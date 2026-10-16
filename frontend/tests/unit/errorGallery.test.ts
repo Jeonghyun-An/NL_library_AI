@@ -38,13 +38,14 @@ describe("SkxConnectionBanner — 실시간 연결 끊김 띠", () => {
   const tpl = template(bannerVue);
   const js = script(bannerVue);
 
-  it("문구 — 다시 연결하는 중 / 연결하지 못함 + [다시 연결]", () => {
+  it("문구 — 다시 연결하는 중 / 연결하지 못함 + [다시 연결], 붙어 있으면 빈 글", () => {
     expect(CONNECTION_HINTS).toEqual({
       reconnecting: "연결이 끊겨 다시 연결하는 중이에요…",
       lost: "연결하지 못했어요. 화면이 최신 상태가 아닐 수 있어요",
     });
     expect(CONNECTION_RETRY_LABEL).toBe("다시 연결");
-    expect(tpl).toContain('<span class="skx-conn__msg">{{ CONNECTION_HINTS[state] }}</span>');
+    expect(js).toContain('const message = computed(() => (props.state === "connected" ? "" : CONNECTION_HINTS[props.state]));');
+    expect(tpl).toContain('<span class="skx-conn__msg">{{ message }}</span>');
     expect(tpl).toContain("{{ CONNECTION_RETRY_LABEL }}");
   });
 
@@ -54,15 +55,26 @@ describe("SkxConnectionBanner — 실시간 연결 끊김 띠", () => {
     expect(tpl).toContain(':data-state="state"');
   });
 
-  it("다시 연결하는 중은 status(조용히), 연결하지 못함은 alert(바로 읽음)", () => {
-    expect(tpl).toContain(":role=\"state === 'lost' ? 'alert' : 'status'\"");
+  it("알림 영역은 늘 그려 두는 한 영역(role=status) — 상태가 바뀌어도 role 을 바꾸지 않고, 붙어 있으면 안을 비운다(쓰는 화면이 늘 그려 두고 state 만 바꾼다)", () => {
+    expect(tpl).toMatch(/<div\s+ref="root"\s+class="skx-conn"[\s\S]*?role="status"\s+tabindex="-1"\s*>/);
+    expect(tpl).not.toContain(":role=");
+    expect(tpl).toContain('<template v-if="message">');
+    expect(js).toMatch(/state: ConnectionState;/);
+    // 머리 주석에 사용법(늘 그려 두고 state 만 바꾼다)
+    expect(bannerVue).toContain("쓰는 화면은 띠를 늘 그려 두고 state 만 바꾼다");
+    expect(bannerVue).toContain("(v-if 로 끊길 때만 그리지 않는다)");
   });
 
   it("[다시 연결] 은 lost 이고 부모가 @retry 를 달았을 때만", () => {
-    expect(js).toMatch(/state: ConnectionState;/);
     expect(js).toMatch(/onRetry\?: \(\) => void;/);
     expect(js).toContain('import { CONNECTION_HINTS, CONNECTION_RETRY_LABEL, type ConnectionState } from "~/utils/apiErrors"');
-    expect(tpl).toMatch(/<button v-if="state === 'lost' && onRetry" type="button" class="skx-conn__retry" @click="onRetry\?\.\(\)">/);
+    expect(tpl).toMatch(/<button v-if="state === 'lost' && onRetry" ref="retryButton" type="button" class="skx-conn__retry" @click="onRetry\?\.\(\)">/);
+  });
+
+  it("[다시 연결] 이 사라질 때(state 가 lost 에서 바뀜) 그 버튼에 있던 초점을 띠(tabindex=-1)로 옮긴다 — body 로 빠지지 않게", () => {
+    expect(js).toMatch(
+      /watch\(\s*\(\) => props\.state,\s*async \(next\) => \{\s*if \(next === "lost" \|\| typeof document === "undefined"\) return;\s*const button = retryButton\.value;\s*if \(!button \|\| document\.activeElement !== button\) return;\s*await nextTick\(\);\s*root\.value\?\.focus\(\);/,
+    );
   });
 });
 
@@ -227,6 +239,18 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(js).toContain('const MISSING_PATH = "/dev/없는-주소";');
   });
 
+  it("아직 사실이 아닌 설명을 싣지 않는다 — 검색 60초 제한(호출부가 아직 넘기지 않는다)·재연결 포기(백오프로 계속 다시 시도한다)", () => {
+    expect(galleryVue).not.toContain("60초 제한");
+    expect(galleryVue).not.toContain("재연결을 거듭해도 붙지 못함");
+    // 대부분의 화면은 아직 이 컴포넌트를 쓰지 않는다 — '쓰이는 곳' 이 아니라 같은 상황이 '생기는 곳'
+    expect(tpl).not.toContain("쓰이는 곳");
+    expect(tpl).toContain("지금 이 컴포넌트를 실제로 쓰는 화면은 전역 오류 화면(①)뿐입니다.");
+  });
+
+  it("① 액자 속 배경 띠가 굵어 보이는 까닭(실제 창 크기 기준)을 캡션에 적는다", () => {
+    expect(tpl).toContain("액자 속 배경 띠는 실제 창 크기(vmax·vh) 기준이라 줄인 액자에서는 굵게 보입니다");
+  });
+
   it("떠날 때 관찰자·타이머를 걷는다", () => {
     expect(js).toMatch(/onBeforeUnmount\(\(\) => \{\s*frameObserver\?\.disconnect\(\);\s*for \(const timer of timers\) clearTimeout\(timer\);/);
   });
@@ -269,6 +293,14 @@ describe("CSS — 새 표시도 '[S] 공통 오류·빈 상태' 구역 안에", 
     expect(code).not.toMatch(/\.skx-conn--lost \{/);
     expect(code).toMatch(/\.skx-conn \{[^}]*color: var\(--skx-ink\);/);
     expect(code).toMatch(/\.skx-charcount--limit \{[^}]*color: var\(--skx-primary\);/);
+  });
+
+  it("붙어 있음(connected)은 보이지 않게만 — display: none 이 아니라 알림 영역을 남긴다. 초점을 받은 띠는 키보드로 왔을 때만 테두리", () => {
+    const connected = code.match(/\.skx-conn--connected \{([^}]*)\}/)?.[1] ?? "";
+    expect(connected).toMatch(/position: absolute;/);
+    expect(connected).toMatch(/clip-path: inset\(50%\);/);
+    expect(connected).not.toMatch(/display: none|visibility: hidden/);
+    expect(code).toMatch(/\.skx-conn:focus-visible \{\s*outline: 2px solid var\(--skx-accent\);/);
   });
 
   it("[다시 연결] 은 :focus-visible 테두리와 24px 누를 자리", () => {

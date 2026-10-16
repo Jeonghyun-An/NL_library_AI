@@ -5374,6 +5374,29 @@ html.skx-scroll-lock {
   border-radius: var(--skx-radius-sm);
   box-shadow: var(--skx-shadow-banner);
 }
+/* 붙어 있음 — 보이는 것 없이 알림 영역만 남긴다(display: none 이면 낭독기가 영역을 잃어 다음에 끊길 때 새 글을 놓친다).
+   흐름에서도 빼 쓰는 화면의 간격을 차지하지 않는다 */
+.skx-conn--connected {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  box-shadow: none;
+}
+/* [다시 연결] 이 사라질 때 초점을 받는 띠(tabindex="-1") — 마우스로 누른 뒤에는 테두리를 그리지 않고, 키보드로 왔을 때만 */
+.skx-conn:focus {
+  outline: none;
+}
+.skx-conn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
 .skx-conn__icon {
   display: inline-flex;
   flex-shrink: 0;

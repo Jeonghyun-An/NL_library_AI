@@ -75,6 +75,8 @@ describe("researchErrorMessage", () => {
     expect(researchErrorMessage(refused, "DeepResearch를 시작하지 못했어요"))
       .toBe(`DeepResearch를 시작하지 못했어요 — ${ERROR_HINTS.network}`);
     expect(researchErrorMessage(new TypeError("Failed to fetch"), "실패")).toBe("실패 — 네트워크 연결을 확인해 주세요");
+    // 크롬이 응답 본문을 읽다 끊기면 던지는 TypeError('network error')도 연결 실패
+    expect(researchErrorMessage(new TypeError("network error"), "실패")).toBe("실패 — 네트워크 연결을 확인해 주세요");
     // 읽기 요청의 30초 제한에 걸린 폴링 GET — 네트워크 탓이 아니라 시간 초과로 알린다
     const timedOut = Object.assign(new Error("[GET] \"/api/research/x\": <no response> [TimeoutError]: The operation was aborted due to timeout"), {
       name: "FetchError",

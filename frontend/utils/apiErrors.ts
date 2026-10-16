@@ -10,6 +10,7 @@
 // 공통 오류 컴포넌트가 스스로 그리는 고정 문구(ERROR_PAGE_TEXT·CONNECTION_HINTS)도 여기 둔다 — 오류 화면 모음(/dev/error-states)이
 // 같은 상수를 읽어 문구 원문을 보이므로, 문구를 고치면 실제 화면과 모음이 함께 바뀐다.
 // 문구는 해요체다(사용자 결정 2026-10-16 — 오류·실패·빈 상태는 '~했어요'·'~해 주세요'·'~예요'·'~없어요')
+import { DEEP_READ, DEEP_RESEARCH } from "./brand";
 
 /**
  * 대체 문구(fallback) 뒤에 ' — ' 로 붙이는 이유. 여기 없는 kind(notFound·conflict·invalid·forbidden·unknown)는 대체 문구만 보인다 —
@@ -94,7 +95,8 @@ export const CONNECTION_HINTS = {
   reconnecting: "연결이 끊겨 다시 연결하는 중이에요…",
   lost: "연결하지 못했어요. 화면이 최신 상태가 아닐 수 있어요",
 } as const;
-export type ConnectionState = keyof typeof CONNECTION_HINTS;
+/** 연결 끊김 띠의 상태 — 'connected'(붙어 있음: 보이는 것 없이 빈 알림 영역만 그린다)와 위 두 문구의 상태 */
+export type ConnectionState = "connected" | keyof typeof CONNECTION_HINTS;
 /** 연결 끊김 띠(lost)의 버튼 글 */
 export const CONNECTION_RETRY_LABEL = "다시 연결";
 
@@ -183,8 +185,11 @@ function isTimeoutError(err: unknown): boolean {
   return TIMEOUT_RE.test(messageOf(cause !== undefined ? cause : err));
 }
 
-/** native fetch 가 서버에 닿지 못했을 때의 TypeError 문구 — 크롬·파이어폭스·사파리·Node(undici) */
-const FETCH_FAILURE_RE = /failed to fetch|fetch failed|networkerror|load failed|network request failed|network connection was lost/i;
+/**
+ * native fetch 가 서버에 닿지 못했을 때의 TypeError 문구 — 크롬·파이어폭스·사파리·Node(undici).
+ * 'network error'(띄어 씀)는 크롬이 응답 본문을 읽다 연결이 끊겼을 때(스트림·큰 JSON) 던지는 TypeError — 파이어폭스의 'NetworkError' 와 함께 잡는다
+ */
+const FETCH_FAILURE_RE = /failed to fetch|fetch failed|network ?error|load failed|network request failed|network connection was lost/i;
 
 /**
  * 응답 없이 끝난 요청의 실패인가 — 이것만 네트워크·시간 초과로 본다. 응답을 가공하다 난 코드 버그(TypeError·SyntaxError 등)를
@@ -281,11 +286,20 @@ const HANGUL_RE = /[가-힣]/;
  * 중괄호(f-string·dict 를 그대로 찍음), 따옴표(repr 로 찍힌 값: "int 여야 한다: 'x'")
  */
 const DEV_TEXT_RE = /[A-Za-z{}'"`]/;
+/**
+ * 사용자에게 보이는 고유명사 — 서버의 사용자용 문장에 들어 있어도 개발자용 표시로 치지 않는다('다시 만들 AI 카드가 없습니다').
+ * 라틴 문자 검사 전에 지운다. 앞뒤가 라틴 문자면 낱말의 일부라 지우지 않는다('KCI_FI001234' 는 'KCI' 만 지워져도 '_FI…' 가 남아 걸린다).
+ * 뒤보기((?<!…))는 사파리 16.4 전에 문법 오류라 앞 글자를 잡아 되돌려 넣는다
+ */
+const USER_TERMS_RE = new RegExp(
+  `(^|[^A-Za-z])(?:${["AI", "SKOVIX", "PDF", "KCI", DEEP_RESEARCH, DEEP_READ].join("|")})(?=[^A-Za-z]|$)`,
+  "g",
+);
 
 /**
  * 서버가 사람에게 보이라고 지은 사유 — 문자열 detail 또는 구조화 detail({code, message, …})의 message.
  * 한글이 있고 개발자용 표시가 없는 깨끗한 문장일 때만 돌려준다(앞뒤 공백은 걷는다). 영문(프레임워크 기본 문구)·한영이 섞인
- * 개발자용 문구·배열(422 검증 실패 — validationMessage 몫)은 null
+ * 개발자용 문구·배열(422 검증 실패 — validationMessage 몫)은 null. 고유명사(USER_TERMS_RE)는 라틴 문자로 치지 않는다
  */
 export function serverMessage(detail: unknown): string | null {
   let text: unknown = detail;
@@ -295,7 +309,8 @@ export function serverMessage(detail: unknown): string | null {
   }
   if (typeof text !== "string") return null;
   const trimmed = text.trim();
-  return trimmed && HANGUL_RE.test(trimmed) && !DEV_TEXT_RE.test(trimmed) ? trimmed : null;
+  if (!trimmed || !HANGUL_RE.test(trimmed)) return null;
+  return DEV_TEXT_RE.test(trimmed.replace(USER_TERMS_RE, "$1")) ? null : trimmed;
 }
 
 /** 구조화 detail 에 code 가 있는가 — 서버가 경우를 갈라 일부러 지은 응답이라는 표시 */

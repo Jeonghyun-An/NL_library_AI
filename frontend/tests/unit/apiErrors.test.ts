@@ -90,6 +90,16 @@ describe("errorKind — 응답이 없을 때", () => {
     }
   });
 
+  it("크롬이 응답 본문을 읽다 끊기면 던지는 TypeError('network error' — 띄어 씀)도 네트워크다", () => {
+    expect(errorKind(new TypeError("network error"))).toBe("network");
+    expect(errorKind(new TypeError("TypeError: network error"))).toBe("network");
+    expect(errorKind(noResponse(new TypeError("network error"), "[GET] \"/api/x\": <no response> network error"))).toBe("network");
+    expect(isAbortError(new TypeError("network error"))).toBe(false);
+    expect(apiErrorMessage(new TypeError("network error"), "불러오지 못했어요")).toBe(`불러오지 못했어요 — ${ERROR_HINTS.network}`);
+    // TypeError 가 아니면(응답과 상관없는 예외) 그대로 unknown
+    expect(errorKind(new Error("network error"))).toBe("unknown");
+  });
+
   it("응답과 상관없는 예외(응답을 가공하다 난 코드 버그·이상한 값)는 네트워크가 아니라 unknown", () => {
     expect(errorKind(new TypeError("Cannot read properties of undefined (reading 'x')"))).toBe("unknown");
     expect(errorKind(new SyntaxError("Unexpected token < in JSON at position 0"))).toBe("unknown");
@@ -262,9 +272,29 @@ describe("apiErrorMessage — (a) 서버의 한글 사유", () => {
     expect(apiErrorMessage(fetchError(422, "파라미터 max_rounds 는 int 여야 한다: 'x'"), "실패")).toBe("실패");
     expect(apiErrorMessage(fetchError(413, "snapshot 은 200KB 까지다"), "저장하지 못했습니다")).toBe("저장하지 못했습니다");
     expect(apiErrorMessage(fetchError(409, { code: "x", message: "승인할 수 없는 상태다: running" }), "실패")).toBe("실패");
-    // 상표 낱말(DeepResearch)이 든 서버 문구도 라틴 문자라 쓰지 않는다 — 연구 화면은 researchErrorMessage 가 browser_active 를 따로 다룬다
+  });
+
+  it("사용자용 고유명사(AI·DeepResearch·DeepRead·SKOVIX·PDF·KCI)가 든 서버 문장은 그대로 — 고유명사를 지운 뒤 라틴 문자를 본다", () => {
+    // app/api/research_topics.py NOTHING_TO_REGENERATE(409) — 사용자에게 보이라고 지은 문장
+    expect(apiErrorMessage(fetchError(409, "다시 만들 AI 카드가 없습니다"), "카드를 다시 만들지 못했어요")).toBe("다시 만들 AI 카드가 없습니다");
     const active = { code: "browser_active", message: "진행 중인 DeepResearch가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요", job_id: "j" };
-    expect(apiErrorMessage(fetchError(429, active), "실패")).toBe(`실패 — ${ERROR_HINTS.busy}`);
+    expect(apiErrorMessage(fetchError(429, active), "실패")).toBe(active.message);
+    for (const text of ["DeepRead 대화를 열 수 없습니다", "SKOVIX 계정이 필요합니다", "PDF 원문이 없는 자료입니다", "KCI 논문만 고를 수 있습니다", "AI가 답을 만들지 못했습니다(AI·PDF)"]) {
+      expect(serverMessage(text), text).toBe(text);
+    }
+  });
+
+  it("고유명사가 낱말의 일부거나 다른 라틴 문자가 남으면 여전히 개발자용 문구다", () => {
+    for (const text of [
+      "PDF 없음: NoSuchKey",
+      "도서 없음: KCI_FI001234",
+      "AIX 서버 오류",
+      "SKOVIX-api 연결 실패",
+      "DeepResearchJob 상태가 이상하다",
+      "AI 카드 생성 실패: timeout",
+    ]) {
+      expect(serverMessage(text), text).toBeNull();
+    }
   });
 
   it("5xx 는 code 가 있는 구조화 detail 이거나 503 일 때만 서버 사유를 쓴다 — 그 밖은 대체 문구 + 이유", () => {

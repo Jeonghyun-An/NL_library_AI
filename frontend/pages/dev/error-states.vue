@@ -19,6 +19,10 @@
             디자인은 <code>assets/css/style_skovix.css</code> 의 <code>[S] 공통 오류·빈 상태</code> 구역 클래스에 입히면
             실제 화면 전체에 반영됩니다.
           </p>
+          <p class="dev-gallery__lead">
+            지금 이 컴포넌트를 실제로 쓰는 화면은 전역 오류 화면(①)뿐입니다. 각 항목의 ‘생기는 곳’은 같은 상황이 생기는 실제 화면이고,
+            차례로 이 컴포넌트로 옮길 자리입니다.
+          </p>
         </div>
         <div class="dev-gallery__theme">
           <p :id="themeLabelId" class="dev-gallery__theme-label">테마</p>
@@ -47,6 +51,7 @@
         </div>
         <p class="dev-gallery__note">
           SkxErrorPage(preview) — {{ SCREEN_W }}×{{ SCREEN_H }} 화면을 액자 폭에 맞춰 줄였습니다. 액자 안 버튼은 눌러도 이동하지 않습니다.
+          액자 속 배경 띠는 실제 창 크기(vmax·vh) 기준이라 줄인 액자에서는 굵게 보입니다 — 실제 404 화면(오른쪽 위 링크)에서 확인해 주세요.
         </p>
         <div class="dev-gallery__grid dev-gallery__grid--wide">
           <article v-for="p in PAGE_SAMPLES" :key="p.status" class="dev-item">
@@ -57,7 +62,7 @@
               </div>
             </div>
             <dl class="dev-item__meta">
-              <dt>쓰이는 곳</dt>
+              <dt>생기는 곳</dt>
               <dd>{{ p.uses.join(" · ") }}</dd>
               <dt>디자인 훅</dt>
               <dd><code v-for="h in p.hooks" :key="h">{{ h }}</code></dd>
@@ -93,7 +98,7 @@
               </SkxErrorState>
             </div>
             <dl class="dev-item__meta">
-              <dt>쓰이는 곳</dt>
+              <dt>생기는 곳</dt>
               <dd>{{ s.uses.join(" · ") }}</dd>
               <dt>디자인 훅</dt>
               <dd><code v-for="h in s.hooks" :key="h">{{ h }}</code></dd>
@@ -128,7 +133,7 @@
               </div>
             </div>
             <dl class="dev-item__meta">
-              <dt>쓰이는 곳</dt>
+              <dt>생기는 곳</dt>
               <dd>{{ INLINE_SAMPLES.basic.uses.join(" · ") }}</dd>
               <dt>디자인 훅</dt>
               <dd><code v-for="h in INLINE_SAMPLES.basic.hooks" :key="h">{{ h }}</code></dd>
@@ -150,7 +155,7 @@
               />
             </div>
             <dl class="dev-item__meta">
-              <dt>쓰이는 곳</dt>
+              <dt>생기는 곳</dt>
               <dd>{{ INLINE_SAMPLES.retry.uses.join(" · ") }}</dd>
               <dt>디자인 훅</dt>
               <dd><code v-for="h in INLINE_SAMPLES.retry.hooks" :key="h">{{ h }}</code></dd>
@@ -165,7 +170,7 @@
               <SkxInlineError :message="INLINE_SAMPLES.busy.texts[0]!" busy :on-retry="ignoreRetry" />
             </div>
             <dl class="dev-item__meta">
-              <dt>쓰이는 곳</dt>
+              <dt>생기는 곳</dt>
               <dd>{{ INLINE_SAMPLES.busy.uses.join(" · ") }}</dd>
               <dt>디자인 훅</dt>
               <dd><code v-for="h in INLINE_SAMPLES.busy.hooks" :key="h">{{ h }}</code></dd>
@@ -190,7 +195,7 @@
               <div class="dev-ghost" aria-hidden="true"><span></span><span></span><span></span></div>
             </div>
             <dl class="dev-item__meta">
-              <dt>쓰이는 곳</dt>
+              <dt>생기는 곳</dt>
               <dd>{{ c.uses.join(" · ") }}</dd>
               <dt>디자인 훅</dt>
               <dd><code v-for="h in c.hooks" :key="h">{{ h }}</code></dd>
@@ -211,7 +216,7 @@
               <SkxCharCount :length="n.length" :max="CHAR_MAX" />
             </div>
             <dl class="dev-item__meta">
-              <dt>쓰이는 곳</dt>
+              <dt>생기는 곳</dt>
               <dd>{{ n.uses.join(" · ") }}</dd>
               <dt>디자인 훅</dt>
               <dd><code v-for="h in n.hooks" :key="h">{{ h }}</code></dd>
@@ -281,7 +286,7 @@ const themeLabelId = `dev-theme-${uid}`;
 const typeId = `dev-type-${uid}`;
 const countId = `dev-count-${uid}`;
 
-/** 항목 설명 — 쓰이는 곳(실제 화면 예)·디자인 훅(클래스·속성)·문구 원문 */
+/** 항목 설명 — 생기는 곳(같은 상황이 생기는 실제 화면 — 대부분 아직 이 컴포넌트를 쓰지 않는다)·디자인 훅(클래스·속성)·문구 원문 */
 interface SpecInfo {
   name: string;
   uses: string[];
@@ -400,7 +405,7 @@ const STATE_SAMPLES: StateSample[] = [
     title: "검색하지 못했어요",
     message: reasonOf(SAMPLE.timeout),
     retry: true,
-    uses: ["논문 검색(60초 제한)", "상세·목록 읽기(30초 제한)", "게이트웨이 504"],
+    uses: ["상세·목록 읽기 — GET 30초 제한(useApi)", "게이트웨이 504"],
     hooks: [".skx-state--timeout", '[data-kind="timeout"]'],
   }),
   stateSample({
@@ -410,7 +415,7 @@ const STATE_SAMPLES: StateSample[] = [
     title: "검색하지 못했어요",
     message: reasonOf(SAMPLE.busy),
     retry: true,
-    uses: ["검색·AI 요약(429·503)", "딥리서치 시작 — 공유 대기열이 찼을 때"],
+    uses: ["딥리서치 시작·승인 — 공유 대기열이 찼을 때(429)", "작업 큐에 연결하지 못함(503)"],
     hooks: [".skx-state--busy", '[data-kind="busy"]'],
   }),
   stateSample({
@@ -477,7 +482,10 @@ const shortQuery = ref("가");
 const INLINE_SAMPLES: Record<"basic" | "retry" | "busy", SpecInfo> = {
   basic: {
     name: "기본 — 검색 입력 상자 바로 아래",
-    uses: ["랜딩·결과 위 검색 입력(422 글자 수)", "딥리서치 질문 입력(2자 미만)"],
+    uses: [
+      "입력 상자 바로 아래 — 서버가 글자 수로 거절한 입력(422)",
+      "딥리서치 질문 2자 미만은 화면이 먼저 막는다(researchInput 의 questionProblem) — 이 줄은 화면이 막지 못한 422 몫",
+    ],
     hooks: [".skx-inline-error", ".skx-inline-error__msg", 'role="alert"'],
     texts: [apiErrorMessage(SAMPLE.tooShort, "검색하지 못했어요")],
   },
@@ -513,7 +521,10 @@ const CONN_SAMPLES: (SpecInfo & { id: ConnSampleId })[] = [
   {
     id: "lost",
     name: "연결하지 못함 + 다시 연결",
-    uses: ["딥리서치 진행 화면 — 재연결을 거듭해도 붙지 못함", "연구 작업대 — 같은 경우"],
+    uses: [
+      "딥리서치 진행 화면 — 다시 붙으려고 상태를 다시 읽었는데 그것도 실패해 다음 시도를 기다리는 동안(백오프로 계속 다시 시도한다)",
+      "[다시 연결] = 기다리지 않고 지금 다시 읽기(useResearch 의 resync)",
+    ],
     hooks: [".skx-conn--lost", '[data-state="lost"]', ".skx-conn__retry", 'role="alert"'],
     texts: [CONNECTION_HINTS.lost, CONNECTION_RETRY_LABEL],
   },
@@ -523,11 +534,11 @@ const connState = reactive<Record<ConnSampleId, ConnectionState>>({ reconnecting
 
 // ── ⑤ 글자 수 ──
 
-/** 딥리서치 질문·검색어 한도(서버 max_length 500)와 같다 */
+/** 본보기 한도 — 딥리서치 질문·검색어의 서버 한도(max_length 500)와 같다(실제 그 입력창에는 maxlength 가 없다) */
 const CHAR_MAX = 500;
 /** [N자로 맞추기] — 한도 가까이(기본 90%) 모양을 바로 볼 수 있는 길이 */
 const COUNT_NEAR_DEMO = 460;
-const COUNT_USES = ["딥리서치 질문 입력", "연구 계획 항목·작업대 주제 질문 고치기", "읽기 메모"];
+const COUNT_USES = ["연구 계획 하위질문 고치기(300자)", "작업대 주제 카드 제목·연구 질문 고치기", "읽기 목록 메모(1000자)"];
 
 const COUNT_SAMPLES = [
   { length: 120, name: "평소" },

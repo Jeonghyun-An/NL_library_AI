@@ -232,10 +232,18 @@ describe("useApi — 읽기 요청의 기본 시간 제한", () => {
   });
 
   it("실제 ofetch — 연결 실패 뒤 다시 보낸 요청도 첫 요청의 시간 제한 안에서 끝난다", async () => {
+    // 첫 요청은 시간 제한(LIMIT_MS) 직전에 연결 실패로 끝나고, ofetch 가 한 번 다시 보낸 요청은 응답 없이 기다린다.
+    // 첫 요청의 시간 제한이 이어지면 LIMIT_MS 쯤에 끝나고, 다시 보낸 요청이 새 시간 제한을 받으면 FIRST_FAIL_MS + LIMIT_MS 쯤에야 끝난다 —
+    // 그 사이(BOUND_MS)로 가른다. 둘 다 실제 타이머라 느린 기계에서도 양쪽에 여유가 크게(위 250ms·아래 130ms) 남게 잡았다
+    const LIMIT_MS = 400;
+    const FIRST_FAIL_MS = 380;
+    const BOUND_MS = 650;
     let calls = 0;
     const flaky = ((_: unknown, init?: RequestInit) => {
       calls += 1;
-      if (calls === 1) return Promise.reject(new TypeError("fetch failed"));
+      if (calls === 1) {
+        return new Promise((_resolve, reject) => setTimeout(() => reject(new TypeError("fetch failed")), FIRST_FAIL_MS));
+      }
       return new Promise((_resolve, reject) => {
         const signal = init?.signal;
         if (signal?.aborted) return reject(signal.reason);
@@ -243,12 +251,17 @@ describe("useApi — 읽기 요청의 기본 시간 제한", () => {
       });
     }) as unknown as typeof fetch;
     const $f = createFetch({ fetch: flaky, defaults: { onRequest: ({ options }) => withReadTimeout(options) } });
-    const err = await $f("/api/x", { timeout: 20 }).then(
+    const started = performance.now();
+    const err = await $f("/api/x", { timeout: LIMIT_MS }).then(
       () => null,
       (e: unknown) => e,
     );
+    const elapsed = performance.now() - started;
     expect(calls).toBe(2);
     expect(errorKind(err)).toBe("timeout");
+    // 첫 실패를 기다린 뒤에 끝났고(시나리오대로 돌았다), 다시 보낸 요청이 새 시간 제한을 받지 않았다
+    expect(elapsed).toBeGreaterThanOrEqual(FIRST_FAIL_MS - 5);
+    expect(elapsed).toBeLessThan(BOUND_MS);
   });
 
   it("실제 ofetch — signal 없는 GET 은 시간 초과로, 호출부 signal 로 끊은 GET 은 끊김으로 끝난다", async () => {
