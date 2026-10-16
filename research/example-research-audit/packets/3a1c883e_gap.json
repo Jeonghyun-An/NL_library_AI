@@ -1,0 +1,92 @@
+{
+ "job": "3a1c883e",
+ "kind": "proposal_gap",
+ "section": "gap",
+ "topic_title": "청소년 스마트폰 과의존과 우울의 관계에 영향을 미치는 부모양육태도",
+ "research_question": "청소년의 스마트폰 과의존과 우울 간의 관계에서 부모양육태도가 매개 변수로 작용하는가?",
+ "group_name": null,
+ "sentences": [
+  {
+   "paragraph": 1,
+   "text": "청소년의 우울과 스마트폰 의존 간의 관계를 더욱 심층적으로 분석하기 위해 다양한 변수를 고려한 연구가 필요하다 [E1].",
+   "n": 1
+  },
+  {
+   "paragraph": 1,
+   "text": "선행연구에서 우울이 스마트폰 사용 문제 경험의 가능성을 높이고, 우울한 기분을 완화하기 위해 스마트폰 의존이 커질 수 있다는 점이 확인되었다 [E2] [E3].",
+   "n": 2
+  },
+  {
+   "paragraph": 1,
+   "text": "특히, 우울과 자살 생각은 청소년의 스마트폰 사용 문제 경험 가능성을 높이는 핵심 요인으로 작용하며, 스마트폰 사용 시간의 증가는 문제 행동으로 연결될 수 있다 [E1] [E3].",
+   "n": 3
+  },
+  {
+   "paragraph": 1,
+   "text": "이러한 점을 고려할 때, 우울과 스마트폰 의존 간의 관계에 영향을 미치는 요인을 심층적으로 분석하는 연구가 필요하다.",
+   "n": 4
+  },
+  {
+   "paragraph": 2,
+   "text": "부모양육태도가 청소년의 스마트폰 의존에 미치는 영향에 대한 연구는 긍정적 양육태도가 스마트폰 의존에 부적 영향을 미치고, 부정적 양육태도는 정적 영향을 미치는 것으로 보고되었다 [E5].",
+   "n": 5
+  },
+  {
+   "paragraph": 2,
+   "text": "또한, 우울과 공격성이 긍정적 양육태도가 청소년의 스마트폰 의존에 미치는 영향을 부분 매개하는 것으로 나타났다 [E5].",
+   "n": 6
+  },
+  {
+   "paragraph": 2,
+   "text": "이러한 결과는 부모양육태도가 청소년의 우울과 공격성을 거쳐 스마트폰 의존에 영향을 미칠 수 있음을 시사한다.",
+   "n": 7
+  },
+  {
+   "paragraph": 2,
+   "text": "따라서 청소년의 스마트폰 과의존과 우울 간의 관계에서 부모양육태도가 매개 변수로 작용하는지 검증하는 연구가 필요하다.",
+   "n": 8
+  },
+  {
+   "paragraph": 3,
+   "text": "청소년의 스마트폰 의존도, 부정정서가 사이버 비행에 미치는 영향에 대한 연구 결과, 스마트폰 의존도와 부정정서는 사이버 비행에 정적인 영향을 미치고, 특히 공격성은 사이버 비행을 증가시키는 영향력을 확인하였다 [E4].",
+   "n": 9
+  },
+  {
+   "paragraph": 3,
+   "text": "이는 청소년의 부정정서가 사이버 비행을 증가시키는 주요 요인으로 작용할 수 있음을 시사한다.",
+   "n": 10
+  },
+  {
+   "paragraph": 3,
+   "text": "따라서 청소년의 우울과 스마트폰 의존 간의 관계에서 부정정서가 매개 변수로 작용하는지 검증하는 연구가 필요하다.",
+   "n": 11
+  }
+ ],
+ "evidence": [
+  {
+   "eid": "E1",
+   "abstract": "This study was conducted to identify factors related to the problematic experiences of smartphone use among adolescents according to gender. The subjects of this study were 54,603 male and female adolescents. This study data was analyzed using SPSS 25.0 program. As a result of this study, the relevant factors for the problematic experiences of smartphone use among male students were academic performance, economic level, counselors, fast food consumption frequency, depression, suicidal ideation, suicide plan, happiness, subjective body image, stress, and smartphone usage time.",
+   "excerpt": "자존감이 낮을 경우 낮은 자존감과 부정적인 대인관계를 회복하기 위해 스 마트폰 과의존 가능성은 증가한다[34]. 따라서 문제행 동도 증가할 수 있을 것이다. 그렇지 않은 청소년에 비해 스마트폰 사용 문제 경험의 가능성이 높은 것으로 나타났다. 그러므로 스마트폰 사용 문제 경험 예방 시 음주와 흡연을 조절할 필요가 있다. 본 연구 결과 우울과 자살 생각은 남학생, 여학생 모 두에게서 없는 경우보다 있는 경우에 스마트폰 사용의 문제적 경험 가능성이 더 높게 나타났다. 자살계획은 남학생에게서만 유의하게 나타났는데 없는 경우보다 있는 경우에 스마트폰 사용의 문제적 경험 가능성이 더 낮게 나타났다. 본 연구 결과와 동일하게 Hwang 등 [16]의 연구 결과 우울이 없는 청소년에 비해 우울이 있는 청소년의 스마트폰 사용으로 인한 문제행동이 더 많은 것으로 나타났다. 그리고 Kim[19]의 연구 결과\n\n본 연구 결과 스트레스의 경우 모든 대상자가 적게 받을 때보다 많은 받을 때 스마트폰 사용의 문제적 경 험 가능성이 더 높게 나타났고 스마트폰 사용 시간이 길수록 스마트폰 사용의 문제적 경험 가능성이 더 높게 나타났다. 본 연구 결과와 동일하게 Hwang 등[16]의 연구 결과 청소년이 스트레스를 더 많이 받고 스마트폰\n\n- 자살 생각이 없는 청소년에 비해 있는 청소년의 스마트 폰 사용 문제 경험 가능성이 증가하였다. 우울한 경우 우울한 기분을 완화시키기 위해 모바일 상의 의사소통 등에 집중하여 스마트폰 의존이 커지게 된다[27]. 우울 은 청소년의 스마트폰 중독에 강하게 영향을 주는 핵심 요인이라 할 수 있으며 우울이 심한 청소년의 경우 자 살생각까지 이어질 수 있다[28,29]. Moon 등[30]의 연 구 결과 스마트폰 사용 시간이 증가할수록 자살계획 가 능성은 증가하였다. 스마트폰 사용 시간의 증가는 문제 행동으로 연결될 수 있다. 그러므로 성별에 따른 스마 트폰 사용으로 인한 문제행동과 자살계획과의 추후 반 복 연구가 필요하다. 스마트폰 중독과 그 문제행동은 자기통제력이 성인에 비해 상대적으로 낮은 청소년에 게 매우 높다[31]. 그러므로 우울하고 자살 생각이 있는 청소년의 스마트폰 사용으로 인한 문제행동을 감소시 키기 위한 적극적인 노력이 필요하다. - 사용 시간이 길수록 스마트폰 사용으로 인한 문제행동 은 더 많이 나타났다."
+  },
+  {
+   "eid": "E2",
+   "abstract": "## The Longitudinal Relationship between Depression and Smartphone Dependency in Adolescents: Autoregressive Cross-lagged Modeling\n\n#### Yoon, Yein* Kim, Ju-ill**\n\nThis study was to identify the relationship between depression and smartphone dependency among adolescents. Previous studies have shown that smartphone dependency and depression has significant relationship. To determine the casual link between them, this study utilized autoregressive cross-lagged model using Korean Children and Youth Panel Survey 2010; KCYPS 2010 panel data(M=1,750) from National Youth Policy Institute.",
+   "excerpt": "연구에서 검증할 모형의 경로는 다음과 같이 표현할 수 있다.\n우울  우울스마트폰의존 스마트폰의존  스마트폰의존우울\n\n우울은 청소년 의 [t]시점에 대한 우울정도의 측정값이며 스마트폰의존은 청소년  의 [t]시점에 대한 스마트폰 의존 측정값을 나타낸다."
+  },
+  {
+   "eid": "E3",
+   "abstract": "",
+   "excerpt": "생물치료정신의학 제 20 권 제 3 호, 2014\n\nJ Korean Soc Biol Ther Psychiatry Vol 20, No 3, 2014\n\n# 한국 청소년의 스마트 폰 중독과 우울, 사회 불안의 상관 관계 : 예비연구\n\n원 저\n\n## 이성철*·최태영*·우정민*·김지현*·서민재*·곽상규**·이종훈*†\n\n### The Relationship of Smartphone Addiction and Depression, Social Anxiety on Adolescents : Preliminary Study\n\n#### Sung Chul Lee, M.D.,* Tae Young Choi, M.D., Ph.D.,* Jung Min Woo, M.D., Ph.D.,* Ji Hyun Kim, M.D., Ph.D.,* Min Jae Seo, M.D.,* Sang Gyu Kwak, Ph.D.,** Jong Hun Lee, M.D., Ph.D.*†\n\nObjectives：Recently, adolescent use of smartphones has dramatically increased. Consequently, smartphone addiction has emerged as a serious social problem. Researches on internet and cellular phone addiction have reported correlation between such addictions and symptoms such as depression and social anxiety. However, there have only been limited studies on the relationship between smartphone use, depression and social anxiety. Methods：Subjects involved in this study are 57 high school students and 16 patients who are diagnosed with depressive disorder in a university hospital and are currently being treated on visitation basis."
+  },
+  {
+   "eid": "E4",
+   "abstract": "본 연구는 청소년을 대상으로 사이버 비행에 미치는 영향을 확인하기 위하여 스마트폰 의존도와 부정 정서 요인을 선행연구로부터 예측변인으로 도출하였다. 이를 검증하기 위하여 중다회귀분석(multiple regression analysis)을 실시하여 스마트폰 의존도와 부정정서가 사이버비행에 미치는 영향력을 확인하 였다. 본 연구의 대상은 한국 아동·청소년 패널조사 2018(Korean Children and Youth Panel Survey)의 패널조사｣의 중1학년 1차년도 패널데이터 2,590명을 대상으로 분석하였다. 이를 토대로 밝혀진 주요 연 구결과는 다음과 같다.\n\n첫째, 청소년들은 성별에 따라 전반적 경향성을 확인한 결과 스마트폰 의존도, 부정정서, 사이버 비행 의 평균값의 차이가 있었다. 둘째, 스마트폰 의존도와 부정정서는 사이버비행에 정적(+)인 영향을 미치 고 있었다. 마지막으로 중다회귀분석 결과 사이버 비행을 증가시키는 변인으로 스마트폰 의존도를 확인 하였으며, 부정정서의 하위변인으로서는 공격성이 사이버 비행을 증가시키는 영향력을 확인할 수 있었 다.",
+   "excerpt": "청소년기에 경험하는 우울 성향은 예측 할 수 없는 충동적이고 파괴적인 행동으로 외 현화되는 경향이 있다고 보고하였다(정소영, 2022). 이는 청소년들은 성인보다 자기조절의 어려움이 발생함으로써 학교부적응에 영향을 미칠 수 있는 변인이다. 특히, 스마트폰 의존도 와 우울은 미숙한 사회적 행동을 숨기기 위한 도구로서의 역할을 하게 되며, 우울이 스마트 폰 의존도에 정적인 영향을 미친다고 보고하였\n\n특히, 청소년의 부정정서는 사이버비행을 직·간접적으로 증가시키는 주요 요인으로 설 명된다. 자기통제이론(Dopheide, 2006; Hirschi, Gottfordson, 1990)에 따르면, 우리가 경험하 는 부정정서의 대표인 우울은 자신의 생각과 행동을 통제하는데 어려움을 겪고 있는 것이라 고 보았다."
+  },
+  {
+   "eid": "E5",
+   "abstract": "본 연구의 목적은 긍정적, 부정적 부모양육태도와 청소년의 스마트폰 의존 간의 관계에서 청소년의 우울과 공격성의 매개효과를 검증하여 청소년복지의 실천적, 정책적 함의를 모색하는 것이다. 이를 위해 한국청소년정책연구원의 한국아동․청소년패널조사(Korean Children and Youth Panel Survey, KCYPS)의 초등학교 4학년 4차년도와 5차년도 자료를 토대로 중학교 1학년 시기의 부모양육태도가 중학교 2학년 시기의 우울과 공격성, 스마트폰 의존에 미치는 영향을 구조방정식모형으로 분석하였 다. 분석 결과 첫째, 긍정적 양육태도는 청소년의 스마트폰 의존에 직접적인 부적 영향을 미치는 것 으로 나타났고 부정적 양육태도는 정적 영향을 미치는 것으로 나타났다. 둘째, 우울과 공격성의 매개 효과를 분석한 결과, 우울과 공격성은 긍정적 양육태도가 청소년의 스마트폰 의존에 미치는 영향을 부분 매개하였고, 부정적 양육태도가 스마트폰 의존에 미치는 영향도 부분 매개하는 것으로 나타났다. 즉 긍정적 양육태도는 청소년의 우울과 공격성을 감소시키며 이는 스마트폰 의존을 줄이는 반면, 부 정적 양육태도는 청소년의 우울과 공격성을 증가시키며 나아가 스마트폰 의존 문제를",
+   "excerpt": "R²=.10\n\n우울\n\n-.298*** .220***\n\n긍정적 양육태도\n\nR²=.18\n\n-.069**\n\n스마트폰 의존\n\n-.172***\n\n.112***\n\n.055*\n\n부정적 양육태도\n\n-.252***\n\n.164***\n\n.133***\n\n공격성\n\n|통제변수: 성별| |---|\n\nR²=.09\n\n*p<.05, **p<.01, ***p<.001. |경로계수: 표준화계수| |---|\n\n그림 2. 연구모형 분석 결과\n\n- 102 -\n\n- 표 3 구조모형의 적합도 지수\n\nχ² df p NFI TLI CFI RMSEA\n\n2064.591 262 .000 .907 .905 .917 .062\n\n본 연구의 구조모형의 경로계수 추정결과(표 4 참고), 긍정적 양육태도는 스마트폰 의존에 유의한 부적 영향을 미치는 것으로 나타났고(β=-.069, p<.01), 부정적 양육태 도는 스마트폰 의존에 유의한 정적 영향을 미치는 것으로 나타났다(β=.112, p<.001). 또한 긍정적 양육태도는 우울(β=-.298, p<.001)과 공격성(β=-.252, p<.001)에 유의한 부적 영향을 미치는 것으로 나타낸 반면, 부정적 양육태도는 우울(β=.055, p<.05)과 공격성(β=.133, p<.001)에 유의한 정적 영향을 미치는 것으로 나타났다. 우울과 공격 성도 스마트폰 의존에 유의한 정적 영향을 미치는 것으로 나타났다(β=.220, p<.001; β=.164, p<.001). 즉, 긍정적 양육태도가 높을수록 우울과 공격성 수준이 낮아지며 우울과 공격성 수준이 높을수록 청소년의 스마트폰 의존이 높아지는 것으로 나타났으 며 긍정적 양육태도가 높을수록 청소년의 스마트폰 의존이 낮아지는 것으로 나타났 다. 한편 부정적 양육태도가 높을수록 우울과 공격성 수준이 높아지며 우울과 공격성 수준이 높을수록 청소년의 스마트폰 의존 경향이 높아지는 것으로 나타났다. - 표 4 구조모형의 경로계수 분석결과\n\n경로 B β S.E."
+  }
+ ]
+}

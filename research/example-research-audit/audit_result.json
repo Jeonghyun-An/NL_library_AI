@@ -1,0 +1,2251 @@
+{
+ "byJob": {
+  "911d9583": {
+   "deep_research": {
+    "sentences": 69,
+    "S": 44,
+    "W": 1,
+    "M": 24,
+    "U_ok": 0,
+    "U_claim": 0,
+    "F": 0,
+    "refuted": 1,
+    "high": 9,
+    "medium": 27,
+    "low": 25
+   },
+   "proposal": {
+    "sentences": 19,
+    "S": 11,
+    "W": 0,
+    "M": 2,
+    "U_ok": 0,
+    "U_claim": 6,
+    "F": 0,
+    "refuted": 1,
+    "high": 1,
+    "medium": 7,
+    "low": 9
+   }
+  },
+  "c816c7b2": {
+   "deep_research": {
+    "sentences": 63,
+    "S": 47,
+    "W": 1,
+    "M": 14,
+    "U_ok": 1,
+    "U_claim": 0,
+    "F": 0,
+    "refuted": 0,
+    "high": 5,
+    "medium": 32,
+    "low": 25
+   },
+   "proposal": {
+    "sentences": 20,
+    "S": 12,
+    "W": 0,
+    "M": 7,
+    "U_ok": 0,
+    "U_claim": 1,
+    "F": 0,
+    "refuted": 0,
+    "high": 2,
+    "medium": 8,
+    "low": 14
+   }
+  }
+ },
+ "perPacket": [
+  {
+   "packet": "911d9583_dr1",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "The 'comprehensive review of service quality' phrase comes from a bibliography entry quoted at the top of E1's chunk ('서비스 품질에 관한 종합적 고찰: 개념 및 측정을 중심으로', 경영논집 1997). It is the title of a cited work, not something E1 found or stated. What E1 actually proposes, an expectation-versus-perception gap model, is not reflected here."
+     },
+     {
+      "n": 2,
+      "verdict": "M",
+      "reason": "Reverses E4's design. In E4, quality of life is made up of income/employment, education and the other listed domains, and is the outcome that library service satisfaction is tested against. E4 does not define library service satisfaction as a concept that includes those quality-of-life elements."
+     },
+     {
+      "n": 3,
+      "verdict": "M",
+      "reason": "Merges two papers into one supposed 'satisfaction measurement method'. The questionnaire with library use, visit and psychology items comes from E16, which measures what affects teenagers' reading effectiveness at a vocational high school, not library user satisfaction. Only the normality, validity and reliability checks come from E4."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "Supported, nearly word for word from the E1 chunk."
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "M",
+      "reason": "E13 is a comparison and analysis of existing performance-evaluation systems. The chunk describes another study's model (4 perspectives, 12 items, 36 indicators) as one of the systems it reviews, right before section 3.4 on 차미경·표순희 2008. The summary says E13 itself derived the model and proposed the key success factors and indicators."
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S",
+      "reason": "Mostly supported by E8 (balanced development, priority improvements, future improvement of complex cultural spaces). 'Continuously monitor' is a small addition."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 2,
+      "severity": "high",
+      "issue": "Under a heading about the concept of satisfaction, the only definition offered is wrong. It says library service satisfaction is a concept containing quality-of-life domains (소득고용, 교육, 문화여가 ...), but in E4 those domains make up quality of life, the outcome variable. A judge reading the 'concept' answer gets a conceptual error."
+     },
+     {
+      "n": 1,
+      "severity": "medium",
+      "issue": "The opening sentence is built from the title of a 1997 reference in E1's bibliography and says nothing concrete about how satisfaction is evaluated. E1's actually relevant content is missed: the expectation-versus-perception gap model and the six service areas (장서, 시설/설비, 직원, 문화프로그램, 열람환경, e-서비스)."
+     },
+     {
+      "n": 3,
+      "severity": "medium",
+      "issue": "The questionnaire for adolescent reading effectiveness (E16) is presented as the general method for measuring public library user satisfaction, and is spliced together with E4's statistical checks into one 'method' that neither paper describes."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "E16 (reading effectiveness of students at a specialized vocational high school) is off-topic for a heading on the concept and measurement of public library user satisfaction, yet it gets a summary card and is cited in the intro."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "E13 is about performance evaluation systems, not user satisfaction, and is never cited in the intro paragraph. Its summary stands alone, with nothing connecting it to the heading."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Content repeats across sentences: the normality, validity and reliability checks appear in both n3 and n9; the quality-of-life domains in n2 and n9; library use/visit/psychology in n3 and n8; and E8's importance-satisfaction analysis with balanced development and priority improvement three times (n4, n6, n10)."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "Ungrammatical Korean copied verbatim from the source: '기존의 도서관 서비스를 관련 분류체계들을 바탕으로' (the object particle has no verb to attach to)."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "A particle is missing: '도서관 이용, 방문, 심리 세분화하여' should read '...심리로 세분화하여'."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "The future-research line is about improving complex cultural spaces, not about the concept or measurement of satisfaction. Its wording is also redundant: '균형 있는 발전과 우선적인 개선 부분을 ... 모니터링하고 발전시켜야'."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The phrase '서비스 품질에 관한 종합적 고찰' appears in E1's chunk only as the title of a cited 1997 work in 경영논집, at the top of the chunk. E1 builds its own service classification and a satisfaction model on the gap between expected and perceived service levels. It never says satisfaction is evaluated on the basis of a 'comprehensive review of service quality'. The sentence turns a citation title into a claim about E1's method."
+     },
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E4's abstract and introduction both say library service satisfaction is tested for its effect on quality of life, which is made up of 소득고용, 교육, 문화여가, 가족공동체, 시민참여, 안전환경 and 주관적 만족도. The sentence reverses this. It defines library service satisfaction as a concept that includes those quality-of-life elements. Those elements are the outcome being tested, not parts of satisfaction."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The questionnaire items (이용자 특성, and 도서관 이용/방문/심리 as 영향변인) come from E16. E16 measures what affects teenagers' reading effectiveness at a vocational high school, not library user satisfaction. Only the 정규분포·타당성·신뢰도 checks come from E4. Both papers are cited, so this is not W. But presenting the combination as the method for measuring public library user satisfaction states something neither paper says."
+     },
+     {
+      "n": 7,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E13's title, '성과평가 체계에 대한 비교·분석', marks it as a comparison of existing systems. The chunk describes a model with 4 perspectives, 12 items and 36 indicators that was weighted by surveying librarians. Right after it comes heading 3.4, which reviews 차미경·표순희 2008, so the 3.x paragraphs describe reviewed studies. The evidence never shows E13 deriving its own model. The summary credits E13 with deriving the model and proposing its key success factors and indicators. That attribution is not supported. The reviewed study is not in this file, so W does not apply."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "911d9583_dr2",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E2 does report that staff problem-solving, communication and service affect satisfaction. But the sentence calls them facility factors (시설 요인). E2 keeps physical environment (물리적 환경) separate from human factors (인적요인), communication and service, so the label distorts the finding."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "W",
+      "reason": "The first clause, '물리적 공간 구성 요소와 제공되는 서비스', comes from E14's survey design (물리적 요인 = 공간 구성 요소, 행태적 요인 = 서비스). E29 supports only the four-part space classification from the building manual and says nothing about these being satisfaction factors."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "M",
+      "reason": "E8 says only that the spaces need improving and that it set out to show which elements to prioritise, which it already did. It never calls for further research, so the future line turns the paper's own completed aim into a research gap."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 1,
+      "severity": "high",
+      "issue": "The opening sentence under the heading '시설 요인' gives staff problem-solving, communication and service as the facility factors. These are staff and service factors, so the section's lead answer is a different question from its heading."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section offers almost no facility evidence about satisfaction. The only concrete facility statements are that accessibility had no effect (E2), a building-manual space classification (E29), and one minority complaint about visit frequency (E27). E8's IPA result that '컴퓨터/장비 사용의 구비성' lags is the most relevant facility finding in the evidence, and the section never uses it."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The E2 summary repeats sentences 1 and 2 almost word for word: staff problem-solving, communication and service, and that accessibility had no effect."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "The E27 summary repeats sentence 4 almost word for word (대출자료실 기자재·서가 배열 불편 → 방문 횟수)."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "E27 studied a university library (C대학교 중앙도서관), but the intro presents it as a public-library finding without saying so. The claim also rests on a minority opinion (the paper calls it '소수의 의견' and '기타' responses) and concerns visit frequency, not satisfaction."
+     },
+     {
+      "n": 3,
+      "severity": "medium",
+      "issue": "E29 is a classification of required spaces from a library building manual, not a study of what affects satisfaction. The sentence lists space categories, which does not answer what influences satisfaction."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "The E29 summary repeats the four-part space classification already given in sentence 3, and it only restates a manual's classification."
+     },
+     {
+      "n": 9,
+      "severity": "medium",
+      "issue": "The E8 summary restates only the paper's stated aim and gives none of its findings. Findings in the evidence include: only 5 of 41 factors scored higher in satisfaction than importance, and computer/equipment provision is the one weak space factor."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The E14 summary describes only the survey item design and gives no findings. E14 is about place-making and place attachment (장소성·장소애착), not satisfaction, and the intro never cites it."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "The future line just recycles E8's own research purpose, which E8 already carried out, so it does not read as a real research gap."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "The sentence reads awkwardly: the second clause '찾아갈 용의가 있다' has no subject (이용자는), and '오히려' sets up a contrast that is not there."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2 does support the finding itself: staff problem-solving ('크게 영향을 미치며'), communication and service affect satisfaction. But E2's model sets 물리적 환경 as its own variable, apart from 인적요인, 커뮤니케이션 and 서비스. Calling the human and service factors '시설 요인' puts the finding under a category the paper does not use. Neither E2 chunk says what physical environment did to satisfaction, so nothing supports the facility framing."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "The pairing '물리적 공간 구성 요소와 제공되는 서비스' copies E14's survey design: physical factors target '공공도서관의 공간 구성 요소', behavioural factors target '공공도서관이 제공하는 서비스'. The model's own E14 summary (#7) uses the same wording. E29 supports only the second clause, the manual's four space categories. E29's '서비스' appears only as a space type label (휴게실, 북카페 and similar), not as services the library provides. E29 also never links these spaces to user satisfaction. So the substantive first clause comes from a different paper than the one cited."
+     },
+     {
+      "n": 11,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E8 says it set out to show which elements to focus improvement on ('어떤 요소에 더 중점을 두고 개선해야 하는지에 대한 방향성을 제시하고자 하였다'), and its IPA results already do this. Its fourth conclusion asks for the spaces themselves to be improved ('향후 도서관 복합문화공간을 개선할 필요가 있다'), not for more research. No E8 chunk calls for further study. The future line turns the paper's completed aim and practical advice into a research gap the paper does not state."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "911d9583_dr3",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E30 does report the program variable with relatively low satisfaction. The sentence itself is muddled, though (see presentation issues)."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "E31: users preferred 독서 및 문예 (42.2%) and 정보화교육 (20.6%), both inside KLPCS 인문교양교육. A fair paraphrase."
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S",
+      "reason": "E36 says this about podcasts (소외계층 service, 시·공간을 극복한 service). It supports the sentence but is not evidence about satisfaction factors."
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "E8: 41 이용요인 items were factor-analysed into 8 factors. The title confirms an importance-satisfaction study. Calling the 41 items '요인' is loose but acceptable."
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "E8's evidence only shows '프로그램' as factor 1 in a factor analysis, which is just a label for an extracted factor. No importance score or IPA result is given, so '중요한 요인 중 하나로 나타났다' adds a finding the evidence does not contain."
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "Borderline. E4 says service satisfaction affects the education part only partially (부분적으로). It is overall satisfaction (종합적 만족도), not service satisfaction, that affects culture, leisure and health. The sentence drops '부분적으로' and the income/employment result, and adds '특히', an emphasis the source does not give. Roughly faithful, but the summary leaves out E4's actual program-service findings."
+     },
+     {
+      "n": 10,
+      "verdict": "S",
+      "reason": "Matches the E30 chunk. However, the chunk appears to describe a prior study inside E30's literature review: it is followed by '최재황･차성종(2012)은…', and E30's title is about community-capacity policy."
+     },
+     {
+      "n": 11,
+      "verdict": "S",
+      "reason": "Technically supported: all six factors significantly affected overall satisfaction. But the sentence singles out 프로그램 and omits that 정보제공정도, 시설 and 장서 had the largest influence, which is selective framing."
+     },
+     {
+      "n": 12,
+      "verdict": "M",
+      "reason": "E30's evidence contains no call for research on improving program satisfaction. The recommendation is the model's own but is attributed to E30 with an [E30] mark."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 1,
+      "severity": "medium",
+      "issue": "The opening sentence of the section is a non-answer and reads awkwardly: '영향을 미치는 프로그램 요인은 … 낮은 만족도를 보이는 것으로 나타났다'. It merges the heading into the finding and reports the program satisfaction level instead of saying which program aspects drive satisfaction."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section never answers the heading substantively, i.e. which aspects of programs affect satisfaction. E8's evidence lists the program items (독창성, 진행자 전문성, 차별성, 자료 충분성, 다양성, 내용 충실성, 공간과의 적절성) and none of them are used. Instead the intro reports a satisfaction level, preferences and a podcast proposal."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Heavy repetition: each intro sentence is restated almost verbatim in a summary. n1 repeats n10 (E30), n2 repeats n8 (E31), n3 repeats n5–6 (E8) and n4 repeats n7 (E36). A reader sees the same four points twice."
+     },
+     {
+      "n": 9,
+      "severity": "medium",
+      "issue": "E4 is off-topic as summarized. It studies how library satisfaction affects quality of life, which is the reverse of 'factors affecting satisfaction'. The summary also omits the one program-related finding in E4 (program-service satisfaction is linked to family/community, civic participation and safety). As a result, a paper with no visible link to programs sits under the program-factor heading."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "The E30 findings (six satisfaction variables, low program satisfaction, all factors significant) appear to come from a prior study described in E30's literature review: the chunk continues with '최재황･차성종(2012)은…' and the paper is about community-capacity policy. The section presents them as E30's own results."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "E36 (podcast services) gives a service proposal, not evidence about factors affecting satisfaction. It is weakly related to the heading, and n4/n7 read as off-topic for 'program factors affecting satisfaction'."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "E31 reports program preferences, not satisfaction or its determinants, so it only loosely answers the heading. The phrase '인문 교양 교육과 일치하는 경향' is vague without explaining that it refers to the KLPCS classification."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "The acronym 'KLPCS' appears without explanation."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "Read together, n10 and n11 suggest that programs are a key driver. The source says the strongest drivers were 정보제공정도, 시설 and 장서, so the framing is selective."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "An overlong single-sentence summary whose subject is unclear ('…서비스 확대를 기대한다': who expects?)."
+     },
+     {
+      "n": 12,
+      "severity": "low",
+      "issue": "The future-research line is generic and adds little."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E8's chunks show only the factor-analysis table and the line naming factor 1 '프로그램' among the 8 factors. They contain no importance scores, IPA quadrant or importance ranking. Factor order reflects explained variance, not importance, so the claim that 프로그램 is one of the important factors is not in the evidence."
+     },
+     {
+      "n": 12,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E30 supports only the premise: the 프로그램 variable had relatively low satisfaction. Its passage contains no call for research on improving program satisfaction or on specific improvement measures. The recommendation is the model's own but is attributed to E30 with an [E30] mark."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "911d9583_dr4",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E4's '.566' is the correlation between 안전/환경 (a quality-of-life domain, truncated to '전/환경' in the chunk) and 주관적 만족 (subjective life satisfaction). The sentence misreads it as '전반적인 환경' and presents it as a library service factor that affects user satisfaction. Neither variable is a library service or user satisfaction."
+     },
+     {
+      "n": 2,
+      "verdict": "M",
+      "reason": "E4 lists 공간/장소서비스, 시설 및 설비서비스, 종합적 부분, 주관적 만족 and 교육 together as variables whose correlations are generally high. The sentence turns 주관적 만족 into the thing they correlate with. In the table, 시설 (.470) is no higher than 프로그램 (.474). 주관적 만족 is life satisfaction, not satisfaction with the library."
+     },
+     {
+      "n": 3,
+      "verdict": "M",
+      "reason": "In E2, 이용 목적, 결혼 여부 and 이용 횟수 are only sample descriptives (respondent counts and percentages). They were not tested or found to affect satisfaction. E2's actual findings are that staff problem-solving, communication and service affect satisfaction and that accessibility does not."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "M",
+      "reason": "This is the same misreading as n2: E4 lists 주관적 만족 as one of the highly correlated variables, not as their correlation partner. The paper's main finding (library service satisfaction affects quality-of-life domains) is left out."
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "M",
+      "reason": "In E39 it is 만족 (satisfaction) that is defined as the user's cognitive and emotional evaluation of library services overall. The summary attributes that definition to 관계혜택 (relational benefits). The list of benefit types is supported."
+     },
+     {
+      "n": 8,
+      "verdict": "M",
+      "reason": "E2 surveys 이용 목적, 결혼 여부 and 이용 횟수 only as respondent characteristics. Its analysis is a regression of service touchpoints on satisfaction, not of how user characteristics affect the experience. The summary invents the analysis and leaves out the real findings (staff problem-solving matters, accessibility does not)."
+     },
+     {
+      "n": 9,
+      "verdict": "M",
+      "reason": "In E14, 체험가치인식도 (.781) > 서비스가치인식도 (.664) describes influence on forming the perception of place value (장소성), not on visit satisfaction. The paper only says separately that experience itself also affects visit satisfaction and intention to revisit. The 방문만족도/재방문의도 measurement part is supported."
+     },
+     {
+      "n": 10,
+      "verdict": "M",
+      "reason": "This future-research recommendation (study interactions among service factors) is cited to E4, but E4's evidence makes no such recommendation. E4 only suggests that supporting libraries can raise quality of life."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 1,
+      "severity": "high",
+      "issue": "The section's opening claim is garbled. The source's truncated '전/환경' (안전/환경, a quality-of-life domain) became '전반적인 환경' and is presented as a library service factor. The bare '.566' is a correlation between two quality-of-life variables, so the number appears out of context."
+     },
+     {
+      "n": 3,
+      "severity": "high",
+      "issue": "Under a 'service factors' heading, the answer lists 이용 목적, 결혼 여부 and 이용 횟수 (sample demographics) as factors in satisfaction. Marital status as a service factor would stand out to judges. Meanwhile E2's directly relevant finding (staff problem-solving outweighs friendliness, communication and service matter, accessibility does not) is never mentioned."
+     },
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "Most of the intro relies on E4, whose outcome variable is 주관적 만족 (subjective life satisfaction, a quality-of-life domain), not satisfaction with the library. The section therefore answers a different question than the heading."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "Broken Korean: '서비스가 치인식도' is a PDF line-break artifact of '서비스가치인식도'. It appears in n4 and again in n9."
+     },
+     {
+      "n": 5,
+      "severity": "medium",
+      "issue": "Repetition: the E4 summary (n5) restates n2 almost word for word, the E14 summary (n9) repeats n4, and the E2 summary (n8) repeats n3's demographic list. The summaries add almost nothing beyond the intro."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The E38 summary is near-verbatim factor-loading detail ('사서 요인에도 어느 정도 적재') from a multicultural-services perception study. It says nothing about what affects user satisfaction. The paper is off-topic for the heading, and '서비스 만족도' here is just one survey item."
+     },
+     {
+      "n": 7,
+      "severity": "medium",
+      "issue": "The E39 summary (senior users' relational benefits) mostly defines terms and lists benefit types. It never says which service factors drive satisfaction, and E39 isn't used in the intro, so the paper is only loosely related to the heading."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "The E2 summary describes the paper by its respondent profile rather than its findings, so the reader learns nothing about the regression results."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "The future-research line is generic ('상호작용 관계를 심층적으로 분석') and pinned to E4, which does not raise the point."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "Correlations (moderate, .47 to .58) are described as '높은 상관관계' and '중요한 역할', which overstates the evidence."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E4, '전/환경' is a cut-off '안전/환경'. The table row 주관적만족 / column 안전/환경 = .566 confirms it. Both are quality-of-life domains, not a library service or user satisfaction. The sentence misreads the variable as '전반적인 환경' and presents it as a service factor behind user satisfaction."
+     },
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E4 lists 공간/장소서비스, 시설 및 설비서비스, 종합적 부분, 주관적 만족 and 교육 together as variables with generally high correlations. It does not say the first three correlate highly with 주관적 만족. The abstract's regression supports only 공간/장소 and 종합 → 주관적 만족. 시설's r with 주관적만족 is .470, below 프로그램 at .474. 주관적 만족 is life satisfaction, not library-user satisfaction, so the sentence distorts the finding."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E2, 이용목적, 결혼 여부 and 이용 횟수 appear only as sample descriptives (counts and percentages from <표 13>). Nothing tests or finds them to affect satisfaction. E2's findings are that staff problem-solving and attitude, communication and service affect satisfaction, and that accessibility does not."
+     },
+     {
+      "n": 5,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "This is the same distortion as n2. E4 names 주관적 만족 as one of the highly correlated variables, not as what the service factors correlate with. 시설 is not among the predictors of 주관적 만족 in the abstract. The claim that these are '중요한 요인' is supported, but the core relation is misstated."
+     },
+     {
+      "n": 7,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E39, the phrase '도서관 서비스 전반에 대한 이용자의 인지적, 감정적 평가의 결과' defines 만족 (satisfaction), not 관계혜택. The summary misattributes that definition. The list of benefit types (심리적·사회적·정보적·기능적) is supported."
+     },
+     {
+      "n": 8,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2 did survey 이용 목적, 결혼 여부 and 이용 횟수, but only as respondent characteristics. Its analysis is a multiple regression of service touchpoint factor scores on satisfaction. Nothing in E2 analyzes how user characteristics affect the experience, so the summary invents the analysis."
+     },
+     {
+      "n": 9,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E14, 체험가치인식도 (.781) > 서비스가치인식도 (.664) is the influence on perceiving the library's place value (장소적 가치/장소성). The paper adds only that experience itself also ('뿐만 아니라…로도') affects 방문만족도/재방문의도. It does not say experience has a greater effect on visit satisfaction than service. The 방문만족도/재방문의도 measurement part is supported."
+     },
+     {
+      "n": 10,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E4's evidence contains no recommendation to study interactions among service factors. Its only implication is that supporting libraries can improve citizens' quality of life and satisfaction. Showing an inter-correlation table is not such a recommendation, so citing E4 for it goes beyond the paper."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "911d9583_dr5",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E43 and E15 correlate demographics with library USE (visit frequency, program participation, usefulness), not with satisfaction. '고용' appears in neither paper; it comes from E4's quality-of-life domain, which is an outcome, not a user characteristic. 학력/교육 and 소득/가계소득 are listed as if they were separate factors."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "Faithful to E4's first two findings, but E4 treats satisfaction as the cause of quality of life, so the sentence does not answer the heading (see presentation issues)."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "Matches E15 Table 5 and its text (age, education and household income correlate with visit frequency). The direction is dropped and the topic is visit frequency, not satisfaction."
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "The first clause is supported by E41 (81% satisfied). The second clause turns E1's conjecture that the study-room user group would value facilities most into a general claim. It drops the subgroup condition and attaches it to E41's regional-information-service users. It is also a facility factor, not a user characteristic."
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "E43 chunk supports the finding that 학력 does not affect the library as a cultural institution, contrary to the reproduction thesis. The 'argues a social/cultural capital role' part comes from the title (modest)."
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "Restates E4's abstract purpose accurately."
+     },
+     {
+      "n": 7,
+      "verdict": "M",
+      "reason": "'공공도서관 이용 활성화 방안을 제시한다' is not in E15's evidence or title. The rest restates the title and the 연구문제 1 framing."
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "Matches E41's title and survey items (use experience, use cycle, satisfaction). 'Basic data for improvement' is generic but modest."
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "E1 builds a satisfaction evaluation model based on prior studies (NCSI, SERVQUAL, LibQual+ and others)."
+     },
+     {
+      "n": 10,
+      "verdict": "M",
+      "reason": "E1 proposes an evaluation model that weights responses by user group and purpose and considers each library's traits. It does not call for research analysing how user and service characteristics affect satisfaction, so the recommendation goes beyond what E1 says. The opening '이하위질문에 대해' is a leftover phrase."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 10,
+      "severity": "high",
+      "issue": "Broken leftover prompt phrase '이하위질문에 대해' (likely '이 하위 질문에 대해' with spaces lost) begins the future-research line; it reads like internal scaffolding."
+     },
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "The section never answers the heading. No cited paper shows user characteristics affecting SATISFACTION. E15 and E43 cover use/visit frequency, E4 covers satisfaction as a cause of quality of life, E41 reports overall satisfaction with one service, and E1 is an evaluation framework. The intro presents use-frequency correlates as satisfaction factors."
+     },
+     {
+      "n": 2,
+      "severity": "high",
+      "issue": "Causal direction is reversed relative to the heading. E4 shows satisfaction influencing income/employment and education quality of life. Placed under 'factors affecting satisfaction', and right after n1 lists 소득·고용 as user characteristics, it reads as income and employment driving satisfaction."
+     },
+     {
+      "n": 1,
+      "severity": "medium",
+      "issue": "Factor list duplicates items (학력 vs 교육, 소득 vs 가계소득) and includes 고용, which no cited paper treats as a user characteristic."
+     },
+     {
+      "n": 5,
+      "severity": "medium",
+      "issue": "The E43 summary says 학력 does not affect the library's cultural role, while n1 cites E43 to list 학력 as a factor. The tension is left unreconciled."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "Facility/physical-environment factors appear under a user-characteristics heading. One sentence also merges two unrelated papers (E41 regional-info service satisfaction, E1 study-room users' priorities) as if they were one finding."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "E41 (regional information service promotion) is off-topic for user characteristic factors; it has no user-characteristic analysis."
+     },
+     {
+      "n": 6,
+      "severity": "low",
+      "issue": "The E4 summary repeats n2's content and is internally redundant ('…영향을 미치는지를 파악하고, …삶의 질에 미치는 영향을 분석한다')."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The E1 summary mostly restates the title, repeating '공공도서관 서비스 고객만족도 평가체계' twice."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The E15 summary largely restates the title. All summaries are 'this study does X' purpose statements with no findings, although E15's findings (younger, female, more educated, higher-income people visit more) were available."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "Awkward phrasing: '방문 빈도가 높은 사람들은 연령, 교육, 가계소득과 유의미한 상관관계를 보인다' attributes the correlation to people rather than to visit frequency, and drops the direction (younger, more educated, higher income)."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E43 (Table 7) correlates gender, age, education level and income with use frequency, online preference, program participation and social/cultural usefulness. E15 (Table 5 and text) correlates age, gender, education, household income and child co-residence with visit frequency. Neither paper measures satisfaction, so calling these satisfaction factors distorts both. '고용' appears in neither paper; it comes from E4's quality-of-life outcome domain. 학력/교육 and 소득/가계소득 are also double-listed. I could not refute the flag."
+     },
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The first clause is supported: E41 reports 81% satisfied. E41's satisfaction reasons are fast, high-quality and plentiful information, not facilities. For the second clause, E1 only conjectures that the study-room user group would value facilities most ('공부방으로 이용하는 이용자 집단은 당연히…'). The sentence drops that subgroup condition, states it as a general fact and attaches it to E41's users. I could not refute the flag."
+     },
+     {
+      "n": 7,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "Most of the summary is supported by the E15 title and the 연구문제 1 text: it analyses factors in Korean adults' library use and their relation to demographic traits. Neither the chunks nor the title say the paper presents '공공도서관 이용 활성화 방안'. The summary adds content about the paper that the evidence does not show. This is minor but real."
+     },
+     {
+      "n": 10,
+      "confirmed": false,
+      "final_verdict": "S",
+      "reason": "Refuted. E1 says user expectations vary with purpose and that satisfaction falls when a library's goals do not match the user's purpose. It says the 2002 Seoul survey result was distorted because user-group traits were not reflected. It calls for weighting satisfaction responses by use level and purpose and for considering each library's traits. Its model evaluates satisfaction by service (문화프로그램, 열람환경, e-서비스). A future line calling for in-depth study of how user traits, together with library service traits, affect satisfaction is a modest extension of E1's stated need, not a new finding. The leading '이하위질문에 대해' is a garbled leftover phrase, a wording problem rather than a faithfulness one."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "911d9583_dr6",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E39 found trust->satisfaction->commitment only among senior users and only within relationship quality. The sentence makes this a general answer for all public library users, and it treats commitment (an outcome) as a factor affecting satisfaction."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "M",
+      "reason": "E4 surveyed public library users in general, not adolescents. The '청소년의 공공도서관 이용만족도 분석' framing is E11's title, so the population is imported from E11. It also drops E4's '부분적으로' (only partially significant)."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "M",
+      "reason": "E8 recommends balanced development that concentrates on the priority improvement areas rather than one sector. The sentence turns this into 'rather than intensive improvement of specific factors, provide diverse programs/services', which merges findings 1 and 2 into a contrast the paper does not make and nearly reverses its point about priority improvement."
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     },
+     {
+      "n": 14,
+      "verdict": "S"
+     },
+     {
+      "n": 15,
+      "verdict": "M",
+      "reason": "In E6 the staff/facilities/content factors come from the prior studies it reviews (황일원, 이재숙, footnotes 5-7). '연구 결과 ... 나타났으며' presents them as E6's own findings. The education/retraining part is supported."
+     },
+     {
+      "n": 16,
+      "verdict": "M",
+      "reason": "E39's evidence says nothing about future research or customized services for different senior user groups. This recommendation goes beyond the paper."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 3,
+      "severity": "high",
+      "issue": "The sentence calls itself an adolescent satisfaction analysis ('청소년의 공공도서관 이용만족도 분석 결과', which is E11's title) but cites E4, a general public library user survey on quality of life. A judge who clicks [E4] finds no adolescents, so the citation is visibly wrong."
+     },
+     {
+      "n": 3,
+      "severity": "medium",
+      "issue": "This sentence and the E4 summaries (12-13) treat library satisfaction as the cause of quality-of-life outcomes. They do not cover factors that affect satisfaction, so E4 is off-topic for this question and heading."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The heading asks how the factors relate to each other, but only E39's trust->satisfaction->commitment chain addresses that, and it covers senior users only. Sentences 3-4 just list factors or outcomes without saying how they relate."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The same content repeats. The trust->satisfaction->commitment finding appears in 1, 2 and 6 (2 is nearly word-for-word the same as 6's source). Staff/facilities/content appears in both 4 and 15, and education-domain quality of life in 3 and 13. '관계혜택, 관계품질, 관계지속의도 간의 관계' appears in both 5 and 16."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "The E11 summary (8-9) only restates the study's purpose and method. It reports no actual satisfaction or dissatisfaction factors, which adds nothing for the heading."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "Awkward Korean: the sentence echoes the heading and then says '요인 간의 관계는 ... 순차적인 영향으로 나타난다', which reads unnaturally and makes commitment sound like a satisfaction factor."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "'특정 요인에 대한 집중적인 개선보다는 다양한 프로그램과 서비스 제공의 필요성' is a confusing contrast. It also sits oddly next to the IPA quadrant finding in the same sentence."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "The non-standard spelling '컨텐츠' (standard: 콘텐츠) is copied from the source. It appears in sentences 4 and 15."
+     },
+     {
+      "n": 16,
+      "severity": "low",
+      "issue": "The only future-research line covers senior users only (E39). That is narrow for a question about public library users in general."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E39 finds trust->satisfaction->commitment within relationship quality for senior public library users only. The sentence drops the senior population, presents the result as the general answer on factors affecting all users' satisfaction, and lists commitment (an outcome of satisfaction) among those factors. That is overgeneralization, not modest summarizing."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The finding (service satisfaction affects the education area of quality of life) is from E4, but E4 surveyed general public library users ('공공도서관 이용자들을 대상으로'). The '청소년의 공공도서관 이용만족도 분석' framing is E11's title, so the population is imported from another paper. It also drops E4's '부분적으로' qualifier."
+     },
+     {
+      "n": 11,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E8 says to pursue balanced development focused on priority improvement areas rather than one specific sector (finding 1), and separately says to provide diverse programs and services given visitor characteristics (finding 2). The sentence merges them into 'diverse programs/services rather than intensive improvement of specific factors', which drops and nearly reverses the paper's point about concentrating on priority improvements. The space/computer-equipment clause is roughly supported."
+     },
+     {
+      "n": 15,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E6's evidence, the staff/facilities/content factors appear in the literature-review subsection '가. 만족도에 영향을 주는 요인' and are attributed to prior studies (footnote 5, 황일원 fn 6, 이재숙 fn 7). Nothing shows E6 produced them itself, so '연구 결과 ... 나타났으며' misattributes reviewed literature as the paper's own finding. The user education and staff retraining recommendation is supported."
+     },
+     {
+      "n": 16,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E39's chunks give hypothesis results and the opening of 결론 및 제언, with no future-research suggestion and nothing about diverse senior user groups or customized service development. The recommendation goes beyond what E39 says."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "911d9583_prior.g1",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "The model-building claim and the call to account for how much people use the library and each library's character are both in E1. One detail is slightly off: E1 merges 전자자원 with 인쇄자원 and 이용시설 with 열람환경 into combined categories, so '개별 구성영역을 구분하고' is imprecise but not a wrong claim."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "M",
+      "reason": "E2 says library use has only a partial effect on easing class stratification, because higher-education and higher-income groups use the library more. The sentence turns this into the library possibly deepening stratification ('사회적 계급화를 심화시킬 수 있음'), which E2 does not say. E2's excerpt even reports that education does not affect the cultural-institution side, against the class-reproduction claim."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "That commitment (몰입) is the strongest predictor is supported. The rest is stitched together: the trust-in-librarians-to-satisfaction point is a finding E3 cites from 박서현(2017) and 송혜지(2015). E3's own implication is marketing strategy by user characteristics, not a relationship-marketing strategy built on trust. The '확인되어 … 고려한' chain links things the paper does not link."
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "Mostly supported. E4 reports effects on several quality-of-life areas (some only partial, which the sentence glosses over). Its excerpt names 공간/장소 and 시설 및 설비 services as important; 프로그램 서비스 is not in that list but is backed by the abstract's regression results. It is a slight blend, still acceptable."
+     },
+     {
+      "n": 8,
+      "verdict": "M",
+      "reason": "E4 does not say its analysis identifies what needs improving or helps set operating direction. It also misdescribes the analysis: E4 correlates service satisfaction with quality of life, not 'service' with 'user satisfaction'. The improvement-direction framing matches E5's abstract ('어떤 요소에 더 중점을 두고 개선해야 하는지에 대한 방향성'), not E4."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "The section never mentions 복합문화공간. It also never cites the two most on-topic papers in its own evidence: E5, which directly studies importance and satisfaction for public-library 복합문화공간 use factors (programs, staff, space), and E6, on physical environment and staff as drivers of user satisfaction. A literature review for a study on 복합문화공간 facility and program factors that leaves out the paper on exactly that topic is an obvious gap to a judge."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "E2 (social and cultural capital, class stratification) does not address user satisfaction, facilities or programs. It is off-topic for the group '공공도서관 이용자 만족도' and the research question, yet it gets a full paragraph."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "E3 (seniors' relational benefits and relationship quality) is only loosely related. It is about relationship marketing for one age group, not facility or program factors, and the section does not explain why it matters to the research question."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section reads as an annotated bibliography. Every paragraph uses the same two-sentence template ('[title paraphrase] 연구는 … [E#]. 또한/특히/따라서 … [E#].'), with no synthesis and no link back to facility versus program factors."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "Papers are referred to by paraphrased titles ('…평가체계에 관한 선행연구는', '…역할 연구는', '…측정 연구는') with no author or year. The heavy title-as-subject phrasing is clunky, and calling one paper '선행연구는' reads oddly."
+     },
+     {
+      "n": 6,
+      "severity": "low",
+      "issue": "Awkward causal chain: '몰입이 … 확인되어, 도서관과 사서에 대한 신뢰가 … 점을 고려한 관계마케팅 전략' jumps from a commitment finding to a trust-based recommendation without a logical link."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "A long run-on list of seven quality-of-life domains inside one sentence. '삶의 질 다양한 영역' is missing a particle (should be '삶의 질의 다양한 영역')."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "A vague, generic closing sentence ('개선이 필요한 부분을 파악하고 … 도움을 줄 수 있음을 시사한다') that adds nothing specific and misdescribes E4's correlation analysis."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2 says high-education, high-income groups use the library more, so library use only partly eases class stratification ('부분적인 영향만'). Neither the abstract nor the excerpt says use 'favors' those groups or may deepen stratification ('심화시킬 수 있음'). The excerpt even reports that education does not affect the cultural-institution side, against class reproduction. That reverses the finding's direction."
+     },
+     {
+      "n": 6,
+      "confirmed": false,
+      "final_verdict": "S",
+      "reason": "Commitment as the strongest predictor is in the abstract and the excerpt (.66). Trust leading to satisfaction is also E3's own result ('신뢰는 만족에 … 긍정적인 영향'), not only the 박서현/송혜지 studies; E3 says its result supports theirs. The abstract frames the work from a relationship-marketing angle with implications for library marketing strategy, so 'a relationship-marketing strategy is needed' is a modest paraphrase. The '확인되어' link is loose, but every part comes from E3."
+     },
+     {
+      "n": 8,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E4 correlates satisfaction with library services against quality-of-life domains and names important factors. It says nothing about finding what needs improving or setting operating direction. The sentence also misdescribes the analysis as 'library service vs user satisfaction'. The improvement-direction idea echoes E5's abstract, but the sentence is mainly a distorted E4 claim with an added implication, so M fits better than W."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "911d9583_gap",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "Matches E1 abstract (only 5 items show satisfaction above importance; balanced development needed). It leaves out the denominator, '41개 요인 중'."
+     },
+     {
+      "n": 2,
+      "verdict": "U_claim",
+      "reason": "An uncited interpretation of E1. It also narrows the finding to '특정 영역', while E1 says the gap is broad ('특정 부문이 아닌'), across 36 of 41 items."
+     },
+     {
+      "n": 3,
+      "verdict": "U_claim",
+      "reason": "An uncited recommendation ('심층적인 분석', '지속적인 모니터링') that comes from no evidence. It reads as practitioner advice, not a research gap."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "U_claim",
+      "reason": "An uncited interpretation that extends E2's general satisfaction-survey point to 복합문화공간 users."
+     },
+     {
+      "n": 6,
+      "verdict": "U_claim",
+      "reason": "No citation, but this is a near-verbatim lift of E2's excerpt ('개별 도서관의 특성을 고려한 평가체계 내에서 개별도서관이 지향하는 목적이 부합하는 성과측정을 대안적으로 모색'). E2's content is presented as the author's own claim."
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "U_claim",
+      "reason": "An uncited interpretation that goes beyond E3. E3 covers performance evaluation, not user-satisfaction measurement, and does not say satisfaction should be judged by quality-of-life impact rather than facility scale."
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "Supported by the E5 abstract. It drops the '부분적으로' qualifier for 소득고용 and 교육, and the 문화여가 effect is from 종합적 만족도, but this is acceptable summarizing."
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "U_claim",
+      "reason": "An uncited inference that applies E4 (youth reading effectiveness) to reading programs in 복합문화공간. E4 does not address complex cultural spaces."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section is titled '연구 공백' but never states a gap. No sentence says what earlier studies did not do, for example separating facility and program factors and testing their effect on satisfaction. Each paragraph summarizes one paper and then adds '이는 … 시사한다' or a 해야 할 것이다 recommendation, so it reads as a second literature review plus advice."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "This works against the proposal's own topic. It says 복합문화공간 satisfaction should be judged not by 시설 규모 but by quality-of-life impact, which undercuts a study about facility factors. It also blurs satisfaction (the dependent variable) with impact."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "Near-verbatim copy of E2's sentence without a citation. It keeps E2's grammatical error '목적이 부합하는' (should be '목적에 부합하는'), so the Korean reads as broken."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "E4 (youth reading effectiveness: 독서태도, role models, library attitude) is off-topic for facility and program factors behind satisfaction in 복합문화공간. All of paragraph 4 (n10–n11) rests on it."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "Every paragraph uses the same template: full paper title + [E#] + finding, then '이는 … 시사한다/의미한다' (n2, n5, n8, n11). The repetition is noticeable."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "'5개 항목에서만' has no denominator (E1: 5 of 41 items), so the number is out of context. Using full paper titles as grammatical subjects, with no author or year, also makes sentences long and awkward (n1, n4, n7, n9, n10)."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "E1's most relevant findings for the topic are not used: the space factors (all but '컴퓨터/장비 사용의 구비성' in quadrant 1 or 4) and the program factor structure. The section skips the direct facility-versus-program evidence it had."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "Citation order jumps: E5 is cited in paragraph 3, before E4 in paragraph 4."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The title contains a non-standard separator character ('비교․분석', U+2024), carried over from the source."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "No [E#] mark. It interprets E1 (\"이는…시사한다\"). E1's abstract does show that importance exceeds satisfaction on 36 of 41 items, so 'expectations not met' is a fair reading. But the sentence narrows this to '특정 영역', while E1 says '특정 부문이 아닌'. It stays an uncited interpretation that distorts the source."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "No citation. '심층적인 분석' and '지속적인 모니터링' are the author's own recommendation. E1 suggests improving priority areas and keeping development balanced, but it says nothing about in-depth facility and program analysis or ongoing monitoring."
+     },
+     {
+      "n": 5,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "No citation. It interprets E2 ('이는…의미한다') and carries E2's point, that survey weights should vary by usage purpose, over to 복합문화공간 users. E2 discusses general public-library satisfaction surveys and never mentions complex cultural spaces."
+     },
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "No citation. The sentence nearly copies E2's excerpt ('개별 도서관의 특성을 고려한 평가체계 내에서 개별도서관이 지향하는 목적이 부합하는 성과측정을 대안적으로 모색'). It is E2's content but carries no mark of its own, so it reads as the author's claim. By the rubric, an unmarked substantive claim is U_claim."
+     },
+     {
+      "n": 8,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "No citation. The flag goes slightly too far: E3's excerpt does list '만족' under the 향유결과 area and ties 향유 to '삶의 질' (the 차미경·표순희 indicators). Still, E3 never says complex-cultural-space satisfaction should be judged by quality-of-life impact rather than service volume or facility size. That framing is the author's uncited interpretation."
+     },
+     {
+      "n": 11,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "No citation. It applies E4's finding to reading programs inside 복합문화공간. E4 found that reading attitude and positive attitude toward the public library affect teenagers' reading effectiveness, but it does not address complex cultural spaces or how to design programs."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "c816c7b2_dr1",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E1 includes studies that examine how social support affects depression, and it aims to lower depression in older adults. That supports the framing, although it rests on one review's inclusion criteria."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "The first clause matches E3's concluding recommendation. The second clause paraphrases E4 but merges two of its points: E4 says people in the support network encourage treatment, and that the support older adults receive is an important resource that makes social integration possible."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "E2's background passage says depressive symptoms are more common with higher age, lower income and among women, and that depression lowers quality of life. '소득 감소' (falling income) slightly shifts '소득이 낮을수록' (lower income). This is E2 citing an earlier study [3], not E2's own finding."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "This is E1's list of aims. It drops '논문의 일반적 특성', so it reads as if E1 measured its own region and sample size, when these are attributes of the reviewed papers."
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "E4 attributes this list to earlier studies ('연구들에서는 ... 보고 있다'), but the summary credits it to '본 연구'. The content itself matches."
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "This matches E2's background. E2 says these factors make depression more likely than at other ages, and the summary turns that into '인해 발생하며'. That is a slight strengthening of cause."
+     },
+     {
+      "n": 9,
+      "verdict": "M",
+      "reason": "E1's evidence only states that E1 aims to suggest programs and research directions for reducing depression. The recommendation that program development and effectiveness-testing studies are needed does not appear in E1."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 2,
+      "severity": "medium",
+      "issue": "The heading asks how the relationship is defined, but the answer's second sentence opens with a recommendation ('사회적 지지망 구축과 융합적 노력이 필요하며'). A clause from E3 is joined with '며' to an unrelated E4 claim, so the sentence reads disjointed and does not answer the heading."
+     },
+     {
+      "n": 3,
+      "severity": "medium",
+      "issue": "This sentence is off-heading. It covers risk factors for depression (age, income, sex) and its effect on quality of life, not the relationship between social support and depression."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Intro and summaries repeat each other: n6 restates n2's first clause (다학제·융합적 노력), n7 restates n2's second clause (건강 유지·사회 통합·사회적 자원), and n8 overlaps n3 (E2's background on causes of depression)."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "E1 has two summary sentences (n4, n5), and both state only purposes. n5 repeats n4's '연구 방향 제안', and neither reports what the review found. n9's future line then reuses the same aim."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The E3 summary mostly restates the title ('융합적인 영향을 분석'). It leaves out the actual finding that is in the evidence: the support network had direct and indirect effects on depression, and material support had a direct effect."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "The E4 summary restates the title ('매개효과를 분석') without saying what mediated what or what the result was. The rest is prior-literature background credited to the study."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "The E2 summary covers background on what causes depression and never reports the paper's own subject or result: whether social support and interpersonal relations moderated the depression–health-behavior link."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Nothing in the section actually defines social support or the relationship, which is what the heading asks. E2's evidence contains a usable definition ('사회적 관계망으로부터 받은 심리적 격려와 정보에 대한 도움') and a buffering role, but neither is used."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "Much of the cited content (n2, n3, n7, n8) comes from the papers' literature-review background (E4 citing 손덕순 2005, E2 citing [3] and [4]), yet it is presented as those papers' own findings or views."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "Awkward Korean: the object marker '을' clashes with the passive verb in '…것을 주요 내용으로 정의되고 있다'. It should read '…것을 주요 내용으로 한다' or '…것으로 정의된다'."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "Awkward wording: '여성 여부와 관련이 있으며' (better '여성일수록'), and '소득 감소' where the source means lower income level."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "'건강 유지 및 치료를 격려하고' is awkward, because health maintenance is not something one encourages. The source says the network encourages continuing treatment, which helps maintain health."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "'노인의 사회적 지지와 우울 감소를 위한 프로그램' is ambiguous: it can read as a program for social support and for depression reduction, rather than a program that reduces depression through social support."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "Metadata display, if shown: E3's year is '2017.1' (probably 2017.10 with the trailing zero dropped), and E2's title is missing a space ('관계에서대인관계와'). E2's source chunks also contain leftover <br> tags and a stray table fragment ('| |---|'), which would show if passages appear in citation popovers."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 9,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E1's chunks give only the study's stated purpose: to synthesize findings and propose programs and research directions for reducing depression in older adults (그 목적 중 하나가 '사회적 지지를 통한 노인의 우울 감소와 연구방향을 제안한다'). No E1 passage reports a finding or recommendation that program development and effectiveness-verification (효과 검증) studies are needed. The 'program' part loosely echoes E1's stated aim, but the effectiveness-testing recommendation is added. It goes beyond E1's evidence, so the verdict is M."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "c816c7b2_dr2",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "U_ok",
+      "reason": "Restates the heading as an opening line. No claim."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "GDSSF-K is in E4 and Zimet's 12-item MSPSS is in E5, so both citations hold. The sentence has no subject, though, so it reads as if one study used both tools."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "E2 supports SPSS 18.0 and the descriptive statistics (counts, percentages, mean, SD). But this is descriptive statistics, not a way of measuring the depression–social support relationship."
+     },
+     {
+      "n": 4,
+      "verdict": "S",
+      "reason": "Mostly faithful to E1's search and inclusion criteria. Small wording slip: E1 searched the foreign databases for Korean studies published abroad ('국외에 출판된 국내논문'). The summary says it analyzed papers published in Korea ('국내에 출판된 논문')."
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "E4 supports GDSSF-K and the yes=0 / no=1 scoring."
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "E5 supports the Zimet 12-item MSPSS and its three groups: family, friends and significant others."
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "Faithful to E3's concluding remark: society-wide concern and multidisciplinary effort to build support networks. It is not about methods (see presentation issues)."
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "E2 supports the 33-item, 4-point tool with 8 subdomains and SPSS 18.0."
+     },
+     {
+      "n": 9,
+      "verdict": "M",
+      "reason": "E3's evidence only calls for society-wide concern and multidisciplinary effort to build support networks. It says nothing about future research on support types (family, friends, community) or on evaluating support-program effectiveness. 'Family, friends' actually echoes E5's MSPSS groups, and 'community' appears in no evidence."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "Heavy repetition between the intro and the summaries. n2 is restated almost word for word in n5 (GDSSF-K) and n6 (Zimet 12-item MSPSS), and 'SPSS 18.0 program' appears in both n3 and n8. Across 9 sentences, a reader sees the same two scales and the same software twice."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The heading asks how the relationship between depression and social support was measured, but the section never names an analysis technique for that relationship. The intro gives only scale names and descriptive statistics. The evidence has Pearson correlation and moderated multiple regression (E2), a mediation design (E4 title) and a systematic review (E1), but these are left out or buried. An expert judge would find the answer thin."
+     },
+     {
+      "n": 3,
+      "severity": "medium",
+      "issue": "The intro offers descriptive statistics (counts, percentages, mean, SD from E2) as a technique for measuring the relationship. This is trivial and does not answer the heading, while E2's correlation and moderated-regression analysis is not mentioned."
+     },
+     {
+      "n": 7,
+      "severity": "medium",
+      "issue": "The E3 summary is a policy conclusion (multidisciplinary effort, society-wide concern). It does not answer the methods/techniques heading."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "The E2 summary describes the health-attitude / health-promotion-behavior instrument, which measures neither depression nor social support. It skips E2's actually relevant method: moderated multiple regression of interpersonal relations and social support."
+     },
+     {
+      "n": 9,
+      "severity": "medium",
+      "issue": "The future-research line is generic. It is not about measurement methods (the heading's topic), and it carries an [E3] mark that E3 does not support."
+     },
+     {
+      "n": 6,
+      "severity": "low",
+      "issue": "E5 is a study of factors in successful aging, not of the depression–social support relationship. Only its social-support instrument is relevant, which makes it a marginal fit for this heading."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "Mixed English inside Korean text: the lowercase 'multidimensional scale of perceived social support' is copied from the source without translation or abbreviation (MSPSS). The sentence also has no subject, so it reads as if one study used both the GDSSF-K and the MSPSS."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "'SPSS 18.0 program' mixes English into Korean prose (also in n8). '또한,' links it to n2 as if it were the same study."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "Awkward Korean: '포함 기준 삼아' is missing a particle (should be '포함 기준으로 삼아'). '데이터베이스' and '데이터 베이스' are spaced inconsistently. The long single sentence lists six databases before reaching the point."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "Source spacing artifact copied over: '(1점) 의'. Also, a yes/no item is called a '양분된 리커트 척도' (dichotomous Likert scale), a contradictory term copied from the source."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "E3's year is shown as '2017.1', which probably means 2017.10 with the trailing zero dropped. It will look wrong in the reference list."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 9,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E3's only chunk says elderly depression is a social problem that needs society-wide attention, and that building support networks and systems needs multidisciplinary, convergent effort. It does not propose future research on specific support types (family, friends, community), and it does not mention evaluating how well support programs work. E3's title does mention a 'social support network', but no chunk breaks that network into family, friends or community. The family and friends groups come from E5's MSPSS description, and 'community' appears in no evidence. The sentence therefore attributes a research agenda to E3 that goes beyond what E3 says."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "c816c7b2_dr3",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "Mostly restates the heading, but it credits E1 with showing 'various study populations'. E1 actually limited its review to community-dwelling elderly (60+) and excluded disease, disability, dementia and disaster/abuse groups, so it does not support a claim of diversity."
+     },
+     {
+      "n": 2,
+      "verdict": "M",
+      "reason": "Distorts E1. E1 selected 30 studies in total (26 domestic, 4 foreign), not 26 in total. It also says 'these studies analyzed papers published 2001-2021', when it was E1 itself that reviewed papers from that period."
+     },
+     {
+      "n": 3,
+      "verdict": "M",
+      "reason": "E7 lists demographic, social-support, disease/health and life-satisfaction factors as predictors of depression reported in prior studies. The sentence turns these into a description of the study populations ('elderly who considered various factors'), which E7 does not say."
+     },
+     {
+      "n": 4,
+      "verdict": "S",
+      "reason": "Rural elderly (E4 title), elderly cancer survivors (E7 title) and single-person-household elderly (E6, 85 elderly papers) are all backed by their own sources. The trailing [E6] wrongly attaches the whole sentence to E6."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S"
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "A faithful paraphrase of E4's future-research suggestion that drops '상대적으로' (relatively)."
+     },
+     {
+      "n": 9,
+      "verdict": "M",
+      "reason": "In E7 these variables appear as predictors reported by prior studies (refs 11-18) in its literature background. The evidence does not show E7 analyzing them. The sentence also says 'elderly depression trajectory' where E7 studies elderly cancer survivors."
+     },
+     {
+      "n": 10,
+      "verdict": "S",
+      "reason": "The content matches E7's background sentence, but it is literature background rather than E7's own finding, and the Korean is broken."
+     },
+     {
+      "n": 11,
+      "verdict": "M",
+      "reason": "Both claims are prior-study findings that E2 cites (Seo[42] and [43]), not E2's own results. E2 itself found that social support, but not interpersonal relations, moderated depression and health-promoting behavior."
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "S"
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 2,
+      "severity": "high",
+      "issue": "The study counts contradict each other. Sentence 2 says 26 studies were selected in total, while the E1 summary (sentence 6) says 30 (26 domestic + 4 foreign). Sentence 2's clause 'these studies analyzed papers published 2001-2021' also garbles who did the analysis."
+     },
+     {
+      "n": 3,
+      "severity": "medium",
+      "issue": "Answers a different question than the heading. It lists categories of depression predictors (demographic, social support, disease, life satisfaction) instead of study populations. '다양한 요인들을 고려한 노인들' ('elderly who considered various factors') is awkward and means nothing."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The heading asks which populations were studied, but only sentence 4 names any (rural, cancer-survivor and single-person-household elderly). No summary says its paper's population: E1 community elderly 60+ (12,555 people), E7 elderly cancer survivors from KLoSA, E6 single-person households, E2 elderly in a limited region. The answer to the heading is thin."
+     },
+     {
+      "n": 5,
+      "severity": "medium",
+      "issue": "All three E1 summary sentences (5-7) cover search procedure: database hit counts 278/79, the selection count and the date range. The relevant content (community elderly, 12,555 participants, 28 of 30 studies found social support reduces depression) is left out. The 278/79 hit counts are numbers out of context for the heading."
+     },
+     {
+      "n": 7,
+      "severity": "medium",
+      "issue": "Sentence 7 repeats the date range '2001년 1월 1일부터 2021년 8월 31일까지' almost word for word from intro sentence 2."
+     },
+     {
+      "n": 13,
+      "severity": "medium",
+      "issue": "The future-research line repeats the E4 summary (sentence 8) nearly verbatim. The E4 summary also gives only the paper's future-work suggestion, not its finding (social support as mediator for rural elderly depression)."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "Broken Korean. In '우울은 사회적 중재 요구가 증가하며 … 다양한 예측요인이 보고되었다' the subject '우울은' does not fit the predicate. The sentence is also generic literature background rather than a summary of E7."
+     },
+     {
+      "n": 9,
+      "severity": "low",
+      "issue": "The E7 summary (sentences 9-10) is a list of variables plus background, and it never mentions that E7 studies elderly cancer survivors or depression trajectories."
+     },
+     {
+      "n": 11,
+      "severity": "medium",
+      "issue": "The E2 summary presents findings that E2 cites from other researchers (Seo[42], [43]) as E2's own. E2's actual result (social support moderates depression and health-promoting behavior) is missing, and E2 is never cited in the answer paragraph."
+     },
+     {
+      "n": 12,
+      "severity": "low",
+      "issue": "The E6 summary leaves out that the paper is about single-person households (1인 가구), which is the population detail the heading asks for. E6 is a broad review of counseling and psychology research trends and only tangential to the depression and social support relationship."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "After the inline citations [E4] [E7] [E6], an extra [E6] at the end of the sentence wrongly attributes the whole sentence to E6."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E1 does not say the studies covered diverse populations. Its inclusion criteria limit the review to community-dwelling elderly aged 60 and over (12,555 people in 30 studies). It excludes disease or surgery patients, disabled people, dementia patients, and disaster or abuse victims. Citing E1 for 'diverse study populations' is not supported."
+     },
+     {
+      "n": 2,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E1 states that 26 domestic and 4 foreign studies were selected, 30 in total. The sentence says the total was 26. The date range 2001-01-01 to 2021-08-31 is E1's own search window for its review, but the sentence attributes it to the selected studies ('이 연구들은 ... 분석하였다'). Both points distort E1."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E7 the demographic, social-support, disease/health and life-satisfaction aspects are factors that affect elderly depression, as reported in prior studies (refs 11-18). E7 never describes study populations as elderly who 'considered' these factors. The sentence changes predictors into a description of the study population, which E7 does not support."
+     },
+     {
+      "n": 9,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E7's chunk does start with the fragment '연구변수 본 연구에서 분석에 활용된 노인 암 경험자의 우울 궤적과 관련', but it breaks off there. The variable list that follows is literature background citing refs 11-18, so the evidence does not show E7 analyzing those variables. The summary also drops the population: E7 studies elderly cancer survivors, not elderly in general."
+     },
+     {
+      "n": 11,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "Both claims appear in E2's chunk only as findings of the studies it cites: Seo[42] for health-promoting behavior lowering depression, and [43] for the social-network interaction effect. E2's own result is different. Social support moderated (buffered) the link between depression and health-promoting behavior, and interpersonal relations did not. Presenting the cited findings as E2's own is a misattribution."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "c816c7b2_dr4",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E1의 포함 기준(지역사회 노인, 사회적 지지가 우울에 미치는 영향, 양적·상관관계 연구)에서 나온 내용이며, E1이 그런 연구 30편을 찾았으므로 틀린 말은 아니다. 다만 고찰의 선정 기준을 연구 분야의 특징처럼 바꿔 썼고, 같은 말을 되풀이하는 수준이어서 아래 표시 문제로 올렸다."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "E9에 '2011년 노인실태조사에서 심각한 우울증상을 경험하는 노인이 29.2%'와 '연령이 증가하면서 함께 증가하는 특성'이 있다. 단, E9가 다른 문헌을 다시 인용한 배경 수치이고 사회적 지지와는 관계가 없다."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "E9에 우울이 삶의 질을 떨어뜨리고 자살행위 같은 문제를 일으켜 중요한 건강문제라는 서술이 있다. 사회적 지지와는 관계없는 배경 서술이다."
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "결과를 잘못 옮겼다. E2에서는 대인관계에 조절효과가 없었고(β=.380, p=.135) 사회적 지지에만 조절효과가 있었다(β=.448, p=.011). 문장은 둘 다 조절효과가 있다고 말한다."
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "E1의 포함 기준과 일치한다. 다만 E1의 핵심 결과(30편 중 28편에서 사회적 지지가 우울 감소에 효과적)가 빠졌다."
+     },
+     {
+      "n": 7,
+      "verdict": "M",
+      "reason": "앞 절은 제목을 옮긴 것이다. 뒤 절은 E4의 연구 제안('사회적 지지 개입을 접목한 종단적 실험연구를 할 필요')을 '사회적 지지 개입의 필요성을 제기'로 바꿨다. 연구 설계 제안을 실천 권고로 옮긴 가벼운 왜곡이다. 매개효과 결과는 하나도 없다."
+     },
+     {
+      "n": 8,
+      "verdict": "M",
+      "reason": "'분석한 결과'라고 썼지만 '우울이 계속 늘고 있다', '신체 및 사회적 상실로 우울이 생길 가능성이 높다'는 E9 서론의 배경 서술이다(다른 문헌 [5] 인용). E9가 직접 분석해서 얻은 결과가 아니다."
+     },
+     {
+      "n": 9,
+      "verdict": "S",
+      "reason": "측정 도구의 영역(신체적·정서적·사회적·영적)은 E2에서 확인된다. 결과는 빠지고 측정 도구 설명만 있다."
+     },
+     {
+      "n": 10,
+      "verdict": "S",
+      "reason": "E11의 배경(노년기 사회적 지원망 축소, 세대관계 비중 증가)과 목적에서 확인된다. 연구 결과는 없다."
+     },
+     {
+      "n": 11,
+      "verdict": "S",
+      "reason": "E4의 후속 연구 제안을 거의 그대로 옮겼다('상대적으로'만 빠짐)."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "절이 제목의 질문(우울과 사회적 지지의 관계에 대한 연구 결과는 어떠한가)에 답하지 않는다. 근거에 바로 쓸 수 있는 결과가 있는데 어디에도 나오지 않는다. E1 '30편 중 28편에서 사회적 지지가 우울 감소에 효과적', E2 '우울과 사회적 관계망 r=-.391, 사회적 지지의 완충(조절)효과', E9 선행연구 요약 '사회적지지 및 가족지지가 높을수록 우울감이 낮았다'. 도입부는 유병률과 우울의 중요성을, 요약은 연구 방법·도구·제목을 다룬다."
+     },
+     {
+      "n": 4,
+      "severity": "high",
+      "issue": "E2 결과를 거꾸로 전한다. 대인관계는 조절효과가 없었는데 대인관계와 사회적 지지 둘 다 조절효과가 있다고 쓴다. 이 절에서 관계에 대한 결과를 말하는 유일한 문장이라 심사위원이 원문 초록과 맞춰 보면 바로 드러난다."
+     },
+     {
+      "n": 2,
+      "severity": "medium",
+      "issue": "주제에서 벗어났다. 2011년 노인 우울 유병률(29.2%)은 사회적 지지와의 관계와 상관없는 배경 수치이고, E9가 다시 인용한 2차 수치를 맥락 없이 꺼냈다. '이는 연령 증가와 함께 증가하는 경향'에서 '이는'이 29.2%라는 수치를 가리켜 어색하다."
+     },
+     {
+      "n": 3,
+      "severity": "medium",
+      "issue": "주제에서 벗어났다. 우울이 삶의 질과 자살에 미치는 중요성은 제목의 '관계에 대한 연구 결과'와 관계가 없다."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "1번 문장과 E1 요약 6번 문장이 같은 포함 기준(지역사회 노인, 사회적 지지가 우울에 미치는 영향, 양적·상관관계 연구)을 거의 같은 말로 되풀이한다."
+     },
+     {
+      "n": 11,
+      "severity": "medium",
+      "issue": "E4 요약 7번 문장과 향후 연구 11번 문장이 같은 내용(스트레스원으로 우울이 심각한 대상, 사회적 지지 개입)을 되풀이한다. E4는 요약도 사실상 후속 연구 제안 한 줄뿐이다."
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "E9 요약이 도입부 2·3번 문장의 내용(우울 증가 추세, 신체·사회적 상실)을 되풀이한다. E9는 행복감·자아존중감·사회참여 같은 요인을 다룬 연구라 사회적 지지 절에서는 곁가지 논문이다."
+     },
+     {
+      "n": 9,
+      "severity": "medium",
+      "issue": "E2 요약에 결과는 없고 건강태도 측정 도구의 영역(신체적·정서적·사회적·영적)만 적었다. 측정 도구 설명은 제목의 질문과 관계없고, 조절효과 결과가 빠졌다."
+     },
+     {
+      "n": 10,
+      "severity": "low",
+      "issue": "E11 요약이 제목과 연구 배경을 다시 쓴 것뿐이고 연구 결과(지원교환·자기효능감이 우울에 미친 영향)가 없다."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "도입 첫 문장이 '이 관계를 다룬 연구는 사회적 지지가 우울에 미치는 영향 연구를 포함한다'는 동어반복이다. 고찰의 선정 기준을 연구 동향이나 결과처럼 제시한다."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2 초록에 '대인관계는 조절효과가 없었으나(β=.380, p=.135) 사회적 지지는 조절효과가 있어(β=.448, p=.011)'라고 되어 있다. 문장은 대인관계와 사회적 지지 둘 다 조절효과가 있다고 말하므로 결과를 뒤집었다. E2의 두 청크 어디에도 대인관계에 조절효과가 있다는 근거는 없다."
+     },
+     {
+      "n": 7,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "앞 절은 E4 제목을 그대로 옮긴 것이라 문제없다. 뒤 절의 근거는 E4의 유일한 청크인 후속연구 제언이다. 원문은 우울증상이 심각한 대상을 중심으로 '다양한 사회적 지지의 개입이 접목된 종단적 관찰을 통하여 ... 실험연구를 수행할 필요'가 있다는 연구 설계 제안이다. 요약은 이것을 '사회적 지지 개입의 필요성을 제기'로 줄여서, 필요하다고 한 대상이 실험연구에서 개입 자체로 바뀌었다. '(개입을 접목한 연구의) 필요성'으로 읽힐 여지도 있어 왜곡은 가볍다. 다만 독자에게는 논문이 실천 개입을 권고한 것으로 읽힌다. 매개효과 결과도 근거에 없다. 가벼운 M으로 유지한다."
+     },
+     {
+      "n": 8,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "'지속적으로 증가추세'와 '신체 및 사회적 상실로 인한 우울이 나타날 가능성이 많다[5]'는 E9 청크에 실제로 있다. 그래서 W나 F는 아니다. 그러나 이 두 문장은 서론의 배경 서술이고, 뒤 문장은 다른 문헌 [5]를 인용한 것이다. 문장은 이를 '영향 요인을 분석한 결과'로 내세워 E9가 직접 분석해서 얻은 결과처럼 보이게 했다. E9의 실제 분석 대상(늙어감에 대한 행복감, 자아존중감, 생활만족도, 사회참여, 일상생활 활동장애)과 그 결과는 근거에 나오지 않는다. 출처의 성격을 잘못 옮겼으므로 M을 유지한다."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "c816c7b2_dr5",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E20 첫째 제한점(일반화를 위한 다양한 인구사회학적 특성 반영 반복연구)과 일치. 다만 '본 연구는'이라는 주어가 어색함(표현 문제로 따로 적음)"
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "E20 둘째 제한점을 거의 그대로 옮김. '영향에 대한'이 빠져 '위험요인과 보호요인의 인과관계'로 조금 바뀌었지만 뜻은 대체로 맞음"
+     },
+     {
+      "n": 3,
+      "verdict": "S"
+     },
+     {
+      "n": 4,
+      "verdict": "S",
+      "reason": "셋째 제한점(설문지 측정의 한계, 질적연구 필요)을 일반화해 요약함. 원문의 구체적 처방(심층면접·행동관찰)은 빠짐"
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "부산광역시 재가여성노인 대상은 대목에, 변수는 제목에 나옴"
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "근거 대목은 제한점 문단뿐이고 결과는 나오지 않는다. 제목의 '완충효과'는 연구 주제일 뿐인데, 강점과 사회적 지지 둘 다 완충효과가 '있음을 확인하였다'고 결과를 단정함. 대목에 없는 연구 결과를 덧붙인 것"
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "제한점 세 가지와 제안은 대목과 맞음. 넷째 제한점(문화적 특성을 반영한 강점평가척도 개발)은 빠짐"
+     },
+     {
+      "n": 8,
+      "verdict": "S",
+      "reason": "원문 문장('특히 종단적 자료를 통해 … 검증되어져야 할 것이다')을 그대로 옮김"
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "같은 내용을 세 번 되풀이한다. 도입 1~4번이 E20의 제한점 네 가지를 나열하고, 요약 7번이 같은 제한점과 제안을 다시 나열하고, 향후 연구 8번은 3번(보호요인의 완충 과정 검증)을 거의 글자 그대로 또 쓴다. 8문장 가운데 6문장이 같은 문단 하나에서 나온 같은 내용"
+     },
+     {
+      "n": 0,
+      "severity": "high",
+      "issue": "제목은 '국내 학술 논문에서' 나온 한계점과 과제를 묻는데, 절 전체의 근거가 논문 한 편(E20, 2007년, 부산 재가여성노인)뿐이다. 도입 문단은 한 연구의 자기 제한점을 연구 분야 전체의 한계처럼 보여 준다. '연구 동향' 질문에 2007년 논문 한 편이라 출처가 얇은 게 바로 드러난다"
+     },
+     {
+      "n": 1,
+      "severity": "medium",
+      "issue": "답변 문단 첫 문장이 '본 연구는 … 반복연구가 필요하다'로 시작해 보고서 자신이 연구인 것처럼 읽힌다. 어느 연구인지 밝히지 않았고, 원래 표본이 부산 재가여성노인으로 한정됐다는 맥락도 빠져 '다양한 인구사회학적 특성'이 왜 필요한지 알 수 없다"
+     },
+     {
+      "n": 2,
+      "severity": "medium",
+      "issue": "'요인들을 횡단적 자료를 통해 검증하여 … 종단적 연구가 필요하다'는 앞뒤가 맞지 않는 것처럼 읽힌다. 원문은 '이 연구는 횡단 자료로 검증했으니 종단 연구가 필요하다'는 뜻인데, 그 어색한 구조를 그대로 옮겨 종단 연구를 횡단 자료로 하라는 말처럼 보인다"
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "도입 1~3번과 8번은 원문 제한점 문단을 거의 글자 그대로 옮겼다. 종합 분석이 아니라 원문을 베낀 것처럼 보인다"
+     },
+     {
+      "n": 8,
+      "severity": "low",
+      "issue": "'검증되어져야 할 것이다'는 이중 피동이다(원문 표현을 그대로 가져옴). 향후 연구 줄이 새 제안 없이 해당 논문의 제한점을 다시 말하는 데 그친다"
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "'마지막으로'라고 맺었지만 원문에는 넷째 제한점(문화적 특성을 반영한 강점평가척도 개발)이 더 있다. 이 논문만의 과제인데 도입과 요약 모두에서 빠졌다"
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E20의 유일한 근거 대목은 제한점과 후속 연구 문단이다. 이 대목은 대상의 한계(부산 재가여성노인), 횡단 자료의 한계, 설문 측정의 한계, 강점 척도의 한계, 그리고 보호요인이 위험요인을 완충하는 과정을 앞으로 검증해야 한다는 점만 말한다. 강점과 사회적 지지가 스트레스-우울 관계를 완충했다는 결과는 대목 어디에도 없다. 제목의 '완충효과'는 연구 주제일 뿐 결과를 말해 주지 않는다. '완충하는 과정을 구체적으로 검증해야 한다'는 문장은 앞으로 할 일이지, 두 변수가 모두 유의한 완충효과를 보였다는 확인이 아니다. 따라서 근거에 없는 결과를 덧붙인 것이 맞다."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "c816c7b2_dr6",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "W",
+      "reason": "The wording '사회적 지지 만족도가 높은 노인이 낮은 수준의 우울을 경험' comes almost word for word from E21 ('…지지에 대한 만족도가 높은 노인일수록 낮은 수준의 우울을 경험') and E2. E1's evidence says only that 28 of 30 studies found social support reduces depression; it never mentions satisfaction. The general direction matches E1, but the specific claim belongs to other papers."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "M",
+      "reason": "E12 says the psychological support factors formed in old age (자아역량감·보람감·안정감) protect against depression ('우울감을 방어하는 기능'). The sentence gives that role to social support. The second clause, that prior retirement preparation is negatively correlated with depression, is supported, but E12 reports it from other studies ([6][7]) rather than as its own finding."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "The statistic is misread. E9 says a later result was 3.9% higher than the 29.2% in the 2011 노인실태조사. The sentence says the 2011 figure of 29.2% itself rose from the previous year, and E9 never mentions a '전년도' comparison. The 29.2% is also background that E9 cites from [4], not E9's own result."
+     },
+     {
+      "n": 7,
+      "verdict": "S"
+     },
+     {
+      "n": 8,
+      "verdict": "S"
+     },
+     {
+      "n": 9,
+      "verdict": "S"
+     },
+     {
+      "n": 10,
+      "verdict": "S"
+     },
+     {
+      "n": 11,
+      "verdict": "S"
+     },
+     {
+      "n": 12,
+      "verdict": "S"
+     },
+     {
+      "n": 13,
+      "verdict": "M",
+      "reason": "Nothing in E1's evidence compares types of social support (family, friends, community) or recommends such a study. This future-research recommendation goes beyond what E1 says."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The heading '…연구는 어떤 성과를 평가하는가?' is awkward Korean, and sentence 1 copies it ('…점을 평가한다'). Research is not the subject that '평가한다' (evaluates) a point, so the opening answer reads unnaturally."
+     },
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "The E9 summary (n6–7) is about how common depression is and how much harm it does, not about the link between depression and social support, so it is off-topic for the heading. The 29.2% appears without context and with a wrong '전년도보다 증가한 수치' reading. E9's on-topic line, that higher self-esteem, social support and family support go with less depression, is not used."
+     },
+     {
+      "n": 10,
+      "severity": "medium",
+      "issue": "The E2 summary (n10–11) repeats E2's introduction background (demographic risk factors, harms of depression) and leaves out E2's own on-topic result: social support buffers the link between depression and health-promoting behaviour (β=.448, p=.011). Demographic risk factors also do not answer the heading."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "The E1 summary (n4–5) describes only search and inclusion methods. It leaves out the systematic review's main result, which is exactly what a '성과' (outcomes) heading asks for: 28 of 30 studies (12,555 older adults) found social support reduces depression."
+     },
+     {
+      "n": 8,
+      "severity": "medium",
+      "issue": "Repetition: the intro (n2) and the E21 summary (n8) say almost the same thing about family support and depression, and n9 repeats it again in more general terms."
+     },
+     {
+      "n": 11,
+      "severity": "low",
+      "issue": "Repetition across summaries: n7 (E9) and n11 (E2) both say depression lowers older adults' quality of life."
+     },
+     {
+      "n": 12,
+      "severity": "low",
+      "issue": "The E12 summary and the second half of n3 are about retirement preparation (노후준비) and leave out social support, even though E12 studies social support as a mediator. This drifts away from the depression–social support heading."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "The first intro sentence cites E1, but its specific claim about support satisfaction comes from E21/E2, so a reader who opens E1 will not find it."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "W",
+      "reason": "E1's chunks say only that 28 of 30 studies found social support reduces depression. They never mention satisfaction. The phrase '만족도가 높은 노인일수록 낮은 수준의 우울을 경험' appears almost word for word in E21 and in E2 (citing [14]). The specific claim therefore comes from other papers in this file, not from E1."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "In E12, the thing that has '우울감을 방어하는 기능' is '자아역량감·보람감·안정감 등의 심리적 지지요인' formed in old age. That is psychological support, not social support. E12's 2.5 section on social support and depression is cut off before it states any such role. The sentence moves this function onto social support. The second clause, about the negative correlation with retirement preparation, is supported, though E12 reports it from other studies ([6][7])."
+     },
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E9 says the later result was 3.9% higher than the 29.2% in the 2011 노인실태조사 ('29.2%로 나타난 것보다 3.9% 증가한 수치'). The sentence instead says the 2011 figure of 29.2% was itself an increase over the previous year. E9 never mentions a '전년도' comparison, so this is a distorted reading of the statistic. The 29.2% is also background E9 cites from [4], not its own result."
+     },
+     {
+      "n": 13,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E1's chunks cover only the review method, the inclusion and exclusion criteria, the study counts and the overall finding (28 of 30 studies). Nothing in them sorts social support into types such as family, friends or community, compares them, or recommends that comparison. The recommendation goes beyond what E1 says."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "c816c7b2_prior.g1",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E1 excerpt: research began after 2000 and continued steadily; 18 of the 30 reviewed papers were published after 2010."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "E1 says it aimed to suggest health-promotion programs and research directions for reducing depression in older adults. Adding '사회적 지지 유형' to that aim stretches it a little but stays within modest summarizing."
+     },
+     {
+      "n": 3,
+      "verdict": "S",
+      "reason": "Matches the E2 abstract: family support (structural) and emotional support (functional) reduce depression, and family support moderates the effect of subjective economic status. Writing '구조적 지지(가족 지지)' blurs a category into one of its subtypes, but the finding is not distorted."
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "Minor. Self-esteem, life satisfaction and happiness on aging as predictors of depression match the E3 abstract. However, the population '지역사회 거주 노인' (community-dwelling) is added: E3 only says 'elderly people'."
+     },
+     {
+      "n": 5,
+      "verdict": "S",
+      "reason": "The E4 table shows family-relationship satisfaction β=-.305***, and the E4 text says support within the family has a significant effect on depressive mood. The 'high satisfaction -> low depression' wording comes from a prior study E4 cites, but E4's own table supports it."
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "The E5 excerpt contains only methods (MSPSS measurement, regression plan) and no results, so the finding that perceived social support positively affects successful aging is not in the evidence. The setting '농촌' (rural) is also not in E5's evidence."
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "The E6 abstract covers depression trajectories and predictors among elderly cancer survivors. The E6 variables section discusses social-support factors (spouse, family relations, social relations). 'Considers various social factors' is a fair, modest summary, though 'recently' (최근에는) has no date in the evidence."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 6,
+      "severity": "medium",
+      "issue": "E5 is about predictors of successful aging, not depression. Under the group '노인의 우울' and a research question about social-support types and depression, this sentence is off-topic, and the finding it reports is not in the evidence."
+     },
+     {
+      "n": 4,
+      "severity": "medium",
+      "issue": "Subject and predicate do not match: '연구 [E3]는 … 영향을 미치는 것으로 나타났다' ('the study … was shown to affect'). It should read '…것으로 나타났다고 보고하였다' or '연구에서는 …'. n6 has the same broken construction ('연구 [E5]는 … 나타났다')."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "The E3 predictors (self-esteem, life satisfaction, happiness on aging) are psychological factors, not social-support types. The sentence does not address the research question (relative influence of family/friend/community support)."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "The section lists papers one at a time and never compares family, friend and community support, which is what the research question asks about. No friend-support or community-support finding is discussed. Paragraph 3 groups unrelated studies (family support and depression, successful aging, cancer survivors) and does not tie them together."
+     },
+     {
+      "n": 7,
+      "severity": "low",
+      "issue": "E6 is about elderly cancer survivors, a tangential population. The sentence states no finding, only that the study 'considers various social factors', so it adds little to the review. '최근에는' (recently) is presented without a year."
+     },
+     {
+      "n": 0,
+      "severity": "low",
+      "issue": "Citation marks sit mid-sentence and are followed directly by a particle ('연구 [E1]는', '연구 [E2]는' …), which reads awkwardly when rendered."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "The passive phrasing '연구는 … 제시하고자 시도되었다' is awkward and copied from E1's own wording. Its object '사회적 지지 유형과 … 건강증진 프로그램 개발 방향' is also hard to parse."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "'2010년 이후 발표된 논문이 다수' comes from the 30 papers in E1's review (18 of 30) but is presented as a fact about the whole literature."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "'구조적 지지(가족 지지)와 기능적 지지(정서적 지지)' reads as if structural support were the same as family support. In E2, family support was the effective subtype within structural support."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "The E3 abstract supports the finding: self-esteem (β=-.318), life satisfaction (β=-.248) and happiness on aging (β=-.200) predict depression in 'the elderly people'. Nothing in E3 says the sample was community-dwelling. The excerpt is only a reference entry, and it mentions 'Rural Elderly' in another work's title, not 'community'. The setting '지역사회 거주' (community-dwelling) is therefore added. This is a minor M."
+     },
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E5 has no abstract. Its excerpt covers only methods (MSPSS measurement, reliability .883, the plan for multiple regression on successful aging) and the start of the results, which gives only the sample's sex ratio (83.5% women). No result on perceived social support predicting successful aging appears, and no other paper in the file says this either, so it is not W. The word '농촌' (rural) is also missing from E5's evidence. The sentence states a finding the cited evidence does not contain."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "c816c7b2_prior.g2",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "S",
+      "reason": "E1 did test whether social support (and perceived strengths) buffers depression in older women. The plural '선행연구들은' rests on one paper only."
+     },
+     {
+      "n": 2,
+      "verdict": "S"
+     },
+     {
+      "n": 3,
+      "verdict": "M",
+      "reason": "Merges two separate limitations in E1. Generalization calls for repeat studies with more varied samples, and the longitudinal study is for causal inference, not generalization. It also narrows E1's 'protective factors buffering risk factors' to social support, though E1 found social support did not buffer; only perceived strengths did."
+     },
+     {
+      "n": 4,
+      "verdict": "S"
+     },
+     {
+      "n": 5,
+      "verdict": "S"
+     },
+     {
+      "n": 6,
+      "verdict": "M",
+      "reason": "An evaluative bridge to the research question ('유형별 영향과 그 기전을 규명하는 데 중요한 시사점'). It speaks of '이러한 연구들' but cites only E2. Neither paper compares family, friend and community support types, so 'important implications for relative influence of types' goes beyond what the evidence says."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 2,
+      "severity": "medium",
+      "issue": "The section is about social support, but it leaves out E1's key social-support result: the stress x social support interaction was not significant (no buffering), and lower family support went with higher depression. S1 says the study tested social-support buffering and S2 reports only the strengths result, so a reader may assume social support also buffered."
+     },
+     {
+      "n": 0,
+      "severity": "medium",
+      "issue": "E1 studied women living at home in Busan, a metropolitan city, not rural elderly. The section uses it for a rural-elderly topic without flagging this. Both papers cover only women, and neither separates family, friend and community support, which is the research question's core."
+     },
+     {
+      "n": 1,
+      "severity": "low",
+      "issue": "Plural '선행연구들은' opens the paragraph but only one paper (E1) is cited, which overstates the body of evidence."
+     },
+     {
+      "n": 3,
+      "severity": "low",
+      "issue": "A whole sentence goes to E1's limitations and future-research notes, which adds little to a social-support literature review, and the limitations are merged inaccurately."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "S4 and S5 both introduce the same E2 study ('연구도 진행되었다' then '이 연구는...'), which is mildly redundant. S4 also says '농촌 노인' when the sample was only rural women aged 65+."
+     },
+     {
+      "n": 5,
+      "severity": "low",
+      "issue": "E2's findings (social networks had direct and indirect effects; material support had a direct effect) are written as analysis aims ('…효과를 분석하였다'), so the reader never learns what was found or in which direction."
+     },
+     {
+      "n": 6,
+      "severity": "low",
+      "issue": "Generic closing filler: '이러한 연구들은' covers both papers but carries only [E2], and the claim of 'important implications for mechanisms by type' is boilerplate rather than drawn from the evidence."
+     },
+     {
+      "n": 2,
+      "severity": "low",
+      "issue": "Long run-on sentence chaining three clauses (분석하여, …제시하며, …제기하였다), which is somewhat heavy to read."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E1's excerpt treats these as separate limitations. Generalization needs repeat studies with more varied samples. The longitudinal study is for causal inference about risk and protective factors. The sentence instead says the longitudinal study is for generalization. E1 also asks to verify how protective factors in general buffer risk factors. Pinning that on social support distorts E1, whose abstract found the stress × social support interaction non-significant; only perceived strengths buffered stress."
+     },
+     {
+      "n": 6,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2 does split social network effects (direct and indirect) from material support (direct only), which partly touches on support types and pathways. But E2 frames its aim as groundwork for building a support system for rural older women. It says nothing about the relative influence of support types or the present research question. '이러한 연구들 … 중요한 시사점을 제공한다' is the writer's own evaluative bridge, attributed only to E2, and it goes beyond what E2 states. Neither paper compares family, friend and community support."
+     }
+    ]
+   }
+  },
+  {
+   "packet": "c816c7b2_gap",
+   "audit": {
+    "sentences": [
+     {
+      "n": 1,
+      "verdict": "M",
+      "reason": "E4 is a successful-aging study. Its excerpt only describes the MSPSS instrument (family, friends, significant others) and its analysis methods. It does not say that the various aspects of social support must be considered in depth. The sentence restates the research question and adds a methodological recommendation that E4 does not make."
+     },
+     {
+      "n": 2,
+      "verdict": "S",
+      "reason": "Mostly supported: E1 found that social network had direct and indirect effects and that material support had a direct effect on depression in rural older women. However, the vague phrase '사회적 지지망과 사회적 지지 간의 융합적인 영향' is not E1's wording and blurs the direct/indirect finding."
+     },
+     {
+      "n": 3,
+      "verdict": "U_claim",
+      "reason": "This is an uncited gap claim that analysis of relative influence by support type is lacking. E3 in this same file already compares support types in rural elders (family support in structural support, emotional support in functional support), so the evidence partly contradicts the claim."
+     },
+     {
+      "n": 4,
+      "verdict": "M",
+      "reason": "E2 only says research on social support and depression has continued steadily since 2000 (30 papers, 18 after 2010). It does not frame this as research on effects by support type. It also says nothing about rural elders or a need for relative-influence analysis, so that recommendation is attributed to E2 without basis."
+     },
+     {
+      "n": 5,
+      "verdict": "M",
+      "reason": "E3 already examined total, structural and functional support and their mediating effects. Presenting this as research that is still needed misrepresents E3: the cited paper is the one that did it. E3's own call for future research is for longitudinal or experimental intervention studies, not this."
+     },
+     {
+      "n": 6,
+      "verdict": "S",
+      "reason": "This is a near-verbatim paraphrase of E3's own suggestion for future research. 'Experimental study' became 'longitudinal observational study', which is a minor shift."
+     },
+     {
+      "n": 7,
+      "verdict": "S",
+      "reason": "Supported by E5: social support buffered the relationship between depression and health-promoting behavior, and E5 proposes developing programs that use social support. E5's sample was elders at urban welfare and culture centers (D-si), not rural elders."
+     }
+    ],
+    "presentation_issues": [
+     {
+      "n": 5,
+      "severity": "high",
+      "issue": "The gap section cites as a needed study (total, structural and functional support, plus mediating effects) exactly what the cited paper E3 already did. A judge who checks E3 will see that the stated gap is already filled by the source used to support it."
+     },
+     {
+      "n": 3,
+      "severity": "high",
+      "issue": "The central gap claim (no relative analysis by support type: family, friends, community) is undercut by the section's own evidence. E3 already found, in rural elders, that family support (structural) and emotional support (functional) reduce depression, and E2's table lists family, friend and community support separately. The gap needs to be narrowed (e.g., direct comparison of friend vs community support) to hold up."
+     },
+     {
+      "n": 1,
+      "severity": "medium",
+      "issue": "The opening sentence mostly restates the research question and hangs a generic methodological statement on E4. E4 is a successful-aging study whose excerpt is only an instrument and methods description, so the citation looks arbitrary."
+     },
+     {
+      "n": 7,
+      "severity": "medium",
+      "issue": "This sentence answers a different question from the gap. It is about the depression and health-promoting-behavior relationship and about developing programs (a practical recommendation), not about the relative influence of support types on depression. E5's sample is urban community elders, not rural."
+     },
+     {
+      "n": 2,
+      "severity": "medium",
+      "issue": "Awkward Korean: '융합적인 영향이 … 우울에 미치는 영향이 확인되었으며' repeats 영향 and uses the vague term '융합적인', which does not describe E1's direct and indirect effects clearly."
+     },
+     {
+      "n": 4,
+      "severity": "low",
+      "issue": "A recommendation that E2 does not make ('농촌 노인에게 특화된 … 분석은 더욱 필요하다') is attached to a systematic-review citation. This makes it look as if the review itself identified the rural gap."
+     },
+     {
+      "n": 6,
+      "severity": "low",
+      "issue": "The sentence nearly copies E3's own sentence about future research word for word. Together with S5, two of the three closing sentences rest on the same paper, so the gap argument reads as borrowed from one source."
+     }
+    ]
+   },
+   "verify": {
+    "checks": [
+     {
+      "n": 1,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E4's excerpt only describes the 12-item MSPSS (family, friends, significant others) and the SPSS analysis plan of a successful-aging study. It makes no claim or recommendation that various aspects of social support must be considered in depth to analyze relative influence on rural elders' depression. The sentence restates the research question and attaches a recommendation E4 does not make."
+     },
+     {
+      "n": 3,
+      "confirmed": true,
+      "final_verdict": "U_claim",
+      "reason": "The sentence has no citation and is not a transition. It makes a substantive gap claim that analysis of relative influence by support type is lacking. E3 in this file actually compares support types (family support is effective in total and structural support, emotional support in functional support), so the claim is partly undercut by the evidence."
+     },
+     {
+      "n": 4,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E2 only says research on elders' social support and depression began after 2000 and continued steadily (30 papers, 18 after 2010). Its measure table lists family, friends and community support scales, but the paper does not frame the steady research as studies of effects by support type. Nothing in E2 mentions rural elders or a need for relative-influence analysis specific to rural elders, so that recommendation is attributed to E2 without basis."
+     },
+     {
+      "n": 5,
+      "confirmed": true,
+      "final_verdict": "M",
+      "reason": "E3's abstract shows it already classified support as total, structural and functional and tested mediating effects in rural elders (Jeollabuk-do, n=228). Citing E3 for 'such research is needed' presents E3's completed work as an open gap. E3's own call for future research is a longitudinal or experimental intervention study focused on high-depression groups, not this."
+     }
+    ]
+   }
+  }
+ ]
+}

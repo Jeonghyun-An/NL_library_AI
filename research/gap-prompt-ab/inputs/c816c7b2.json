@@ -1,0 +1,148 @@
+{
+ "job_id": "c816c7b2-3c55-419d-b063-1fd705cc5edf",
+ "gen_id": 147,
+ "same_papers": true,
+ "missing_title": [],
+ "stored_evidence": {
+  "E1": "KCI_FI002278740",
+  "E2": "KCI_FI002782062",
+  "E3": "KCI_FI001407641",
+  "E4": "KCI_FI001824092",
+  "E5": "KCI_FI002267397"
+ },
+ "input": {
+  "key": "gap",
+  "kind": "gap",
+  "question": "노인의 우울과 사회적 지지에 관한 연구 동향을 알려줘",
+  "topic": {
+   "id": 70,
+   "title": "농촌 노인의 다양한 사회적 지지 유형과 우울 간의 관계 연구"
+  },
+  "research_question": "농촌 노인의 우울에 미치는 가족, 친구, 지역사회 등 다양한 사회적 지지 유형의 상대적 영향력은 무엇인가?",
+  "papers": [
+   {
+    "eid": "E1",
+    "cnts_id": "KCI_FI002278740",
+    "title": "농촌 여성노인의 사회적 지지망과 사회적지지가 우울에 미치는 융합적인 영향",
+    "year": 2017,
+    "abstract": "The purposes of this study were to identify influence of social networks and social support on depression among older women in rural area on agricultural off-season. The sample consisted of 112 women aged 65 years or over who lived in rural areas of Chung-Nam. Some variables related to depression in older women, including depression, social network, social support were measured using reliable instruments. Pathway analysis was used to test the proposed conceptual model designed to explain the direct, indirect and total effect between social networks and social support on depression.",
+    "excerpt": {
+     "chunk_id": "KCI_FI002278740__0024",
+     "page_start": 7,
+     "page_end": 7,
+     "text": "9475, pp 1961-1970, 2005. ### 6.\n결론 및 제언\n\n본 연구는 우울의 고위험군인 농촌 여성 노인의 우울 을 감소시키기 위한 사회적지지 시스템구축의 기초자료 를 마련하기 위해 시도되었다.\n본 연구결과 농촌여성노 인의 우울에 사회적지지망은 직·간접효과를 갖는 것으로 나타났고, 사회적지지(물질적지지)는 직접효과를 갖는 것으로 확인되었다."
+    }
+   },
+   {
+    "eid": "E2",
+    "cnts_id": "KCI_FI002782062",
+    "title": "노인의 사회적 지지와 우울의 관계 연구에 대한 체계적 문헌고찰",
+    "year": 2021,
+    "abstract": "Objectives : Elderly people are becoming more socially isolated due to COVID-19 and long-term social isolation can lead to serious psychosocial problems. This study aimed to identify the relationship between social support and depression of the elderly, and research trends of recent studies through a systematic review.",
+    "excerpt": {
+     "chunk_id": "KCI_FI002782062__0038",
+     "page_start": 15,
+     "page_end": 18,
+     "text": "scale(Liu & Besser, 2000)\n\nLubben Social Network scale–Revised\n\nLubben Social Network scale–Revised\n\nSocial support scale(Schuster et al.)\n\nSocial support scale(Schuster et al.)\n\nSocial supporter(Vaux et al., 1986)\n\nSocial supporter(Vaux et al., 1986)\n\nSocial support scale(Kim & Yoon)\n\nSocial support scale(Kim & Yoon)\n\nMPSS(Zimet et al., 1988)\n\nMPSS(Zimet et al., 1988)\n\nSocial activity support Social support scale\n\nSPS\n\nSPS\n\nLocal community support SPS\n\nCaring support -\n\n해당 문헌 번호는 표 1의 문헌 번호와 일치*\n\nand frequency of Social\n\nThe number of children, friends,\n\nrelatives, and neighbors' support\n\nFriends support\n\nFamily support\n\nparticipation\n\n- 하며 이를 통해 향후 노인의 우울 감소를 위한 건강증진 프 로그램과 연구방향을 제시하고자 시도되었다. 노인의 사회적 지지와 우울의 관련 연구는 2000년 이후 시작되어 꾸준히 진행되고 있었으며 본 연구에 포함된 논문 은 총 30편으로 이 중 18편이 2010년 이후에 발표되었다."
+    }
+   },
+   {
+    "eid": "E3",
+    "cnts_id": "KCI_FI001407641",
+    "title": "농촌노인의 우울에 대한 사회적 지지의 매개효과",
+    "year": 2009,
+    "abstract": "본 연구는 농촌노인의 스트레스원과 사회적 지지의 우울과의 인과관계를 다각적인 측면에서 규명하기 위한 것으로 스트레스원으로 인한 우울에 대하여 사회적 지지를 구조적 지지와 기능 적 지지로 분류하여 그 매개효과를 검증하고 있다. 조사대상은 전라북도 8개 군에 거주하는 65 세 이상 노인으로 구조화된 설문지를 이용하여 직접 면접형식으로 조사하였으며 228명의 자료\n\n- 가 분석에 이용되었다. 분석결과는 첫째, 스트레스 수준에 따른 우울의 증가 정도는 주관적 경 제상태, 주관적 건강상태, 일상생활활동능력 순으로 나타났다. 둘째, 사회적 지지의 총합과 구조 적 지지에서는 가족지지, 기능적 지지에서는 정서적 지지가 우울을 감소시키는 것으로 나타났\n- 다. 셋째, 사회적 지지의 총합과 구조적 지지에서는 가족지지가 주관적 경제상태가 우울에 미치 는 영향을 완화시키고 있으며, 기능적 지지에서는 정서적 지지가 일상생활활동능력에 대해 우울 을 완화시키는 매개효과가 있는 것으로 나타났다. 이러한 결과는 사회적 지지가 우울을 완화시 키는 직․간접적인 효과가 있음을 보여주는 것으로, 농촌노인의 삶의 질을 향상시키는데 사회적 지지는 중요한 문제해결 요소가 될 수 있음을 시사하고 있다.",
+    "excerpt": {
+     "chunk_id": "KCI_FI001407641__0037",
+     "page_start": 23,
+     "page_end": 23,
+     "text": "따라서 다음 연구에서는 건강 및 생활환경 등의 스트레스원에 의한 우울증상이 상대적으로 심각한 대상을 중심으로 다양한 사 회적 지지의 개입이 접목된 종단적 관찰을 통하여 사회적 지지의 우울에 대한 영향 관계를 심도 있게 관찰할 수 있는 실험연구를 수행할 필요를 느낀다. 참고문헌\n\n고문희(2008), “노인우울증과 여가활동 및 음주습관과의 관계”, 전남대학교 대학원 석사학위논 문."
+    }
+   },
+   {
+    "eid": "E4",
+    "cnts_id": "KCI_FI001824092",
+    "title": "농촌 노인의 성공적 노화 영향요인 분석",
+    "year": 2013,
+    "abstract": "",
+    "excerpt": {
+     "chunk_id": "KCI_FI001824092__0012",
+     "page_start": 2,
+     "page_end": 3,
+     "text": "학력에 따른 교정점수를 부여하고, 만성질환은 질환을 앓았거나 현재 앓고 있는 경우로 의사에 의해 진단받은 만성질병(암, 관 절염, 요통, 당뇨병, 고혈압, 뇌졸중, 심장병)을 보고하게 하였고 그 합을 이용하였다.<br><br>2.3.5 지각된 사회적 지지<br><br>지각된 사회적 지지는 Zimet 등[21]의 12문항 multidimensional scale of perceived social support 도구 로 측정하였다. 이 도구는 지지를 받는 타인으로 가족, 친 구, 그리고 유의미한 주변인 세 그룹으로 설문내용이 구 성되어 있으며, 각 문항은 Likert 5점 척도로 평가하여 점 수가 높을수록 노인들이 타인으로부터 받는 사회적 지지 가 긍정적임을 의미한다. 본 연구에서 이 도구의 신뢰도 분석결과 Cronbach's Alpha 내적 일치도는 .883으로 나 타났다.<br><br>2.4 자료 분석 수집된 자료는 SPSS/WIN 21.0 프로그램을 이용하여<br><br>다음과 같이 분석하였다. 대상자의 일반적 특성, 건강관 련 특성, 주관적 건강상태, 일상생활능력, 우울, 지각된 사회적 지지, 인지능력, 성공적 노화에 대한 기술통계를 실시하였다. 성공적 노화와 관련된 요인을 파악하기 위 해 일반적 특성과 건강관련 특성에 따른 성공적 노화의 차이를 t-test, ANOVA로 분석하였고, Scheffe test로 사 후분석을 시행하였으며, 연구변수들 간의 관계는 Pearson's correlation coefficient로 분석하였다. 대상자의 성공적 노화에 미치는 영향을 파악하기 위해 Multiple regression 을 적용하였다.<br><br>3. 연구 결과<br><br><br>3.1 일반적 특성과 건강관련 특성<br><br>본 연구대상자의 일반적 특성을 살펴보면 성별은 여 자가 167명(83.5%), 남자가 33명(16.5%)로 여성노인이<br><br>더 많았다."
+    }
+   },
+   {
+    "eid": "E5",
+    "cnts_id": "KCI_FI002267397",
+    "title": "노인의 우울과 건강증진행위와의 관계에서대인관계와 사회적 지지의 조절효과",
+    "year": 2017,
+    "abstract": "",
+    "excerpt": {
+     "chunk_id": "KCI_FI002267397__0000",
+     "page_start": 0,
+     "page_end": 0,
+     "text": "|Journal of Digital Convergence❙ 397<br><br>https://doi.org/10.14400/JDC.2017.15.9.397<br><br>노인의 우울과 건강증진행위와의 관계에서 대인관계와 사회적 지지의 조절효과<br><br>이송흔<br><br>초당대학교 간호학과<br><br>Moderating Effects of Interpersonal Relation and Social Network on the Relationship between Depression and Health Behavior in Elderly<br><br>Song-Heun Lee<br><br>Dept. of Nursing, Chodang University<br><br>요 약 본 연구는 지역사회 노인의 우울과 건강증진행위와의 관계에서 대인관계와 사회적 지지의 조절효과를 파악하기 위하여 시도되었다. 자료수집기간은 2016년 10월 12일부터 12월 20일까지이며 D시에 소재한 노인복지관 두 곳과 문화센터 1곳에서 65세 이상의 노인 286명을 임의표집하였다. 수집된 자료는 SPSS Statistics 20.0의 t-test, ANOVA, multiple regression을 이용하여 분석하였다. 연구결과, 대상자의 우울은 20.47점, 대인관계는 21.27점, 사회적 지지는 20.92점, 건강증진행위는 111.69점이었다. 우울은 대인관계(r=-.283, p<.000), 사회적 관계망(r=-.391, p<.000), 건강증진행위와 (r=-.611, p<.000) 유의한 음의 상관관계를 보였으며, 대인관계와 사회적 관계망(r= .353, p<.000) 및 건강증진행위는(r= .372, p<.000) 유의한 양의 상관관계를 보였다. 우울과 건강증진행위와의 관계에서 대인관계는 조절효과가 없었으나(β =.380, p=.135) 사회적 지지는 조절효과가 있어(β=.448, p=.011) 지역사회 노인의 우울과 건강증진행위와의 관계에서 완충작용을 하는 것으로 나타났다. 따라서, 본 연구의 결과를 근거로 지역사회 노인들의 건강증진행위를 유도하고 지속하 도록 하는 데 있어 사회적 지지를 활용한 프로그램의 개발과 활용을 제안하는 바이다.<br><br>주제어 : 노인, 우울, 대인관계, 사회적 지지, 건강증진<br><br>Abstract This study was conducted to identify moderating"
+    }
+   }
+  ],
+  "figures": [
+   {
+    "id": "F1",
+    "label": "이 절에 준 논문 수",
+    "value": "5"
+   },
+   {
+    "id": "F2",
+    "label": "발행 연도 범위",
+    "value": "2009~2021"
+   }
+  ],
+  "group": null,
+  "seeds": [
+   {
+    "heading": "국내 학술 논문에서 노인의 우울과 사회적 지지 간의 관계를 측정하기 위해 어떤 방법과 기법이 사용되었는가?",
+    "text": "향후 연구에서는 다양한 사회적 지지 유형(가족, 친구, 지역사회 등)이 노인의 우울에 미치는 영향을 구체적으로 분석하고, 사회적 지지 프로그램의 효과성을 평가하는 연구가 필요하다 [E1]."
+   }
+  ],
+  "basis": {
+   "topic_id": 70,
+   "papers": [
+    "KCI_FI002278740",
+    "KCI_FI002782062",
+    "KCI_FI001407641",
+    "KCI_FI001824092",
+    "KCI_FI002267397"
+   ],
+   "question": "농촌 노인의 우울에 미치는 가족, 친구, 지역사회 등 다양한 사회적 지지 유형의 상대적 영향력은 무엇인가?"
+  }
+ },
+ "stored_paragraphs": [
+  "농촌 노인의 우울에 미치는 가족, 친구, 지역사회 등 다양한 사회적 지지 유형의 상대적 영향력을 분석하기 위해서는 사회적 지지의 다양한 측면을 심층적으로 고려해야 한다 [E4]. 기존 연구에서는 사회적 지지망과 사회적 지지 간의 융합적인 영향이 농촌 여성 노인의 우울에 미치는 영향이 확인되었으며, 물질적 지지가 직접적인 영향을 미치는 것으로 나타났다 [E1]. 그러나 사회적 지지 유형별(가족, 친구, 지역사회 등) 상대적인 영향력에 대한 구체적인 분석은 미흡한 것으로 보인다.",
+  "노인의 사회적 지지와 우울의 관계에 대한 체계적인 문헌고찰 결과, 사회적 지지 유형별 효과에 대한 연구가 꾸준히 진행되고 있지만, 농촌 노인에게 특화된 사회적 지지 유형의 상대적 영향력 분석은 더욱 필요하다 [E2]. 특히, 사회적 지지의 총합, 구조적 지지, 기능적 지지 등 다양한 관점에서 사회적 지지가 우울에 미치는 영향과 그 매개효과를 규명하는 연구가 필요하다 [E3].",
+  "향후 연구에서는 건강 및 생활환경 등의 스트레스원에 의한 우울증상이 심각한 농촌 노인을 중심으로 다양한 사회적 지지의 개입이 접목된 종단적 관찰 연구를 수행하여 사회적 지지가 우울에 미치는 영향 관계를 심도 있게 관찰할 필요가 있다 [E3]. 또한, 지역사회 노인의 우울과 건강증진행위와의 관계에서 사회적 지지가 완충작용을 하는 점을 고려하여, 사회적 지지를 활용한 프로그램 개발 및 활용 방안을 모색해야 한다 [E5]."
+ ],
+ "stored_checks": [
+  {
+   "dropped": 0,
+   "numbers": [],
+   "softened": 0,
+   "unmarked": 1,
+   "dropped_f": 0
+  },
+  {
+   "dropped": 0,
+   "numbers": [],
+   "softened": 0,
+   "unmarked": 0,
+   "dropped_f": 0
+  },
+  {
+   "dropped": 0,
+   "numbers": [],
+   "softened": 0,
+   "unmarked": 0,
+   "dropped_f": 0
+  }
+ ]
+}
