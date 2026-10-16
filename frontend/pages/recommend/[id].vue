@@ -53,130 +53,152 @@
           </div>
         </div>
 
-        <!-- AI 텍스트 (타이핑 애니메이션) -->
-        <div class="skx-rcd-ai">
-          <div class="skx-rcd-ai__top">
-            <span class="skx-ai-dot skx-rcd-ai__logo" aria-hidden="true"></span>
-            <span class="skx-rcd-ai__label">{{ meta.aiLabel }}</span>
-            <span
-              v-if="loading"
-              style="font-size: 12px; color: var(--skx-accent-strong)"
-              >●</span
-            >
-          </div>
-          <div
-            :class="['skx-ai-answer-wrap', aiExpanded && 'is-expanded']"
-            ref="aiWrapRef"
-          >
-            <div class="skx-ai-answer">
-              <p class="skx-ai-answer__text">
-                {{ typedText
-                }}<span v-if="loading && typedText" class="skx-stream-cursor" />
-              </p>
+        <!-- 불러오지 못함 — 소개·도서 칸 대신 상태 블록. 서버 404(이 고민으로 찾은 도서 없음)·빈 목록은 빈 결과,
+             그 밖은 이유 + [다시 시도] -->
+        <SkxErrorState
+          v-if="loadFailure && !loading"
+          :kind="loadFailure.kind"
+          :title="loadFailure.title"
+          :message="loadFailure.message"
+          :on-retry="loadFailure.retry ? fetchRecommend : undefined"
+        >
+          <NuxtLink v-if="loadFailure.kind === 'empty'" to="/recommend" class="skx-state__action">
+            {{ SCENARIO_TEXT.pickAnother }}
+          </NuxtLink>
+        </SkxErrorState>
+
+        <template v-else>
+          <!-- AI 텍스트 (타이핑 애니메이션) -->
+          <div class="skx-rcd-ai">
+            <div class="skx-rcd-ai__top">
+              <span class="skx-ai-dot skx-rcd-ai__logo" aria-hidden="true"></span>
+              <span class="skx-rcd-ai__label">{{ meta.aiLabel }}</span>
+              <span
+                v-if="loading"
+                style="font-size: 12px; color: var(--skx-accent-strong)"
+                >●</span
+              >
             </div>
-            <button
-              v-if="showExpandBtn"
-              type="button"
-              class="skx-ai-expand-bar"
-              :aria-expanded="aiExpanded"
-              @click="aiExpanded = !aiExpanded"
-            >
-              <span class="skx-ai-expand-bar__label">{{
-                aiExpanded ? "접기" : "펼치기"
-              }}</span>
-              <img
-                class="skx-ai-expand-bar__arrow"
-                src="/img/ico-arrow.svg"
-                alt=""
-                aria-hidden="true"
-                :style="
-                  aiExpanded
-                    ? 'transform:rotate(90deg)'
-                    : 'transform:rotate(-90deg)'
-                "
-              />
-            </button>
-          </div>
-        </div>
-
-        <!-- 도서 선택 -->
-        <div class="skx-rcd-select">
-          <h3 class="skx-rcd-select__tit">
-            가장 나에게 도움이되는 책을 선택해주세요.
-          </h3>
-
-          <!-- 로딩 -->
-          <div v-if="loading" class="skx-rcd-book-grid">
             <div
-              v-for="n in 4"
-              :key="n"
-              :class="['skx-rcd-book-card', `skx-rcd-book-card--${n}`]"
-              style="opacity: 0.4; pointer-events: none"
+              :class="['skx-ai-answer-wrap', aiExpanded && 'is-expanded']"
+              ref="aiWrapRef"
             >
-              <div class="skx-rcd-book-card__head">
-                <img
-                  class="skx-rcd-book-card__icon"
-                  src="/img/ico-book-select.svg"
-                  alt=""
+              <div class="skx-ai-answer">
+                <!-- 새 서버의 ai_failed — 소개·추천 사유를 만들지 못했다(빈 값). [다시 시도]는 추천을 처음부터 다시 받는다 -->
+                <SkxInlineError
+                  v-if="aiFailed && !loading"
+                  :message="SCENARIO_TEXT.aiFailed"
+                  @retry="fetchRecommend"
                 />
+                <p v-else class="skx-ai-answer__text">
+                  {{ typedText
+                  }}<span v-if="loading && typedText" class="skx-stream-cursor" />
+                </p>
+              </div>
+              <button
+                v-if="showExpandBtn"
+                type="button"
+                class="skx-ai-expand-bar"
+                :aria-expanded="aiExpanded"
+                @click="aiExpanded = !aiExpanded"
+              >
+                <span class="skx-ai-expand-bar__label">{{
+                  aiExpanded ? "접기" : "펼치기"
+                }}</span>
+                <img
+                  class="skx-ai-expand-bar__arrow"
+                  src="/img/ico-arrow.svg"
+                  alt=""
+                  aria-hidden="true"
+                  :style="
+                    aiExpanded
+                      ? 'transform:rotate(90deg)'
+                      : 'transform:rotate(-90deg)'
+                  "
+                />
+              </button>
+            </div>
+          </div>
+
+          <!-- 도서 선택 -->
+          <div class="skx-rcd-select">
+            <h3 class="skx-rcd-select__tit">
+              가장 나에게 도움이되는 책을 선택해주세요.
+            </h3>
+
+            <!-- 로딩 -->
+            <div v-if="loading" class="skx-rcd-book-grid">
+              <div
+                v-for="n in 4"
+                :key="n"
+                :class="['skx-rcd-book-card', `skx-rcd-book-card--${n}`]"
+                style="opacity: 0.4; pointer-events: none"
+              >
+                <div class="skx-rcd-book-card__head">
+                  <img
+                    class="skx-rcd-book-card__icon"
+                    src="/img/ico-book-select.svg"
+                    alt=""
+                  />
+                  <p
+                    class="skx-rcd-book-card__desc"
+                    style="
+                      background: #eee;
+                      border-radius: 4px;
+                      height: 2.5rem;
+                      width: 80%;
+                    "
+                  ></p>
+                </div>
+                <div class="skx-rcd-book-card__cover">
+                  <img
+                    :src="SPINNER_SRC"
+                    alt=""
+                    style="width: 32px; opacity: 0.3"
+                  />
+                </div>
                 <p
-                  class="skx-rcd-book-card__desc"
+                  class="skx-rcd-book-card__name"
                   style="
                     background: #eee;
                     border-radius: 4px;
-                    height: 2.5rem;
-                    width: 80%;
+                    height: 1rem;
+                    width: 60%;
                   "
                 ></p>
               </div>
-              <div class="skx-rcd-book-card__cover">
-                <img
-                  :src="SPINNER_SRC"
-                  alt=""
-                  style="width: 32px; opacity: 0.3"
-                />
-              </div>
-              <p
-                class="skx-rcd-book-card__name"
-                style="
-                  background: #eee;
-                  border-radius: 4px;
-                  height: 1rem;
-                  width: 60%;
-                "
-              ></p>
+            </div>
+
+            <!-- 도서 그리드 -->
+            <div v-else class="skx-rcd-book-grid">
+              <button
+                v-for="(book, i) in recommendedBooks"
+                :key="book.book_id"
+                type="button"
+                :class="['skx-rcd-book-card', `skx-rcd-book-card--${i + 1}`]"
+                @click="openModal(book)"
+              >
+                <div class="skx-rcd-book-card__head">
+                  <img
+                    class="skx-rcd-book-card__icon"
+                    src="/img/ico-book-select.svg"
+                    alt=""
+                  />
+                  <p class="skx-rcd-book-card__desc">{{ book.reason }}</p>
+                </div>
+                <div class="skx-rcd-book-card__cover">
+                  <BookCover :book-id="book.book_id" />
+                </div>
+                <p v-if="book.quote" class="skx-rcd-book-card__quote">
+                  {{ book.quote }}
+                </p>
+                <p class="skx-rcd-book-card__name">
+                  {{ book.book_info?.title || book.book_id }}
+                </p>
+              </button>
             </div>
           </div>
-
-          <!-- 도서 그리드 -->
-          <div v-else class="skx-rcd-book-grid">
-            <button
-              v-for="(book, i) in recommendedBooks"
-              :key="book.book_id"
-              type="button"
-              :class="['skx-rcd-book-card', `skx-rcd-book-card--${i + 1}`]"
-              @click="openModal(book)"
-            >
-              <div class="skx-rcd-book-card__head">
-                <img
-                  class="skx-rcd-book-card__icon"
-                  src="/img/ico-book-select.svg"
-                  alt=""
-                />
-                <p class="skx-rcd-book-card__desc">{{ book.reason }}</p>
-              </div>
-              <div class="skx-rcd-book-card__cover">
-                <BookCover :book-id="book.book_id" />
-              </div>
-              <p v-if="book.quote" class="skx-rcd-book-card__quote">
-                {{ book.quote }}
-              </p>
-              <p class="skx-rcd-book-card__name">
-                {{ book.book_info?.title || book.book_id }}
-              </p>
-            </button>
-          </div>
-        </div>
+        </template>
       </div>
     </main>
 
@@ -269,9 +291,10 @@
 </template>
 
 <script setup lang="ts">
-import { useApi } from "~/composables/useApi";
+import { API_SEARCH_TIMEOUT_MS, useApi } from "~/composables/useApi";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { SPINNER_SRC } from "~/utils/brand";
+import { SCENARIO_TEXT, failureView, scenarioAiFailed, type StateView } from "~/utils/bookErrors";
 
 const route = useRoute();
 const api = useApi();
@@ -343,6 +366,12 @@ interface RecommendedBook {
 
 const recommendedBooks = ref<RecommendedBook[]>([]);
 const loading = ref(false);
+// 불러오지 못함(서버 오류·네트워크) 또는 추천할 도서 없음(404·빈 목록) — 토스트로 잠깐 알리고 빈 칸으로 두던 것을 화면 안 상태 블록으로
+const loadFailure = ref<StateView | null>(null);
+// 새 서버의 ai_failed=true — 도서는 왔지만 소개·추천 사유가 빈 값이다. 옛 서버(필드 없음)는 false 라 예전처럼 기본 문구를 타이핑한다
+const aiFailed = ref(false);
+// 화면을 떠나면 받던 추천을 끊는다 — 늦은 응답이 떠난 화면의 상태를 고치지 않게
+const pageAbort = new AbortController();
 
 // ── AI 타이핑 애니메이션 ───────────────────────────────────
 const typedText = ref("");
@@ -350,10 +379,15 @@ const aiWrapRef = ref<HTMLElement | null>(null);
 const aiExpanded = ref(false);
 const showExpandBtn = ref(false);
 
+// 타이핑 차례 — 다시 받기로 새 글을 타이핑하기 시작하면 이전 타이핑은 멈춘다(두 글이 섞이지 않게)
+let typingRun = 0;
+
 function typeText(text: string) {
   typedText.value = "";
+  const run = ++typingRun;
   let i = 0;
   const tick = () => {
+    if (run !== typingRun) return;
     if (i < text.length) {
       typedText.value += text[i++];
       setTimeout(tick, 20);
@@ -381,29 +415,61 @@ function openModal(book: RecommendedBook) {
 }
 
 // ── API 호출 ──────────────────────────────────────────────
+// 처음 열 때와 [다시 시도](불러오기 실패·ai_failed)가 부른다
 async function fetchRecommend() {
+  if (loading.value) return;
   loading.value = true;
+  loadFailure.value = null;
+  aiFailed.value = false;
+  showExpandBtn.value = false;
+  typingRun += 1;
   typedText.value = "";
   try {
     const data = await api<any>("/scenario/recommend", {
       method: "POST",
       body: { concern: meta.value.concern, top_k: 4 },
+      signal: pageAbort.signal,
+      // 검색 + LLM 사유 생성이라 오래 걸릴 수 있는 읽기 성격 POST — 검색과 같은 시간 제한
+      timeout: API_SEARCH_TIMEOUT_MS,
     });
+    if (pageAbort.signal.aborted) return;
     recommendedBooks.value = data?.books || [];
+    if (!recommendedBooks.value.length) {
+      loadFailure.value = scenarioEmpty();
+      return;
+    }
+    if (scenarioAiFailed(data)) {
+      aiFailed.value = true;
+      return;
+    }
     // AI 요약 영역: LLM이 생성한 고민 공감 + 추천 소개(intro)
     typeText(data?.intro || meta.value.aiLabel);
-  } catch {
-    showToast("추천 도서를 불러오는 중 오류가 발생했습니다.");
-    typeText(meta.value.aiLabel);
+  } catch (e: unknown) {
+    if (pageAbort.signal.aborted) return;
+    recommendedBooks.value = [];
+    loadFailure.value = failureView(e, SCENARIO_TEXT.failedTitle, scenarioEmpty());
   } finally {
     loading.value = false;
   }
 }
 
+// 추천할 도서가 없다 — 서버 404(검색 0건)·빈 목록. 고장이 아니라 빈 결과라 [다시 시도] 대신 [다른 상황 고르기]
+function scenarioEmpty(): StateView {
+  return { kind: "empty", title: SCENARIO_TEXT.emptyTitle, message: SCENARIO_TEXT.emptyMessage, retry: false };
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === "Escape") modalOpen.value = false;
+}
+
 onMounted(() => {
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") modalOpen.value = false;
-  });
-  fetchRecommend();
+  window.addEventListener("keydown", onKeydown);
+  void fetchRecommend();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", onKeydown);
+  pageAbort.abort();
+  typingRun += 1;
 });
 </script>

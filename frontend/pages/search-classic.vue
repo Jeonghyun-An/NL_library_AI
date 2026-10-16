@@ -207,6 +207,8 @@
                   :answer="streamingReason"
                   :keywords="streamingKeywords"
                   :is-streaming="isStreamingReason"
+                  :reason-error="reasonError"
+                  @retry-reason="retryTopReason"
                 />
                 <div v-if="bookResult.books.length > 1" class="more-section">
                   <h3 class="more-title">함께 추천하는 도서</h3>
@@ -267,6 +269,8 @@
                     :answer="selectedStreamingReason"
                     :keywords="selectedKeywords"
                     :is-streaming="isSelectedStreaming"
+                    :reason-error="selectedReasonError"
+                    @retry-reason="retrySelectedReason"
                   />
                 </div>
               </template>
@@ -349,6 +353,9 @@ import type {
   SearchResponse,
 } from "~/types/search";
 import type { HistoryEntry } from "~/types/history";
+import { readOrCreateBrowserId, safeLocalStorage } from "~/utils/browserId";
+import { readReasonStream } from "~/utils/bookAiPick";
+import { reasonFailureText } from "~/utils/bookErrors";
 
 const { history, setHistory, clearHistory } = useSearchHistory();
 const { cart, removeFromCart } = useCart();
@@ -363,10 +370,23 @@ const searchInputRef = ref<{ focus: () => void } | null>(null);
 const streamingReason = ref("");
 const streamingKeywords = ref<string[]>([]);
 const isStreamingReason = ref(false);
+// 추천 이유를 끝까지 받지 못했을 때의 한 줄(HTTP 오류·서버의 {error}·끊김) — 비면 안내가 없다
+const reasonError = ref("");
 const selectedBook = ref<BookChunkGroup | null>(null);
 const selectedStreamingReason = ref("");
 const selectedKeywords = ref<string[]>([]);
 const isSelectedStreaming = ref(false);
+const selectedReasonError = ref("");
+// 추천 이유 스트림 — 받는 칸(1위·살펴보기)마다 하나. 같은 칸에 새로 받기 시작하면 이전 것을 끊는다(늦게 끝난 이전 스트림이 새 글·안내를 덮지 않게)
+const reasonStreams = new Map<Ref<string>, AbortController>();
+// 화면을 떠나면 받던 추천 이유를 끊는다 — 서버가 쓰지 않을 글을 끝까지 만들지 않게
+onUnmounted(() => {
+  for (const ctrl of reasonStreams.values()) ctrl.abort();
+});
+// 새 검색·기록 복원으로 1위 칸을 비울 때 — 받던 이유가 새 결과의 칸에 이어 붙거나 실패 안내를 띄우지 않게 끊는다
+function stopTopReason() {
+  reasonStreams.get(streamingReason)?.abort();
+}
 const sliderRef = ref<HTMLElement | null>(null);
 const selectedSectionRef = ref<HTMLElement | null>(null);
 const topBarRef = ref<HTMLElement | null>(null);
@@ -407,14 +427,9 @@ async function loadHistory() {
 }
 
 onMounted(() => {
-  const stored = localStorage.getItem("sid");
-  if (stored) {
-    sessionId.value = stored;
-  } else {
-    const sid = generateUUID();
-    sessionId.value = sid;
-    localStorage.setItem("sid", sid);
-  }
+  // 저장소가 막힌 브라우저(사생활 보호 창·쿠키 차단)에서는 localStorage 읽기·쓰기가 던진다 — 던지면 아래 기록 불러오기·세그먼트 위치·
+  // 상단바 높이 설정이 모두 멈춘다. 읽지 못하면 새 ID 를 만들고, 저장하지 못하면 이 페이지에 있는 동안만 쓴다
+  sessionId.value = readOrCreateBrowserId(safeLocalStorage(), generateUUID);
   loadHistory();
 
   nextTick(() => {
@@ -447,9 +462,11 @@ onMounted(() => {
 async function handleSearch(query: string) {
   currentQuery.value = query;
   currentHistoryId.value = null;
+  stopTopReason();
   streamingReason.value = "";
   streamingKeywords.value = [];
   isStreamingReason.value = false;
+  reasonError.value = "";
   selectedBook.value = null;
 
   await search(query, "book", 10);
@@ -463,12 +480,14 @@ async function handleSearch(query: string) {
       streamingReason,
       streamingKeywords,
       isStreamingReason,
+      reasonError,
     );
   }
 
   nextTick(() => searchInputRef.value?.focus());
 }
 
+// 추천 이유를 받는다. 4xx·5xx·서버의 {error}·[DONE] 없이 끊김이면 errorRef 에 안내 한 줄(서버 글 대신 프런트 문구 — reasonFailureText)
 async function doStreamReason(
   query: string,
   rewrittenQuery: string,
@@ -476,16 +495,23 @@ async function doStreamReason(
   reasonRef: Ref<string>,
   keywordsRef: Ref<string[]>,
   streamingRef: Ref<boolean>,
+  errorRef: Ref<string>,
 ) {
+  reasonStreams.get(reasonRef)?.abort();
+  const ctrl = new AbortController();
+  reasonStreams.set(reasonRef, ctrl);
+  const signal = ctrl.signal;
   streamingRef.value = true;
   reasonRef.value = "";
   keywordsRef.value = [];
+  errorRef.value = "";
 
   const topChunkTexts = [...book.chunks]
     .sort((a, b) => (b.rerank_score ?? b.score) - (a.rerank_score ?? a.score))
     .slice(0, 15)
     .map((c) => c.text);
 
+  let complete = false;
   try {
     const response = await fetch(
       `${config.public.apiBase}/books/reason/stream`,
@@ -498,36 +524,61 @@ async function doStreamReason(
           book_id: book.book_id,
           chunk_texts: topChunkTexts,
         }),
+        signal,
       },
     );
 
-    if (!response.body) return;
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const text = decoder.decode(value, { stream: true });
-      for (const line of text.split("\n")) {
-        if (!line.startsWith("data: ")) continue;
-        const data = line.slice(6).trim();
-        if (data === "[DONE]") return;
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.keywords) {
-            keywordsRef.value = parsed.keywords;
-          } else if (parsed.text) {
-            reasonRef.value += parsed.text;
-          }
-        } catch {}
-      }
+    // 4xx·5xx 면 본문(오류 JSON)을 읽지 않고 실패로 둔다. {error}·{keywords}·{text}·[DONE] 은 메인 화면과 같은 읽기(readReasonStream)가 가른다
+    if (response.ok && response.body) {
+      complete = await readReasonStream(
+        response.body,
+        (delta) => {
+          if (!signal.aborted) reasonRef.value += delta;
+        },
+        (kw) => {
+          if (!signal.aborted) keywordsRef.value = kw;
+        },
+      );
+    } else {
+      void response.body?.cancel().catch(() => undefined);
     }
   } catch (e) {
-    console.error("추천 이유 스트리밍 실패:", e);
-  } finally {
-    streamingRef.value = false;
+    if (!signal.aborted) console.error("추천 이유 스트리밍 실패:", e);
   }
+  // 같은 칸에 새로 받기 시작했으면(끊김) 그쪽이 칸을 맡는다
+  if (signal.aborted) return;
+  streamingRef.value = false;
+  if (!complete) errorRef.value = reasonFailureText(reasonRef.value);
+}
+
+// 추천 이유의 [다시 시도] — 같은 검색어·같은 책으로 처음부터 다시 받는다
+function retryTopReason() {
+  const book = topBook.value;
+  if (!book) return;
+  const query = bookResult.value?.query ?? currentQuery.value;
+  doStreamReason(
+    query,
+    bookResult.value?.rewritten_query ?? query,
+    book,
+    streamingReason,
+    streamingKeywords,
+    isStreamingReason,
+    reasonError,
+  );
+}
+
+function retrySelectedReason() {
+  const book = selectedBook.value;
+  if (!book) return;
+  doStreamReason(
+    currentQuery.value,
+    bookResult.value?.rewritten_query ?? currentQuery.value,
+    book,
+    selectedStreamingReason,
+    selectedKeywords,
+    isSelectedStreaming,
+    selectedReasonError,
+  );
 }
 
 function selectSecondaryBook(book: BookChunkGroup) {
@@ -541,6 +592,7 @@ function selectSecondaryBook(book: BookChunkGroup) {
     selectedStreamingReason,
     selectedKeywords,
     isSelectedStreaming,
+    selectedReasonError,
   );
   nextTick(() => {
     selectedSectionRef.value?.scrollIntoView({
@@ -566,9 +618,11 @@ function restoreHistory(entry: HistoryEntry) {
   currentHistoryId.value = entry.id;
   currentQuery.value = entry.query;
   result.value = entry.result as SearchResponse;
+  stopTopReason();
   streamingReason.value = "";
   streamingKeywords.value = [];
   isStreamingReason.value = false;
+  reasonError.value = "";
   selectedBook.value = null;
   window.scrollTo({ top: 0, behavior: "smooth" });
   nextTick(() => searchInputRef.value?.focus());
@@ -582,6 +636,7 @@ function restoreHistory(entry: HistoryEntry) {
       streamingReason,
       streamingKeywords,
       isStreamingReason,
+      reasonError,
     );
   }
 }

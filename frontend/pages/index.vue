@@ -57,11 +57,15 @@
                   class="skx-search__input"
                   v-model="currentQuery"
                   placeholder="찾고싶은 도서를 문장으로 검색해보세요!"
+                  :maxlength="SEARCH_QUERY_MAX"
+                  :aria-describedby="showCount ? 'skx-count-book' : undefined"
                   :disabled="loading"
                   @keydown.enter.exact="onSearchEnter"
                 ></textarea>
               </label>
               <div class="skx-search__actions">
+                <!-- 글자 수는 한도 가까이(90%)부터만 보인다 — 랜딩 입력 상자 모양은 그대로 두고(후배 시안 작업 중) 넘기 전에만 알린다 -->
+                <SkxCharCount v-if="showCount" id="skx-count-book" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
                 <button
                   type="button"
                   class="skx-send"
@@ -117,11 +121,14 @@
                   class="skx-search__input"
                   v-model="currentQuery"
                   placeholder="찾고싶은 논문을 문장으로 검색해보세요!"
+                  :maxlength="SEARCH_QUERY_MAX"
+                  :aria-describedby="showCount ? 'skx-count-paper' : undefined"
                   :disabled="loading"
                   @keydown.enter.exact="onSearchEnter"
                 ></textarea>
               </label>
               <div class="skx-search__actions">
+                <SkxCharCount v-if="showCount" id="skx-count-paper" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
                 <button
                   type="button"
                   class="skx-send"
@@ -202,9 +209,12 @@
           class="skx-rsearch__input"
           v-model="currentQuery"
           aria-label="검색어 입력"
+          :maxlength="SEARCH_QUERY_MAX"
+          :aria-describedby="showCount ? 'skx-count-result' : undefined"
           :disabled="loading"
           @keydown.enter="onSearchEnter"
         />
+        <SkxCharCount v-if="showCount" id="skx-count-result" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
         <button
           type="button"
           class="skx-send"
@@ -226,12 +236,19 @@
         <p style="margin-top: 12px">AI가 도서를 검색 중입니다...</p>
       </div>
 
-      <div
-        v-else-if="searchError"
-        class="skx-rframe"
-        style="padding: 20px; color: #c00"
-      >
-        {{ searchError }}
+      <!-- 검색 실패 — 결과 자리에 상태 블록. [다시 시도]는 실패한 그 검색어로 다시 찾는다(입력창을 고쳤어도) -->
+      <div v-else-if="searchFailure" class="skx-rframe">
+        <SkxErrorState
+          :kind="searchFailure.kind"
+          :title="searchFailure.title"
+          :message="searchFailure.message"
+          :on-retry="searchFailure.retry ? retrySearch : undefined"
+        />
+      </div>
+
+      <!-- 결과 0건(0건 기록 복원 포함) — 빈 틀 대신 결과 없음 안내. 결과가 정해지기 전(기록을 읽는 중)에는 보이지 않는다 -->
+      <div v-else-if="resultSettled && !books.length" class="skx-rframe">
+        <SkxErrorState kind="empty" :title="BOOK_SEARCH_TEXT.emptyTitle" :message="BOOK_SEARCH_TEXT.emptyMessage" />
       </div>
 
       <div v-else class="skx-rframe">
@@ -269,22 +286,12 @@
                   >
                     AI 사서가 추천 이유를 정리하고 있어요…
                   </p>
-                  <p
+                  <!-- 글 없이 실패 — 받은 글이 없어 짧으니 제목 바로 아래 -->
+                  <SkxInlineError
                     v-else-if="reasonStatus === 'error'"
-                    class="skx-pick__text skx-pick__text--muted"
-                    role="status"
-                  >
-                    추천 이유를 불러오지 못했어요.
-                    <button type="button" class="skx-pick__retry" @click="retryTopReason">다시 시도</button>
-                  </p>
-                  <p
-                    v-if="reasonStatus === 'interrupted'"
-                    class="skx-pick__text skx-pick__text--muted"
-                    role="status"
-                  >
-                    중간에 끊겼어요 ·
-                    <button type="button" class="skx-pick__retry" @click="retryTopReason">다시 시도</button>
-                  </p>
+                    :message="BOOK_REASON_TEXT.failed"
+                    @retry="retryTopReason"
+                  />
                 </section>
                 <section
                   v-if="topReadEffect"
@@ -297,6 +304,14 @@
                   <p class="skx-pick__text">{{ topReadEffect }}</p>
                 </section>
               </div>
+              <!-- 받다가 끊김 — 받은 글이 길어 접혀도 늘 보이게 접히는 칸 밖(#after)에 둔다 -->
+              <template #after>
+                <SkxInlineError
+                  v-if="reasonStatus === 'interrupted'"
+                  :message="BOOK_REASON_TEXT.partial"
+                  @retry="retryTopReason"
+                />
+              </template>
             </ClampedPanel>
           <aside class="skx-pick__book" aria-label="SKOVIX 추천 1권">
             <span class="skx-pick__label">SKOVIX 추천 1권</span>
@@ -311,6 +326,8 @@
               @chat="openDetailWithChat(topBook)"
               @pdf="viewPdf(topBook)"
             />
+            <!-- 원문 파일이 없으면 뷰어 대신 누른 카드 바로 아래에 알린다 -->
+            <SkxInlineError v-if="pdfProblem?.id === topBook.book_id" :message="pdfProblem.message" />
           </aside>
         </AiResultPanel>
         <!-- 1위 도서도 질문과 거리가 멀면 추천하지 않고 목록만 안내한다(추천 이유도 부르지 않는다) -->
@@ -343,15 +360,16 @@
             />
           </ResultListHead>
           <div class="skx-book-list">
-            <ResultCard
-              v-for="item in pagedBooks"
-              :key="item.book_id"
-              :item="item"
-              kind="book"
-              @open="openDetail(item)"
-              @chat="openDetailWithChat(item)"
-              @pdf="viewPdf(item)"
-            />
+            <template v-for="item in pagedBooks" :key="item.book_id">
+              <ResultCard
+                :item="item"
+                kind="book"
+                @open="openDetail(item)"
+                @chat="openDetailWithChat(item)"
+                @pdf="viewPdf(item)"
+              />
+              <SkxInlineError v-if="pdfProblem?.id === item.book_id" :message="pdfProblem.message" />
+            </template>
           </div>
 
           <!-- 쪽 이동 -->
@@ -362,10 +380,10 @@
 
     <!-- PdfViewer, Toast -->
     <PdfViewer
-      v-if="pdfOpen && selectedItem"
-      :cnts-id="selectedItem.book_id"
-      :title="selectedItem.book_info?.title"
-      @close="pdfOpen = false"
+      v-if="pdf"
+      :cnts-id="pdf.cntsId"
+      :title="pdf.title"
+      @close="closePdf"
     />
 
     <Teleport to="body">
@@ -378,7 +396,8 @@
 
 <script setup lang="ts">
 import { useBookmark } from "~/composables/useBookmark";
-import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
+import { API_SEARCH_TIMEOUT_MS, apiHeaders, apiUrl, useApi } from "~/composables/useApi";
+import { usePdfOpener } from "~/composables/usePdfOpener";
 import { useHistory } from "~/composables/useHistory";
 import ResearchExampleCards from "~/components/research/ResearchExampleCards.vue";
 import { useResearchExamples } from "~/composables/useResearchWorks";
@@ -420,6 +439,14 @@ import {
 } from "~/utils/resultPaging";
 import { rememberListView, savedListView } from "~/composables/useListView";
 import { SPINNER_SRC } from "~/utils/brand";
+import { charCountState } from "~/utils/apiErrors";
+import {
+  BOOK_REASON_TEXT,
+  BOOK_SEARCH_TEXT,
+  SEARCH_QUERY_MAX,
+  failureView,
+  type StateView,
+} from "~/utils/bookErrors";
 
 // ── 상수 ──────────────────────────────────────────────────
 // 예시 질의는 운영 검색으로 고른 것이다(2026-10-08 — 후보마다 상위 결과를 판정자 둘 이상이 따로 봤다).
@@ -464,7 +491,13 @@ const currentQuery = ref("");
 const resultQuery = ref("");
 const rewrittenQuery = ref("");
 const loading = ref(false);
-const searchError = ref("");
+// 검색 실패(결과 자리의 상태 블록) — 영문 ofetch 메시지 대신 apiErrorMessage 의 이유를 쓴다(utils/bookErrors failureView)
+const searchFailure = ref<StateView | null>(null);
+// 지금 결과가 정해졌는가(검색 응답이 왔거나 기록을 펼쳤다) — 0건 안내를 결과가 정해진 뒤에만 보인다. 검색을 끊고 기록을 읽는
+// 사이(books 가 빈 채)에 '검색 결과가 없어요'가 잠깐 비치지 않게
+const resultSettled = ref(false);
+// 마지막으로 보낸 소장자료 검색 — 실패의 [다시 시도]가 같은 검색어(와 같은 기록)로 다시 찾는다
+let lastSearch: { query: string; reuse?: BookEntry } | null = null;
 const books = ref<BookChunkGroup[]>([]);
 const papers = ref<BookChunkGroup[]>([]);
 const keywordChips = ref<string[]>([]);
@@ -484,10 +517,17 @@ const reasonPending = computed(() => reasonStatus.value === "loading");
 const aiExpanded = ref(false);
 
 // ── 상세 ──────────────────────────────────────────────────
-const selectedItem = ref<BookChunkGroup | null>(null);
 const showChat = ref(false);
-const pdfOpen = ref(false);
 const refsOpen = ref(true);
+
+// ── 원문 보기 ──────────────────────────────────────────────
+// 파일이 있는지 먼저 묻고 연다(usePdfOpener) — 없는 원문을 그대로 열면 pdf.js 의 영문 오류 화면이 뜬다. 열지 못한 까닭은 누른 카드 바로 아래에
+const { pdf, checking: checkingPdf, openPdf, closePdf } = usePdfOpener();
+const pdfProblem = ref<{ id: string; message: string } | null>(null);
+
+// ── 글자 수 ────────────────────────────────────────────────
+// 세 입력창(랜딩 두 칸·결과 검색바)이 같은 값(currentQuery)을 쓴다. 한도(SEARCH_QUERY_MAX)는 maxlength 가 막고, 글자 수는 한도 가까이부터만 보인다
+const showCount = computed(() => charCountState(currentQuery.value.length, SEARCH_QUERY_MAX) !== "normal");
 
 const detailTabs = computed(() =>
   mode.value === "paper"
@@ -708,6 +748,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   }
 
   const signal = beginRun();
+  lastSearch = { query, reuse };
   currentQuery.value = query;
   resultQuery.value = query.trim();
   currentHistoryId.value = null;
@@ -715,7 +756,9 @@ async function handleSearch(query: string, reuse?: BookEntry) {
   // 그 기록을 누르면 지금 주소와 같아 이동이 무시되며, 새로고침하면 이전 기록이 열린다
   router.replace({ query: { q: query.trim() } });
   loading.value = true;
-  searchError.value = "";
+  searchFailure.value = null;
+  resultSettled.value = false;
+  pdfProblem.value = null;
   books.value = [];
   papers.value = [];
   resetReason();
@@ -736,6 +779,8 @@ async function handleSearch(query: string, reuse?: BookEntry) {
         use_rerank: true,
       },
       signal,
+      // 질의 재작성·재정렬로 오래 걸릴 수 있는 읽기 성격 POST — 시간 제한이 없으면 게이트웨이가 끊을 때까지 스피너가 돌고 입력창이 잠긴다
+      timeout: API_SEARCH_TIMEOUT_MS,
     });
     if (signal.aborted) return;
     if (data?.books) {
@@ -743,6 +788,7 @@ async function handleSearch(query: string, reuse?: BookEntry) {
       rewrittenQuery.value = data.rewritten_query || query;
     }
     loading.value = false;
+    resultSettled.value = true;
     // 기록 저장을 기다리는 동안에도 빈 칸 대신 '정리하는 중'이 보이게 스트림 시작 전에 미리 받는 중으로 둔다
     if (isRecommendable(pickTopBook(books.value))) reasonStatus.value = "loading";
 
@@ -756,13 +802,17 @@ async function handleSearch(query: string, reuse?: BookEntry) {
     // 결과를 그린 뒤 저장을 기다리는 사이 상세로 떠났으면 주소를 건드리지 않는다 — 늦은 replace 가 그 이동을 취소한다(usePageLeaving)
     if (!leaving.value) router.replace({ query: { q: query.trim(), h: entry.id } });
     void streamTopReason(entry.id, query.trim(), signal);
-  } catch (e: any) {
+  } catch (e: unknown) {
     if (signal.aborted) return;
-    searchError.value =
-      e?.data?.detail || e?.message || "검색 중 오류가 발생했습니다.";
+    searchFailure.value = failureView(e, BOOK_SEARCH_TEXT.failedTitle);
   } finally {
     if (!signal.aborted) loading.value = false;
   }
+}
+
+// 검색 실패의 [다시 시도] — 실패한 그 검색어로(입력창을 고쳤어도). 결과만 비어 있던 기록을 채우던 검색이면 같은 기록을 채운다
+function retrySearch() {
+  if (lastSearch) void handleSearch(lastSearch.query, lastSearch.reuse);
 }
 
 // 입력창의 엔터는 검색이다. 한글 조합 중의 엔터는 글자 확정용이라 검색하지 않는다(SearchPlusMenu 와 같은 관례) —
@@ -798,13 +848,15 @@ function goLanding() {
   rewrittenQuery.value = "";
   currentHistoryId.value = null;
   loading.value = false;
-  searchError.value = "";
+  searchFailure.value = null;
+  resultSettled.value = false;
+  lastSearch = null;
   books.value = [];
   papers.value = [];
   resetReason();
   resetListView();
-  selectedItem.value = null;
-  pdfOpen.value = false;
+  pdfProblem.value = null;
+  closePdf();
 }
 
 // ── 기록 복원 ─────────────────────────────────────────────
@@ -869,7 +921,7 @@ async function restoreFromQuery() {
   }
   // 이 복원이 beginRun 으로 끊은 이유 스트림이 이어받을 화면 없이 끝나는 길 — '정리하는 중'으로 굳지 않게 매듭짓는다
   settleReason();
-  showToast("없는 기록입니다. 목록을 새로 고쳤습니다.");
+  showToast("없는 기록이라 목록을 새로 고쳤어요.");
 }
 
 function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
@@ -877,7 +929,9 @@ function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
   showBookMode();
   view.value = "results";
   loading.value = false;
-  searchError.value = "";
+  searchFailure.value = null;
+  resultSettled.value = true;
+  pdfProblem.value = null;
   currentQuery.value = entry.title;
   resultQuery.value = entry.title;
   currentHistoryId.value = entry.id;
@@ -1126,8 +1180,10 @@ function requestLoan(item: BookChunkGroup) {
   );
 }
 
-function viewPdf(item: BookChunkGroup) {
-  selectedItem.value = item;
-  pdfOpen.value = true;
+// 원문 보기 — 파일을 확인하는 동안 또 누르면 무시한다(뷰어가 두 번 열리거나 안내가 뒤섞이지 않게). 열리면 안내를 걷는다
+async function viewPdf(item: BookChunkGroup) {
+  if (checkingPdf.value) return;
+  const problem = await openPdf({ cntsId: item.book_id, title: item.book_info?.title ?? "" });
+  pdfProblem.value = problem ? { id: item.book_id, message: problem } : null;
 }
 </script>

@@ -23,9 +23,14 @@ export function useCart() {
     return [];
   });
 
+  // 저장소가 막혔거나(사생활 보호 창·쿠키 차단) 가득 차면 setItem 이 던진다 — 던지면 담기를 부른 쪽(TopResult 의 대출 신청)이
+  // 중간에 멈춰 안내도 뜨지 않는다. 장바구니는 메모리(useState)에 그대로 두고 저장만 건너뛴다(새로 고치면 사라진다)
   function _persist() {
-    if (process.client) {
+    if (!process.client) return;
+    try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cart.value));
+    } catch {
+      /* 저장하지 못함 — 이 페이지에 있는 동안만 메모리 값으로 쓴다 */
     }
   }
 

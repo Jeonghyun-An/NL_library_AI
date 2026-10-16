@@ -27,10 +27,17 @@
           <img :src="SPINNER_SRC" alt="" />
           <p>도서 정보를 불러오는 중...</p>
         </div>
-        <div v-else-if="pageError" class="dt-error">
-          <p>{{ pageError }}</p>
-          <button type="button" class="dt-btn dt-btn--ghost" @click="navigateTo('/')">홈으로</button>
-        </div>
+        <!-- 불러오기 실패 — 404 는 '찾을 수 없어요'(다시 시도 없음), 그 밖은 이유 + [다시 시도]. 둘 다 [홈으로] -->
+        <SkxErrorState
+          v-else-if="pageFailure"
+          :kind="pageFailure.kind"
+          :title="pageFailure.title"
+          :message="pageFailure.message"
+          title-tag="h1"
+          :on-retry="pageFailure.retry ? loadPage : undefined"
+        >
+          <button type="button" class="skx-state__action" @click="navigateTo('/')">{{ BOOK_DETAIL_TEXT.home }}</button>
+        </SkxErrorState>
 
         <template v-else-if="book">
           <!-- 머리(서지) — 표지 · 칩 줄(관련도 · #키워드, 키워드가 없으면 분류 칩) · 제목 · 서지 표 · 오른쪽 버튼 열 -->
@@ -65,7 +72,13 @@
             </div>
             <div class="dt-hero__actions">
               <div class="dt-hero__row">
-                <button type="button" class="dt-btn dt-btn--ghost" @click="viewPdf(cnts_id, book.title)">
+                <button
+                  type="button"
+                  class="dt-btn dt-btn--ghost"
+                  :aria-busy="checkingPdf"
+                  :aria-describedby="pdfProblem?.id === cnts_id ? 'bdetail-pdf-problem' : undefined"
+                  @click="viewPdf(cnts_id, book.title)"
+                >
                   원문 보기
                 </button>
                 <button
@@ -88,6 +101,13 @@
                 <DetailSparkIcon />DeepRead
               </button>
             </div>
+            <!-- 원문 파일이 없으면 뷰어 대신 머리 아래에 알린다 -->
+            <SkxInlineError
+              v-if="pdfProblem?.id === cnts_id"
+              id="bdetail-pdf-problem"
+              class="dt-hero__note"
+              :message="pdfProblem.message"
+            />
           </section>
 
           <!-- AI 큐레이션 — 가로 밑줄 탭 [추천 이유][줄거리][소개](글이 없는 탭은 뺀다) -->
@@ -110,24 +130,36 @@
                     추천 이유를 생성하고 있습니다<span class="skx-stream-cursor" />
                   </p>
                   <div v-else-if="reasonText" class="dt-prose" v-html="renderedReason" />
-                  <p v-else-if="!reasonError" class="dt-muted">추천 이유 정보가 없습니다.</p>
-                  <!-- 추천 이유를 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로 -->
-                  <p v-if="reasonError && !reasonLoading" class="dt-muted" role="alert">{{ reasonError }} ·
-                    <button type="button" class="skx-retry" @click="retryReason($event)">다시 시도</button>
-                  </p>
+                  <SkxErrorState v-else-if="!reasonError" kind="empty" compact :title="BOOK_DETAIL_TEXT.reasonEmpty" />
+                  <!-- 추천 이유를 받지 못했다(서버의 {error}·HTTP 오류·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로 -->
+                  <SkxInlineError
+                    v-if="reasonError && !reasonLoading"
+                    ref="reasonFailRef"
+                    :message="reasonError"
+                    @retry="retryReason"
+                  />
                 </template>
                 <p v-else-if="active === 'plot'" class="dt-prose">{{ plotText }}</p>
                 <p v-else-if="active === 'intro'" class="dt-prose">{{ book.introduction }}</p>
               </template>
             </DetailTabs>
-            <p v-else class="dt-empty">AI 큐레이션 정보가 없습니다.</p>
+            <SkxErrorState v-else kind="empty" compact :title="BOOK_DETAIL_TEXT.curationEmpty" />
           </section>
 
           <!-- 관련 자료 추천 — 제목으로 찾은 다른 소장자료 최대 4권(연관도 하한 아래는 비운다). 카드를 누르면 그 자료 상세로, [자세히 보기]는 요약 전문과 버튼 -->
           <section class="dt-section" aria-labelledby="bdetail-related-title">
             <h2 id="bdetail-related-title" class="dt-section__title">관련 자료 추천</h2>
             <p v-if="relatedLoading" class="dt-empty">불러오는 중...</p>
-            <p v-else-if="!relatedItems.length" class="dt-empty">연관 추천 항목이 없습니다.</p>
+            <!-- 실패와 진짜 0건을 가른다 — 실패를 '없음'으로 보이지 않는다 -->
+            <SkxErrorState
+              v-else-if="relatedFailure"
+              :kind="relatedFailure.kind"
+              :title="relatedFailure.title"
+              :message="relatedFailure.message"
+              compact
+              :on-retry="relatedFailure.retry ? fetchRelatedBooks : undefined"
+            />
+            <SkxErrorState v-else-if="!relatedItems.length" kind="empty" compact :title="BOOK_DETAIL_TEXT.relatedEmptyTitle" />
             <div v-else class="dt-related__grid">
               <DetailRelatedCard
                 v-for="rel in relatedItems"
@@ -141,7 +173,7 @@
                 reason-label="AI 요약"
                 pop-title="AI 요약"
                 :reason="recoDesc(rel)"
-                empty-text="요약 정보가 없습니다."
+                empty-text="요약 정보가 없어요."
                 :expanded="openRelated === rel.book_id"
                 @update:expanded="(open: boolean) => (openRelated = relatedOpenAfter(openRelated, rel.book_id, open))"
               >
@@ -162,10 +194,14 @@
                   <button
                     type="button"
                     class="dt-btn dt-btn--ghost"
+                    :aria-busy="checkingPdf"
                     @click="viewPdf(rel.book_id, rel.book_info?.title ?? '')"
                   >
                     원문 보기
                   </button>
+                </template>
+                <template #note>
+                  <SkxInlineError v-if="pdfProblem && pdfProblem.id === rel.book_id" :message="pdfProblem.message" />
                 </template>
               </DetailRelatedCard>
             </div>
@@ -179,8 +215,8 @@
       </div>
     </main>
 
-    <!-- 채팅 사이드 패널 -->
-    <aside id="dt-chat" :class="['skx-chat-panel', chatPanelOpen && 'is-open']">
+    <!-- 채팅 사이드 패널 — 도서를 불러온 뒤에만 연다(못 불러오면 안쪽의 닫기 버튼도 없는 빈 패널이 화면을 덮는다) -->
+    <aside id="dt-chat" :class="['skx-chat-panel', chatPanelOpen && book && 'is-open']">
       <div class="skx-chat-panel__inner" v-if="book">
         <div class="skx-chat-header">
           <button
@@ -265,10 +301,10 @@
 
     <!-- PDF 뷰어 — 이 자료·관련 자료가 같이 쓴다 -->
     <PdfViewer
-      v-if="pdfTarget"
-      :cnts-id="pdfTarget.id"
-      :title="pdfTarget.title"
-      @close="pdfTarget = null"
+      v-if="pdf"
+      :cnts-id="pdf.cntsId"
+      :title="pdf.title"
+      @close="closePdf"
     />
 
     <Teleport to="body">
@@ -280,6 +316,7 @@
 </template>
 
 <script setup lang="ts">
+import type { ComponentPublicInstance } from "vue";
 import { marked } from "marked";
 import { useBookmark } from "~/composables/useBookmark";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
@@ -303,7 +340,9 @@ import { kdcChip } from "~/utils/kdc";
 import { cardKeywords } from "~/utils/resultCard";
 import { relatedOpenAfter } from "~/utils/relatedCard";
 import { SPINNER_SRC } from "~/utils/brand";
-import { BOOK_REASON_FAILED, type AiStreamEnd, failureText, readAiStream } from "~/utils/aiStream";
+import { type AiStreamEnd, readAiStream } from "~/utils/aiStream";
+import { BOOK_DETAIL_TEXT, failureView, reasonFailureText, type StateView } from "~/utils/bookErrors";
+import { usePdfOpener } from "~/composables/usePdfOpener";
 
 // ── 라우트 ─────────────────────────────────────────────────
 const route = useRoute();
@@ -320,7 +359,8 @@ onBeforeUnmount(() => pageAbort.abort());
 // ── 도서 데이터 ────────────────────────────────────────────
 const book = ref<BookInfo | null>(null);
 const pageLoading = ref(true);
-const pageError = ref("");
+// 불러오기 실패(본문 자리의 상태 블록) — 404 는 '찾을 수 없어요', 그 밖은 이유 + [다시 시도]
+const pageFailure = ref<StateView | null>(null);
 
 useHead({ title: () => (book.value?.title ? `${book.value.title} — 소장자료` : "소장자료") });
 
@@ -354,8 +394,10 @@ const reasonText = ref("");
 const reasonLoading = ref(false);
 // 추천 이유를 다 받았는지 — 받기 전에는 비어 있어도 [추천 이유] 탭을 둔다(곧 채워진다)
 const reasonDone = ref(false);
-// 추천 이유를 만들지 못했을 때 보일 문구(서버의 {error} 문구, 없으면 BOOK_REASON_FAILED) — 받은 글에 잇지 않고 따로 보인다
+// 추천 이유를 받지 못했을 때 보일 한 줄(reasonFailureText — 서버의 {error} 글(합쇼체)은 쓰지 않는다) — 받은 글에 잇지 않고 따로 보인다
 const reasonError = ref("");
+// 실패 안내(SkxInlineError) — [다시 시도]를 누르면 안내째 빠지므로 초점을 옮길 탭 본문을 이 요소에서 찾는다
+const reasonFailRef = ref<ComponentPublicInstance | null>(null);
 const renderedReason = computed(() =>
   reasonText.value ? (marked.parse(reasonText.value) as string) : "",
 );
@@ -378,6 +420,8 @@ const activeCuration = computed(() => activeTabKey(detailTab.value, curationTabs
 const RELATED_LIMIT = 4;
 const relatedItems = ref<any[]>([]);
 const relatedLoading = ref(false);
+// 관련 자료를 불러오지 못함 — 진짜 0건(relatedItems 가 빈 채로 성공)과 가른다
+const relatedFailure = ref<StateView | null>(null);
 // [자세히 보기]로 연 카드 — 한 번에 하나
 const openRelated = ref<string | null>(null);
 
@@ -417,34 +461,48 @@ function showToast(msg: string) {
   }, 2500);
 }
 
-// PDF viewer — 이 자료·관련 자료
-const pdfTarget = ref<{ id: string; title: string } | null>(null);
-function viewPdf(id: string, title: string) {
-  pdfTarget.value = { id, title };
+// PDF viewer — 이 자료·관련 자료. 파일이 있는지 먼저 묻고 연다(usePdfOpener) — 없는 원문을 그대로 열면 pdf.js 의 영문 오류 화면이 뜬다.
+// 열지 못한 까닭은 누른 버튼 쪽(이 자료면 머리 아래, 관련 자료면 그 카드)에 알린다
+const { pdf, checking: checkingPdf, openPdf, closePdf } = usePdfOpener();
+const pdfProblem = ref<{ id: string; message: string } | null>(null);
+async function viewPdf(id: string, title: string) {
+  // 확인 중에는 무시한다 — openPdf 가 null 을 돌려줘 안내가 지워지는 일이 없게
+  if (checkingPdf.value) return;
+  const problem = await openPdf({ cntsId: id, title });
+  pdfProblem.value = problem ? { id, message: problem } : null;
 }
 
 // ── 초기화 ─────────────────────────────────────────────────
-onMounted(async () => {
-  // ?chat=1 → 채팅 패널 자동 오픈
-  if (route.query.chat === "1") {
-    chatPanelOpen.value = true;
-  }
-  await fetchBook();
-  if (book.value) {
-    streamReason();
-    fetchRelatedBooks();
-  }
+onMounted(() => {
+  void loadPage();
 });
 
+// 도서를 불러오고, 불러왔으면 추천 이유·관련 자료를 받는다. 처음 열 때와 불러오기 실패의 [다시 시도]가 부른다
+async function loadPage() {
+  await fetchBook();
+  if (!book.value) return;
+  // ?chat=1(결과의 DeepRead 버튼) → 채팅 패널 자동 오픈. 도서를 불러온 뒤에 연다
+  if (route.query.chat === "1") chatPanelOpen.value = true;
+  void streamReason();
+  void fetchRelatedBooks();
+}
+
 // ── 도서 fetch ─────────────────────────────────────────────
+// 다시 시도하는 동안에는 로딩 표시가 상태 블록 자리를 잇는다(pageLoading 이 먼저 그려진다)
 async function fetchBook() {
   pageLoading.value = true;
-  pageError.value = "";
   try {
     const data = await api<BookInfo>(`/books/${cnts_id}`, { signal: pageAbort.signal });
     book.value = data;
-  } catch (e: any) {
-    pageError.value = e?.data?.detail || "도서 정보를 불러올 수 없습니다.";
+    pageFailure.value = null;
+  } catch (e: unknown) {
+    // 떠나며 끊은 요청이면 아무것도 띄우지 않는다
+    if (pageAbort.signal.aborted) return;
+    pageFailure.value = failureView(e, BOOK_DETAIL_TEXT.failedTitle, {
+      kind: "notFound",
+      title: BOOK_DETAIL_TEXT.notFoundTitle,
+      message: BOOK_DETAIL_TEXT.notFoundMessage,
+    });
   } finally {
     pageLoading.value = false;
   }
@@ -481,14 +539,14 @@ async function streamReason() {
   }
   reasonLoading.value = false;
   reasonDone.value = true;
-  // 이 화면은 추천 이유를 저장하지 않는다 — 실패({error}·끊김)면 받은 글에 잇지 않고 안내를 따로 보인다
-  if (!end.ok && !pageAbort.signal.aborted) reasonError.value = failureText(end, BOOK_REASON_FAILED);
+  // 이 화면은 추천 이유를 저장하지 않는다 — 실패({error}·HTTP 오류·끊김)면 받은 글에 잇지 않고 안내를 따로 보인다
+  if (!end.ok && !pageAbort.signal.aborted) reasonError.value = reasonFailureText(reasonText.value);
 }
 
-// [다시 시도] — 추천 이유를 처음부터 다시 받는다. 버튼은 받는 동안 빠지므로 초점을 탭 본문으로 먼저 옮긴다
-function retryReason(event?: Event) {
+// [다시 시도] — 추천 이유를 처음부터 다시 받는다. 버튼은 안내째 빠지므로 초점을 탭 본문으로 먼저 옮긴다
+function retryReason() {
   if (reasonLoading.value) return;
-  focusOwningPanel(event?.currentTarget ?? null);
+  focusOwningPanel(reasonFailRef.value?.$el ?? null);
   void streamReason();
 }
 
@@ -496,8 +554,9 @@ function retryReason(event?: Event) {
 // 백엔드가 이 자료의 제목으로 찾되 자기 자신은 검색 조건에서 미리 빼고, 연관도 하한 아래는 채우지 않는다.
 // 사용자 검색(POST /books/search)을 쓰면 긴 학위논문은 자기 청크가 후보를 다 채워 1권만 남았다
 async function fetchRelatedBooks() {
-  if (!book.value) return;
+  if (!book.value || relatedLoading.value) return;
   relatedLoading.value = true;
+  relatedFailure.value = null;
   try {
     const data = await api<any>(`/books/${encodeURIComponent(cnts_id)}/related`, {
       query: { top_k: RELATED_LIMIT },
@@ -510,8 +569,9 @@ async function fetchRelatedBooks() {
         .filter((b) => b.book_id !== cnts_id)
         .slice(0, RELATED_LIMIT);
     }
-  } catch {
-    /* ignore */
+  } catch (e: unknown) {
+    // 떠나며 끊은 요청이면 아무것도 띄우지 않는다(failureView 도 null)
+    if (!pageAbort.signal.aborted) relatedFailure.value = failureView(e, BOOK_DETAIL_TEXT.relatedFailedTitle);
   } finally {
     relatedLoading.value = false;
   }
