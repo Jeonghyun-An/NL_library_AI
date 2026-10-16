@@ -117,6 +117,7 @@ def test_curate_books_returns_parsed_result():
     assert result["intro"] == "두 권의 큐레이션 소개."
     assert len(result["items"]) == 2
     assert result["items"][0]["book_id"] == "B001"
+    assert not result.get("ai_failed")   # 성공한 생성에는 실패 표시가 없다
 
 
 def test_curate_books_fallback_on_json_error():
@@ -134,6 +135,7 @@ def test_curate_books_fallback_on_json_error():
     assert result["intro"] == ""
     assert result["items"][0]["book_id"] == "B001"
     assert result["items"][0]["reason"] == ""
+    assert result["ai_failed"] is True   # 빈 사유가 실패로 채운 것임을 화면이 알게 한다(api/book.py /curate)
 
 
 def test_curate_books_fallback_on_http_error():
@@ -150,6 +152,7 @@ def test_curate_books_fallback_on_http_error():
     result = asyncio.run(_run())
     assert result["intro"] == ""
     assert len(result["items"]) == 2
+    assert result["ai_failed"] is True
 
 
 def test_curate_books_context_includes_plot_and_themes():

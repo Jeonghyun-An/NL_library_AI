@@ -102,6 +102,7 @@ def test_recommend_books_returns_reason_and_quote():
     assert len(result["items"]) == 2
     assert result["items"][0]["reason"] == "태그라인1"
     assert result["items"][0]["quote"] == "인용구1"
+    assert not result.get("ai_failed")   # 성공한 생성에는 실패 표시가 없다
 
 
 def test_recommend_books_fallback_on_parse_error():
@@ -119,6 +120,7 @@ def test_recommend_books_fallback_on_parse_error():
     assert result["items"][0]["book_id"] == "B001"
     assert result["items"][0]["reason"] == ""
     assert result["items"][0]["quote"] == ""
+    assert result["ai_failed"] is True   # 빈 사유·인용이 실패로 채운 것임을 화면이 알게 한다(api/scenario.py)
 
 
 def test_recommend_books_context_includes_read_effect():
@@ -158,3 +160,4 @@ def test_recommend_books_fallback_on_http_error():
     result = asyncio.run(_run())
     assert len(result["items"]) == 2
     assert all(item["reason"] == "" for item in result["items"])
+    assert result["ai_failed"] is True

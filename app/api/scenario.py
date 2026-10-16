@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_db
+from core.errors import search_outage_as_503
 from repositories.book import BookRepository
 from schemas.book import ScenarioRequest, ScenarioBook, ScenarioResponse
 from services.search.pipeline import search
@@ -18,28 +19,32 @@ async def scenario_recommend(
     req: ScenarioRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """독자 고민 → 맞춤 도서 추천 (reason + quote)"""
-    result = await search(
-        req.concern,
-        mode="book",
-        top_k=req.top_k,
-        use_rewrite=True,
-        use_rerank=True,
-        doc_scope="book",   # 논문 제외, 도서만 검색
-        db=db,
-    )
+    """독자 고민 → 맞춤 도서 추천 (reason + quote).
 
-    # doc_type 스칼라 미지정 구버전 인덱스 대비: 도서 필터 결과가 없으면 전체로 재시도
-    if not result.books:
-        log.warning("도서 필터 검색 0건 — doc_scope 없이 재시도")
+    오류: 검색 기반(Milvus·임베딩) 연결/조회 장애는 503(search_unavailable). LLM 사유 생성이 실패하면 책은 그대로 두고
+    빈 사유·인용으로 채운 뒤 ai_failed=true 를 싣는다 — 화면이 빈 칸 대신 '사유를 만들지 못했다'를 보인다."""
+    with search_outage_as_503("상황별 추천"):
         result = await search(
             req.concern,
             mode="book",
             top_k=req.top_k,
             use_rewrite=True,
             use_rerank=True,
+            doc_scope="book",   # 논문 제외, 도서만 검색
             db=db,
         )
+
+        # doc_type 스칼라 미지정 구버전 인덱스 대비: 도서 필터 결과가 없으면 전체로 재시도
+        if not result.books:
+            log.warning("도서 필터 검색 0건 — doc_scope 없이 재시도")
+            result = await search(
+                req.concern,
+                mode="book",
+                top_k=req.top_k,
+                use_rewrite=True,
+                use_rerank=True,
+                db=db,
+            )
 
     if not result.books:
         raise HTTPException(404, "추천 도서를 찾을 수 없습니다")
@@ -69,4 +74,5 @@ async def scenario_recommend(
         concern=req.concern,
         intro=rec.get("intro", ""),
         books=books,
+        ai_failed=bool(rec.get("ai_failed")),
     )

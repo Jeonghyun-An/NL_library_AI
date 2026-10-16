@@ -8,6 +8,7 @@ from sqlalchemy import select, func, delete as sa_delete, text as sa_text
 
 from core.config import get_settings
 from core.deps import get_db
+from core.errors import broker_outage_as_503
 from models.book import Book
 from models.section import BookSection
 
@@ -92,7 +93,8 @@ async def backfill_plot(
     )).scalar() or 0
 
     from workers.tasks import backfill_plot as backfill_plot_task
-    task = backfill_plot_task.delay(limit=limit, force=force)
+    with broker_outage_as_503("줄거리 백필"):
+        task = backfill_plot_task.delay(limit=limit, force=force)
     return {"task_id": task.id, "limit": limit, "force": force, "candidates": target}
 
 
@@ -116,7 +118,8 @@ async def backfill_read_effect_api(
     )).scalar() or 0
 
     from workers.tasks import backfill_read_effect as backfill_read_effect_task
-    task = backfill_read_effect_task.delay(limit=limit, force=force)
+    with broker_outage_as_503("독후 효과 백필"):
+        task = backfill_read_effect_task.delay(limit=limit, force=force)
     return {"task_id": task.id, "limit": limit, "force": force, "candidates": target}
 
 
@@ -144,7 +147,8 @@ async def backfill_summary_api(
     target = (await db.execute(stmt)).scalar() or 0
 
     from workers.tasks import backfill_summary as backfill_summary_task
-    task = backfill_summary_task.delay(limit=limit, force=force, doc_types=doc_types)
+    with broker_outage_as_503("요약 백필"):
+        task = backfill_summary_task.delay(limit=limit, force=force, doc_types=doc_types)
     return {
         "task_id": task.id, "limit": limit, "force": force,
         "doc_types": doc_types, "candidates": target,
@@ -542,7 +546,9 @@ async def reindex_all():
             skipped.append(key)
             continue
 
-        task = process_from_minio.delay(book_id, key)
+        # 중간에 끊기면 앞서 보낸 것은 이미 큐에 있다 — 가드가 몇 건 보냈는지 로그에 남긴다
+        with broker_outage_as_503(f"전체 재인덱싱 {book_id}(앞서 {len(dispatched)}건 보냄)"):
+            task = process_from_minio.delay(book_id, key)
         dispatched.append({"book_id": book_id, "minio_key": key, "task_id": task.id})
         log.info(f"재인덱싱 디스패치: {book_id} ({key})")
 

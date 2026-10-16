@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from core.config import get_settings
 from core.deps import get_db
+from core.errors import broker_outage_as_503, search_outage_as_503
 from schemas.book import (
     SearchRequest,
     ChunkSearchResponse,
@@ -79,15 +80,17 @@ async def search_papers(
     # 구체어를 버리고 없던 주제어를 덧붙였다. 켬 71% vs 끔 87%(파이프라인 측정, 독립 3세트 450문항 — 재작성 단계 −17.6%p),
     # 배포본 실측 Recall@10 89%(2026-10-14, 합성 질문 기준) — research/brochure-search-eval/README.md, 사용자 결정
     # 2026-10-14. 소장자료 검색(/api/books/search)은 그대로 재작성한다
-    result = await search(
-        req.query,
-        mode=req.mode,
-        top_k=req.top_k,
-        use_rewrite=False,
-        use_rerank=req.use_rerank,
-        doc_scope="paper",
-        db=db,
-    )
+    # Milvus·임베딩 연결/조회 장애는 503(search_unavailable), 코드 버그는 500 그대로(core/errors.py)
+    with search_outage_as_503("논문 검색"):
+        result = await search(
+            req.query,
+            mode=req.mode,
+            top_k=req.top_k,
+            use_rewrite=False,
+            use_rerank=req.use_rerank,
+            doc_scope="paper",
+            db=db,
+        )
 
     if isinstance(result, BookSearchResponse):
         repo = BookRepository(db)
@@ -139,7 +142,8 @@ async def get_related_papers(
     if top_k < 1 or top_k > 10:
         raise HTTPException(400, "top_k는 1~10 사이여야 합니다.")
 
-    hits = await find_related_papers(cnts_id, db, top_k=top_k)
+    with search_outage_as_503(f"논문 관련 자료 {cnts_id}"):
+        hits = await find_related_papers(cnts_id, db, top_k=top_k)
 
     # book_info 일괄 조회
     repo = BookRepository(db)
@@ -263,5 +267,6 @@ async def load_kci_catalog(file: UploadFile = File(...)):
         f.write(content)
 
     from workers.tasks import load_kci_catalog_xlsx
-    task = load_kci_catalog_xlsx.delay(save_path)
+    with broker_outage_as_503("KCI 서지 적재"):
+        task = load_kci_catalog_xlsx.delay(save_path)
     return {"task_id": task.id, "filename": file.filename}

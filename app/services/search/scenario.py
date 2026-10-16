@@ -101,7 +101,9 @@ async def recommend_books(concern: str, books: list) -> dict:
             return result
     except Exception as e:
         log.error(f"시나리오 추천 생성 실패: {e}")
+        # 책은 그대로 보이고 사유·인용만 빈다 — ai_failed 로 화면이 '사유를 만들지 못했다'를 알게 한다(api/scenario.py)
         return {
             "intro": "",
             "items": [{"book_id": b.cnts_id, "reason": "", "quote": ""} for b in target_books],
+            "ai_failed": True,
         }
