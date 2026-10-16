@@ -476,8 +476,9 @@ describe("CSS — '[S] 공통 오류·빈 상태' 구역", () => {
     expect(code).toMatch(/\.skx-state__action \{\s*color: var\(--skx-ink\);\s*background: var\(--skx-frost-bg-soft\);\s*border: 1px solid var\(--skx-chip-line\);/);
   });
 
-  it("전역 오류 화면만 상태 블록 뒤에 결과 큰 틀과 같은 유리 면(--skx-frame-bg — 홀로그램 위 글자 대비)", () => {
-    expect(code).toMatch(/\.skx-error-page \.skx-state \{\s*background: var\(--skx-frame-bg\);\s*border: 1px solid var\(--skx-frame-line\);/);
+  it("전역 오류 화면도 상태 블록에 면·테두리를 깔지 않는다 — 설명 글만 본문색으로 진하게(후배 의견 2026-10-16, 대비는 themeHolo.test.ts)", () => {
+    expect(code).not.toMatch(/\.skx-error-page \.skx-state \{[^}]*(background|border):/);
+    expect(code).toMatch(/\.skx-error-page \.skx-state__msg \{\s*color: var\(--skx-ink\);/);
     expect(code).toMatch(/\.skx-error-page__main \{[^}]*max-width: 32rem;/);
   });
 

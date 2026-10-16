@@ -5351,11 +5351,18 @@ html.skx-scroll-lock {
 .skx-error-page__logo {
   width: min(12rem, 60%);
 }
-/* 움직이는 홀로그램 위에 바로 놓이는 이 화면만 상태 블록 뒤에 결과 큰 틀과 같은 유리 면을 깐다 — 띠가 가장 밝게 겹쳐도
-   제목·설명이 4.5:1 이상(themeHolo.test.ts 의 '전역 오류 화면 상태 카드'). 섹션 안의 상태 블록은 시안대로 면 없이 본문 위에 바로 놓인다 */
-.skx-error-page .skx-state {
-  background: var(--skx-frame-bg);
-  border: 1px solid var(--skx-frame-line);
+/* 움직이는 홀로그램 위에 바로 놓이는 이 화면도 상태 블록을 면·테두리 없이 둔다(시안대로 — 후배 의견 2026-10-16 '빼는 게 깔끔').
+   대신 설명 글을 회색(--skx-gray-1)에서 본문색(--skx-ink)으로 한 단계 진하게 — 랜딩의 페이지 위 작은 글 선례와 같이 띠 하나가
+   지나는 자리까지 4.5:1. 제목은 큰 글이라 '카드 없이 페이지 위에 놓이는 큰 제목' 기준을 따른다(둘 다 themeHolo.test.ts) */
+.skx-error-page .skx-state__msg {
+  color: var(--skx-ink);
+}
+/* 치명 오류 화면의 보조 버튼([처음 화면으로] — [다시 시도] 다음)은 옅은 면(흰 5%)만 깔려 다크에서 본문색 글이 4.5:1 에 못 미친다 —
+   이 화면에서만 글을 가장 진한 톤으로(themeHolo.test.ts) */
+.skx-error-page .skx-state__action:not(:first-child),
+.skx-error-page .skx-state__action:not(:first-child):visited,
+.skx-error-page .skx-state__action:not(:first-child):hover {
+  color: var(--skx-ink-strong);
 }
 /* 오류 화면 모음의 액자 안(preview) — 화면 높이(100vh) 대신 액자 높이를 채운다. 홀로그램(position: fixed)을 가두는 transform·overflow 는 액자 쪽이 둔다 */
 .skx-error-page--preview {
