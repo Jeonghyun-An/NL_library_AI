@@ -1,0 +1,191 @@
+{
+ "topic": "lib_quality",
+ "panel": "paper",
+ "intent": "공공도서관 서비스 품질 평가(평가 모형·지표·이용자 만족)를 다룬 연구",
+ "lists": {
+  "R1": [
+   {
+    "title": "공공도서관 서비스 고객만족도 평가체계에 관한 연구 A Study on Customer Satisfaction Framework for Public Library Services",
+    "author": "김선애",
+    "year": "2006.09",
+    "publisher": "한국도서관·정보학회지",
+    "kdc": null,
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "고객 만족을 위한 공공도서관 평가지표에 관한 고찰 A Study of the Public Library Evaluation Index for Customer Satisfaction",
+    "author": "유병장",
+    "year": "2004.09",
+    "publisher": "한국도서관·정보학회지",
+    "kdc": null,
+    "subject": null,
+    "abstract": "서비스 기관인 공공도서관의 존립근거는 고객들의 도서관에 대한 요구와 기대라 할 수 있다. 최근에는 도서관과 유사한 프로그램을 운영하는 단체와 인터넷의 발달로 공공도서관의 존립에 대한 불안감이 가중되고 있는 실정이다. 따라서 공공도서관이 지속적으로 지역사회와 고객들로부터 필요성을 얻기 위해서는 많은 노력이 요구되고 있다. 본 소고에서는 고객지향적인 행정서비스를 공급하기 위한 방안으로 제정된 행정서비스현장제를 공공도서관과 연계하여 살펴보고, 문화관광부에서 시행하고 있는 문화기반시설 관리운영평가와 경기도의 경기도 공공도서관 평가의 분석, 서울시의 시민만족도 조사 등 최근에 공공도서관 평가에서 제시된 지표를 분석하여 향후 공공도서관 평가에 필요한 기초 자료를 제공한다."
+   },
+   {
+    "title": "공공도서관 성과평가 체계에 대한 비교․분석 A Comparative Analysis of the Performance Evaluation System for Public Libraries",
+    "author": "김선애",
+    "year": "2020.12",
+    "publisher": "한국비블리아학회지",
+    "kdc": null,
+    "subject": "공공도서관, 공공도서관 평가, 도서관평가모델, 도서관성과평가 Public Library, Public Library Evaluation, Library Evaluation Model, Library Performance Measurement",
+    "abstract": "급변하는 환경 하에서 공공도서관은 다양한 변화에 대응하고, 사회적 가치를 입증하고 그리고 투입자원에 대한 정당성을 증명하기 위해 그들의 활동을 포괄적으로 나타낼 수 있는 성과 측정이 필요하다. 그러나 대부분의 성과평가는 특정 영역 혹은 특정 분석방법에 치중하여 진행되어 왔다. 이에 본 연구는 국내 공공도서관 성과관리 도구 개발을 위해, 도서관 선진 국가들의 공공도서관 성과평가도구 개발을 위한 노력을 살펴보았다. 공공도서관 성과평가의 방향성, 평가체계, 주요 성과평가영역 등을 검토․분석하여 시사점을 도출하였다. 주요결과는 공공도서관 성과평가의 관점이 투입-산출위주에서 결과(outcome)혹은 영향(impact)으로 옮겨가고 있었고, 성과평가영역이 공공도서관 발전전략 혹은 도서관의 역할과 연계되어 있었다. 그리"
+   },
+   {
+    "title": "도서관의 정보서비스 품질평가 연구에 관한 고찰 A Review of Studies on the Quality Evaluation of Library Information Service",
+    "author": "홍현진",
+    "year": "2005.06",
+    "publisher": "한국도서관·정보학회지",
+    "kdc": null,
+    "subject": null,
+    "abstract": ""
+   },
+   {
+    "title": "구조방정식 모형을 이용한 대학도서관 서비스 품질 평가 An Evaluation of Service Quality in University Library Using Structural Equation Modeling",
+    "author": "윤기찬 | 이순철",
+    "year": "2009.09",
+    "publisher": "한국도서관·정보학회지",
+    "kdc": null,
+    "subject": null,
+    "abstract": "본 연구는 대학 도서관의 서비스 품질 측정을 통한 이용자 만족과 재이용의도에 미치는 영향을 분석함으로서 대학도서관의 서비스 품질의 향상 방안에 대해 모색해 보고자 시행되었다. 이를 위해 LibQUAL+에서 사용된 척도를 대상으로 대학 도서관의 서비스 품질에 대해 측정해 보고, 측정된 결과를 토대로 이용자 만족과 재이용 의도에 미치는 영향에 대해 구조방정식(SEM)모형을 통해 분석하였다. 그 결과를 종합해 보면 정보통제, 도서 관 장소, 서비스 영향력 순으로 대학 도서관의 서비스 품질에 많은 영향력을 미치는 것으로 나타났다. 따라서 대학 도서관이 서비스 품질을 향상시키기 위해서는 정보통제, 도서관 장소, 서비스 영향력 순으로 우선순위를 두어 서비스 품질을 개선시켜야 할 것이다."
+   },
+   {
+    "title": "대학도서관의 인적 서비스 품질에 관한 연구 A Study on the Evaluation and Improvement of Staff Services Quality in Academic Library",
+    "author": "강혜영",
+    "year": "2010.12",
+    "publisher": "한국도서관·정보학회지",
+    "kdc": null,
+    "subject": "인적서비스, 이용자만족, 서비스 품질, 품질인식, 괴리원인",
+    "abstract": "본 연구는 대학도서관 인적 서비스에 대한 대학생들의 인식정도, 신분별 상관성, 전반적인 도서관 만족도와의 영향관계를 검증하고, 품질 인식의 괴리 원인 분석과 개선안을 제시하고자 한다. 인식도의 분석결과, 이용자의 현행서비스에 대한 인식은 아주 낮고, 서비스 품질은 최소한의 수준에도 미치지 못하였다. 품질 요인에서 희망수준 이 높은 것은 미소장자료의 신속한 입수와 공손함이었고, 희망수준과 괴리가 큰 요인은 충분한 주제전문서비스와 자발적인 도움이었다. 서비스 품질은 도서관 만족도에 영향을 주었으며, 주제전문서비스, 이용자 요구의 정확한 이해, 예의바르고 공손함이 영향을 많이 주었다. 인식 괴리 원인은 사서들의 무관심, 질문응답의 의욕부족, 커뮤니케 이션의 부족, 이용자에 대한 배려 부족 등이었다."
+   },
+   {
+    "title": "서울시 공공도서관 운영 분석을 통한 서비스 성과관리 설계의 방향성 연구 A Study on the Outcome Management through the Analysis of Public Library Operations and Services in Seoul",
+    "author": "김신영 | 권나현 | 김선애",
+    "year": "2020.09",
+    "publisher": "한국도서관·정보학회지",
+    "kdc": null,
+    "subject": "Public Library, Public Library Service, Outcome Management, Performance Indicators",
+    "abstract": "본 연구는 서울지역 공공도서관의 운영 분석을 통하여 서비스 성과관리 설계의 방향성을 제시하는데 목적이\n\n- 있다. 이를 위하여 ｢제2차 서울시도서관발전종합계획(2018∼2022)｣과 ｢제3차 도서관발전종합계획(2019-2023)｣에 따른 서울시의 시행계획을 연계하여 분석하고, 서울시민의 공공도서관 서비스에 대한 인식도 조사를 종합하여 정책개발 쟁점을 도출하였다. 이어 서울시 25개 자치구 173개 공공도서관의 투입지표와 자료서비스, 프로그램 이용실적, 웹이용, 상호대차 등 서비스 현황을 분석하였다. 이러한 분석 결과를 바탕으로 자치구별 도서관 서비스의 성과를 가시화 할 수 있는 성과관리 방향성을 제시하였다. 구체적으로 공공도서관 서비스 성과관리를 위하여 전략목표와 핵심과제의 선정에 내실화, 성과관리의 범주 "
+   },
+   {
+    "title": "도서관 서비스의 품질인증제도 활용에 관한 연구 A Study on the Application of Quality Certification System in Library Services",
+    "author": "이상복",
+    "year": "2002.03",
+    "publisher": "한국문헌정보학회지",
+    "kdc": null,
+    "subject": null,
+    "abstract": "본 논문은 세계적인 품질인증제도를 도서관 및 정보센터의 서비스 품질 평가에 활용할 수 있도록 이들 제도의 특성을 비교·분석하고, 외국 도서관의 적용사례를 고찰한 것이다. 본 논문의 분석 결과, TQM을 기반으로 한 데밍품질상, 말콤발드리지 국가품질상은 광범위하고, 동적이며, 고객 지향적인 제도인 반면, ISO 9000 품질 인증 제도는 협소하고, 정적이며, 명세서의 일치여부를 평가하는 내부지향적 제도임이 밝혀졌다.\n\nABSTRACTS\n\nThe purpose of this study is to apply the international quality certification system to service quality evaluation in library and information service cent"
+   },
+   {
+    "title": "대학도서관의 장애인 서비스 수준 측정을 위한 평가지표 개발 Development of Evaluation Indicators for Level of Service on Academic Library Users with Disabilities",
+    "author": "박종배",
+    "year": "2013.12",
+    "publisher": "한국도서관·정보학회지",
+    "kdc": null,
+    "subject": "대학도서관, 장애 대학생, 교육복지, 장애인 서비스, 서비스 평가지표",
+    "abstract": "본 연구는 우리나라 대학도서관에서 장애 학생의 교육복지 향상을 위하여 필요한 핵심적인 서비스 요인이 무엇인지를 규명하고, 장애인 서비스 수준을 측정하기 위한 평가지표를 개발하고자 하였다. 이를 위해 공공도서관 의 장애인 서비스 기준과 대학도서관의 직무단위, 그리고 선행 연구문헌을 분석하여 대학도서관에 적합한 장애인 서비스 평가요인과 하위지표를 추출하였다. 추출된 평가요인과 하위지표는 대학도서관 현장에 근무하고 있는 사서를 대상으로 사전조사와 본 조사를 실시하여 평가지표로서의 적합성을 검증하였다. 평가지표 검증 결과, 대학도서관 사서 집단이 인식하는 대학도서관 장애인 서비스 평가요인은 8개 요인 33개 하위지표로 구성되어 있음을 확인하였다."
+   },
+   {
+    "title": "전문도서관의 서비스 품질평가에 관한 연구 A Study on Evaluating Service Quality in Special Libraries",
+    "author": "김윤실",
+    "year": "2002.09",
+    "publisher": "정보관리학회지",
+    "kdc": null,
+    "subject": null,
+    "abstract": "1990년대에 들어서면서 보편화되기 시작한 정보화의 물결은 도서관의 서비스 형태에도 많은 변화를 가져왔다. 그러나 도서관 이용자의 입장에서는 어떤 형태의 서비스가 제공되더라도 기본적으로 이용자가 제공받는 서비스의 품질에 의해서 좌우될 수밖에 없다는 특성을 갖는다. 본 연구는 도서관의 서비스 품질을 평가하고, 이에 영향을 미치는 주된 요인들을 파악하여, 향후 더욱 높은 수준의 서비스를 제공할 때 이용되는 서브퀄(SERVQUAL) 모형을 채택하여, 전문도서관에서 이용자들이 느끼는 서비스 품질에 대한 기대와 지각을 측정하였다.\n\nABSTRACT\nThe rapid change in almost every area of science at the turn of the 21st century have also affe"
+   }
+  ],
+  "R2": [
+   {
+    "title": "고객 경험 관리(CEM)를 활용한 공공도서관의 이용자 경험 분석: 고양시립도서관을 중심으로 Analyses of Public Library User Experiences using Customer Experience Management (CEM) Perspective: Focused a Public Library in Goyang City",
+    "author": "이고은 | 박지홍",
+    "year": "2021.12",
+    "publisher": "한국비블리아학회지",
+    "kdc": null,
+    "subject": "공공도서관, 고객경험관리, 이용자만족도, CEM, 서비스 Public Library, Customer Experience Management, User Satisfaction, CEM, Service",
+    "abstract": "연구의 목적은 공공도서관과 이용자 간 커뮤니케이션 및 경험을 분석하여 이용자 만족도에 영향을 미치는 요인을 파악하는 것이다. 현재 경영 및 마케팅 분야에서 다양하게 활용하고 있는 고객 경험 관리(CEM)를 적용하여 이용자의 경험을 세분화하여 분석하고자 한다. 이용자의 경험에 대한 접점을 도출하기 위하여 마케팅, 경영 분야의 CEM 연구를 검토하여 물리적 환경, 인적 요인, 커뮤니케이션, 서비스를 독립변수로 설정하고 감정적 즐거움을 매개변수, 이용자 만족을 종속변수로 설정하여 설문 문항을 구성하였다. 설문 방법은 온라인 및 오프라인(대면) 2가지 방법으로 실시하였으며 수집된 총 60개의 설문지를 기반으로 통계분석을 진행하였다. 연구 결과는 이용자의 물리적 환경과 편의성에 대한 경험이 높을수록 만족도가 높게 나"
+   },
+   {
+    "title": "사서교사 이미지가 학교도서관 이용자 만족도에 미치는 영향에 관한 연구 The Effects of Teacher Librarians’ Images on the User Satisfaction of School Libraries",
+    "author": "천희선 | 박지홍",
+    "year": "2018.12",
+    "publisher": "한국비블리아학회지",
+    "kdc": null,
+    "subject": "사서교사이미지, 이용자만족, 재이용의도, 추천의도 Teacher Librarian Image, User Satisfaction, Reuse Intention, Recommendation Intention",
+    "abstract": "본 연구는 이용자들이 사서교사에 대해 어떠한 이미지를 가지고 있는지 알아보고 그 이미지에 따라 학교도서관 이용자만족도를 알아봄으로서 학교도서관 활성화방안을 제시하였다. 조사방법은 서울, 경기지역 10개의 중, 고등학생 을 대상으로 설문과 심층면담을 실시하였다. 분석결과, 사서교사의 이미지유형은 전문성있는 이미지와 적극적인 이미지, 단순한 업무이미지로 분류되었고 전문성있는 이미지와 적극적인 이미지는 학교도서관이용자만족에 정(+)의 상관관계를 가지고 있는 것으로 나타났고 단순한 업무이미지는 부(-)의 상관관계를 가지고 있는 것으로 나타났다. 사서교사와 이미지와 학교도서관 만족도는 학교도서관 재이용의사와 추천의도에서도 유의한 영향을 보여주었다. 사서교사이미지와 학교도서관 이용자만족을 높이기 위해서는 사서교사의 적"
+   },
+   {
+    "title": "도서관 복합문화공간 이용요인에 대한 중요도-만족도 분석에 관한 연구 A Study on the Analysis of Importance-Performance on the Use factor of Complex Cultural Space in Library",
+    "author": "노지윤 | 노영희",
+    "year": "2019.12",
+    "publisher": "한국도서관·정보학회지",
+    "kdc": null,
+    "subject": "도서관, 복합문화공간, 도서관 복합문화공간, 중요도, 만족도, 중요도-만족도, 분석IPA, 이용요인",
+    "abstract": "최근 공공도서관에서 복합문화공간화가 이루어지고 있는 시점에서, 본 연구는 공공도서관 복합문화공간 이용요인에 관한 이용자 의 중요도-만족도 인식을 분석하였다. 분석결과를 기반으로 도서관 이용자의 복합문화공간 이용 차원에 대한 이해를 넓히고, 어떤 요소에 더 중점을 두고 개선해야 하는지에 대한 방향성을 제시하고자 하였다. 연구결과는 다음과 같다: 첫째, 현재 41개의 도서관 복합문화공간요인 중 5개 항목에서만 중요도에 비해 만족도가 높게 나타나 특정 부문이 아닌 우선적인 개선 부분을 중점으로 균형 있는 발전을 도모할 필요가 있다. 둘째, 도서관 복합문화공간의 이용자들은 혼자(42%) 또는 가족(18.2%)과 함께 주로 이용하며 주말 오전과 오후를 포함한 이용자 수(35%)보다 평일 오후에 이용하는 사람(50.5"
+   },
+   {
+    "title": "이용자 장서이용행태 분석을 통한 공공도서관의 장서개발에 관한 연구 A Study of Collection Development by Analyzing Users' Collection-Use Behaviors in Public Libraries",
+    "author": "이진경 | 이지연",
+    "year": "2011.09",
+    "publisher": "한국비블리아학회지",
+    "kdc": null,
+    "subject": "장서개발, 공공도서관, 장서이용행태, 이용자 만족도, 이용자 요구 Collection Development, Public Library, Collection-Use Behavior, User Satisfaction, User Needs",
+    "abstract": "공공도서관은 방문하는 이용자들의 배경이 다양하고 도서관을 찾는 목적 또한 다양하기 때문에 모든 이용자의 요구를 충분히 만족시키기에 어려움을 겪고 있다. 이를 극복하기 위한 노력으로 공공도서관 자료의 만족 수준을 높일 수 있는 장서개발 연구가 필요하다. 따라서 본 연구는 공공도서관의 장서개발을 위해 서울특별시 소재 구립 공공도서관 10개관 이용자들을 대상으로 설문조사를 실시하여 이용자의 장서이용행태를 파악하고, 이를 바탕으로 서울시 구립 공공도서관을 위한 장서개발의 방향을 제시하였다.\n\n##### ABSTRACT\n\nIn public libraries, there are many difficulties in fulfilling requests by users, as typically have from diver"
+   },
+   {
+    "title": "공공도서관 디지털정보센터 서비스 개선에 관한 연구 Study on the Improvement of Digital Information Center Services at Public Librariesgh Survey of Hanbat Library Users",
+    "author": "김영신",
+    "year": "2007.06",
+    "publisher": "한국도서관·정보학회지",
+    "kdc": null,
+    "subject": null,
+    "abstract": "본 연구에서는 2002년에 설치된 대전 한밭도서관의 디지털정보센터 이용자들을 대상으로 이용자 만족도에 영향을 주는 요인으로 선행연구에서 이미 규명된 시설, 컨텐츠, 직원, 운영에 대한 서비스 수준과 이용자의 만족도를 설문조\n\n- 사와 현장관찰을 통하여 파악하고 문제점을 도출하여 이에 대한 적용 가능한 개선안을 찾고자 하였다. 데이터 분석결 과 디지털정보센터 서비스에 대한 전반적인 만족도는 7점 척도에서 4.68로 비교적 좋은 편이었다. 기기와 관련된 만족도는 3년 전보다 상승하였으나 직원과 운영에 대한 만족도는 감소하였다. 나타난 문제들의 대부분은 적극적인 이용교육과 컨텐츠제공, 서비스에 대한 안내와 홍보로 해소될 수 있는 유형이었다. 그러나 응답자의 69.7%가 컨텐츠 이용방법을 센터을 통하여 교육받을 의"
+   },
+   {
+    "title": "청소년의 공공도서관 이용만족도 분석 및 서비스 발전 방안 연구: 서울특별시교육청 도서관·평생학습관을 중심으로 A Study on Analyzing Adolescents’ User Satisfaction Survey and Suggesting Service Development Plan: Focusing on Seoul Metropolitan Office of Education Library",
+    "author": "이혜원 | 장선화",
+    "year": "2022.09",
+    "publisher": "한국비블리아학회지",
+    "kdc": null,
+    "subject": "서울특별시교육청 도서관․평생학습관, 청소년, 리터러시, 이용만족도, 독서프로그램 Seoul Metropolitan Office of Education Library, adolescent, literacy, user satisfaction, reading programs",
+    "abstract": "본 연구에서는 22개 서울특별시교육청 도서관․평생학습관(서울시교육청 도서관)에 대한 청소년의 만족도 실태를 파악하고 불만족 요인을 개선해 청소년을 위한 정보서비스의 질적 향상을 도모하고 궁극적으로는 서울시교육청 도서관의 청소년 이용 활성화 방안을 제시하였다. 또한 디지털 시대로의 전환기에 독서 매체의 변화가 불가피해지는 상황을 고려하여 전자도서관 이용실태를 살펴보았다. 이를 통해 본 연구에서는 청소년의 흥미를 유발할 수 있고 새로운 정보기술을 반영한 독서 프로그램 기획, 전자책 서비스 범위 및 시스템 개선, 학교도서관과의 연계, 공간 재구조화 등을 제안하였다.\n\n##### ABSTRACT\n\nThe purpose of this study was to identify the status of adolescent"
+   },
+   {
+    "title": "공공도서관의 인터넷서비스 이용자를 위한 정보이용능력 지도의 필요성에 관한 연구 The Need for Information Literacy Instruction for Public Library Internet Service Users",
+    "author": "장윤금",
+    "year": "2005.06",
+    "publisher": "한국비블리아학회지",
+    "kdc": null,
+    "subject": null,
+    "abstract": "본 연구에서는 미국 공공도서관의 인터넷서비스 이용자들의 서비스 이용 수준 및 현황에 대하여 살펴봄 으로써 공공도서관에서의 인터넷서비스가 어느 단계에 이르고 있는지를 검토하였으며 인터넷 정보이용능 력 지도에 대한 필요성을 논의하였다. 미국 중서부에 위치한 4개 공공도서관의 인터넷서비스 이용자를 설 문 조사하여 수집된 386부의 설문지를 분석한 결과 인터넷 경험이 적은 인터넷 초보자의 서비스 만족도가 인터넷을 다년간 사용한 중급이나 고급 수준의 이용자에 비해 월등히 높은 것으로 나타났으며 인터넷 사 용 강좌를 택한 경험이 있는 이용자의 서비스 만족도가 인터넷 사용 강좌를 한번도 택하지 않은 경우보다 높은 것으로 밝혀졌다. 이러한 연구 결과를 바탕으로 미국 공공도서관의 인터넷서비스 이용자를 위한 정보 이용능력 지"
+   },
+   {
+    "title": "도서관이 삶의 질에 미치는 영향의 측정에 관한 연구 A Study on the Measurement of the Influence of Libraries on the Quality of Life",
+    "author": "노영희",
+    "year": "2019.12",
+    "publisher": "한국도서관·정보학회지",
+    "kdc": null,
+    "subject": "도서관 서비스, 도서관 서비스 만족도, 삶의 질, 영향관계",
+    "abstract": "본 연구에서는 도서관에서 제공하는 서비스 만족도가 소득고용, 교육, 문화여가, 가족공동체, 시민참여, 안전환경, 주관적 만족도 로 구성되는 삶의 질에 영향을 미치는지를 파악하고자 하였다. 이를 위해 공공도서관 이용자들을 대상으로 설문을 수행하였으며, 측정도구의 정규분포 정도(왜도와 첨도)와 타당성 및 신뢰도 검증을 하였다. 첫째, 도서관 서비스 만족도가 소득 및 고용 부분의 삶의 질에 부분적으로 유의미한 영향을 미치는 것으로 나타났다. 둘째, 도서관 서비스 만족도는 삶의 질 중 교육부분에 부분적으로 유의미한 영향을 미치는 것으로 나타났다. 셋째, 도서관에 대한 종합적인 만족도는 삶의 질 중 문화/여가/건강 등에 대한 만족도에 영향을 미치는 것으로 나타났다. 넷째, 도서관의 프로그램서비스, 종합적 부분에 대한"
+   },
+   {
+    "title": "공공도서관 시니어 이용자가 지각하는 관계혜택이 관계품질과 관계지속의도에 미치는 영향에 관한 연구 A Study on the Effects of Public Library Senior User’s Perception of Relational Benefits on the Relationship Quality and Intent to Relationship Continuity",
+    "author": "신혜봉 | 노동조",
+    "year": "2019.12",
+    "publisher": "한국비블리아학회지",
+    "kdc": null,
+    "subject": "공공도서관, 시니어 이용자, 관계혜택, 관계품질, 신뢰, 만족, 몰입, 관계지속의도, 구조방정식모형 Public Library, Senior Library User, Relational Benefits, Relationship Quality, Trust, Satisfaction, Commitment, Intent to Relationship Continuity, Structure Equation Model",
+    "abstract": "본 연구는 공공도서관 시니어 이용자가 도서관 이용 시 지각하는 관계혜택이 관계품질과 관계지속의도에 미치는 영향을 파악하기 위해 공공도서관을 이용하는 50세 이상의 시니어 이용자 185명을 대상으로 설문조사를 실시하였다. 본 연구의 결과, 공공도서관의 시니어 이용자가 지각하는 관계혜택은 관계품질을 매개로 관계지속 의도에 영향을 미치는 것으로 나타났다. 특히, 관계혜택요인 중 기능적 혜택은 관계품질을 매개로 관계지속의도 에 강한 영향을 미치는 것으로 나타났고, 관계품질 요인 중 몰입은 관계지속의도를 예측하는 가장 중요한 변수로 확인되었다. 본 연구는 공공도서관 시니어 이용자와 도서관과의 관계형성과정을 관계마케팅의 관점에서 알아봄으로써 이용자 특성에 따른 도서관마케팅 전략개발에 실천적 시사점을 제시하였다는데 그 "
+   },
+   {
+    "title": "수원시 공공도서관 초등학생 독서문화프로그램의 운영 개선을 위한 연구 A Study on Improving the Operation of Reading Culture Programs for Elementary School Students in Public Libraries in Suwon City",
+    "author": "기인영 | 강순애",
+    "year": "2013.12",
+    "publisher": "한국비블리아학회지",
+    "kdc": null,
+    "subject": "독서문화프로그램, 초등학생 독서문화프로그램, 수원시 공공도서관, 독서문화프로그램 담당자, 독서문화프로그램 참여자 Reading Culture Program, Reading Culture Program for Elemantary School Student, Public Library in Suwon City, Reading Culture Program Manager, Reading Culture Program Participants",
+    "abstract": "공공도서관은 사회적 변화에 따라 문화적․교육적 기능이 활성화 되면서 다양한 형태의 독서문화프로그램을 개발하기 시작하였다. 본 연구에서는 최근 5년 동안 수원시 공공도서관을 대상으로 초등학생 독서문화프로그램의 운영 실태를 조사하고, 이용자 만족도 조사를 통하여 문제점과 그에 대한 개선방안을 제시하였다. 조사 결과를 분석하여 도출한 문제점에 대한 개선방안으로는 담당자들의 협의체 구성, 강사 인력풀 구축, 잠재적인 자원봉사 교육, 프로그램을 위한 대규모 시설 필요, 향토문화예술단체와 연계 등이 있다. 본 연구의 결과는 수원시 공공도서관의 초등학생 대상 독서문화프로그램 운영 시 참고자료로 활용하고 참여자의 요구에 맞게 문제점을 개선할 수 있는 계기를 마련하는데 그 목적이 있다.\n\n##### ABSTRACT\n\nWit"
+   }
+  ]
+ }
+}

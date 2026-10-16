@@ -1,0 +1,77 @@
+{
+ "job": "c816c7b2",
+ "kind": "proposal_prior",
+ "section": "prior.g1",
+ "topic_title": "농촌 노인의 다양한 사회적 지지 유형과 우울 간의 관계 연구",
+ "research_question": "농촌 노인의 우울에 미치는 가족, 친구, 지역사회 등 다양한 사회적 지지 유형의 상대적 영향력은 무엇인가?",
+ "group_name": "노인의 우울",
+ "sentences": [
+  {
+   "paragraph": 1,
+   "text": "노인의 우울과 사회적 지지의 관계에 대한 연구는 2000년 이후 꾸준히 진행되어 왔으며, 2010년 이후 발표된 논문이 다수를 차지한다 [E1].",
+   "n": 1
+  },
+  {
+   "paragraph": 1,
+   "text": "특히, 노인의 사회적 지지와 우울의 관계를 체계적으로 고찰한 연구 [E1]는 사회적 지지 유형과 노인의 우울 감소를 위한 건강증진 프로그램 개발 방향을 제시하고자 시도되었다.",
+   "n": 2
+  },
+  {
+   "paragraph": 2,
+   "text": "농촌 노인의 우울에 대한 사회적 지지의 매개효과를 분석한 연구 [E2]는 구조적 지지(가족 지지)와 기능적 지지(정서적 지지)가 우울 감소에 기여하며, 가족 지지가 주관적 경제 상태가 우울에 미치는 영향을 완화시키는 효과가 있음을 확인하였다.",
+   "n": 3
+  },
+  {
+   "paragraph": 2,
+   "text": "또한, 지역사회 거주 노인의 우울에 미치는 영향 요인을 분석한 연구 [E3]는 자존감, 삶의 만족도, 노년에 대한 행복감이 우울에 영향을 미치는 것으로 나타났다.",
+   "n": 4
+  },
+  {
+   "paragraph": 3,
+   "text": "노인 집단에서 나타나는 건강 수준 차이의 요인 분석 연구 [E4]는 가족 관계 만족도가 높은 노인이 낮은 수준의 우울을 경험하며, 가족 지지가 노인의 우울감에 유의미한 영향을 미치는 것으로 보고하였다.",
+   "n": 5
+  },
+  {
+   "paragraph": 3,
+   "text": "농촌 노인의 성공적 노화 영향 요인 분석 연구 [E5]는 지각된 사회적 지지가 노인의 성공적 노화에 긍정적인 영향을 미치는 것으로 나타났다.",
+   "n": 6
+  },
+  {
+   "paragraph": 3,
+   "text": "최근에는 노인 암 경험자의 우울 변화 궤적과 예측 요인을 분석하는 연구 [E6]도 진행되고 있으며, 이 연구는 노인의 우울에 영향을 미치는 다양한 사회적 요인들을 고려하고 있다.",
+   "n": 7
+  }
+ ],
+ "evidence": [
+  {
+   "eid": "E1",
+   "abstract": "Objectives : Elderly people are becoming more socially isolated due to COVID-19 and long-term social isolation can lead to serious psychosocial problems. This study aimed to identify the relationship between social support and depression of the elderly, and research trends of recent studies through a systematic review.",
+   "excerpt": "scale(Liu & Besser, 2000)\n\nLubben Social Network scale–Revised\n\nLubben Social Network scale–Revised\n\nSocial support scale(Schuster et al.)\n\nSocial support scale(Schuster et al.)\n\nSocial supporter(Vaux et al., 1986)\n\nSocial supporter(Vaux et al., 1986)\n\nSocial support scale(Kim & Yoon)\n\nSocial support scale(Kim & Yoon)\n\nMPSS(Zimet et al., 1988)\n\nMPSS(Zimet et al., 1988)\n\nSocial activity support Social support scale\n\nSPS\n\nSPS\n\nLocal community support SPS\n\nCaring support -\n\n해당 문헌 번호는 표 1의 문헌 번호와 일치*\n\nand frequency of Social\n\nThe number of children, friends,\n\nrelatives, and neighbors' support\n\nFriends support\n\nFamily support\n\nparticipation\n\n- 하며 이를 통해 향후 노인의 우울 감소를 위한 건강증진 프 로그램과 연구방향을 제시하고자 시도되었다. 노인의 사회적 지지와 우울의 관련 연구는 2000년 이후 시작되어 꾸준히 진행되고 있었으며 본 연구에 포함된 논문 은 총 30편으로 이 중 18편이 2010년 이후에 발표되었다."
+  },
+  {
+   "eid": "E2",
+   "abstract": "본 연구는 농촌노인의 스트레스원과 사회적 지지의 우울과의 인과관계를 다각적인 측면에서 규명하기 위한 것으로 스트레스원으로 인한 우울에 대하여 사회적 지지를 구조적 지지와 기능 적 지지로 분류하여 그 매개효과를 검증하고 있다. 조사대상은 전라북도 8개 군에 거주하는 65 세 이상 노인으로 구조화된 설문지를 이용하여 직접 면접형식으로 조사하였으며 228명의 자료\n\n- 가 분석에 이용되었다. 분석결과는 첫째, 스트레스 수준에 따른 우울의 증가 정도는 주관적 경 제상태, 주관적 건강상태, 일상생활활동능력 순으로 나타났다. 둘째, 사회적 지지의 총합과 구조 적 지지에서는 가족지지, 기능적 지지에서는 정서적 지지가 우울을 감소시키는 것으로 나타났\n- 다. 셋째, 사회적 지지의 총합과 구조적 지지에서는 가족지지가 주관적 경제상태가 우울에 미치 는 영향을 완화시키고 있으며, 기능적 지지에서는 정서적 지지가 일상생활활동능력에 대해 우울 을 완화시키는 매개효과가 있는 것으로 나타났다. 이러한 결과는 사회적 지지가 우울을 완화시 키는 직․간접적인 효과가 있음을 보여주는 것으로, 농촌노인의 삶의 질을 향상시키는데 사회적 지지는 중요한 문제해결 요소가 될 수 있음을 시사하고 있다.",
+   "excerpt": "따라서 다음 연구에서는 건강 및 생활환경 등의 스트레스원에 의한 우울증상이 상대적으로 심각한 대상을 중심으로 다양한 사 회적 지지의 개입이 접목된 종단적 관찰을 통하여 사회적 지지의 우울에 대한 영향 관계를 심도 있게 관찰할 수 있는 실험연구를 수행할 필요를 느낀다. 참고문헌\n\n고문희(2008), “노인우울증과 여가활동 및 음주습관과의 관계”, 전남대학교 대학원 석사학위논 문."
+  },
+  {
+   "eid": "E3",
+   "abstract": "The purpose of this research is to analyze the depression, happiness on aging, self-esteem, life satisfaction and disability of daily living activity level of the elderly people, and to analyze the variables to impact on their depression. The study data were analyzed descriptive analysis, t-test, ANOVA, Pearson’s Correlation Coefficient, and multiple regression analysis. The most influential variables on the elderly depression were self-esteem with 27.9% of explanatory power (β=-.318, p<.001), followed by life satisfaction with 5.5%(β=-.248, p<.001), happiness on aging 4.1%((β=-.200, p<.001),",
+   "excerpt": "thesis, Hanyang University, 2012. - [32] K.\nPark, Y.\nPark, Y. Yum, “The Influence of the Patterns of Intergenerational Exchange on the Depressive Symptom of Rural Elderly”, Korean Journal of Gerontological Social Welfare, Vol."
+  },
+  {
+   "eid": "E4",
+   "abstract": "이와 같은 결과를 바탕으로 다음과 같은 제언을 할 수 있다. 첫째, 건강 수준의 취약집단 인 여성노인을 위한 특화된 정책이 필요하다. 둘째, 건강 수준이 낮은 저소득, 저학력 노인 집단의 건강 수준을 끌어올리기 위한 특화된 정책이 필요하다. 셋째, 노인들의 건강에 영향 을 미치는 가정생활 만족도를 높이기 위한 새로운 접근이 요구된다.",
+   "excerpt": "[표]\n적 지지에 대한 만족도가 높은 노인일수록 낮은 수준의 우울을 경험한다고 하였고, 윤현숙 외(2009) 노인의 우울감은 자녀로부터 받는 정서적 도구적 재정적 지지를 포함한 모든 사회적 지지 의 영향을 받는다고 분석했다. 이러한 선행연구를 뒷받침하는 결과로서 가족 안에서의 지 지가 노인의 우울감에 미치는 효과가 매우 유의미하게 나타나는 것임을 알 수 있다.\n\n|변 수| |Model 1<br><br>B (S.E)<br><br>β|Model 2<br><br>B (S.E.)<br><br>β|Model 3<br><br>B (S.E.)<br><br>β|Model 4 B (S.E.) β<br><br>|\n|---|---|---|---|---|---|\n|인구 학적 특성|성별<br><br>연령|5.761 (.767)<br><br>.199***<br><br>.134 (.045)<br><br>.079**|3.615 (.815)<br><br>.125***<br><br>.033 (.046)<br><br>.019|3.133 (.834)<br><br>.108***<br><br>.028 (.046)<br><br>.017|.241 (.838)<br><br>.008<br><br>.013 (.045)<br><br>.008|\n|사회 경제적 특성|교육<br><br>소득| |-.307<br><br>(.069)<br><br>-.131***<br><br>-.1549<br><br><br>(.284)<br><br>-.148***|-.305<br><br>(.069)<br><br>-.131***<br><br>-1.492<br><br><br>(.285)<br><br>-.142***|-.296<br><br>(.066)<br><br>-.127***<br><br>-.694<br><br><br>(.283)<br><br>-.066*|\n|건강 위험 행동|흡연<br><br>음주| | |.741 (.555)<br><br>.035<br><br>-1.397 (.558)<br><br>-.066*|.211<br><br>(.533)<br><br>.010<br><br>-1.337<br><br>(.534)<br><br><br>-.063*|\n|사회적 지지망|가족 관계 만족도| | | |-.610 (.056)<br><br>-.305***|\n|R Adjusted R R Change F(Sig)<br><br><br><br><br><br>|"
+  },
+  {
+   "eid": "E5",
+   "abstract": "",
+   "excerpt": "학력에 따른 교정점수를 부여하고, 만성질환은 질환을 앓았거나 현재 앓고 있는 경우로 의사에 의해 진단받은 만성질병(암, 관 절염, 요통, 당뇨병, 고혈압, 뇌졸중, 심장병)을 보고하게 하였고 그 합을 이용하였다.<br><br>2.3.5 지각된 사회적 지지<br><br>지각된 사회적 지지는 Zimet 등[21]의 12문항 multidimensional scale of perceived social support 도구 로 측정하였다. 이 도구는 지지를 받는 타인으로 가족, 친 구, 그리고 유의미한 주변인 세 그룹으로 설문내용이 구 성되어 있으며, 각 문항은 Likert 5점 척도로 평가하여 점 수가 높을수록 노인들이 타인으로부터 받는 사회적 지지 가 긍정적임을 의미한다. 본 연구에서 이 도구의 신뢰도 분석결과 Cronbach's Alpha 내적 일치도는 .883으로 나 타났다.<br><br>2.4 자료 분석 수집된 자료는 SPSS/WIN 21.0 프로그램을 이용하여<br><br>다음과 같이 분석하였다. 대상자의 일반적 특성, 건강관 련 특성, 주관적 건강상태, 일상생활능력, 우울, 지각된 사회적 지지, 인지능력, 성공적 노화에 대한 기술통계를 실시하였다. 성공적 노화와 관련된 요인을 파악하기 위 해 일반적 특성과 건강관련 특성에 따른 성공적 노화의 차이를 t-test, ANOVA로 분석하였고, Scheffe test로 사 후분석을 시행하였으며, 연구변수들 간의 관계는 Pearson's correlation coefficient로 분석하였다. 대상자의 성공적 노화에 미치는 영향을 파악하기 위해 Multiple regression 을 적용하였다.<br><br>3. 연구 결과<br><br><br>3.1 일반적 특성과 건강관련 특성<br><br>본 연구대상자의 일반적 특성을 살펴보면 성별은 여 자가 167명(83.5%), 남자가 33명(16.5%)로 여성노인이<br><br>더 많았다."
+  },
+  {
+   "eid": "E6",
+   "abstract": "Purpose:The purpose of this study was to identify the trajectories of depressive symptoms and the predictive factors that determine the trajectories among elderly cancer survivors in South Korea.Methods:This study was a secondary data analysis using the Korean Longitudinal Study of Ageing (KLoSA). The inclusion criteria were adults who were aged 65 years or older, diagnosed with cancer, and participated in the panel survey at least three times. Data were analyzed using SPSS 25.0 and STATA 16.0 for Group-Based Trajectory Model. Results:This study comprised 197 participants.",
+   "excerpt": "연구변수 본 연구에서 분석에 활용된 노인 암 경험자의 우울 궤적과 관련\n\n우울과 관련된 사회적 중재 요구가 증가하며 노인의 우울과 관 련된 연구가 활발히 진행되었고, 우울의 다양한 예측요인이 선행 연구를 통해 보고되었다.11) 노인의 우울은 연령,12) 소득 수준11) 등의 인구학적 측면과 배우자 유무,13) 가족 관계,14) 사회적 관계13) 등 사 회적 지지 측면, 만성질환의 수,15) 주관적 건강상태,16) 인지기능17)등 질병 및 건강 행태 측면과 삶의 만족도18) 측면에 영향을 받는 것으 로 나타났다."
+  }
+ ]
+}
