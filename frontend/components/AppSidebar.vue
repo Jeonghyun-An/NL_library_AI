@@ -955,16 +955,17 @@ onBeforeUnmount(() => {
 .skx-history__empty-box .skx-history__start {
   margin: 0 0.4rem;
 }
+/* 빈 상태의 유일한 할 일이라 피그마 알약(11px)보다 한 단계 크게 — 글 13px·안쪽 여백 넓게(사용자 요청 2026-10-16) */
 .skx-history__start {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.1rem 0.3rem;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
   border: none;
   border-radius: var(--skx-radius-sm);
   background: var(--skx-frost-bg);
-  font-size: 0.55rem;
-  font-weight: 500;
+  font-size: 0.65rem;
+  font-weight: 600;
   line-height: 1.4;
   color: var(--skx-gray-1);
   white-space: nowrap;
@@ -972,8 +973,8 @@ onBeforeUnmount(() => {
   transition: color 0.15s;
 }
 .skx-history__start-chev {
-  width: 0.25rem;
-  height: 0.4rem;
+  width: 0.3rem;
+  height: 0.48rem;
   fill: var(--skx-gray-1);
   transition: fill 0.15s;
 }
