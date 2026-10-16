@@ -4,7 +4,8 @@
 - 라우트가 잡지 않은 예외 → 500 {"detail": INTERNAL_ERROR_DETAIL, "code": "internal_error"}. 스택은 로그에만 남긴다 —
   전에는 Starlette 기본 응답 'Internal Server Error'(JSON 아닌 글)가 그대로 화면에 갔다.
 - 검색 기반(Milvus·gRPC·연결/시간 초과) 연결 장애 → 503 {"detail": SEARCH_UNAVAILABLE_DETAIL, "code": "search_unavailable"}.
-  Milvus 가 돌려준 그 밖의 오류(컬렉션 없음·스키마·자료형 불일치 등)는 기다려도 낫지 않아 500(internal_error)이다.
+  Milvus 가 돌려준 그 밖의 오류(컬렉션 없음·스키마·자료형 불일치 등)는 대개 기다려도 낫지 않아 500(internal_error)이다
+  (기다리면 낫는 서버 오류 — 재시작 직후 준비 안 됨·속도 제한 — 도 지금은 500 이 되는 한계는 is_search_outage 에 적었다).
 - 원문 저장소(MinIO) 연결 장애 → 503 {"detail": STORAGE_UNAVAILABLE_DETAIL, "code": "storage_unavailable"}
 - 작업 큐(Celery 브로커)에 넣지 못함 → 503 {"detail": QUEUE_UNAVAILABLE_DETAIL} — 딥리서치(api/research.py
   _broker_unavailable)와 같은 문구·꼴이다.
@@ -130,8 +131,12 @@ def is_search_outage(exc: BaseException) -> bool:
     - Milvus 연결 실패 — MilvusUnavailableException·ConnectError, 연결 실패 code(2) 의 MilvusException
     - grpc UNAVAILABLE·DEADLINE_EXCEEDED — 날 grpc.RpcError(pymilvus 는 기한 초과를 재시도 없이 그대로 다시 던진다)이든,
       재시도 끝에 pymilvus 가 감싼 MilvusException 이든. 채널 대기 시간 초과(grpc.FutureTimeoutError)도 연결 장애다
-    그 밖의 MilvusException(컬렉션 없음·스키마 준비 안 됨·자료형 불일치·인자 오류 ParamError 등)과 다른 grpc 상태는 기다려도
-    낫지 않는다 — 503 으로 가리면 '잠시 뒤 다시'가 영영 낫지 않으니 500 으로 보낸다(search_outage_as_503 이 ERROR 로그를 남긴다)."""
+    그 밖의 MilvusException(컬렉션 없음·스키마 준비 안 됨·자료형 불일치·인자 오류 ParamError 등)과 다른 grpc 상태는 대개
+    기다려도 낫지 않는다 — 503 으로 가리면 '잠시 뒤 다시'가 영영 낫지 않으니 500 으로 보낸다(search_outage_as_503 이 ERROR
+    로그를 남긴다).
+    한계: 기다리면 낫는 서버 오류 중에도 연결 실패가 아닌 것은 500 이 된다 — Milvus 재시작 직후 서비스가 아직 준비되지
+    않았다는 오류(연결은 됐는데 서버가 돌려준 not ready 류 MilvusException), 속도 제한(rate limit) 오류,
+    grpc RESOURCE_EXHAUSTED 등. 지금은 오류 번호별로 가르지 않아 이것들도 '잠시 뒤 다시' 대신 internal_error 로 간다."""
     if isinstance(exc, (ConnectionError, TimeoutError, httpx.TransportError)):
         return True
     if isinstance(exc, _types(_milvus_unavailable, _milvus_connect_error, _grpc_future_timeout)):

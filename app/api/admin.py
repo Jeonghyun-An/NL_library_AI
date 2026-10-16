@@ -476,9 +476,11 @@ async def delete_all_embeddings(confirm: str):
         # 검색·적재가 없는 컬렉션을 물고 계속 실패한다
         indexer.forget_collection()
 
-    # 같은 이름의 빈 컬렉션(스키마·인덱스·load)을 곧바로 다시 만든다. 워커처럼 다른 프로세스가 쥔 핸들은 여기서 버릴 수
-    # 없지만, 그쪽 호출도 컬렉션을 이름으로 물으므로 다시 만든 컬렉션에 닿는다. 실패해도 Milvus 는 이미 비었으니 아래
-    # PostgreSQL 리셋은 그대로 한다 — 캐시를 버렸으므로 다음 검색·적재의 ensure_collection() 이 다시 만들어 본다
+    # 같은 이름의 빈 컬렉션(스키마·인덱스·load)을 곧바로 다시 만든다. 적재 워커(Celery)처럼 다른 프로세스가 쥔 핸들 캐시는
+    # 이 요청으로 버릴 수 없지만, 그쪽 호출도 컬렉션을 이름으로 물으므로 다시 만든 컬렉션에 닿는다. 실패해도 Milvus 는 이미
+    # 비었으니 아래 PostgreSQL 리셋은 그대로 한다 — 이 프로세스(API)는 캐시를 버렸으므로 다음 검색의 ensure_collection() 이
+    # 다시 만들어 본다. 적재 워커는 캐시한(지운) 핸들을 그대로 돌려받아 스스로 다시 만들지 않는다 — 그 전에 검색이 다시
+    # 만들어 두지 않으면 워커를 재시작해야 적재가 다시 만든다
     recreated = True
     try:
         indexer.ensure_collection()
@@ -502,7 +504,7 @@ async def delete_all_embeddings(confirm: str):
         db.close()
 
     if not recreated:
-        raise HTTPException(500, "임베딩은 지웠지만 Milvus 컬렉션을 다시 만들지 못했습니다. 다음 검색·적재 때 다시 만듭니다")
+        raise HTTPException(500, "임베딩은 지웠지만 Milvus 컬렉션을 다시 만들지 못했습니다. 다음 검색 때 다시 만듭니다(적재 워커는 재시작 뒤)")
     return {"milvus_deleted": milvus_count, "status": "ok"}
 
 

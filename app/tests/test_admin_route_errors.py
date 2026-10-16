@@ -211,7 +211,7 @@ class TestDeleteAllEmbeddings:
         resp = e.client.delete("/api/admin/embedding/all", params={"confirm": "yes"})
 
         assert resp.status_code == 500
-        assert resp.json() == {"detail": "임베딩은 지웠지만 Milvus 컬렉션을 다시 만들지 못했습니다. 다음 검색·적재 때 다시 만듭니다"}
+        assert resp.json() == {"detail": "임베딩은 지웠지만 Milvus 컬렉션을 다시 만들지 못했습니다. 다음 검색 때 다시 만듭니다(적재 워커는 재시작 뒤)"}
         # Milvus 는 이미 비었다 — PostgreSQL 도 리셋해 '적재됨'으로 남지 않게 한다
         assert ("delete", "book_sections") in e.session.ops and "commit" in e.session.ops
         # 캐시가 비어 있어 다음 ensure_collection() 이 다시 만들어 본다
