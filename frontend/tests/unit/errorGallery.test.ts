@@ -13,6 +13,7 @@ import {
   charCountState,
   charLimitMessage,
 } from "~/utils/apiErrors";
+import { CHAT_MAX_CHARS } from "~/utils/deepReadSse";
 import { rawCss } from "./helpers/themeCss";
 
 const root = resolve(__dirname, "../..");
@@ -243,11 +244,17 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(js.match(/\n {4}diff:/g)).toHaveLength(4);
     expect(tpl).toContain('<template v-if="s.diff">');
     expect(tpl).toContain("<dt>시안 대비</dt>");
-    // 제목·버튼은 딥리서치 화면과 같은 상수 — 실패의 [다시 시도] 글도 같은 함수(보고서 작성 단계에서 멈춤)
+    // 제목·설명·버튼은 딥리서치 화면과 같은 상수·함수 — 실패의 설명·[다시 시도] 글도 같은 함수(보고서 작성 단계에서 멈춤)
     expect(js).toContain("title: RESEARCH_STATE_TEXT.failedTitle,");
+    expect(js).toContain('message: researchFailedMessage("explored", true),');
     expect(js).toContain('retryLabel: researchRetryLabel("explored"),');
     expect(js).toContain("title: RESEARCH_STATE_TEXT.canceledTitle,");
+    expect(js).toContain("message: RESEARCH_STATE_TEXT.canceledMessage,");
     expect(js).toContain("action: { label: RESEARCH_STATE_TEXT.restart, href: \"#\" },");
+    // 실제 화면처럼 멈춘·취소한 연구는 카드 안의 compact 블록
+    expect(js).toMatch(/id: "researchFailed",[\s\S]*?compact: true,[\s\S]*?id: "researchCanceled",[\s\S]*?compact: true,[\s\S]*?id: "researchNotFound",/);
+    // 설명을 이 페이지에서 새로 짓지 않는다(실제 화면과 갈라지지 않게)
+    expect(js).not.toMatch(/message: "[^"]*(근거는 남아 있어요|이어 갈 수 없어요)/);
     expect(js).toContain("message: RESEARCH_STATE_TEXT.notFoundMessage,");
     expect(js).toContain("action: { label: \"연구 시작하기\", href: START_RESEARCH_HREF },");
     expect(js).toContain("deepResearchStartRoute()");
@@ -262,7 +269,8 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(researchVue).toContain(':title="RESEARCH_NOT_FOUND" :message="RESEARCH_STATE_TEXT.notFoundMessage"');
     expect(researchVue).toContain('{{ RESEARCH_STATE_TEXT.backToSearch }}');
     expect(researchVue).toContain(':title="RESEARCH_STATE_TEXT.failedTitle"');
-    expect(researchVue).toContain(':title="RESEARCH_STATE_TEXT.canceledTitle"');
+    expect(researchVue).toContain(':title="RESEARCH_STATE_TEXT.canceledTitle" :message="RESEARCH_STATE_TEXT.canceledMessage"');
+    expect(researchVue).toContain("researchFailedMessage(view.value.stage, canRetry.value, view.value.lastError)");
     expect(researchVue.match(/\{\{ RESEARCH_STATE_TEXT\.restart \}\}/g)).toHaveLength(2);
     expect(researchVue).toContain("researchRetryLabel(view.value?.stage)");
     expect(researchVue).not.toMatch(/연구가 도중에 멈췄습니다|취소된 연구입니다|찾을 수 없는 연구입니다/);
@@ -282,12 +290,33 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(js).toContain('const MISSING_PATH = "/dev/없는-주소";');
   });
 
-  it("아직 사실이 아닌 설명을 싣지 않는다 — 검색 60초 제한(호출부가 아직 넘기지 않는다)·재연결 포기(백오프로 계속 다시 시도한다)", () => {
-    expect(galleryVue).not.toContain("60초 제한");
+  it("사실이 아닌 설명을 싣지 않는다 — 통합 뒤 실제 화면이 공통 컴포넌트를 쓴다", () => {
+    // 재연결은 포기하지 않는다(백오프로 계속 다시 시도한다)
     expect(galleryVue).not.toContain("재연결을 거듭해도 붙지 못함");
-    // 대부분의 화면은 아직 이 컴포넌트를 쓰지 않는다 — '쓰이는 곳' 이 아니라 같은 상황이 '생기는 곳'
+    // 통합 전 설명 — 쓰는 화면이 전역 오류 화면뿐·딥리서치는 rs-card·실패 설명에 last_error 원문·백엔드 반영 전·입력창에 maxlength 없음
+    for (const stale of ["전역 오류 화면(①)뿐", "차례로 이 컴포넌트로 옮길", "rs-card 로 그립니다", "그대로 붙인다", "백엔드 반영 뒤", "maxlength 가 없다", "대부분 아직"]) {
+      expect(galleryVue, stale).not.toContain(stale);
+    }
+    // 실제로 그 컴포넌트를 쓰지 않는 자리(글자 수 없는 입력·상태 블록이 아닌 쓰기 실패)를 '생기는 곳'으로 들지 않는다
+    for (const wrong of ["연구 계획 하위질문 고치기(300자)", "읽기 목록 메모(1000자)", "연구 작업대 저장", "모든 상태 블록", "모든 줄 안내"]) {
+      expect(galleryVue, wrong).not.toContain(wrong);
+    }
     expect(tpl).not.toContain("쓰이는 곳");
-    expect(tpl).toContain("지금 이 컴포넌트를 실제로 쓰는 화면은 전역 오류 화면(①)뿐입니다.");
+    expect(tpl).toContain("각 항목의 ‘생기는 곳’은 그 모양이 실제로 나오는 대표 화면입니다.");
+    // 검색·관련 자료의 60초 제한은 호출부가 넘긴다(useApi 의 API_SEARCH_TIMEOUT_MS)
+    expect(js).toContain("60초 제한 — API_SEARCH_TIMEOUT_MS");
+    expect(read("composables/useApi.ts")).toContain("export const API_SEARCH_TIMEOUT_MS = 60_000;");
+    expect(read("pages/papers/index.vue")).toContain("timeout: API_SEARCH_TIMEOUT_MS,");
+  });
+
+  it("DeepRead — 답을 받지 못한 말풍선은 '다시 시도 있음' 줄 안내, 질문 글자 수는 2000자", () => {
+    expect(js).toMatch(/retry: \{[\s\S]*?"DeepRead 대화 — 답을 받지 못한 말풍선"[\s\S]*?\},\r?\n {2}busy:/);
+    expect(js).toContain("`DeepRead 질문(${CHAT_MAX_CHARS}자)`");
+    expect(CHAT_MAX_CHARS).toBe(2000);
+    // 실제 DeepRead 화면이 그 컴포넌트를 쓴다
+    const chat = read("components/BookChat.vue");
+    expect(chat).toMatch(/<SkxInlineError\s+class="skx-chat-msg__failed"/);
+    expect(chat).toContain(':max="CHAT_MAX_CHARS"');
   });
 
   it("① 액자 속 배경 띠가 굵어 보이는 까닭(실제 창 크기 기준)을 캡션에 적는다", () => {
@@ -362,6 +391,16 @@ describe("CSS — 새 표시도 '[S] 공통 오류·빈 상태' 구역 안에", 
 
   it("preview 오류 화면은 화면 높이 대신 액자 높이", () => {
     expect(code).toMatch(/\.skx-error-page--preview \{\s*min-height: 0;\s*height: 100%;/);
+  });
+
+  it("슬롯 버튼이 일하는 중(aria-disabled — 딥리서치 [같은 질문으로 다시 시작])도 [다시 시도] 재시도 중과 같은 모양", () => {
+    expect(code).toMatch(/\.skx-state__retry\[aria-disabled="true"\],\s*\.skx-state__action\[aria-disabled="true"\] \{\s*opacity: 0\.55;\s*cursor: progress;/);
+    expect(read("pages/research/[id].vue")).toMatch(/class="skx-state__action"\s+:aria-disabled="restarting \? 'true' : undefined"/);
+  });
+
+  it("낡은 주석이 지운 규칙을 가리키지 않는다 — DeepRead 말풍선의 .skx-retry 규칙은 없어졌다", () => {
+    expect(rawCss).not.toContain(".skx-chat-msg--ai .skx-retry");
+    expect(rawCss).not.toMatch(/실패 안내는 \.skx-retry/);
   });
 
   it("슬롯 링크(.skx-state__action)는 지나간·마우스 올린 링크도 같은 색 — 공통 리셋 a:hover 를 이긴다(보조·주 버튼 둘 다)", () => {

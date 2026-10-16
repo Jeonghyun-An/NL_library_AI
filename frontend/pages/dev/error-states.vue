@@ -3,11 +3,12 @@
      메뉴에 잇지 않고 검색엔진에도 싣지 않는다(robots noindex,nofollow).
      표시는 모두 실제 컴포넌트다(SkxErrorPage·SkxErrorState·SkxInlineError·SkxConnectionBanner·SkxCharCount) — 복제 마크업이 없어
      style_skovix.css 의 '[S] 공통 오류·빈 상태' 구역을 고치면 이 페이지와 실제 화면이 함께 바뀐다.
-     문구도 여기 새로 짓지 않는다 — 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage)에 본보기 오류를 넣어 만든 글과
-     상수(ERROR_PAGE_TEXT·CONNECTION_HINTS·AI_SUMMARY_FAILED·charLimitMessage·RESEARCH_STATE_TEXT)를 그대로 보여 문구가 바뀌면 같이 바뀐다.
+     문구도 여기 새로 짓지 않는다 — 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage·researchFailedMessage)에 본보기 오류를 넣어
+     만든 글과 상수(ERROR_PAGE_TEXT·CONNECTION_HINTS·AI_SUMMARY_FAILED·charLimitMessage·RESEARCH_STATE_TEXT)를 그대로 보여 문구가 바뀌면 같이 바뀐다.
      화면마다 다른 대체 문구('검색하지 못했어요' 등)와 실제 화면에 아직 없는 빈 연구 안내만 본보기로 적는다.
+     항목마다 '생기는 곳'은 그 모양이 실제로 나오는 대표 화면이다(공통 컴포넌트를 쓰는 곳 — 2~4곳).
      ③ 딥리서치 상태는 후배 시안의 네 변형(실패·취소·찾을 수 없음·결과 없음)을 실제 동작(pages/research/[id].vue·api/research.py)에 맞춘 것 —
-     항목마다 '시안 대비'에 바꾼 점을 적는다.
+     딥리서치 화면과 같은 상수·함수를 읽고, 항목마다 '시안 대비'에 바꾼 점을 적는다.
      [다시 시도] 는 누르면 잠깐 재시도 중 모양으로 바뀌었다 돌아오고, [다시 연결] 은 다시 연결하는 중 → 붙음(띠가 사라짐) → 다시 끊김으로
      돈다(요청은 보내지 않는다).
      이 페이지 자체의 틀(.dev-*)은 아래 scoped 스타일이고 디자인 대상이 아니다 -->
@@ -22,10 +23,7 @@
             디자인은 <code>assets/css/style_skovix.css</code> 의 <code>[S] 공통 오류·빈 상태</code> 구역 클래스에 입히면
             실제 화면 전체에 반영됩니다.
           </p>
-          <p class="dev-gallery__lead">
-            지금 이 컴포넌트를 실제로 쓰는 화면은 전역 오류 화면(①)뿐입니다. 각 항목의 ‘생기는 곳’은 같은 상황이 생기는 실제 화면이고,
-            차례로 이 컴포넌트로 옮길 자리입니다.
-          </p>
+          <p class="dev-gallery__lead">각 항목의 ‘생기는 곳’은 그 모양이 실제로 나오는 대표 화면입니다.</p>
         </div>
         <div class="dev-gallery__theme">
           <p :id="themeLabelId" class="dev-gallery__theme-label">테마</p>
@@ -281,9 +279,20 @@ import {
   type ConnectionState,
   type ErrorStateKind,
 } from "~/utils/apiErrors";
+import { SEARCH_QUERY_MAX } from "~/utils/bookErrors";
+import { DEEP_RESEARCH } from "~/utils/brand";
+import { CHAT_MAX_CHARS } from "~/utils/deepReadSse";
 import { deepResearchStartRoute } from "~/utils/landingStart";
-import { RESEARCH_STATE_TEXT, researchErrorMessage, researchRetryLabel } from "~/utils/researchErrors";
+import {
+  LOST_AFTER_DROPS,
+  RESEARCH_STATE_TEXT,
+  researchErrorMessage,
+  researchFailedMessage,
+  researchRetryLabel,
+} from "~/utils/researchErrors";
+import { QUESTION_MAX } from "~/utils/researchInput";
 import { THEMES, THEME_LABELS } from "~/utils/theme";
+import { WORK_STREAM_LOST_MS } from "~/utils/workErrors";
 
 useHead({
   title: "오류 화면 모음 — SKOVIX",
@@ -296,7 +305,7 @@ const themeLabelId = `dev-theme-${uid}`;
 const typeId = `dev-type-${uid}`;
 const countId = `dev-count-${uid}`;
 
-/** 항목 설명 — 생기는 곳(같은 상황이 생기는 실제 화면 — 대부분 아직 이 컴포넌트를 쓰지 않는다)·디자인 훅(클래스·속성)·문구 원문 */
+/** 항목 설명 — 생기는 곳(그 모양이 실제로 나오는 대표 화면 2~4곳)·디자인 훅(클래스·속성)·문구 원문 */
 interface SpecInfo {
   name: string;
   uses: string[];
@@ -313,7 +322,7 @@ const START_RESEARCH_HREF = (() => {
 })();
 
 // 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage)에 넣어 볼 본보기 오류 — 문구를 여기 적지 않고 규칙이 만든 글을 보인다.
-// network 는 응답 없이 끝난 요청(ofetch FetchError — 상태 없음), 나머지는 상태 코드만 든 응답, tooLong 은 FastAPI 422 검증 실패(검색어 500자 초과)
+// network 는 응답 없이 끝난 요청(ofetch FetchError — 상태 없음), 나머지는 상태 코드만 든 응답
 const SAMPLE = {
   network: { name: "FetchError" },
   timeout: { status: 504 },
@@ -322,7 +331,6 @@ const SAMPLE = {
   notFound: { status: 404 },
   // 백엔드 오류 code — 서버 detail(옛 말투) 대신 CODE_MESSAGES 의 문구를 쓴다
   searchDown: { status: 503, data: { detail: "검색 서버가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요", code: "search_unavailable" } },
-  tooLong: { status: 422, data: { detail: [{ type: "string_too_long", ctx: { max_length: 500 } }] } },
 } as const;
 
 /** 상태 블록의 설명 줄 — 제목이 이미 '무엇을 못 했는지'라 규칙이 붙이는 이유(ERROR_HINTS)만 둔다(대체 문구를 비워 넘긴다) */
@@ -407,7 +415,11 @@ const STATE_SAMPLES: StateSample[] = [
     kind: "error",
     title: "논문 정보를 불러오지 못했어요",
     retry: true,
-    uses: ["논문 상세 — 정보 읽기 실패", "딥리서치 — 연구 불러오기 실패", "연구 작업대 — 이어간 연구 불러오기 실패"],
+    uses: [
+      "딥리서치 — 멈춘 연구 카드(③ 실패 — kind 를 주지 않아 기본값)",
+      "전역 오류 화면 — 화면을 그리지 못함(① 치명 오류)",
+      "kind 를 errorKind 로 넘기는 화면(검색·상세·작업대)은 이 갈래가 아니라 아래 network·timeout·busy·server 로 나온다",
+    ],
     hooks: [".skx-state", ".skx-state--error", '[data-tone="error"]', ".skx-state__title", ".skx-state__retry"],
   }),
   stateSample({
@@ -417,17 +429,26 @@ const STATE_SAMPLES: StateSample[] = [
     title: "검색하지 못했어요",
     message: reasonOf(SAMPLE.network),
     retry: true,
-    uses: ["도서·논문 검색 결과", "논문 상세", "딥리서치 화면 불러오기"],
+    uses: [
+      "소장자료·논문 검색 결과",
+      "논문·도서 상세 — 정보·관련 자료 읽기",
+      "딥리서치 — 연구 불러오기",
+      "연구 작업대 — 주제 카드·참고문헌 후보·보고서 불러오기",
+    ],
     hooks: [".skx-state--network", ".skx-state__msg", ".skx-state__icon(아이콘 원 — 실패 갈래는 경고 삼각형)"],
   }),
   stateSample({
     id: "timeout",
     name: "시간 초과",
     kind: errorKind(SAMPLE.timeout),
-    title: "검색 기록을 불러오지 못했어요",
+    title: "관련 자료를 불러오지 못했어요",
     message: reasonOf(SAMPLE.timeout),
     retry: true,
-    uses: ["상세·목록 읽기 — GET 30초 제한(useApi)", "게이트웨이 504"],
+    uses: [
+      "논문·도서 상세·딥리서치 — 정보 읽기(GET 30초 제한 — useApi)",
+      "소장자료·논문 검색 결과·상세의 관련 자료(60초 제한 — API_SEARCH_TIMEOUT_MS)",
+      "게이트웨이 504",
+    ],
     hooks: [".skx-state--timeout", '[data-kind="timeout"]'],
   }),
   stateSample({
@@ -437,7 +458,7 @@ const STATE_SAMPLES: StateSample[] = [
     title: "검색하지 못했어요",
     message: reasonOf(SAMPLE.busy),
     retry: true,
-    uses: ["딥리서치 시작·승인 — 공유 대기열이 찼을 때(429)", "작업 큐에 연결하지 못함(503)"],
+    uses: ["소장자료·논문 검색 결과 — 요청 몰림(429·503)", "논문·도서 상세·관련 자료 — 503", "딥리서치·연구 작업대 불러오기 — 503"],
     hooks: [".skx-state--busy", '[data-kind="busy"]'],
   }),
   stateSample({
@@ -447,17 +468,21 @@ const STATE_SAMPLES: StateSample[] = [
     title: "논문 정보를 불러오지 못했어요",
     message: reasonOf(SAMPLE.server),
     retry: true,
-    uses: ["논문 상세", "검색 결과", "연구 작업대 저장"],
+    uses: ["논문·도서 상세 — 정보 읽기(5xx)", "소장자료·논문 검색 결과", "연구 작업대 — 주제 카드·참고문헌 후보·보고서 불러오기"],
     hooks: [".skx-state--server", '[data-kind="server"]'],
   }),
   stateSample({
     id: "searchDown",
-    name: "서버가 알린 장애(code) — 백엔드 반영 뒤",
+    name: "서버가 알린 장애(code)",
     kind: errorKind(SAMPLE.searchDown),
     title: "검색하지 못했어요",
     message: reasonOf(SAMPLE.searchDown),
     retry: true,
-    uses: ["검색 서버(Milvus·임베딩) 장애 — 503 search_unavailable", "원문 저장소 장애 — 503 storage_unavailable", "잡지 않은 서버 예외 — 500 internal_error"],
+    uses: [
+      "소장자료·논문 검색 결과 — 검색 서버(Milvus·임베딩) 장애(503 search_unavailable)",
+      "상황별 추천 — 같은 장애(503 search_unavailable)",
+      "어느 화면이든 잡지 않은 서버 예외(500 internal_error — kind 는 server, 설명 줄은 같은 규칙)",
+    ],
     hooks: [".skx-state--busy", "설명 줄은 apiErrors 의 CODE_MESSAGES(서버 detail 은 쓰지 않는다)"],
   }),
   stateSample({
@@ -467,7 +492,7 @@ const STATE_SAMPLES: StateSample[] = [
     title: researchErrorMessage(SAMPLE.notFound, ""),
     message: RESEARCH_STATE_TEXT.notFoundMessage,
     action: { label: RESEARCH_STATE_TEXT.backToSearch, href: "/papers" },
-    uses: ["딥리서치 — 없는 연구 주소", "논문 상세 — 없는 논문 주소"],
+    uses: ["딥리서치 — 없는 연구 주소", "논문·도서 상세 — 없는 주소", "연구 작업대 — 인용의 근거 기록을 찾지 못함(compact)"],
     hooks: [".skx-state--notFound", '[data-tone="neutral"]', ".skx-state__action(슬롯 링크 — 버튼 줄의 첫 버튼이라 주 버튼 모양)"],
   }),
   stateSample({
@@ -476,7 +501,11 @@ const STATE_SAMPLES: StateSample[] = [
     kind: "empty",
     title: "검색 결과가 없어요",
     message: "다른 검색어로 다시 검색해 주세요.",
-    uses: ["논문 검색 결과 0건", "소장자료 검색 0건", "빈 읽기 목록"],
+    uses: [
+      "소장자료·논문 검색 결과 0건",
+      "논문·도서 상세 — 관련 자료·AI 큐레이션 없음(compact)",
+      "연구 작업대 — 후보 논문·주제 카드·목차 없음",
+    ],
     hooks: [".skx-state--empty", '[data-tone="neutral"]', 'role="status"'],
   }),
   stateSample({
@@ -495,7 +524,11 @@ const STATE_SAMPLES: StateSample[] = [
     message: reasonOf(SAMPLE.network),
     retry: true,
     busy: true,
-    uses: ["[다시 시도]를 누르고 응답을 기다리는 동안 — 모든 상태 블록"],
+    uses: [
+      "[다시 시도]를 누르고 응답을 기다리는 동안 — 논문 상세·관련 자료",
+      "출처 인용 창 — 인용 정보",
+      "딥리서치 — 연구 불러오기 실패·멈춘 연구 카드",
+    ],
     hooks: ['.skx-state__retry[aria-disabled="true"]', '[aria-busy="true"]'],
   }),
   stateSample({
@@ -506,12 +539,18 @@ const STATE_SAMPLES: StateSample[] = [
     message: reasonOf(SAMPLE.network),
     compact: true,
     retry: true,
-    uses: ["연구 작업대 — 인용의 원문 대목", "카드·옆 칸처럼 이미 틀이 있는 자리"],
+    uses: [
+      "연구 작업대 — 인용의 원문 대목",
+      "논문·도서 상세 — 관련 자료",
+      "출처 인용 창 — 인용 정보",
+      "딥리서치 — 멈춘·취소한 연구 카드(③)",
+    ],
     hooks: [".skx-state--compact"],
   }),
 ];
 
-// 후배 시안 'DR/상태 안내'의 네 변형을 실제 동작에 맞춘 것 — 제목·버튼은 실제 화면(pages/research/[id].vue)과 같은 상수,
+// 후배 시안 'DR/상태 안내'의 네 변형을 실제 동작에 맞춘 것 — 제목·설명·버튼은 실제 화면(pages/research/[id].vue)과 같은 상수·함수
+// (RESEARCH_STATE_TEXT·researchFailedMessage·researchRetryLabel). 멈춘·취소한 연구는 실제 화면처럼 카드 안의 compact 블록이다.
 // 실패의 다시 시도 갈래는 api/research.py retry_research(보고서 작성 단계에서 멈춘 연구만 체크포인트로 이어 가고, 계획 단계 실패는 새 연구)
 const RESEARCH_SAMPLES: StateSample[] = [
   stateSample({
@@ -519,25 +558,34 @@ const RESEARCH_SAMPLES: StateSample[] = [
     name: "실패 — 보고서 작성 중 멈춤",
     kind: "error",
     title: RESEARCH_STATE_TEXT.failedTitle,
-    message: "탐색에서 모은 근거는 남아 있어요.\n보고서 작성부터 다시 시작할 수 있어요.",
+    // 보고서 작성 단계(stage explored)에서 멈춘, 계획이 있는 연구 — 실제 화면은 서버 last_error 중 알아보는 사유만 둘째 줄에 넣는다
+    message: researchFailedMessage("explored", true),
     retry: true,
     retryLabel: researchRetryLabel("explored"),
-    uses: ["딥리서치 — 보고서를 쓰다 멈춘 연구(stage explored)"],
-    hooks: [".skx-state--error", '[data-tone="error"]', ".skx-state__retry(retryLabel)"],
+    compact: true,
+    uses: ["딥리서치 — 보고서를 쓰다 멈춘 연구(stage explored) — 머리 아래(진행 막대 자리) 카드"],
+    hooks: [".skx-state--error", '[data-tone="error"]', ".skx-state--compact", ".skx-state__retry(retryLabel)"],
     diff:
-      "제목은 실제 화면 문구. [문의하기]는 뺐다 — 앱에 문의 창구가 없다. [다시 시도] 글은 멈춘 단계를 따른다: 보고서 작성 중이면 '보고서 작성부터 다시 시도'(탐색 결과로 이어 감), " +
-      "탐색 중이면 '다시 시도'(승인한 계획으로 탐색부터 다시), 계획 단계에서 멈췄으면 다시 시도할 수 없어 '같은 질문으로 다시 시작'(새 연구)만 둔다. " +
-      "실제 화면은 설명 줄에 서버가 남긴 멈춘 까닭(last_error — 예외 원문일 수 있다)을 그대로 붙인다 — 이 컴포넌트로 옮길 때 이 설명으로 바꾼다.",
+      "제목은 실제 화면 문구. [문의하기]는 뺐다 — 앱에 문의 창구가 없다. 설명과 [다시 시도] 글은 멈춘 단계를 따른다: 보고서 작성 중이면 " +
+      "'보고서 작성부터 다시 시도'(탐색 결과로 이어 감), 탐색 중이면 '다시 시도'(승인한 계획으로 탐색부터 다시), 계획 단계에서 멈췄으면 " +
+      "다시 시도할 수 없어 '같은 질문으로 다시 시작'(새 연구)만 둔다. 서버가 남긴 멈춘 까닭(last_error — 예외 원문일 수 있다)은 붙이지 않고, " +
+      "알아보는 사유(시간 상한·응답 없는 작업 회수·모든 하위질문 실패)만 해요체 한 줄로 바꿔 둘째 줄에 넣는다.",
   }),
   stateSample({
     id: "researchCanceled",
     name: "취소",
     kind: "canceled",
     title: RESEARCH_STATE_TEXT.canceledTitle,
-    message: "취소한 연구는 이어 갈 수 없어요.\n같은 질문으로 새 연구를 시작할 수 있어요.",
+    message: RESEARCH_STATE_TEXT.canceledMessage,
     action: { label: RESEARCH_STATE_TEXT.restart, href: "#" },
-    uses: ["딥리서치 — 사용자가 취소한 연구(계획을 세우는 중·승인 대기·대기열·진행 중 어디서든)"],
-    hooks: [".skx-state--canceled", '[data-tone="neutral"]', 'role="status"'],
+    compact: true,
+    uses: ["딥리서치 — 사용자가 취소한 연구(계획을 세우는 중·승인 대기·대기열·진행 중 어디서든) — 머리 아래 카드"],
+    hooks: [
+      ".skx-state--canceled",
+      '[data-tone="neutral"]',
+      'role="status"',
+      '.skx-state__action[aria-disabled="true"](새 연구를 만드는 동안 — aria-busy 와 함께)',
+    ],
     diff:
       "시안 제목 '연구가 중단되었어요' 대신 실제 화면 문구. [이어서 연구하기]·'중단된 지점부터 이어서 진행'은 뺐다 — 취소한 연구는 이어 갈 수 없다" +
       "(다시 시도는 실패한 연구만 받는다). [새 연구 시작]은 실제 버튼 '같은 질문으로 다시 시작'(원래 질문·탐색 방식으로 새 연구를 만든다).",
@@ -552,7 +600,7 @@ const RESEARCH_SAMPLES: StateSample[] = [
     uses: ["딥리서치 — 없는 연구 주소(주소 오타)"],
     hooks: [".skx-state--notFound", '[data-tone="neutral"]'],
     diff:
-      "시안 제목 '연구를 불러오지 못했어요'는 불러오기 실패(네트워크·서버)와 헷갈려 실제 404 문구를 쓴다. '접근 권한이 없는 연구일 수 있어요'는 뺐다 — " +
+      "시안 제목 '연구를 불러오지 못했어요'는 실제 화면의 불러오기 실패(네트워크·서버) 제목이라 헷갈려 실제 404 문구를 쓴다. '접근 권한이 없는 연구일 수 있어요'는 뺐다 — " +
       "연구는 주소만 알면 누구나 연다(권한 검사가 없다). 원인은 주소가 잘못된 경우다(연구를 지우는 기능은 없다 — 사이드바 전체 삭제도 기록만 지운다).",
   }),
   stateSample({
@@ -584,8 +632,9 @@ const STATE_SECTIONS = [
     id: "dev-sec-research",
     title: "③ 딥리서치 상태 (후배 시안 네 변형)",
     note:
-      "시안의 실패·취소·찾을 수 없음·결과 없음을 실제 동작에 맞춘 문구로 그렸습니다. 제목·버튼은 딥리서치 화면(pages/research/[id].vue)과 같은 상수입니다 — " +
-      "실제 화면은 아직 이 컴포넌트가 아니라 rs-card 로 그립니다. 항목마다 '시안 대비'에 바꾼 점을 적었습니다.",
+      "시안의 실패·취소·찾을 수 없음·결과 없음을 실제 동작에 맞춘 문구로 그렸습니다. 딥리서치 화면(pages/research/[id].vue)도 같은 컴포넌트에 " +
+      "같은 상수·함수(RESEARCH_STATE_TEXT·researchFailedMessage·researchRetryLabel)를 넘깁니다 — 멈춘·취소한 연구는 머리 아래(진행 막대 자리) 카드 안의 " +
+      "compact 블록, 없는 연구는 본문 전체 자리입니다. 결과 없음만 실제 화면에 없습니다. 항목마다 '시안 대비'에 바꾼 점을 적었습니다.",
     samples: RESEARCH_SAMPLES,
   },
 ];
@@ -596,27 +645,33 @@ const STATE_SECTIONS = [
 const AI_PARTIAL_TEXT =
   "검색된 논문들은 공공도서관 이용의 변화를 대출 기록과 이용자 설문으로 살핍니다. 대부분은 비대면 서비스가 늘면서 방문 이용이 줄었다고 보고하고, 일부 연구는 청소년 이용자의 열람실 이용이";
 
-const sampleQuery = ref("공공도서관 서비스 품질을 평가한 연구를 찾고 있어요. 이용자 만족도와 시설, 장서, 프로그램을 함께 본 연구면 좋겠어요… (500자를 넘는 긴 질문)");
+const sampleQuery = ref("공공도서관 서비스 품질을 평가한 연구를 찾고 있어요. 이용자 만족도와 시설, 장서, 프로그램을 함께 본 연구면 좋겠어요.");
 
 const INLINE_SAMPLES: Record<"basic" | "retry" | "busy", SpecInfo> = {
   basic: {
     name: "기본 — 검색 입력 상자 바로 아래",
     uses: [
-      "입력 상자 바로 아래 — 서버가 글자 수로 거절한 입력(422, 검색어 500자 초과)",
-      "입력창에 글자 수 제한(maxlength)이 들어가면 화면이 먼저 막아 거의 생기지 않는다",
+      `${DEEP_RESEARCH} 모드의 입력 상자 아래 — 질문 길이·연구 시작 실패(네트워크가 끊겼을 때의 문구)`,
+      "연구 계획·주제 카드 고치기 — 입력이 규칙에 맞지 않음(하위질문 개수·글자 수 등)",
+      "출처 인용 창 — 복사하지 못함",
     ],
     hooks: [".skx-inline-error", ".skx-inline-error__msg", 'role="alert"'],
-    texts: [apiErrorMessage(SAMPLE.tooLong, "검색하지 못했어요")],
+    // 연구 시작 요청이 서버에 닿지 못했을 때 — SearchPlusMenu 와 같은 규칙·대체 문구
+    texts: [researchErrorMessage(SAMPLE.network, `${DEEP_RESEARCH}를 시작하지 못했어요`)],
   },
   retry: {
     name: "다시 시도 있음 — AI 글 뒤에서 끊김",
-    uses: ["논문 검색 AI 요약", "논문 상세 AI 요약", "도서 추천 이유"],
-    hooks: [".skx-inline-error__retry", ".skx-chat-msg--ai .skx-inline-error(AI 말풍선 안)"],
+    uses: ["논문 검색·논문 상세 AI 요약", "도서 추천 이유", "사이드바 — 기록을 불러오지 못함", "DeepRead 대화 — 답을 받지 못한 말풍선"],
+    hooks: [".skx-inline-error__retry", ".skx-chat-msg--ai .skx-inline-error(DeepRead AI 말풍선 안 — 말풍선 글자색)"],
     texts: [AI_SUMMARY_FAILED, RETRY_TEXT],
   },
   busy: {
     name: "재시도 중",
-    uses: ["[다시 시도]를 누르고 응답을 기다리는 동안 — 모든 줄 안내"],
+    uses: [
+      "[다시 시도]를 누르고 응답을 기다리는 동안 — 사이드바 기록",
+      "연구 작업대 — 저장 뒤 화면을 새로 고치지 못한 단계",
+      "딥리서치 — 취소 뒤 정리 안내의 [다시 불러오기]",
+    ],
     hooks: ['.skx-inline-error__retry[aria-disabled="true"]', '[aria-busy="true"]'],
     texts: [apiErrorMessage(SAMPLE.network, "목록을 불러오지 못했어요"), RETRY_TEXT],
   },
@@ -641,8 +696,9 @@ const CONN_SAMPLES: (SpecInfo & { id: ConnSampleId })[] = [
     id: "lost",
     name: "연결하지 못함 + 다시 연결",
     uses: [
-      "딥리서치 진행 화면 — 다시 붙으려고 상태를 다시 읽었는데 그것도 실패해 다음 시도를 기다리는 동안(백오프로 계속 다시 시도한다)",
-      "[다시 연결] = 기다리지 않고 지금 다시 읽기(useResearch 의 resync)",
+      `딥리서치 진행 화면 — 연결 실패(스트림 끊김·상태 다시 읽기 실패)가 연달아 ${LOST_AFTER_DROPS}번 쌓였을 때(그 뒤에도 백오프로 계속 다시 시도해, 붙으면 띠가 걷힌다)`,
+      `연구 작업대 — 끊긴 뒤 ${WORK_STREAM_LOST_MS / 1000}초 안에 다시 붙지 못했을 때`,
+      "[다시 연결] = 기다리지 않고 지금 다시 붙기(딥리서치는 상태를 다시 읽은 뒤 — useResearch 의 reconnect)",
     ],
     hooks: [".skx-conn--lost", '[data-state="lost"]', ".skx-conn__icon(경고 삼각형)", ".skx-conn__retry", ".skx-conn--connected(붙음 — 보이지 않음)"],
     texts: [CONNECTION_HINTS.lost, CONNECTION_RETRY_LABEL],
@@ -653,11 +709,15 @@ const connState = reactive<Record<ConnSampleId, ConnectionState>>({ reconnecting
 
 // ── ⑥ 글자 수 ──
 
-/** 본보기 한도 — 딥리서치 질문·검색어의 서버 한도(max_length 500)와 같다(실제 그 입력창에는 maxlength 가 없다) */
+/** 본보기 한도 — 검색어·DeepResearch 질문의 한도(서버 max_length 500, 입력창 maxlength)와 같다 */
 const CHAR_MAX = 500;
 /** [N자로 맞추기] — 한도 가까이(기본 90%) 모양을 바로 볼 수 있는 길이 */
 const COUNT_NEAR_DEMO = 460;
-const COUNT_USES = ["연구 계획 하위질문 고치기(300자)", "작업대 주제 카드 제목·연구 질문 고치기", "읽기 목록 메모(1000자)"];
+const COUNT_USES = [
+  `소장자료·논문 검색어(${SEARCH_QUERY_MAX}자 — 소장자료 검색은 한도 가까이부터 보인다)`,
+  `${DEEP_RESEARCH} 질문(${QUESTION_MAX}자)`,
+  `DeepRead 질문(${CHAT_MAX_CHARS}자)`,
+];
 
 const COUNT_SAMPLES = [
   { length: 120, name: "평소" },
