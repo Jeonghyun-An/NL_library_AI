@@ -2,10 +2,13 @@
 import { describe, expect, it } from "vitest";
 import { ERROR_HINTS, httpStatus } from "~/utils/apiErrors";
 import {
+  RESEARCH_NOT_FOUND,
+  RESEARCH_STATE_TEXT,
   activeResearchId,
   detailMessage,
   pdfCheckProblem,
   researchErrorMessage,
+  researchRetryLabel,
   versionConflict,
   workErrorMessage,
 } from "~/utils/researchErrors";
@@ -212,5 +215,26 @@ describe("pdfCheckProblem", () => {
 
   it("확인 요청 자체가 실패하면 판단하지 않고 뷰어에 맡긴다", () => {
     expect(pdfCheckProblem(null)).toBeNull();
+  });
+});
+
+describe("딥리서치 화면의 상태 문구(RESEARCH_STATE_TEXT) — 해요체, 오류 화면 모음과 같은 상수", () => {
+  it("멈춘·취소한·찾을 수 없는 연구", () => {
+    expect(RESEARCH_NOT_FOUND).toBe("찾을 수 없는 연구예요");
+    expect(researchErrorMessage(fetchError(404), "실패")).toBe(RESEARCH_NOT_FOUND);
+    expect(RESEARCH_STATE_TEXT).toEqual({
+      failedTitle: "연구가 도중에 멈췄어요",
+      canceledTitle: "취소된 연구예요",
+      notFoundMessage: "주소가 잘못됐거나 지워진 연구예요.",
+      restart: "같은 질문으로 다시 시작",
+      backToSearch: "논문 검색으로 돌아가기",
+    });
+  });
+
+  it("[다시 시도] 글 — 보고서 작성 단계(explored)에서 멈췄으면 보고서 작성부터, 그 밖은 다시 시도", () => {
+    expect(researchRetryLabel("explored")).toBe("보고서 작성부터 다시 시도");
+    expect(researchRetryLabel("exploring")).toBe("다시 시도");
+    expect(researchRetryLabel(null)).toBe("다시 시도");
+    expect(researchRetryLabel(undefined)).toBe("다시 시도");
   });
 });

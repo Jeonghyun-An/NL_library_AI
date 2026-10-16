@@ -9,9 +9,9 @@
 
     <main class="rs-page" :class="{ 'has-progressbar': !!barView }">
       <div v-if="notFound" class="rs-card rs-state">
-        <h1 class="rs-state__title">찾을 수 없는 연구입니다</h1>
-        <p class="rs-muted">주소가 잘못됐거나 지워진 연구입니다.</p>
-        <NuxtLink to="/papers" class="rs-btn">논문 검색으로 돌아가기</NuxtLink>
+        <h1 class="rs-state__title">{{ RESEARCH_NOT_FOUND }}</h1>
+        <p class="rs-muted">{{ RESEARCH_STATE_TEXT.notFoundMessage }}</p>
+        <NuxtLink to="/papers" class="rs-btn">{{ RESEARCH_STATE_TEXT.backToSearch }}</NuxtLink>
       </div>
 
       <div v-else-if="loadError" class="rs-card rs-state">
@@ -126,17 +126,17 @@
                 </template>
               </SynthProgressCard>
               <div v-else-if="phase === 'failed'" class="rs-card rs-card--error">
-                <p class="rs-card__title">연구가 도중에 멈췄습니다</p>
+                <p class="rs-card__title">{{ RESEARCH_STATE_TEXT.failedTitle }}</p>
                 <p v-if="view.lastError" class="rs-muted">{{ view.lastError }}</p>
                 <div class="rs-card__actions">
                   <button v-if="canRetry" type="button" class="rs-btn" :disabled="busy" @click="retry">{{ retryLabel }}</button>
-                  <button v-else type="button" class="rs-btn" :disabled="restarting" @click="onRestart">같은 질문으로 다시 시작</button>
+                  <button v-else type="button" class="rs-btn" :disabled="restarting" @click="onRestart">{{ RESEARCH_STATE_TEXT.restart }}</button>
                 </div>
               </div>
               <div v-else-if="phase === 'canceled'" class="rs-card">
-                <p class="rs-card__title">취소된 연구입니다</p>
+                <p class="rs-card__title">{{ RESEARCH_STATE_TEXT.canceledTitle }}</p>
                 <div class="rs-card__actions">
-                  <button type="button" class="rs-btn" :disabled="restarting" @click="onRestart">같은 질문으로 다시 시작</button>
+                  <button type="button" class="rs-btn" :disabled="restarting" @click="onRestart">{{ RESEARCH_STATE_TEXT.restart }}</button>
                 </div>
               </div>
             </section>
@@ -277,7 +277,7 @@ import { DEEP_RESEARCH } from "~/utils/brand";
 import { queueLine } from "~/utils/queueLine";
 import { draftReport, draftSlots, synthEta, type SynthEta } from "~/utils/researchDraft";
 import { questionUsedFromSteps, researchPhase, understoodLine } from "~/utils/researchEvents";
-import { researchErrorMessage } from "~/utils/researchErrors";
+import { RESEARCH_NOT_FOUND, RESEARCH_STATE_TEXT, researchErrorMessage, researchRetryLabel } from "~/utils/researchErrors";
 import { researchModeLine, restartParams } from "~/utils/researchMode";
 import {
   buildReportDocument,
@@ -324,7 +324,7 @@ const reportState = computed(() => reportSlot(phase.value, !!view.value?.report,
 const maxSubquestions = computed(() => Number(view.value?.params.max_subquestions) || DEFAULT_MAX_SUBQUESTIONS);
 // 계획이 없는 잡의 재시도는 서버가 409 로 거절한다
 const canRetry = computed(() => (view.value?.plan.length ?? 0) > 0);
-const retryLabel = computed(() => (view.value?.stage === "explored" ? "보고서 작성부터 다시 시도" : "다시 시도"));
+const retryLabel = computed(() => researchRetryLabel(view.value?.stage));
 // 머리의 탐색 방식 — 두 칸이 다 0 이면 폭넓게, 두 칸이 없는 잡(06c 전)은 null(그리지 않는다)
 const modeLine = computed(() => (view.value ? researchModeLine(view.value.params) : null));
 

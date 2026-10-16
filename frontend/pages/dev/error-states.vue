@@ -4,9 +4,12 @@
      표시는 모두 실제 컴포넌트다(SkxErrorPage·SkxErrorState·SkxInlineError·SkxConnectionBanner·SkxCharCount) — 복제 마크업이 없어
      style_skovix.css 의 '[S] 공통 오류·빈 상태' 구역을 고치면 이 페이지와 실제 화면이 함께 바뀐다.
      문구도 여기 새로 짓지 않는다 — 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage)에 본보기 오류를 넣어 만든 글과
-     상수(ERROR_PAGE_TEXT·CONNECTION_HINTS·AI_SUMMARY_FAILED·charLimitMessage)를 그대로 보여 문구가 바뀌면 같이 바뀐다.
-     화면마다 다른 대체 문구('검색하지 못했어요' 등)만 본보기로 적는다.
-     [다시 시도]·[다시 연결] 은 누르면 잠깐 재시도 중 모양으로 바뀌었다 돌아온다(요청은 보내지 않는다).
+     상수(ERROR_PAGE_TEXT·CONNECTION_HINTS·AI_SUMMARY_FAILED·charLimitMessage·RESEARCH_STATE_TEXT)를 그대로 보여 문구가 바뀌면 같이 바뀐다.
+     화면마다 다른 대체 문구('검색하지 못했어요' 등)와 실제 화면에 아직 없는 빈 연구 안내만 본보기로 적는다.
+     ③ 딥리서치 상태는 후배 시안의 네 변형(실패·취소·찾을 수 없음·결과 없음)을 실제 동작(pages/research/[id].vue·api/research.py)에 맞춘 것 —
+     항목마다 '시안 대비'에 바꾼 점을 적는다.
+     [다시 시도] 는 누르면 잠깐 재시도 중 모양으로 바뀌었다 돌아오고, [다시 연결] 은 다시 연결하는 중 → 붙음(띠가 사라짐) → 다시 끊김으로
+     돈다(요청은 보내지 않는다).
      이 페이지 자체의 틀(.dev-*)은 아래 scoped 스타일이고 디자인 대상이 아니다 -->
 <template>
   <div class="skx-app">
@@ -73,15 +76,12 @@
         </div>
       </section>
 
-      <!-- ② 섹션 상태 블록 — kind 별 -->
-      <section class="dev-gallery__section" aria-labelledby="dev-sec-state">
-        <h2 id="dev-sec-state" class="dev-gallery__h2">② 섹션 상태 블록 (SkxErrorState)</h2>
-        <p class="dev-gallery__note">
-          제목은 화면마다 다른 '무엇을 못 했는지', 설명 줄은 오류 규칙(apiErrorMessage)이 붙이는 이유입니다. 여기 없는 kind(invalid·conflict·forbidden·unknown)는
-          실패 갈래([data-tone="error"])로 같은 모양이고, .skx-state--{kind} 로 따로 꾸밀 수 있습니다.
-        </p>
+      <!-- ② 섹션 상태 블록 — kind 별 / ③ 딥리서치 상태 — 후배 시안 네 변형을 실제 동작에 맞춰. 같은 틀을 섹션 목록으로 돈다 -->
+      <section v-for="g in STATE_SECTIONS" :key="g.id" class="dev-gallery__section" :aria-labelledby="g.id">
+        <h2 :id="g.id" class="dev-gallery__h2">{{ g.title }}</h2>
+        <p class="dev-gallery__note">{{ g.note }}</p>
         <div class="dev-gallery__grid">
-          <article v-for="s in STATE_SAMPLES" :key="s.id" class="dev-item">
+          <article v-for="s in g.samples" :key="s.id" class="dev-item">
             <h3 class="dev-item__name">{{ s.name }}</h3>
             <div class="dev-item__stage">
               <SkxErrorState
@@ -89,11 +89,12 @@
                 :title="s.title"
                 :message="s.message"
                 :compact="s.compact"
+                :retry-label="s.retryLabel"
                 :busy="s.busy || !!retrying[s.id]"
                 :on-retry="s.retry ? () => simulateRetry(s.id) : undefined"
               >
-                <template v-if="s.back" #default>
-                  <a class="skx-state__action" :href="s.back.href" @click.prevent>{{ s.back.label }}</a>
+                <template v-if="s.action" #default>
+                  <a class="skx-state__action" :href="s.action.href" @click.prevent>{{ s.action.label }}</a>
                 </template>
               </SkxErrorState>
             </div>
@@ -104,14 +105,18 @@
               <dd><code v-for="h in s.hooks" :key="h">{{ h }}</code></dd>
               <dt>문구</dt>
               <dd><span v-for="t in s.texts" :key="t">‘{{ t }}’</span></dd>
+              <template v-if="s.diff">
+                <dt>시안 대비</dt>
+                <dd>{{ s.diff }}</dd>
+              </template>
             </dl>
           </article>
         </div>
       </section>
 
-      <!-- ③ 줄 단위 안내 — 쓰이는 자리째로 -->
+      <!-- ④ 줄 단위 안내 — 쓰이는 자리째로 -->
       <section class="dev-gallery__section" aria-labelledby="dev-sec-inline">
-        <h2 id="dev-sec-inline" class="dev-gallery__h2">③ 줄 단위 안내 (SkxInlineError)</h2>
+        <h2 id="dev-sec-inline" class="dev-gallery__h2">④ 줄 단위 안내 (SkxInlineError)</h2>
         <div class="dev-gallery__grid dev-gallery__grid--wide">
           <article class="dev-item">
             <h3 class="dev-item__name">{{ INLINE_SAMPLES.basic.name }}</h3>
@@ -181,9 +186,13 @@
         </div>
       </section>
 
-      <!-- ④ 연결 끊김 띠 — 화면 위쪽에 붙는 모양을 흐린 본문 자리와 함께 -->
+      <!-- ⑤ 연결 끊김 띠 — 화면 위쪽에 붙는 모양을 흐린 본문 자리와 함께 -->
       <section class="dev-gallery__section" aria-labelledby="dev-sec-conn">
-        <h2 id="dev-sec-conn" class="dev-gallery__h2">④ 연결 끊김 띠 (SkxConnectionBanner)</h2>
+        <h2 id="dev-sec-conn" class="dev-gallery__h2">⑤ 연결 끊김 띠 (SkxConnectionBanner)</h2>
+        <p class="dev-gallery__note">
+          쓰는 화면은 띠를 늘 그려 두고 state 만 바꿉니다(connected 면 보이는 것 없이 빈 알림 영역만) — 끊길 때 새로 생긴 띠는 화면 낭독기가 놓칩니다.
+          [다시 연결]을 누르면 버튼이 사라지며 초점이 띠로 옮겨 갑니다.
+        </p>
         <div class="dev-gallery__grid dev-gallery__grid--wide">
           <article v-for="c in CONN_SAMPLES" :key="c.id" class="dev-item">
             <h3 class="dev-item__name">{{ c.name }}</h3>
@@ -206,9 +215,9 @@
         </div>
       </section>
 
-      <!-- ⑤ 글자 수 — 세 상태 + 직접 쳐 보는 입력창 -->
+      <!-- ⑥ 글자 수 — 세 상태 + 직접 쳐 보는 입력창 -->
       <section class="dev-gallery__section" aria-labelledby="dev-sec-count">
-        <h2 id="dev-sec-count" class="dev-gallery__h2">⑤ 글자 수 (SkxCharCount)</h2>
+        <h2 id="dev-sec-count" class="dev-gallery__h2">⑥ 글자 수 (SkxCharCount)</h2>
         <div class="dev-gallery__grid">
           <article v-for="n in COUNT_SAMPLES" :key="n.length" class="dev-item">
             <h3 class="dev-item__name">{{ n.name }}</h3>
@@ -272,7 +281,8 @@ import {
   type ConnectionState,
   type ErrorStateKind,
 } from "~/utils/apiErrors";
-import { researchErrorMessage } from "~/utils/researchErrors";
+import { deepResearchStartRoute } from "~/utils/landingStart";
+import { RESEARCH_STATE_TEXT, researchErrorMessage, researchRetryLabel } from "~/utils/researchErrors";
 import { THEMES, THEME_LABELS } from "~/utils/theme";
 
 useHead({
@@ -296,6 +306,11 @@ interface SpecInfo {
 
 /** 컴포넌트 기본 버튼 글(SkxErrorState·SkxInlineError 의 retryLabel 기본값) — 설명 줄에만 쓴다 */
 const RETRY_TEXT = "다시 시도";
+/** 사이드바 [연구 시작하기]가 여는 주소 — 첫 화면의 논문 패널 + DeepResearch 모드(utils/landingStart) */
+const START_RESEARCH_HREF = (() => {
+  const route = deepResearchStartRoute();
+  return `${route.path}?${new URLSearchParams(route.query).toString()}`;
+})();
 
 // 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage)에 넣어 볼 본보기 오류 — 문구를 여기 적지 않고 규칙이 만든 글을 보인다.
 // network 는 응답 없이 끝난 요청(ofetch FetchError — 상태 없음), 나머지는 상태 코드만 든 응답, tooShort 는 FastAPI 422 검증 실패
@@ -305,6 +320,8 @@ const SAMPLE = {
   busy: { status: 503 },
   server: { status: 500 },
   notFound: { status: 404 },
+  // 백엔드 오류 code — 서버 detail(옛 말투) 대신 CODE_MESSAGES 의 문구를 쓴다
+  searchDown: { status: 503, data: { detail: "검색 서버가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요", code: "search_unavailable" } },
   tooShort: { status: 422, data: { detail: [{ type: "string_too_short", ctx: { min_length: 2 } }] } },
 } as const;
 
@@ -357,7 +374,7 @@ onMounted(() => {
   frameObserver.observe(first);
 });
 
-// ── ② 섹션 상태 블록 ──
+// ── ② 섹션 상태 블록 · ③ 딥리서치 상태 ──
 
 interface StateSample extends SpecInfo {
   id: string;
@@ -366,15 +383,20 @@ interface StateSample extends SpecInfo {
   message?: string;
   /** [다시 시도] 를 단다 */
   retry?: boolean;
+  /** [다시 시도] 글 — 없으면 컴포넌트 기본값('다시 시도') */
+  retryLabel?: string;
   /** 늘 재시도 중 */
   busy?: boolean;
   compact?: boolean;
-  /** 기본 슬롯에 넣는 돌아가기 링크(.skx-state__action) */
-  back?: { label: string; href: string };
+  /** 기본 슬롯에 넣는 버튼 자리 링크(.skx-state__action — 첫 버튼이면 주 버튼 모양) */
+  action?: { label: string; href: string };
+  /** 후배 시안 대비 바꾼 점(③) */
+  diff?: string;
 }
 
 function stateSample(s: Omit<StateSample, "texts">): StateSample {
-  const texts = [s.title, s.message, s.retry ? RETRY_TEXT : undefined, s.back?.label].filter((t): t is string => !!t);
+  const retryText = s.retry ? (s.retryLabel ?? RETRY_TEXT) : undefined;
+  const texts = [s.title, s.message, retryText, s.action?.label].filter((t): t is string => !!t);
   return { ...s, texts };
 }
 
@@ -396,7 +418,7 @@ const STATE_SAMPLES: StateSample[] = [
     message: reasonOf(SAMPLE.network),
     retry: true,
     uses: ["도서·논문 검색 결과", "논문 상세", "딥리서치 화면 불러오기"],
-    hooks: [".skx-state--network", ".skx-state__msg", ".skx-state__icon(그림 자리 — 기본 숨김)"],
+    hooks: [".skx-state--network", ".skx-state__msg", ".skx-state__icon(아이콘 원 — 실패 갈래는 경고 삼각형)"],
   }),
   stateSample({
     id: "timeout",
@@ -429,14 +451,24 @@ const STATE_SAMPLES: StateSample[] = [
     hooks: [".skx-state--server", '[data-kind="server"]'],
   }),
   stateSample({
+    id: "searchDown",
+    name: "서버가 알린 장애(code)",
+    kind: errorKind(SAMPLE.searchDown),
+    title: "검색하지 못했어요",
+    message: reasonOf(SAMPLE.searchDown),
+    retry: true,
+    uses: ["검색 서버(Milvus·임베딩) 장애 — 503 search_unavailable", "원문 저장소 장애 — 503 storage_unavailable", "잡지 않은 서버 예외 — 500 internal_error"],
+    hooks: [".skx-state--busy", "설명 줄은 apiErrors 의 CODE_MESSAGES(서버 detail 은 쓰지 않는다)"],
+  }),
+  stateSample({
     id: "notFound",
     name: "찾을 수 없음 + 돌아가기",
     kind: errorKind(SAMPLE.notFound),
     title: researchErrorMessage(SAMPLE.notFound, ""),
-    message: "주소가 잘못됐거나 지워진 연구예요.",
-    back: { label: "논문 검색으로 돌아가기", href: "/papers" },
+    message: RESEARCH_STATE_TEXT.notFoundMessage,
+    action: { label: RESEARCH_STATE_TEXT.backToSearch, href: "/papers" },
     uses: ["딥리서치 — 없는 연구 주소", "논문 상세 — 없는 논문 주소", "지워진 연구"],
-    hooks: [".skx-state--notFound", '[data-tone="neutral"]', ".skx-state__action(슬롯 링크)"],
+    hooks: [".skx-state--notFound", '[data-tone="neutral"]', ".skx-state__action(슬롯 링크 — 버튼 줄의 첫 버튼이라 주 버튼 모양)"],
   }),
   stateSample({
     id: "empty",
@@ -446,6 +478,14 @@ const STATE_SAMPLES: StateSample[] = [
     message: "다른 검색어로 다시 검색해 주세요.",
     uses: ["논문 검색 결과 0건", "소장자료 검색 0건", "빈 읽기 목록"],
     hooks: [".skx-state--empty", '[data-tone="neutral"]', 'role="status"'],
+  }),
+  stateSample({
+    id: "canceled",
+    name: "취소",
+    kind: "canceled",
+    title: RESEARCH_STATE_TEXT.canceledTitle,
+    uses: ["딥리서치 — 사용자가 취소한 연구(버튼까지 갖춘 모양은 ③)"],
+    hooks: [".skx-state--canceled", '[data-tone="neutral"]', 'role="status"'],
   }),
   stateSample({
     id: "retrying",
@@ -471,7 +511,86 @@ const STATE_SAMPLES: StateSample[] = [
   }),
 ];
 
-// ── ③ 줄 단위 안내 ──
+// 후배 시안 'DR/상태 안내'의 네 변형을 실제 동작에 맞춘 것 — 제목·버튼은 실제 화면(pages/research/[id].vue)과 같은 상수,
+// 실패의 다시 시도 갈래는 api/research.py retry_research(보고서 작성 단계에서 멈춘 연구만 체크포인트로 이어 가고, 계획 단계 실패는 새 연구)
+const RESEARCH_SAMPLES: StateSample[] = [
+  stateSample({
+    id: "researchFailed",
+    name: "실패 — 보고서 작성 중 멈춤",
+    kind: "error",
+    title: RESEARCH_STATE_TEXT.failedTitle,
+    message: "탐색에서 모은 근거는 남아 있어요. 보고서 작성부터 다시 시작할 수 있어요.",
+    retry: true,
+    retryLabel: researchRetryLabel("explored"),
+    uses: ["딥리서치 — 보고서를 쓰다 멈춘 연구(stage explored)"],
+    hooks: [".skx-state--error", '[data-tone="error"]', ".skx-state__retry(retryLabel)"],
+    diff:
+      "제목은 실제 화면 문구. [문의하기]는 뺐다 — 앱에 문의 창구가 없다. [다시 시도] 글은 멈춘 단계를 따른다: 보고서 작성 중이면 '보고서 작성부터 다시 시도'(탐색 결과로 이어 감), " +
+      "탐색 중이면 '다시 시도'(승인한 계획으로 탐색부터 다시), 계획 단계에서 멈췄으면 다시 시도할 수 없어 '같은 질문으로 다시 시작'(새 연구)만 둔다. " +
+      "실제 화면은 설명 줄에 서버가 남긴 멈춘 까닭(last_error — 예외 원문일 수 있다)을 그대로 붙인다 — 이 컴포넌트로 옮길 때 이 설명으로 바꾼다.",
+  }),
+  stateSample({
+    id: "researchCanceled",
+    name: "취소",
+    kind: "canceled",
+    title: RESEARCH_STATE_TEXT.canceledTitle,
+    message: "취소한 연구는 이어 갈 수 없어요. 같은 질문으로 새 연구를 시작할 수 있어요.",
+    action: { label: RESEARCH_STATE_TEXT.restart, href: "#" },
+    uses: ["딥리서치 — 사용자가 취소한 연구(계획을 세우는 중·승인 대기·대기열·진행 중 어디서든)"],
+    hooks: [".skx-state--canceled", '[data-tone="neutral"]', 'role="status"'],
+    diff:
+      "시안 제목 '연구가 중단되었어요' 대신 실제 화면 문구. [이어서 연구하기]·'중단된 지점부터 이어서 진행'은 뺐다 — 취소한 연구는 이어 갈 수 없다" +
+      "(다시 시도는 실패한 연구만 받는다). [새 연구 시작]은 실제 버튼 '같은 질문으로 다시 시작'(원래 질문·탐색 방식으로 새 연구를 만든다).",
+  }),
+  stateSample({
+    id: "researchNotFound",
+    name: "찾을 수 없음",
+    kind: errorKind(SAMPLE.notFound),
+    title: researchErrorMessage(SAMPLE.notFound, ""),
+    message: RESEARCH_STATE_TEXT.notFoundMessage,
+    action: { label: RESEARCH_STATE_TEXT.backToSearch, href: "/papers" },
+    uses: ["딥리서치 — 없는 연구 주소(주소 오타·지워진 연구)"],
+    hooks: [".skx-state--notFound", '[data-tone="neutral"]'],
+    diff:
+      "시안 제목 '연구를 불러오지 못했어요'는 불러오기 실패(네트워크·서버)와 헷갈려 실제 404 문구를 쓴다. '접근 권한이 없는 연구일 수 있어요'는 뺐다 — " +
+      "연구는 주소만 알면 누구나 연다(권한 검사가 없다). 원인은 주소가 잘못됐거나 지워진 연구다.",
+  }),
+  stateSample({
+    id: "researchEmpty",
+    name: "결과 없음 — 아직 연구가 없음",
+    kind: "empty",
+    title: "아직 진행한 연구가 없어요",
+    message: "연구 시작하기를 누르면 첫 화면에서 DeepResearch로 질문할 수 있어요.",
+    action: { label: "연구 시작하기", href: START_RESEARCH_HREF },
+    uses: ["사이드바 DeepResearch 묶음 — 연구 기록이 하나도 없을 때(지금은 [연구 시작하기] 버튼만 있다)"],
+    hooks: [".skx-state--empty", '[data-tone="neutral"]', 'role="status"'],
+    diff:
+      "제목은 시안 그대로. 실제로는 이 큰 빈 화면이 없다 — 사이드바 묶음이 [연구 시작하기]만 두고, 누르면 첫 화면이 논문 패널 + DeepResearch 모드로 열린다" +
+      "(?start=deep-research). 연구 시작 전용 화면은 두지 않는다.",
+  }),
+];
+
+const STATE_SECTIONS = [
+  {
+    id: "dev-sec-state",
+    title: "② 섹션 상태 블록 (SkxErrorState)",
+    note:
+      "제목은 화면마다 다른 '무엇을 못 했는지', 설명 줄은 오류 규칙(apiErrorMessage)이 붙이는 이유입니다. 색은 아이콘 원에만 씁니다 — 실패 갈래는 경고 삼각형(위험색), " +
+      "빈 결과는 문서+돋보기(청록), 찾을 수 없음은 돋보기+X(회색), 취소는 둥근 네모(포인트색). 여기 없는 kind(invalid·conflict·forbidden·unknown)는 " +
+      '실패 갈래([data-tone="error"])로 같은 모양이고, .skx-state--{kind} 로 따로 꾸밀 수 있습니다. 버튼 줄의 첫 버튼이 주 버튼(포인트색 채움)입니다.',
+    samples: STATE_SAMPLES,
+  },
+  {
+    id: "dev-sec-research",
+    title: "③ 딥리서치 상태 (후배 시안 네 변형)",
+    note:
+      "시안의 실패·취소·찾을 수 없음·결과 없음을 실제 동작에 맞춘 문구로 그렸습니다. 제목·버튼은 딥리서치 화면(pages/research/[id].vue)과 같은 상수입니다 — " +
+      "실제 화면은 아직 이 컴포넌트가 아니라 rs-card 로 그립니다. 항목마다 '시안 대비'에 바꾼 점을 적었습니다.",
+    samples: RESEARCH_SAMPLES,
+  },
+];
+
+// ── ④ 줄 단위 안내 ──
 
 /** 받다가 끊긴 AI 요약 — 문장 중간에서 끊긴 본보기 글 */
 const AI_PARTIAL_TEXT =
@@ -506,7 +625,7 @@ const INLINE_SAMPLES: Record<"basic" | "retry" | "busy", SpecInfo> = {
 /** '재시도 중' 본보기는 버튼만 그리면 된다 — 눌러도(컴포넌트가 무시한다) 아무 일도 하지 않는다 */
 function ignoreRetry(): void {}
 
-// ── ④ 연결 끊김 띠 ──
+// ── ⑤ 연결 끊김 띠 ──
 
 type ConnSampleId = "reconnecting" | "lost";
 
@@ -515,7 +634,7 @@ const CONN_SAMPLES: (SpecInfo & { id: ConnSampleId })[] = [
     id: "reconnecting",
     name: "다시 연결하는 중",
     uses: ["딥리서치 진행 화면 — 실시간 진행이 끊겨 다시 붙는 동안", "연구 작업대 — 작업 스트림 재연결"],
-    hooks: [".skx-conn", ".skx-conn--reconnecting", '[data-state="reconnecting"]', ".skx-conn__msg", 'role="status"'],
+    hooks: [".skx-conn", ".skx-conn--reconnecting", '[data-state="reconnecting"]', ".skx-conn__icon(깜빡이는 점)", ".skx-conn__msg", 'role="status"'],
     texts: [CONNECTION_HINTS.reconnecting],
   },
   {
@@ -525,14 +644,14 @@ const CONN_SAMPLES: (SpecInfo & { id: ConnSampleId })[] = [
       "딥리서치 진행 화면 — 다시 붙으려고 상태를 다시 읽었는데 그것도 실패해 다음 시도를 기다리는 동안(백오프로 계속 다시 시도한다)",
       "[다시 연결] = 기다리지 않고 지금 다시 읽기(useResearch 의 resync)",
     ],
-    hooks: [".skx-conn--lost", '[data-state="lost"]', ".skx-conn__retry", 'role="alert"'],
+    hooks: [".skx-conn--lost", '[data-state="lost"]', ".skx-conn__icon(경고 삼각형)", ".skx-conn__retry", ".skx-conn--connected(붙음 — 보이지 않음)"],
     texts: [CONNECTION_HINTS.lost, CONNECTION_RETRY_LABEL],
   },
 ];
 
 const connState = reactive<Record<ConnSampleId, ConnectionState>>({ reconnecting: "reconnecting", lost: "lost" });
 
-// ── ⑤ 글자 수 ──
+// ── ⑥ 글자 수 ──
 
 /** 본보기 한도 — 딥리서치 질문·검색어의 서버 한도(max_length 500)와 같다(실제 그 입력창에는 maxlength 가 없다) */
 const CHAR_MAX = 500;
@@ -589,11 +708,15 @@ function simulateRetry(id: string): void {
   });
 }
 
+/** [다시 연결] — 다시 연결하는 중 → 붙음(띠가 사라지고 빈 알림 영역만) → 다시 끊김으로 돈다 */
 function simulateReconnect(id: ConnSampleId): void {
   if (connState[id] !== "lost") return;
   connState[id] = "reconnecting";
   later(() => {
-    connState[id] = "lost";
+    connState[id] = "connected";
+    later(() => {
+      connState[id] = "lost";
+    });
   });
 }
 

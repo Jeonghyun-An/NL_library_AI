@@ -197,7 +197,10 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     const classes = [...tpl.matchAll(/\sclass="([^"]*)"/g)].flatMap((m) => m[1]!.split(/\s+/));
     const owned = classes.filter((c) => /^skx-(state|inline-error|conn|charcount|error-page|holo)(?:$|--|__)/.test(c));
     expect(owned).toEqual(["skx-state__action"]);
-    expect(tpl).toContain('<a class="skx-state__action" :href="s.back.href" @click.prevent>');
+    expect(tpl).toContain('<a class="skx-state__action" :href="s.action.href" @click.prevent>');
+    // ② 와 ③ 은 같은 틀(섹션 목록)을 돈다 — 상태 블록 마크업은 한 벌
+    expect(tpl.match(/<SkxErrorState/g)).toHaveLength(1);
+    expect(tpl).toMatch(/<section v-for="g in STATE_SECTIONS"/);
     // 이 페이지의 틀(.dev-*)은 공통 구역 클래스를 꾸미지 않는다
     expect(css).not.toMatch(/\.skx-/);
   });
@@ -219,7 +222,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
   });
 
   it("② 상태 블록 — 요구한 kind 와 재시도 중·compact 를 모두 보인다", () => {
-    for (const id of ["error", "network", "timeout", "busy", "server", "notFound", "empty", "retrying", "compact"]) {
+    for (const id of ["error", "network", "timeout", "busy", "server", "searchDown", "notFound", "empty", "canceled", "retrying", "compact"]) {
       expect(js, id).toMatch(new RegExp(`id: "${id}",`));
     }
     expect(js).toMatch(/id: "retrying",[\s\S]*?busy: true,/);
@@ -227,6 +230,45 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     for (const title of ["검색하지 못했어요", "논문 정보를 불러오지 못했어요", "검색 결과가 없어요"]) {
       expect(js, title).toContain(`title: "${title}"`);
     }
+    // 취소 kind·서버 code 문구(CODE_MESSAGES — 서버 detail 은 쓰지 않는다)
+    expect(js).toMatch(/id: "canceled",[\s\S]*?kind: "canceled",/);
+    expect(js).toMatch(/searchDown: \{ status: 503, data: \{ detail: "[^"]*", code: "search_unavailable" \} \}/);
+    expect(js).toContain("message: reasonOf(SAMPLE.searchDown)");
+  });
+
+  it("③ 딥리서치 상태 — 시안 네 변형(실패·취소·찾을 수 없음·결과 없음)을 실제 동작에 맞춰, 항목마다 시안 대비 바꾼 점", () => {
+    for (const id of ["researchFailed", "researchCanceled", "researchNotFound", "researchEmpty"]) {
+      expect(js, id).toMatch(new RegExp(`id: "${id}",[\\s\\S]*?diff:`));
+    }
+    expect(js.match(/\n {4}diff:/g)).toHaveLength(4);
+    expect(tpl).toContain('<template v-if="s.diff">');
+    expect(tpl).toContain("<dt>시안 대비</dt>");
+    // 제목·버튼은 딥리서치 화면과 같은 상수 — 실패의 [다시 시도] 글도 같은 함수(보고서 작성 단계에서 멈춤)
+    expect(js).toContain("title: RESEARCH_STATE_TEXT.failedTitle,");
+    expect(js).toContain('retryLabel: researchRetryLabel("explored"),');
+    expect(js).toContain("title: RESEARCH_STATE_TEXT.canceledTitle,");
+    expect(js).toContain("action: { label: RESEARCH_STATE_TEXT.restart, href: \"#\" },");
+    expect(js).toContain("message: RESEARCH_STATE_TEXT.notFoundMessage,");
+    expect(js).toContain("action: { label: \"연구 시작하기\", href: START_RESEARCH_HREF },");
+    expect(js).toContain("deepResearchStartRoute()");
+    // 실제와 다른 시안 문구는 버튼·설명으로 쓰지 않는다(시안 대비 설명에서만 말한다)
+    expect(js).not.toMatch(/label: "(문의하기|이어서 연구하기|새 연구 시작)"/);
+    expect(js).not.toMatch(/(title|message): "[^"]*(접근 권한|중단된 지점부터|연구를 불러오지 못했어요|연구가 중단되었어요)/);
+  });
+
+  it("딥리서치 화면도 같은 상수를 쓴다 — 모음과 실제 화면의 문구가 함께 바뀐다", () => {
+    const researchVue = read("pages/research/[id].vue");
+    expect(researchVue).toContain("{{ RESEARCH_NOT_FOUND }}");
+    expect(researchVue).toContain("{{ RESEARCH_STATE_TEXT.notFoundMessage }}");
+    expect(researchVue).toContain("{{ RESEARCH_STATE_TEXT.failedTitle }}");
+    expect(researchVue).toContain("{{ RESEARCH_STATE_TEXT.canceledTitle }}");
+    expect(researchVue.match(/\{\{ RESEARCH_STATE_TEXT\.restart \}\}/g)).toHaveLength(2);
+    expect(researchVue).toContain("researchRetryLabel(view.value?.stage)");
+    expect(researchVue).not.toMatch(/연구가 도중에 멈췄습니다|취소된 연구입니다|찾을 수 없는 연구입니다/);
+  });
+
+  it("⑤ [다시 연결] 흉내는 다시 연결하는 중 → 붙음(connected) → 다시 끊김으로 돈다", () => {
+    expect(js).toMatch(/connState\[id\] = "reconnecting";[\s\S]*?connState\[id\] = "connected";[\s\S]*?connState\[id\] = "lost";/);
   });
 
   it("① 액자 — transform + overflow: hidden 으로 홀로그램(position: fixed)을 가두고, 16:10 화면을 액자 폭에 맞춰 줄인다", () => {

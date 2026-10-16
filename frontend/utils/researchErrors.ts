@@ -33,6 +33,23 @@ const BROWSER_ACTIVE_MESSAGE = `진행 중인 ${DEEP_RESEARCH}가 있어요 — 
 // 딥리서치 화면의 404 — 연구 주소가 잘못됐거나 지워졌다(링크만 알면 누구나 열 수 있어 권한 문제는 없다)
 export const RESEARCH_NOT_FOUND = "찾을 수 없는 연구예요";
 
+// 딥리서치 화면(pages/research/[id].vue)의 멈춘·취소한·찾을 수 없는 연구 카드 문구. 오류 화면 모음(/dev/error-states)의
+// '딥리서치 상태' 묶음이 같은 상수를 읽어 실제 화면과 같은 글을 보인다
+export const RESEARCH_STATE_TEXT = {
+  failedTitle: "연구가 도중에 멈췄어요",
+  canceledTitle: "취소된 연구예요",
+  notFoundMessage: "주소가 잘못됐거나 지워진 연구예요.",
+  // 원래 질문·탐색 방식으로 새 연구를 만든다 — 취소한 연구·계획 단계에서 멈춘 연구는 이어 갈 수 없어 이 버튼만 있다
+  restart: "같은 질문으로 다시 시작",
+  backToSearch: "논문 검색으로 돌아가기",
+} as const;
+
+// 멈춘 연구의 [다시 시도] 글 — 보고서 작성 단계(stage explored)에서 멈췄으면 탐색 결과를 체크포인트로 두고 보고서 작성부터
+// 이어 간다(api/research.py retry_research). 탐색 중에 멈췄으면 승인한 계획으로 탐색부터 다시 돈다
+export function researchRetryLabel(stage: string | null | undefined): string {
+  return stage === "explored" ? "보고서 작성부터 다시 시도" : "다시 시도";
+}
+
 interface LimitDetail {
   code?: unknown;
   message?: unknown;
