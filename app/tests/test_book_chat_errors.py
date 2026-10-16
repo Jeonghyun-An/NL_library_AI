@@ -2,11 +2,11 @@
 
 LLM 호출 실패({error: CHAT_STREAM_ERROR})는 test_book_chat_stream_end.py 가 본다. 여기는 같은 {error} 이벤트 꼴(문자열 error
 키)에 code 를 더한 셋이다 — 모두 [DONE] 바로 앞, 마지막 이벤트다.
-- not_found: 대화할 자료가 서지에 없다 → {"error": "자료를 찾을 수 없습니다", "code": "not_found"}. 전에는 '도서를 찾을 수
+- not_found: 대화할 자료가 서지에 없다 → {"error": "자료를 찾을 수 없어요", "code": "not_found"}. 전에는 '도서를 찾을 수
   없습니다.' 를 보통 {text} 로 흘려 화면이 답처럼 대화에 남겼다.
-- retrieval_failed: 청크 검색(임베딩·Milvus)이 실패했다 → {"error": "자료 내용을 읽지 못했습니다. 잠시 뒤 다시 시도하세요",
+- retrieval_failed: 청크 검색(임베딩·Milvus)이 실패했다 → {"error": "자료 내용을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요",
   "code": "retrieval_failed"}. 전에는 로그만 남기고 근거 없이 질문만 LLM 에 보내 답을 지어냈다 — 이제 LLM 을 부르지 않는다.
-- empty_answer: LLM 이 글 조각 없이 [DONE] 으로 끝났다 → {"error": "답을 만들지 못했습니다", "code": "empty_answer"}. 전에는
+- empty_answer: LLM 이 글 조각 없이 [DONE] 으로 끝났다 → {"error": "답을 만들지 못했어요", "code": "empty_answer"}. 전에는
   빈 답이 정상 답으로 남았다.
 
 book_chat 을 더미 embedder·indexer 위에서 올리는 픽스처는 test_book_chat_prompt.py 의 것을 그대로 쓴다.
@@ -58,12 +58,12 @@ class TestNotFound:
         payloads = fake_llm(monkeypatch, book_chat, [delta("x"), "data: [DONE]"])
         chunks = _stream(book_chat, book=None)
         assert chunks[-1] == DONE and chunks.count(DONE) == 1
-        assert events(chunks) == [{"error": "자료를 찾을 수 없습니다", "code": "not_found"}]
+        assert events(chunks) == [{"error": "자료를 찾을 수 없어요", "code": "not_found"}]
         assert payloads == []                       # LLM 을 부르지 않는다
 
 
 class TestRetrievalFailed:
-    RETRIEVAL = {"error": "자료 내용을 읽지 못했습니다. 잠시 뒤 다시 시도하세요", "code": "retrieval_failed"}
+    RETRIEVAL = {"error": "자료 내용을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요", "code": "retrieval_failed"}
 
     def test_milvus_failure_ends_without_calling_the_llm(self, book_chat, monkeypatch):
         exceptions = pytest.importorskip("pymilvus.exceptions")
@@ -120,7 +120,7 @@ class TestRetrievalFailed:
 
 
 class TestEmptyAnswer:
-    EMPTY = {"error": "답을 만들지 못했습니다", "code": "empty_answer"}
+    EMPTY = {"error": "답을 만들지 못했어요", "code": "empty_answer"}
 
     def test_done_without_any_text_is_an_empty_answer(self, book_chat, monkeypatch, hit):
         _fake_search(monkeypatch, book_chat, [hit])

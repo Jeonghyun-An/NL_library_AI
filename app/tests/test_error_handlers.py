@@ -1,6 +1,6 @@
 """test_error_handlers.py — 화면에 닿는 API 오류 응답의 공통 꼴(core/errors.py).
 
-- 라우트가 잡지 않은 예외 → 500 {"detail": "서버에서 문제가 생겼습니다. 잠시 뒤 다시 시도하세요", "code": "internal_error"}.
+- 라우트가 잡지 않은 예외 → 500 {"detail": "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요", "code": "internal_error"}.
   전에는 Starlette 기본 응답 'Internal Server Error'(JSON 아닌 영어 글)가 화면에 그대로 갔다. 스택은 로그에 남는다.
 - HTTPException·RequestValidationError 는 그대로다(code 를 더하지 않는다).
 - ApiError → {"detail", "code"}. 처리기를 걸지 않은 앱에서도 상태·문구는 HTTPException 처럼 같다.
@@ -92,7 +92,7 @@ class TestInternalError:
         assert resp.status_code == 500
         assert resp.headers["content-type"].startswith("application/json")
         assert resp.json() == {"detail": INTERNAL_ERROR_DETAIL, "code": "internal_error"}
-        assert INTERNAL_ERROR_DETAIL == "서버에서 문제가 생겼습니다. 잠시 뒤 다시 시도하세요"
+        assert INTERNAL_ERROR_DETAIL == "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요"
 
     def test_the_exception_text_does_not_reach_the_screen(self):
         assert "secret internal detail" not in _client(_app()).get("/boom").text
@@ -150,8 +150,9 @@ class TestApiError:
         assert (m.status_code, m.detail, m.code) == (503, STORAGE_UNAVAILABLE_DETAIL, "storage_unavailable")
         assert (q.status_code, q.detail) == (503, QUEUE_UNAVAILABLE_DETAIL)
         assert not hasattr(q, "code")      # 딥리서치 _broker_unavailable 과 같은 꼴(detail 만)
-        assert SEARCH_UNAVAILABLE_DETAIL == "검색 서버가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요"
-        assert STORAGE_UNAVAILABLE_DETAIL == "원문 저장소가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요"
+        assert SEARCH_UNAVAILABLE_DETAIL == "검색 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"
+        assert STORAGE_UNAVAILABLE_DETAIL == "원문 저장소가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"
+        assert QUEUE_UNAVAILABLE_DETAIL == "작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요"
 
     def test_queue_message_matches_deep_research(self):
         # api.research 는 redis·relay 를 물고 와 여기서 import 하지 않는다(test_research_api 가 대역 위에서 올린다) —

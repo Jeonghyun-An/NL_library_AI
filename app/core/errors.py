@@ -26,10 +26,10 @@ from fastapi.responses import JSONResponse
 
 log = logging.getLogger(__name__)
 
-INTERNAL_ERROR_DETAIL = "서버에서 문제가 생겼습니다. 잠시 뒤 다시 시도하세요"
-SEARCH_UNAVAILABLE_DETAIL = "검색 서버가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요"
-STORAGE_UNAVAILABLE_DETAIL = "원문 저장소가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요"
-QUEUE_UNAVAILABLE_DETAIL = "작업 큐에 연결하지 못했습니다 — 잠시 후 다시 시도하세요"
+INTERNAL_ERROR_DETAIL = "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요"
+SEARCH_UNAVAILABLE_DETAIL = "검색 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"
+STORAGE_UNAVAILABLE_DETAIL = "원문 저장소가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"
+QUEUE_UNAVAILABLE_DETAIL = "작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요"
 
 
 class ApiError(HTTPException):

@@ -1,13 +1,13 @@
 """test_storage_queue_errors.py — 원문 저장소(MinIO)·작업 큐(Celery 브로커) 장애의 오류 응답.
 
 표지·원문 PDF(api/book.py):
-- MinIO 연결 장애 → 503 {"detail": "원문 저장소가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요", "code": "storage_unavailable"}.
+- MinIO 연결 장애 → 503 {"detail": "원문 저장소가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요", "code": "storage_unavailable"}.
   전에는 _resolve_original_key 가 모든 예외를 '없음'으로 삼켜 404 가 되거나, 표지 ① 단계가 삼킨 뒤 다음 단계에서 500 이 났다.
 - 원본이 없거나 깨져 표지를 못 그림 → 404(화면의 <img> 가 대체 표지로 바뀐다). 전에는 깨진 원본이 렌더 예외로 500 이었다.
 - 원문 PDF 의 404 문구에 S3 오류 글(영문)을 싣지 않는다.
 
 적재·업로드·취소·재시도·백필(api/book.py·api/admin.py): .delay()·control.revoke() 가 브로커에 닿지 못하면 503
-{"detail": "작업 큐에 연결하지 못했습니다 — 잠시 후 다시 시도하세요"}(딥리서치 _enqueue 와 같은 문구). 코드 버그는 500.
+{"detail": "작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요"}(딥리서치 _enqueue 와 같은 문구). 코드 버그는 500.
 
 MinIO·워커 모듈은 대역이다(workers.tasks·workers.celery_app 를 sys.modules 에 꽂는다). 예외는 운영 이미지의 실제 클래스
 (urllib3 MaxRetryError·minio S3Error·kombu OperationalError·redis ConnectionError)를 쓴다. async 테스트 없음.

@@ -1,6 +1,6 @@
 """test_search_outage_api.py — 검색 계열 엔드포인트의 오류 응답과 LLM 사유 실패 표시(ai_failed).
 
-검색 기반(Milvus·임베딩) 연결/조회 장애 → 503 {"detail": "검색 서버가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요",
+검색 기반(Milvus·임베딩) 연결/조회 장애 → 503 {"detail": "검색 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요",
 "code": "search_unavailable"} — 소장자료 검색·논문 검색·상황별 추천·소장자료 관련 자료·논문 관련 자료. 전에는 500
 'Internal Server Error'(JSON 아님)가 화면에 갔다. 코드 버그(TypeError 등)와 장애가 아닌 Milvus 오류(컬렉션 없음 등)는
 503 으로 가리지 않고 500 internal_error 다.

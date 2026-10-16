@@ -29,9 +29,9 @@ CHAT_STREAM_ERROR = "답을 만들지 못했습니다"
 #   not_found        — 대화할 자료(cnts_id)가 서지에 없다. 전에는 '도서를 찾을 수 없습니다.' 를 보통 {text} 로 흘려 답처럼 남았다
 #   empty_answer     — LLM 이 글 조각 하나 없이 [DONE] 으로 끝났다. 전에는 빈 답이 정상 답으로 대화에 남았다
 #   retrieval_failed — 청크 검색(임베딩·Milvus)이 실패했다. 전에는 로그만 남기고 근거 없이 질문만 보내 답을 지어냈다
-CHAT_NOT_FOUND_ERROR = "자료를 찾을 수 없습니다"
-CHAT_EMPTY_ANSWER_ERROR = "답을 만들지 못했습니다"
-CHAT_RETRIEVAL_ERROR = "자료 내용을 읽지 못했습니다. 잠시 뒤 다시 시도하세요"
+CHAT_NOT_FOUND_ERROR = "자료를 찾을 수 없어요"
+CHAT_EMPTY_ANSWER_ERROR = "답을 만들지 못했어요"
+CHAT_RETRIEVAL_ERROR = "자료 내용을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요"
 
 
 def _error_event(message: str, code: str) -> str:
