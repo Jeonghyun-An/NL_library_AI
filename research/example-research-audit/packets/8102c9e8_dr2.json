@@ -1,0 +1,135 @@
+{
+ "job": "8102c9e8",
+ "kind": "deep_research_section",
+ "question": "학교폭력 예방 프로그램의 효과에 관한 연구를 정리해줘",
+ "heading": "학교폭력 예방 프로그램의 효과 측정 방법",
+ "sentences": [
+  {
+   "part": "intro",
+   "text": "학교폭력 예방 프로그램의 효과 측정 방법은 다양한 방식으로 이루어진다.",
+   "n": 1
+  },
+  {
+   "part": "intro",
+   "text": "초등학생 대상 프로그램의 효과 분석에서는 학교폭력에 대한 인식, 태도 및 행동, 대처능력의 변화를 사전검사와 사후검사를 통해 측정한다 [E1].",
+   "n": 2
+  },
+  {
+   "part": "intro",
+   "text": "가해 성향 아동을 대상으로 한 프로그램의 효과 검증에는 학교폭력 실태 설문지를 사용하여 폭력 유형별 경험 빈도를 측정한다 [E3].",
+   "n": 3
+  },
+  {
+   "part": "intro",
+   "text": "메타분석 연구에서는 현재 교육 현장에서 실시되는 프로그램의 효과를 분석한다 [E2].",
+   "n": 4
+  },
+  {
+   "part": "intro",
+   "text": "또한, 학교폭력 가해행동 관련 유발변인과의 상관관계를 분석하기도 한다 [E6].",
+   "n": 5
+  },
+  {
+   "part": "intro",
+   "text": "마지막으로, 예비중등교사 수업의 효과 측정에는 교사역량 진단척도를 활용하여 지식, 기술, 태도를 평가하고, 성찰 과정을 통해 질적 분석도 병행한다 [E7].",
+   "n": 6
+  },
+  {
+   "part": "summary",
+   "paper": "E1",
+   "text": "본 연구는 초등학생을 대상으로 학교폭력 예방 프로그램의 적용 효과를 분석하여, 프로그램 적용 전후 학생들의 학교폭력에 대한 인식, 태도 및 행동, 대처능력의 변화를 측정하고자 하였다.",
+   "n": 7
+  },
+  {
+   "part": "summary",
+   "paper": "E1",
+   "text": "이를 위해 실험집단과 통제집단을 설정하고 사전검사와 사후검사를 실시하여 프로그램 효과를 검증하였다.",
+   "n": 8
+  },
+  {
+   "part": "summary",
+   "paper": "E3",
+   "text": "본 연구는 가해 성향 아동을 대상으로 집단상담 프로그램을 적용하고 그 효과를 검증하기 위해 학교폭력 실태 설문지를 활용하였다.",
+   "n": 9
+  },
+  {
+   "part": "summary",
+   "paper": "E3",
+   "text": "설문지는 6가지 폭력 유형에 대한 경험 빈도를 측정하며, 프로그램 참여자 선정에도 활용되었다.",
+   "n": 10
+  },
+  {
+   "part": "summary",
+   "paper": "E2",
+   "text": "본 연구는 현재 교육 현장에서 실시되고 있는 학교폭력 예방 프로그램의 효과에 대한 메타분석을 통해 프로그램의 실제 효과를 파악하고자 하였다.",
+   "n": 11
+  },
+  {
+   "part": "summary",
+   "paper": "E6",
+   "text": "본 연구는 한국 청소년의 학교폭력 가해행동 관련 유발변인에 대한 메타분석을 통해 학교폭력 발생에 영향을 미치는 요인을 규명하고, 그 중에서도 학교 환경의 영향을 분석하였다.",
+   "n": 12
+  },
+  {
+   "part": "summary",
+   "paper": "E7",
+   "text": "본 연구는 액션러닝을 적용한 예비중등교사 ‘학교폭력 예방 및 대책’ 수업의 효과를 분석하기 위해 양적 분석과 질적 분석을 병행하였다.",
+   "n": 13
+  },
+  {
+   "part": "summary",
+   "paper": "E7",
+   "text": "양적 분석에는 교사역량 진단척도를 활용하고, 질적 분석에는 학생들의 성찰 과정을 통해 수업 소감을 수집하였다.",
+   "n": 14
+  },
+  {
+   "part": "future",
+   "text": "학교폭력 예방 프로그램 효과 측정 시, 다양한 변수를 통제하고 장기적인 효과를 추적하는 연구가 필요하다 [E1].",
+   "n": 15
+  }
+ ],
+ "evidence": [
+  {
+   "eid": "E1",
+   "title": "학교폭력 예방 프로그램의 적용효과 분석: 초등학생의 학교폭력에 대한 인식, 태도 및 행동, 대처능력의 변화를 중심으로",
+   "year": "2010.12",
+   "chunks": [
+    "&lt;표 2&gt; 연구 설계\n\nG₁(실험집단) O₁ X O₂ G₂(통제집단) O₃ O₄\n\nO₁, O₂: 사전검사 O₃, O₄: 사후검사 X: 학교폭력 예방 프로그램시청\n\n###### 4. 분석방법\n\n첫째, 학교폭력 예방 프로그램의 효과 분석을 하기 전에 사전검사 점수에 대한 집단간 차이검증 (independent t-test)을 실시하였다. 둘째, 프로그램 처치에 따른 적용효과를 검증하기 위해 실험집단과 통제집단의 사전, 사후검사 점수 의 차이를 혼합변량분석(Mixed ANOVA)을 사용하여 분석하였는데, 그 이유는 실험처치 후 비교집단과 실험집단의 점수 차이가 존재하는지는 두 집단이 동일한 모집단에서 표집 되었다는 가정 하에서 의미가 있으므로 통계적으로 Mixed ANOVA를 사용하는 것이 최적의 효과분석 방법이라고 판단했기 때문이다. 또한 학년과 성별에 따라 사전검사 점수 간에 차이가 있는 것으로 나타났으므로 이를 공변인으로 사후 검사에 대한 공변량분석(ANCOVA)을 실시하였다. ###### 5.",
+    "### Ⅲ.\n연구방법\n\n###### 1.\n연구대상\n\n이 연구의 대상은 서울과 경기도 소재의 초등학교 3, 5학년 학생 982명으로 하였다. 연구대상 선정은 학교폭력 실태조사에 근거하여 학교폭력 발생 가능성이 높은 지역의 학교와 낮은 지역의 학교 각 1개교 씩 총 4개 학교를 선정하였고, 각 학년에서 임의로 4개 학급을 할당하여 한 집단(2개 학년×2학급)은 학 교폭력 예방 프로그램을 시청한 실험집단(497명)으로, 다른 한 집단은 프로그램을 시청하지 않은 통제 집단(485명)으로 배치하여 실험을 수행하였다. ###### 2. 측정도구\n\n학교폭력 예방 프로그램의 효과성 검증을 위한 사전 사후 검사로는 학교폭력 발생과정 및 학교폭력 관련 검사 도구들을 검토･분석한 후, 본 연구를 위해 학교폭력 예방을 위한 보호요인 영역의 구성개념 으로 학교폭력에 대한 인식수준, 학교폭력에 대한 태도 및 행동, 학교폭력 대처능력을 추출하여 구성하 였다."
+   ]
+  },
+  {
+   "eid": "E2",
+   "title": "학교폭력 예방 프로그램의 효과에 대한 메타분석",
+   "year": "2016.1",
+   "chunks": [
+    "|Journal of Digital Convergence❙ 33<br><br>http://dx.doi.org/10.14400/JDC.2016.14.10.33<br><br>학교폭력 예방 프로그램의 효과에 대한 메타분석<br><br>김경희<br><br>동신대학교 유아교육학과<br><br>Meta—Analysis on the Effect of School Violence Intervention Program<br><br>Kyung-Hee Kim<br><br>Dept. of Early Childhood Education, Dongshin University<br><br>요 약 이 연구는 현재 교육현장에서 실시되고 있는 학교폭력 예방 프로그램의 효과에 대한 메타분석을 실시하였 다. 메타분석은 체계적이고 객관적인 방법을 활용하여 개입의 크기와 방향을 제시한다는 장점을 가지고 있는 분석방 법으로, 개입에 대한 종합적 분석이 가능하다. 논문의 선정기준을 통해 총 33편의 연구물을 분석 대상으로 선정하였 다. 선정된 33편의 연구물에서 129개의 효과크기를 종합하여 분석한 결과 학교폭력 예방 프로그램의 전체 효과크기 는 0.624로 나타났다.",
+    "1] Funnel plot<br><br>3.2 효과영역에 따른 효과크기<br><br>개별 연구물의 여러 효과들을 인간의 특성 영역에 따 라 범주화하여 분석한 결과는 다음과 같다<Table 4>.\n학 교폭력 예방 프로그램의 효과는 인간의 정의적 영역에서 0.781로 가장 큰 효과크기를 보고하였다. 다음으로는 운 동적 영역(0.686), 인지적 영역(0.540), 사회적 영역(0.492), 복합적 영역(0.472) 순으로 효과크기를 보고하였다. 이를 통해 학교폭력 예방 프로그램이 인간의 감정과 정서의 표현방식을 나타내는 특성으로 동기, 흥미, 불안, 태도 등 을 포함하는 정의적인 영역에 효과가 중간 이상 있는 것 을 알 수 있다. 또한 정의적 영역뿐만 아니라 모든 영역 에서 중간 정도의 효과크기를 보고 한 것으로 보아 학교 폭력 예방 프로그램이 인간의 특성 영역에서 모두 효과 가 있는 것으로 판단할 수 있다.<br><br>3.3 중재변인에 따른 효과크기<br><br>개별 연구에서 살펴본 변수들을 크게 범주형 변수와 연속형 변수로 구분하여 연구의 특성에 따른 효과크기를 살펴보았다. 범주형 변수에는 참가자의 연령과 예방 단 계가 포함되었다."
+   ]
+  },
+  {
+   "eid": "E3",
+   "title": "초등학교 폭력예방을 위한 집단상담 프로그램의 적용과 그 효과(Ⅰ): 가해 성향 아동을 대상으로",
+   "year": "2008.1",
+   "chunks": [
+    "측정도구\n\n프로그램 참여자 선정 및 실험처치의 효과검증을 위해 사용된 측정도구는 다음과 같다.\n1) 학교 폭력실태 설문지\n\n프로그램에 참여할 가해 성향자 집단을 선별하기 위한 검사로서 공동연구자들의 선행연구(최태진 등, 2006)에서 사용되었던 설문지를 부분 발췌하여 사용하였다.\n설 문지는 6가지 폭력 유형(금품 및 물품갈취, 언어적 협박 및 강요, 신체폭력, 언어적 희롱, 따돌림, 사이버 폭력)에 따라 각 4개 문항으로 되어 있으며, 각각의 문항에 대\n\n- 하여 경험 빈도에 따라 ‘거의 매일(3점)’, ‘주 2-3회(2점)’, ‘주 1회(1점)’, ‘전혀 없음(0 점)’으로 나누어 해당항목에 표시하게 하였다. 가해 성향자 집단은 총점(만점 72점)에 - 서 평균이 24점 이상～48점 이하에 속하는 아동으로 선정하였으며, 이들 학생 중 부 장교사 혹은 담임교사로부터 추천을 받아 참여자의 최종 선정이 이루어졌다. 2) 자기중심성, 공격성, 친사회성, 갈등해결방식 척도\n\n프로그램 참여 대상자(실험 및 통제집단)로 최종 선정된 아동들의 심리적 특성 사 전진단 및 프로그램 처치 이후 효과 검증을 위한 목적으로 자기중심성～갈등해결방 식의 4개 변인에 대한 척도를 구성하여 사용하였다. 이들 4개 영역은 공동 연구자들 의 선행연구(최태진 등, 2006; 허승희 등 2007)에 기초하여 가해 성향 아동들과 밀접 히 관련되어 있는 것으로 판단되었던 변인이다. 각각의 특성을 측정하기 위해서는 일차적으로 각 변인별로 이전의 선행연구에서 사용되었던 3개～7개의 관련 검사를 수집하였다."
+   ]
+  },
+  {
+   "eid": "E6",
+   "title": "한국 청소년의 학교폭력 가해행동 관련 유발변인에 대한 메타분석",
+   "year": "2018.09",
+   "chunks": [
+    "The findings were as follows: First, there is a medium level of correlation between school violence and the group of triggering variables, the most relative variable group being school environment. The triggering factors which have highest correlation are aggression in the group of individual characteristics; physical, linguistic, and emotional violence in home environment variables; school violence experience in the school environment variables; and violent media exposure in social environment variables. Second, moderator effects were found that effect size between school violence behaviors and the triggering variables such as the school environment variables and the social environment variables had significant difference by school grade. That is, high school students showed the highest relationship between school violence and those variables. More interestingly, there was significant difference in school violence measurement in the relationship between school violence and related variables. The measuring tool B.V.Q showed that the highest relationship was between school violence behaviors and the triggering variables. This study is meaningful for suggesting a theoretical and practical framework from which to analyze and understand school violence. Findings of this study also imply that practical programs for preventing school violence should be developed immediately."
+   ]
+  },
+  {
+   "eid": "E7",
+   "title": "액션러닝을 적용한 예비중등교사 ‘학교폭력 예방 및 대책’ 수업의 효과",
+   "year": "2018.1",
+   "chunks": [
+    "양적분석 외에 질적 분석을 위해 실험집단에게는 성찰 과정을 통해 수업에서 느낀 소감 도 수집하였다.\n### 4.\n측정도구\n\n#### 1) 학교폭력 예방 및 대처를 위한 교사역량\n\n본 연구에서 사용한 도구는 임재연(2015)이 개발한 학교폭력 예방 및 대처를 위한 교사역량 진 단척도로서 “학교폭력이 발생하지 않도록 예방하고, 폭력발생시 적절히 대처해 사안 해결을 돕기 위해 필요한 지식·기술·태도로 구성된 교사의 전문적 능력”을 측정하기 위한 도구이다."
+   ]
+  }
+ ]
+}

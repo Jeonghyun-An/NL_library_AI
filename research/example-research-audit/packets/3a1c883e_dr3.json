@@ -1,0 +1,109 @@
+{
+ "job": "3a1c883e",
+ "kind": "deep_research_section",
+ "question": "청소년의 스마트폰 과의존과 우울의 관계에 관한 연구를 정리해줘",
+ "heading": "청소년 스마트폰 과의존과 우울 간의 상관관계 연구",
+ "sentences": [
+  {
+   "part": "intro",
+   "text": "청소년의 우울과 스마트폰 의존은 서로의 예측요인으로도, 그리고 결과요인으로도 빈번히 다루어져 왔으며, 기존 선행연구들을 통해 두 변인 간의 상관관계는 명백히 입증되었다 [E3].",
+   "n": 1
+  },
+  {
+   "part": "intro",
+   "text": "청소년 스마트폰 자가진단 척도 결과, 38점 이하의 일반 사용자군과 39점 이상의 위험 사용자군으로 분류할 수 있으며, 위험 사용자군은 우울과 사회 불안을 경험할 가능성이 높다 [E16].",
+   "n": 2
+  },
+  {
+   "part": "intro",
+   "text": "또한, 우울과 자살 생각은 스마트폰 사용의 문제적 경험 가능성을 높이는 요인으로 나타났다 [E17].",
+   "n": 3
+  },
+  {
+   "part": "summary",
+   "paper": "E3",
+   "text": "본 논문은 우울과 스마트폰 의존의 상관관계에 대한 기존 연구의 부족함을 지적하고, 두 변인 간의 인과관계 파악의 필요성을 강조한다.",
+   "n": 4
+  },
+  {
+   "part": "summary",
+   "paper": "E3",
+   "text": "청소년의 우울 및 스마트폰 의존과 관련된 문제를 이해하고 적합한 개입 방안을 개발하기 위해 더 많은 연구가 필요하다고 주장한다.",
+   "n": 5
+  },
+  {
+   "part": "summary",
+   "paper": "E4",
+   "text": "본 논문은 청소년의 우울과 스마트폰 의존 간의 종단적 인과관계를 분석하는 것을 목적으로 한다.",
+   "n": 6
+  },
+  {
+   "part": "summary",
+   "paper": "E6",
+   "text": "본 논문은 중학생, 고등학생 및 대학생의 스마트폰 의존도에 영향을 미치는 요인을 비교 분석하며, 스마트폰이 청소년에게 일종의 장난감 역할을 할 수 있다고 주장한다.",
+   "n": 7
+  },
+  {
+   "part": "summary",
+   "paper": "E16",
+   "text": "본 논문은 청소년의 스마트폰 자가진단 척도를 활용하여 스마트폰 중독 위험군을 분류하고, 고위험 사용자가 우울, 사회 불안을 경험할 가능성이 높다는 상관관계를 제시한다.",
+   "n": 8
+  },
+  {
+   "part": "summary",
+   "paper": "E17",
+   "text": "본 논문은 성별에 따른 청소년의 스마트폰 사용 문제적 경험 관련 요인을 분석하며, 낮은 자존감, 우울, 자살 생각 등이 스마트폰 사용 문제적 경험 가능성을 높이는 요인임을 밝힌다.",
+   "n": 9
+  },
+  {
+   "part": "future",
+   "text": "청소년의 우울과 스마트폰 의존 간의 인과관계 방향성을 명확히 파악하기 위한 후속 연구가 필요하다 [E3].",
+   "n": 10
+  }
+ ],
+ "evidence": [
+  {
+   "eid": "E3",
+   "title": "청소년의 우울과 스마트폰 의존의 종단적 관계: 자기회귀교차지연 효과 분석",
+   "year": "2019.12",
+   "chunks": [
+    "실제로 선행연구들을 정리해 본 결과, 우 울과 스마트폰 의존은 서로의 예측요인으로도, 그리고 결과요인으로도 빈번히 다루어지고 있었 다. 즉, 두 변인의 상관관계는 기존 선행연구들을 통해 명백히 입증되었으나, 인과적 방향성에 대한 연구는 절대적 수도 부족하고 그 결과에 있어서도 일관성이 결여되어 있는 실정이라고 볼 수 있다. 따라서 더 많은 후속 연구를 통해 관련 요인 및 두 변인 간 관계의 방향성 등을 검증 할 필요가 있다. 두 변인 간의 인과관계를 좀 더 명확히 파악한다면, 청소년의 우울 및 스마트 폰 의존과 관련된 문제를 이해하고 그에 적합한 정책적․실천적 개입방안의 개발에 기여할 수 있을 것이라고 사료된다. <표 1> 스마트폰 의존과 우울 선행연구 분석결과\n\n분류 연구\n\n두 변인 간의 상관관계\n\n우울 ⟶ 스마트폰의존\n\n스마트폰의존 ⟶ 우울\n\n국내\n\n임경자 외(2013) 이성재(2014) 강인성(2015) 이상준(2018)\n\n국외\n\n국내\n\nKadir et al.(2006) Park & Lee(2012) Rozgonjuk et al(2018)\n\n김수올․김소명(2016) 고은영․김은향(2017) 박상규․조혜선(2018)\n\n국외\n\nBoumosleh & Jaalouk(2017) Elhai et al.(2017)\n\n국내\n\n금창민(2013)\n\n- 김경호(2015)\n\n김동일 외 (2015) 김선아(2015)\n\n- 김경호(2016)\n\n박혜정․최은숙(2017) 정은혜․이소연(2017)\n\n국외 Elhai et al.",
+    "(2016)\n\n### Ⅲ.\n연구방법\n\n- 1. 연구참여자\n\n청소년의 우울과 스마트폰 의존 간의 관계를 살펴보기 위하여, 한국청소년정책연구원에서 시 행하고 있는 한국아동․청소년패널조사 2010(Korean Children and Youth Panel Survey 2010; KCYPS 2010) 중 초4 패널 데이터를 활용하였다.\n한국아동․청소년패널조사 2010는 한국청소년패널조사 (2003~2008년)의 후속연구로서, 아동․청소년 성장과 발달의 다양한 양상을 종합적으로 파악\n\n- 하는 것을 목적으로 하였다."
+   ]
+  },
+  {
+   "eid": "E4",
+   "title": "우울과 스마트폰 의존의 종단적 관계",
+   "year": "2023.06",
+   "chunks": [
+    "스마트폰 사용 정도(휴대전화 이용 빈도, 휴대전화 의존도)가 높 으면 우울에 영향을 미친다는 결과를 따라 최근 청소년들이 과거보다 스마트폰에 더 많이 의존하여 같은 결과가 도출된 걸로 생각해볼 수도 있다.따라서 청소년의 스마트폰 사용 용 도와 휴대전화 사용 시간, 주중과 주말에 따른 사용 빈도 등을 고려한 연구가 이루어져야 할 것이다. ###### 【참고문헌】\n\n고미나(2015), “청소년의 온라인 게임중독과 비행 간의 관계”, 수산해양교육연구, 27\n\n(3):644-655,<https://doi.org/10.13000/JFMSE.2015.27.3.644>.",
+    "|DOIhttp://dx.doi.org/10.22143/HSS21.14.3.249| |---|\n\n3511\n\n## LongitudinalRelationshipBetweenDepressionand SmartphoneDependence\n\n###### Mincheol Shin & Dongil Chun\n\nAbstract: The purpose of this study is to analyze the longitudinal causal relationship between depression and smartphone dependence in adolescents. Therefore, the data from the 1st-4th survey of the 4th grade cohort of elementary school (2,607) and the 1st grade cohort of middle school (2,590) of KCYPS 2018 are used. In addition, the Autoregressive Cross-lagged Model is applied using SPSS 26.0 and AMOS 26.0, and the longitudinal causal relationship between the two variables is examined. Looking at the cross-lagged effect, it was found that smartphone dependence affects depression. This suggests that smartphone dependence acts significantly as a leading factor in adolescent depression. This study suggested that intervention insmartphonedependenceshouldprecedeyouthdepressionanditsplan. Key Words: Korean Children and Youth Panel Survey, Smartphone dependence, Depression,\n\nGeneralStrainTheory,AutoregressiveCross-laggedModel\n\n#### 우울과 스마트폰 의존의 종단적 관계\n\n###### 신 민 철*ㆍ전 동 일**\n\n연구 목적: 본 연구는 청소년의 우울과 스마트폰 의존의 종단적 인과관계를 분석하는데 목적을 두었 다."
+   ]
+  },
+  {
+   "eid": "E6",
+   "title": "중학생, 고등학생 및 대학생의 스마트폰 의존도 영향요인 비교: 제7차 한국 아동청소년 패널조사 자료를 바탕으로",
+   "year": "2019.04",
+   "chunks": [
+    "연구의 필요성\n\nTEL +82-63-850-6047 FAX +82-63-850-6060 E-MAIL ejlee06@wku.ac.kr\n\n스마트폰은 휴대폰과 컴퓨터가 결합된 것으로 전화나 문자뿐 아 니라 동영상 감상 및 제작, 소셜 네트워크 서비스(Social Network Service, SNS)를 통한 콘텐츠의 공유, 게임, 음악 감상 등 다양한 기 능을 가지고 있다. 스마트폰은 소지가 간편하기 때문에 청소년이 언제든 가지고 놀 수 있는 일종의 장난감 역할을 한다[1,2]. 이러한 점 때문에 청소년의 스마트폰 소지율 증가[1]와 함께 스마트폰 의\n\nKey words 스마트폰, 의존, 청소년, 젊은 성인 Received Dec 12, 2018 Revised Jan 17, 2019 Accepted Jan 23, 2019\n\nThis is an Open Access article distributed under the terms of the Creative Commons Attribution NonCommercial License (http://creativecommons.org/licenses/by-nc/4.0/) which permits unrestricted noncommercial use, distribution, and reproduction in any medium, provided the original work is properly cited. Copyright © 2019 Korean Academy of Child Health Nursing | 165\n\n존 청소년도 증가하는 추세이다[3]. 없다고 하여[4] 일관되지 않은 결과를 보고하였는데, 이는 청소년 의 발달단계에 따른 또래 영향의 차이가 그 원인일 가능성이 있다. 스마트폰을 지나치게 많이 사용하면 신체적으로 피로, 소화불 량, 요통, 수면장애, 시력저하, 거북목 증후군이 발생할 수 있고, 정 신적으로 우울, 불안, 외로움, 충동성이 높아지며, 사회적으로는 대 인관계 위축, 일상생활 장애와 비언어적 의사소통 능력 저하와 같 은 많은 건강문제를 유발한다[1]. 스마트폰 의존이 신체적, 정신적 건강에 부정적인 영향을 미치는 것이 알려지면서스마트폰 의존도 에 영향을 미치는 요인에 관한 연구가 활발히 진행되고 있다. 현재 까지 밝혀진 개인요인으로는 여자[4], 공격성이 높을수록[5,6], 자 아존중감이 낮을수록[5,7], 자아탄력성이 낮을수록[7], 자신의 정 체성이 확립되지 않을수록[8,9] 스마트폰 의존도가 높다고 보고되 었고, 청소년의 정체성 확립은 스마트폰 의존도를 낮춘다고 하였 다[8]. 그러나 우울과 스마트폰 의존과의 관계는 일관되지 않은 결 과가 보고되고 있다[5,6]. 스마트폰 의존에 영향을 미치는 요인에 관한 선행 연구는 청소 년의 개인요인, 부모요인, 또래요인을 전체적으로 분석하지 않고, 특정 변인만을 중점적으로 다룬 경우가 대부분이며[4-15], 또한 이 러한 요인이 발달단계별로 어떻게 달라지는지에 대해 비교한 연구 는 찾아보기 어렵다."
+   ]
+  },
+  {
+   "eid": "E16",
+   "title": "한국 청소년의 스마트 폰 중독과 우울, 사회 불안의 상관 관계 : 예비연구",
+   "year": "2014.12",
+   "chunks": [
+    "생물치료정신의학 제 20 권 제 3 호, 2014\n\nJ Korean Soc Biol Ther Psychiatry Vol 20, No 3, 2014\n\n# 한국 청소년의 스마트 폰 중독과 우울, 사회 불안의 상관 관계 : 예비연구\n\n원 저\n\n## 이성철*·최태영*·우정민*·김지현*·서민재*·곽상규**·이종훈*†\n\n### The Relationship of Smartphone Addiction and Depression, Social Anxiety on Adolescents : Preliminary Study\n\n#### Sung Chul Lee, M.D.,* Tae Young Choi, M.D., Ph.D.,* Jung Min Woo, M.D., Ph.D.,* Ji Hyun Kim, M.D., Ph.D.,* Min Jae Seo, M.D.,* Sang Gyu Kwak, Ph.D.,** Jong Hun Lee, M.D., Ph.D.*†\n\nObjectives：Recently, adolescent use of smartphones has dramatically increased. Consequently, smartphone addiction has emerged as a serious social problem. Researches on internet and cellular phone addiction have reported correlation between such addictions and symptoms such as depression and social anxiety. However, there have only been limited studies on the relationship between smartphone use, depression and social anxiety. Methods：Subjects involved in this study are 57 high school students and 16 patients who are diagnosed with depressive disorder in a university hospital and are currently being treated on visitation basis.",
+    "청소년 스마트폰 자가진단 척도는 결과 점수 범위는 15 점부터 60점까지이며, 점수가 높을수록 고위험 사용자군 으로 분류한다.\n이 척도의 결과로 고위험 사용자군, 잠재 적 위험 사용자군, 일반 사용자군, 3개 집단으로 분류될 수 있다.\n총점 43점 이상인 경우 고위험 사용자군에 속하 며, 잠재적 위험 사용자군은 총점 39점 이상 42점 이하인 경우이다. 마지막으로 일반 사용자군은 총점 38점 이하 로 구분한다. 본 연구에서는 38점 이하인 스마트 폰 일반 사용자군과 39점 이상인 스마트 폰 위험 사용자 군으로 나누어 연구를 진행하였다. 2) Beck 우울척도(Beck’s Depression inventory : BDI)\n\n총 21문항으로 구성된 Likert식 4점 척도로, 우울증을 선별하기 위한 자가 평가 척도이다."
+   ]
+  },
+  {
+   "eid": "E17",
+   "title": "성별에 따른 청소년의 스마트폰 사용의 문제적 경험 관련 요인",
+   "year": "2021.1",
+   "chunks": [
+    "자존감이 낮을 경우 낮은 자존감과 부정적인 대인관계를 회복하기 위해 스 마트폰 과의존 가능성은 증가한다[34]. 따라서 문제행 동도 증가할 수 있을 것이다. 그렇지 않은 청소년에 비해 스마트폰 사용 문제 경험의 가능성이 높은 것으로 나타났다. 그러므로 스마트폰 사용 문제 경험 예방 시 음주와 흡연을 조절할 필요가 있다. 본 연구 결과 우울과 자살 생각은 남학생, 여학생 모 두에게서 없는 경우보다 있는 경우에 스마트폰 사용의 문제적 경험 가능성이 더 높게 나타났다. 자살계획은 남학생에게서만 유의하게 나타났는데 없는 경우보다 있는 경우에 스마트폰 사용의 문제적 경험 가능성이 더 낮게 나타났다. 본 연구 결과와 동일하게 Hwang 등 [16]의 연구 결과 우울이 없는 청소년에 비해 우울이 있는 청소년의 스마트폰 사용으로 인한 문제행동이 더 많은 것으로 나타났다. 그리고 Kim[19]의 연구 결과\n\n본 연구 결과 스트레스의 경우 모든 대상자가 적게 받을 때보다 많은 받을 때 스마트폰 사용의 문제적 경 험 가능성이 더 높게 나타났고 스마트폰 사용 시간이 길수록 스마트폰 사용의 문제적 경험 가능성이 더 높게 나타났다. 본 연구 결과와 동일하게 Hwang 등[16]의 연구 결과 청소년이 스트레스를 더 많이 받고 스마트폰\n\n- 자살 생각이 없는 청소년에 비해 있는 청소년의 스마트 폰 사용 문제 경험 가능성이 증가하였다. 우울한 경우 우울한 기분을 완화시키기 위해 모바일 상의 의사소통 등에 집중하여 스마트폰 의존이 커지게 된다[27]. 우울 은 청소년의 스마트폰 중독에 강하게 영향을 주는 핵심 요인이라 할 수 있으며 우울이 심한 청소년의 경우 자 살생각까지 이어질 수 있다[28,29]. Moon 등[30]의 연 구 결과 스마트폰 사용 시간이 증가할수록 자살계획 가 능성은 증가하였다. 스마트폰 사용 시간의 증가는 문제 행동으로 연결될 수 있다. 그러므로 성별에 따른 스마 트폰 사용으로 인한 문제행동과 자살계획과의 추후 반 복 연구가 필요하다. 스마트폰 중독과 그 문제행동은 자기통제력이 성인에 비해 상대적으로 낮은 청소년에 게 매우 높다[31]. 그러므로 우울하고 자살 생각이 있는 청소년의 스마트폰 사용으로 인한 문제행동을 감소시 키기 위한 적극적인 노력이 필요하다. - 사용 시간이 길수록 스마트폰 사용으로 인한 문제행동 은 더 많이 나타났다. 스트레스는 스마트폰 내의 가상 공간으로의 몰입을 야기할 수 있으므로 문제행동 가능 성도 증가할 수 있다. 적절한 스트레스 관리로 스마트 폰으로 인한 문제행동을 예방할 필요가 있다. Moon 등 [35]의 연구 결과 여학생이 남학생에 비해 스마트폰을 - 더 과사용 하였으며, Kim 등[36]의 연구 결과 여학생 의 스마트폰 중독수준이 높은 것으로 나타났다. 그러나 Kwon 등[37]의 연구 결과 남학생의 스마트폰 의존이 더 높은 것으로 나타나 스마트폰 문제행동에 대한 성별 차이와 그 영향 정도에 대한 추후 연구가 이루어져야 하며, 적정한 스마트폰 사용에 대한 관리가 필요하다. 본 연구 결과 모두 대상자에게서 행복한 경우에 스 마트폰 사용의 문제적 경험 가능성이 더 낮게 나타났\n\n#### 5. 결론\n\n- 다."
+   ]
+  }
+ ]
+}
