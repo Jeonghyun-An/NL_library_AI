@@ -84,6 +84,13 @@ def _build_schema() -> CollectionSchema:
 _collection_cache: Collection | None = None
 
 
+def forget_collection() -> None:
+    """캐시한 컬렉션 핸들을 버린다 — 컬렉션을 지운(drop) 뒤 부른다. 남겨 두면 ensure_collection() 이 지운 컬렉션의 핸들을
+    그대로 돌려줘, 그 프로세스의 검색·적재가 없는 컬렉션을 물고 계속 실패한다(api/admin.py 전체 임베딩 삭제)."""
+    global _collection_cache
+    _collection_cache = None
+
+
 def ensure_collection() -> Collection:
     """
     컬렉션 없으면 생성, 있으면 반환 (모듈 레벨 캐시).

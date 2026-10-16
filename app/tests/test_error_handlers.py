@@ -4,12 +4,17 @@
   전에는 Starlette 기본 응답 'Internal Server Error'(JSON 아닌 영어 글)가 화면에 그대로 갔다. 스택은 로그에 남는다.
 - HTTPException·RequestValidationError 는 그대로다(code 를 더하지 않는다).
 - ApiError → {"detail", "code"}. 처리기를 걸지 않은 앱에서도 상태·문구는 HTTPException 처럼 같다.
-- 장애 판별(검색·원문 저장소·작업 큐)은 일시 장애만 본다 — 코드 버그(TypeError 등)는 503 으로 가리지 않는다.
+- 장애 판별(검색·원문 저장소·작업 큐)은 일시 장애만 본다 — 코드 버그(TypeError 등)는 503 으로 가리지 않는다. 검색은
+  연결 장애(Milvus 연결 실패, grpc UNAVAILABLE·DEADLINE_EXCEEDED, 연결·시간 초과)만 503 이고, 그 밖의 Milvus 오류(컬렉션
+  없음·스키마·자료형 불일치 등)는 기다려도 낫지 않아 500 이다.
+- main.py 가 install_error_handlers 를 실제로 건다(다른 테스트는 라우터만 올린 앱이라 빠뜨려도 통과한다).
 
-예외 클래스는 운영 이미지(pymilvus 2.4·minio 7.2·urllib3 2·kombu 5.6·redis 5)의 실제 것을 쓴다. 로컬 venv 에 없으면
-그 경우만 건너뛴다(importorskip). async 테스트 없음.
+예외 클래스는 운영 이미지(pymilvus 2.4.6·grpc·minio 7.2·urllib3 2·kombu 5.6·redis 5)의 실제 것을 쓴다 — Milvus·grpc 오류는
+milvus_errors.py 가 실제 호출로 만든다. 로컬 venv 에 없으면 그 경우만 건너뛴다(importorskip). async 테스트 없음.
 """
+import ast
 import logging
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import httpx
@@ -33,6 +38,7 @@ from core.errors import (
     search_outage_as_503,
     storage_outage_as_503,
 )
+from milvus_errors import milvus_connect_failure, milvus_retry_error, rpc_error
 
 
 class _Body(BaseModel):
@@ -167,6 +173,36 @@ class TestGuards:
         assert resp.status_code == 500
         assert resp.json()["code"] == "internal_error"
 
+    def test_a_permanent_milvus_error_inside_the_search_guard_is_500_and_logged(self, caplog):
+        # 컬렉션이 없어진 것 같은 오류는 '잠시 뒤 다시'로 낫지 않는다 — 500 으로 내고, 어느 검색에서 난 Milvus 오류인지 남긴다
+        exceptions = pytest.importorskip("pymilvus.exceptions")
+        app = _app()
+
+        @app.get("/search-milvus-broken")
+        async def search_milvus_broken():
+            with search_outage_as_503("테스트 검색"):
+                raise exceptions.MilvusException(code=100, message="collection not found[collection=nl_lib_chunks]")
+
+        with caplog.at_level(logging.ERROR, logger=errors.log.name):
+            resp = _client(app).get("/search-milvus-broken")
+        assert resp.status_code == 500
+        assert resp.json() == {"detail": INTERNAL_ERROR_DETAIL, "code": "internal_error"}
+        messages = [r.getMessage() for r in caplog.records if r.name == errors.log.name and r.levelname == "ERROR"]
+        assert any("[테스트 검색]" in m and "MilvusException" in m and "일시 장애 아님" in m for m in messages)
+
+    def test_a_milvus_outage_inside_the_search_guard_is_503(self):
+        app = _app()
+        down = milvus_connect_failure()
+
+        @app.get("/search-milvus-down")
+        async def search_milvus_down():
+            with search_outage_as_503("테스트 검색"):
+                raise down
+
+        resp = _client(app).get("/search-milvus-down")
+        assert resp.status_code == 503
+        assert resp.json() == {"detail": SEARCH_UNAVAILABLE_DETAIL, "code": "search_unavailable"}
+
     def test_http_exception_passes_through_every_guard(self):
         for guard in (search_outage_as_503, storage_outage_as_503, broker_outage_as_503):
             with pytest.raises(HTTPException) as caught:
@@ -212,15 +248,76 @@ class TestSearchOutage:
     def test_code_bugs_are_not(self, exc):
         assert not is_search_outage(exc)
 
-    def test_milvus_errors_are_outages_but_param_error_is_a_bug(self):
+    # ── Milvus·grpc — 운영 이미지 pymilvus 2.4.6·grpc 가 실제로 던지는 것(milvus_errors.py) ──
+    def test_milvus_down_at_connect_is_an_outage(self):
+        # Milvus 가 꺼져 있으면 connections.connect 는 채널 대기 끝에 code=2 의 MilvusException 을 던진다
         exceptions = pytest.importorskip("pymilvus.exceptions")
-        assert is_search_outage(exceptions.MilvusException(code=2, message="Fail connecting to server"))
-        assert is_search_outage(exceptions.MilvusUnavailableException(message="unavailable"))
-        assert not is_search_outage(exceptions.ParamError(message="wrong vector dim"))
+        exc = milvus_connect_failure()
+        assert type(exc) is exceptions.MilvusException and exc.code == 2
+        assert is_search_outage(exc)
 
-    def test_grpc_deadline_is_an_outage(self):
+    def test_milvus_unreachable_after_retries_is_an_outage(self):
+        # 연결이 끊긴 채 부른 RPC — pymilvus 는 UNAVAILABLE 을 재시도하다 MilvusException 으로 감싸 던지고, code 에는
+        # grpc 오류의 code 메서드가 부르지 않은 채 실린다
         grpc = pytest.importorskip("grpc")
-        assert is_search_outage(grpc.RpcError())
+        exceptions = pytest.importorskip("pymilvus.exceptions")
+        exc = milvus_retry_error("UNAVAILABLE")
+        assert type(exc) is exceptions.MilvusException and callable(exc.code)
+        assert exc.code() == grpc.StatusCode.UNAVAILABLE
+        assert is_search_outage(exc)
+
+    @pytest.mark.parametrize("code_name", ["UNAVAILABLE", "DEADLINE_EXCEEDED"])
+    def test_grpc_unavailable_and_deadline_are_outages(self, code_name):
+        assert is_search_outage(rpc_error(code_name))
+
+    def test_a_deadline_through_pymilvus_is_still_the_raw_grpc_error(self):
+        # pymilvus 는 기한 초과를 재시도하지 않고 날 grpc.RpcError 로 다시 던진다
+        grpc = pytest.importorskip("grpc")
+        exc = milvus_retry_error("DEADLINE_EXCEEDED")
+        assert isinstance(exc, grpc.RpcError) and exc.code() == grpc.StatusCode.DEADLINE_EXCEEDED
+        assert is_search_outage(exc)
+
+    def test_milvus_connection_classes_are_outages(self):
+        exceptions = pytest.importorskip("pymilvus.exceptions")
+        assert is_search_outage(exceptions.MilvusUnavailableException(message="unavailable"))
+        assert is_search_outage(exceptions.ConnectError(message="Connect server fail"))
+
+    def test_grpc_channel_wait_timeout_is_an_outage(self):
+        grpc = pytest.importorskip("grpc")
+        assert is_search_outage(grpc.FutureTimeoutError())
+
+    # 기다려도 낫지 않는 Milvus 오류 — 503('잠시 뒤 다시')으로 가리지 않는다
+    @pytest.mark.parametrize("name, kwargs", [
+        ("DataTypeNotMatchException", {"message": "The Input data type is inconsistent with defined schema"}),
+        ("SchemaNotReadyException", {"message": "Collection 'nl_lib_chunks' not exist, or you can pass in schema"}),
+        ("CollectionNotExistException", {"message": "collection not found"}),
+        ("ConnectionNotExistException", {"message": "should create connection first."}),
+        ("IndexNotExistException", {"message": "Index doesn't exist."}),
+        ("DataNotMatchException", {"message": "The data fields number is not match with schema."}),
+        ("ParamError", {"message": "wrong vector dim"}),
+        # 서버가 돌려준 오류(check_status) — code 는 Milvus 오류 번호다. 100 = 컬렉션 없음
+        ("MilvusException", {"code": 100, "message": "collection not found[collection=nl_lib_chunks]"}),
+        # pymilvus 가 알 수 없는 예외를 감싼 것(decorators.error_handler) — code 1(UNEXPECTED_ERROR)
+        ("MilvusException", {"message": "Unexpected error, message=<'NoneType' object is not subscriptable>"}),
+    ], ids=lambda v: v if isinstance(v, str) else None)
+    def test_permanent_milvus_errors_are_not_outages(self, name, kwargs):
+        exceptions = pytest.importorskip("pymilvus.exceptions")
+        assert not is_search_outage(getattr(exceptions, name)(**kwargs))
+
+    @pytest.mark.parametrize("code_name", ["INVALID_ARGUMENT", "UNIMPLEMENTED", "PERMISSION_DENIED"])
+    def test_other_grpc_statuses_are_not_outages(self, code_name):
+        assert not is_search_outage(rpc_error(code_name))
+
+    def test_a_retried_server_error_is_not_an_outage(self):
+        # INTERNAL 도 pymilvus 가 재시도하다 MilvusException 으로 감싼다 — 꼴은 UNAVAILABLE 과 같지만 상태가 다르다
+        exceptions = pytest.importorskip("pymilvus.exceptions")
+        exc = milvus_retry_error("INTERNAL")
+        assert type(exc) is exceptions.MilvusException and callable(exc.code)
+        assert not is_search_outage(exc)
+
+    def test_a_bare_grpc_error_without_a_status_is_not_an_outage(self):
+        grpc = pytest.importorskip("grpc")
+        assert not is_search_outage(grpc.RpcError())
 
     def test_stubbed_modules_do_not_break_the_check(self, monkeypatch):
         # 로컬 테스트는 pymilvus 를 MagicMock 으로 갈아 끼우기도 한다(pipeline_stub) — isinstance 가 터지면 안 된다
@@ -267,3 +364,33 @@ class TestBrokerOutage:
     @pytest.mark.parametrize("exc", _BUGS, ids=lambda e: type(e).__name__)
     def test_code_bugs_are_not(self, exc):
         assert not is_broker_outage(exc)
+
+
+# ── main.py 연결 ──────────────────────────────────────────
+class TestAppWiring:
+    def test_main_installs_the_error_handlers_on_its_app(self):
+        # 위 테스트는 처리기를 직접 건 앱을 쓰고, 다른 API 테스트는 라우터만 올린 앱을 쓴다 — main.py 가 처리기 등록을
+        # 빠뜨려도 모두 통과한다. main 은 DB·라우터를 물고 오므로 import 하지 않고 소스를 읽는다
+        tree = ast.parse((Path(__file__).resolve().parents[1] / "main.py").read_text(encoding="utf-8"))
+        imported = {
+            (node.module, alias.name, alias.asname)
+            for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
+            for alias in node.names
+        }
+        assert ("core.errors", "install_error_handlers", None) in imported
+
+        # 모듈 맨 위에서 app = FastAPI(...) 를 만든 뒤 그 app 에 건다(함수 안·다른 앱에 거는 것은 치지 않는다)
+        app_line = next(
+            node.lineno for node in tree.body
+            if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "app" for t in node.targets)
+            and isinstance(node.value, ast.Call) and getattr(node.value.func, "id", None) == "FastAPI"
+        )
+        installs = [
+            node for node in tree.body
+            if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
+            and getattr(node.value.func, "id", None) == "install_error_handlers"
+        ]
+        assert len(installs) == 1
+        call = installs[0].value
+        assert [getattr(a, "id", None) for a in call.args] == ["app"]
+        assert installs[0].lineno > app_line

@@ -2,6 +2,8 @@
 
 - DELETE /api/admin/embedding/all 이 /embedding/{cnts_id} 에 가려지던 경로 순서 버그. 전에는 'all' 이 cnts_id 로 잡혀
   전체 삭제 대신 'all' 이라는 도서 한 권의 임베딩 삭제가 돌았고 confirm 검사도 거치지 않았다.
+- 전체 임베딩 삭제는 컬렉션을 지운(drop) 뒤 indexer 의 컬렉션 캐시를 버리고 ensure_collection() 으로 다시 만든다. 전에는
+  다시 만들지도 캐시를 비우지도 않아 그 뒤 검색이 지운 컬렉션의 핸들을 물고 계속 실패했다.
 - ingest_jobs 의 {job_id} 는 uuid 로 받는다 — uuid 가 아니면 422(전에는 Postgres uuid 칼럼 비교에서 500). 없는 잡의
   retry 는 404(전에는 0건 재시도 200).
 
@@ -95,6 +97,135 @@ class TestEmbeddingRoutes:
         monkeypatch.setattr(postgres, "SyncSessionLocal", lambda: _Session())
         resp = _client(admin.router).delete("/api/admin/embedding/CNTS-1")
         assert resp.status_code == 200 and seen == ["CNTS-1"]
+
+
+# ── 전체 임베딩 삭제: drop 뒤 캐시를 버리고 다시 만든다 ─────────
+class _Milvus:
+    """이름으로 묻는 Milvus 서버 대역 — 있는 컬렉션 이름과 한 일만 둔다. 처리기가 함수 안에서 읽는 pymilvus 의
+    connections·utility·Collection 과, 진짜 indexer.ensure_collection 이 모듈 머리에서 읽은 같은 이름들을 이것으로 간다."""
+
+    def __init__(self, name: str, *, count=0, drop_error=None, create_error=None):
+        self.existing = {name}
+        self.count = count
+        self.drop_error, self.create_error = drop_error, create_error
+        self.log: list[tuple] = []
+        milvus = self
+
+        class _Collection:
+            def __init__(self, name, schema=None, **kwargs):
+                if schema is not None:
+                    if milvus.create_error is not None:
+                        raise milvus.create_error
+                    milvus.existing.add(name)
+                    milvus.log.append(("create", name, tuple(f.name for f in schema.fields)))
+                self.name = name
+                self.num_entities = milvus.count
+
+            def create_index(self, field_name, index_params):
+                milvus.log.append(("index", field_name, index_params["index_type"]))
+
+            def load(self):
+                milvus.log.append(("load", self.name))
+
+        def drop_collection(name):
+            if milvus.drop_error is not None:
+                raise milvus.drop_error
+            milvus.existing.discard(name)
+            milvus.log.append(("drop", name))
+
+        self.Collection = _Collection
+        self.connections = SimpleNamespace(has_connection=lambda alias: True, connect=lambda **kw: None)
+        self.utility = SimpleNamespace(has_collection=lambda name: name in milvus.existing,
+                                       drop_collection=drop_collection)
+
+
+class _SyncSession:
+    def __init__(self):
+        self.ops: list = []
+
+    def query(self, model):
+        return SimpleNamespace(delete=lambda: self.ops.append(("delete", model.__tablename__)))
+
+    def execute(self, stmt):
+        self.ops.append(("execute", str(stmt)))
+
+    def commit(self):
+        self.ops.append("commit")
+
+    def close(self):
+        self.ops.append("close")
+
+
+class TestDeleteAllEmbeddings:
+    @pytest.fixture
+    def env(self, monkeypatch):
+        """진짜 indexer(ensure_collection·forget_collection)를 쓰고 Milvus·PostgreSQL 만 대역으로 간다."""
+        pymilvus = pytest.importorskip("pymilvus")
+        indexer = pytest.importorskip("services.ingestion.indexer")
+        import db.postgres as postgres
+
+        def setup(**kwargs):
+            milvus = _Milvus(indexer.COLLECTION, **kwargs)
+            for module in (pymilvus, indexer):
+                monkeypatch.setattr(module, "connections", milvus.connections)
+                monkeypatch.setattr(module, "utility", milvus.utility)
+                monkeypatch.setattr(module, "Collection", milvus.Collection)
+            session = _SyncSession()
+            monkeypatch.setattr(postgres, "SyncSessionLocal", lambda: session)
+            # 이 프로세스가 지우기 전에 쥐고 있던 컬렉션 핸들 — 검색(search_chunks)이 ensure_collection() 으로 받는 것
+            stale = SimpleNamespace(name="지운 컬렉션의 핸들")
+            monkeypatch.setattr(indexer, "_collection_cache", stale)
+            return SimpleNamespace(milvus=milvus, session=session, stale=stale, indexer=indexer,
+                                   client=_client(admin.router))
+
+        return setup
+
+    def test_drop_then_forget_then_recreate(self, env):
+        e = env(count=1234)
+        resp = e.client.delete("/api/admin/embedding/all", params={"confirm": "yes"})
+
+        assert resp.status_code == 200 and resp.json() == {"milvus_deleted": 1234, "status": "ok"}
+        name = e.indexer.COLLECTION
+        kinds = [entry[0] for entry in e.milvus.log]
+        assert kinds == ["drop", "create", "index", "index", "load"]    # 지운 뒤 같은 이름으로 다시 만든다
+        assert e.milvus.log[1][1] == name and "sparse_embedding" in e.milvus.log[1][2]
+        assert name in e.milvus.existing
+        # 캐시는 지운 컬렉션의 핸들이 아니라 다시 만든 컬렉션이다 — 전에는 지운 핸들이 남아 그 뒤 검색이 계속 실패했다
+        assert e.indexer._collection_cache is not e.stale
+        assert e.indexer.ensure_collection().name == name
+        assert e.milvus.log[-1] == ("load", name)                      # 위 ensure_collection 은 캐시를 돌려줘 새로 만들지 않는다
+        # PostgreSQL 리셋도 한다
+        assert ("delete", "book_sections") in e.session.ops and "commit" in e.session.ops
+
+    def test_without_a_collection_it_still_creates_one(self, env):
+        e = env()
+        e.milvus.existing.clear()
+        resp = e.client.delete("/api/admin/embedding/all", params={"confirm": "yes"})
+
+        assert resp.status_code == 200 and resp.json() == {"milvus_deleted": 0, "status": "ok"}
+        assert [entry[0] for entry in e.milvus.log] == ["create", "index", "index", "load"]
+        assert e.indexer._collection_cache is not e.stale
+
+    def test_a_failed_recreate_still_resets_postgres_and_leaves_the_cache_empty(self, env):
+        e = env(count=5, create_error=RuntimeError("create collection failed: quota exceeded"))
+        resp = e.client.delete("/api/admin/embedding/all", params={"confirm": "yes"})
+
+        assert resp.status_code == 500
+        assert resp.json() == {"detail": "임베딩은 지웠지만 Milvus 컬렉션을 다시 만들지 못했습니다. 다음 검색·적재 때 다시 만듭니다"}
+        # Milvus 는 이미 비었다 — PostgreSQL 도 리셋해 '적재됨'으로 남지 않게 한다
+        assert ("delete", "book_sections") in e.session.ops and "commit" in e.session.ops
+        # 캐시가 비어 있어 다음 ensure_collection() 이 다시 만들어 본다
+        assert e.indexer._collection_cache is None
+
+    def test_a_failed_drop_is_a_korean_500_and_postgres_is_untouched(self, env):
+        e = env(drop_error=RuntimeError("drop collection failed: rpc error"))
+        resp = e.client.delete("/api/admin/embedding/all", params={"confirm": "yes"})
+
+        assert resp.status_code == 500
+        assert resp.json() == {"detail": "Milvus 컬렉션을 지우지 못했습니다. 서버 로그를 확인하세요"}
+        assert "rpc error" not in resp.text
+        assert e.session.ops == []
+        assert e.indexer._collection_cache is None
 
 
 # ── ingest_jobs 의 잘못된 job_id ───────────────────────────

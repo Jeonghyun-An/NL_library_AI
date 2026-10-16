@@ -2,7 +2,8 @@
 
 검색 기반(Milvus·임베딩) 연결/조회 장애 → 503 {"detail": "검색 서버가 잠시 응답하지 않습니다. 잠시 뒤 다시 시도하세요",
 "code": "search_unavailable"} — 소장자료 검색·논문 검색·상황별 추천·소장자료 관련 자료·논문 관련 자료. 전에는 500
-'Internal Server Error'(JSON 아님)가 화면에 갔다. 코드 버그(TypeError 등)는 503 으로 가리지 않고 500 internal_error 다.
+'Internal Server Error'(JSON 아님)가 화면에 갔다. 코드 버그(TypeError 등)와 장애가 아닌 Milvus 오류(컬렉션 없음 등)는
+503 으로 가리지 않고 500 internal_error 다.
 
 상황별 추천(/api/scenario/recommend)·큐레이션(/api/books/curate)은 LLM 사유 생성이 실패하면 빈 사유로 채우고
 ai_failed=true 를 싣는다(성공이면 false).
@@ -21,6 +22,7 @@ from fastapi.testclient import TestClient
 
 from core.errors import SEARCH_UNAVAILABLE_DETAIL, install_error_handlers
 from history_sqlite import AsyncSessionOverSync, add_book, make_engine
+from milvus_errors import rpc_error
 from models.search_history import SearchHistory
 from pipeline_stub import stubbed_pipeline
 
@@ -128,10 +130,18 @@ class TestSearchUnavailable:
         assert resp.status_code == 503 and resp.json() == SEARCH_503
 
     def test_paper_search_grpc_deadline(self, api):
-        grpc = pytest.importorskip("grpc")
-        api.fail_search("paper", "search", grpc.RpcError())
+        # pymilvus 는 기한 초과를 날 grpc.RpcError(DEADLINE_EXCEEDED)로 다시 던진다
+        api.fail_search("paper", "search", rpc_error("DEADLINE_EXCEEDED"))
         resp = api.client.post("/api/papers/search", json={"query": "노인 우울"})
         assert resp.status_code == 503 and resp.json() == SEARCH_503
+
+    def test_paper_search_with_a_dropped_collection_is_500_not_503(self, api):
+        # 컬렉션이 없어진 것 같은 영구 오류는 '잠시 뒤 다시'로 낫지 않는다 — 503 으로 가리지 않는다
+        exceptions = pytest.importorskip("pymilvus.exceptions")
+        api.fail_search("paper", "search",
+                        exceptions.MilvusException(code=100, message="collection not found[collection=nl_lib_chunks]"))
+        resp = api.client.post("/api/papers/search", json={"query": "노인 우울"})
+        assert resp.status_code == 500 and resp.json()["code"] == "internal_error"
 
     def test_scenario_recommend(self, api):
         api.fail_search("scenario", "search", _milvus_down())

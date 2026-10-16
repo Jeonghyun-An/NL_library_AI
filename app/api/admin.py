@@ -446,7 +446,7 @@ def _delete_embedding(cnts_id: str, db_sync) -> dict:
 # 'all' 이라는 도서 한 권의 임베딩 삭제가 돌았다(confirm 검사도 거치지 않는다)
 @router.delete("/embedding/all")
 async def delete_all_embeddings(confirm: str):
-    """전체 임베딩 삭제. Milvus 컬렉션 전체 flush + PostgreSQL 상태 리셋.
+    """전체 임베딩 삭제. Milvus 컬렉션을 지우고(drop) 같은 스키마의 빈 컬렉션으로 다시 만든다 + PostgreSQL 상태 리셋.
 
     ?confirm=yes 필수.
     """
@@ -455,6 +455,7 @@ async def delete_all_embeddings(confirm: str):
 
     from pymilvus import connections, Collection, utility
     from db.postgres import SyncSessionLocal
+    from services.ingestion import indexer
 
     # Milvus 전체 삭제 (drop & recreate)
     milvus_count = 0
@@ -467,7 +468,23 @@ async def delete_all_embeddings(confirm: str):
             utility.drop_collection(cfg.MILVUS_COLLECTION)
             log.info(f"Milvus 컬렉션 '{cfg.MILVUS_COLLECTION}' 삭제 완료 ({milvus_count}개)")
     except Exception as e:
-        raise HTTPException(500, f"Milvus 삭제 실패: {e}")
+        # 예외 글(영문)은 화면에 내지 않는다 — 로그에만
+        log.error("Milvus 컬렉션 삭제 실패: %s: %s", type(e).__name__, e, exc_info=True)
+        raise HTTPException(500, "Milvus 컬렉션을 지우지 못했습니다. 서버 로그를 확인하세요")
+    finally:
+        # 지운(또는 지우다 만) 컬렉션의 핸들을 버린다 — 남기면 ensure_collection() 이 그것을 그대로 돌려줘 이 프로세스의
+        # 검색·적재가 없는 컬렉션을 물고 계속 실패한다
+        indexer.forget_collection()
+
+    # 같은 이름의 빈 컬렉션(스키마·인덱스·load)을 곧바로 다시 만든다. 워커처럼 다른 프로세스가 쥔 핸들은 여기서 버릴 수
+    # 없지만, 그쪽 호출도 컬렉션을 이름으로 물으므로 다시 만든 컬렉션에 닿는다. 실패해도 Milvus 는 이미 비었으니 아래
+    # PostgreSQL 리셋은 그대로 한다 — 캐시를 버렸으므로 다음 검색·적재의 ensure_collection() 이 다시 만들어 본다
+    recreated = True
+    try:
+        indexer.ensure_collection()
+    except Exception as e:
+        recreated = False
+        log.error("Milvus 컬렉션 재생성 실패: %s: %s", type(e).__name__, e, exc_info=True)
 
     # PostgreSQL — BookSection + 임베딩 상태 리셋
     db = SyncSessionLocal()
@@ -484,6 +501,8 @@ async def delete_all_embeddings(confirm: str):
     finally:
         db.close()
 
+    if not recreated:
+        raise HTTPException(500, "임베딩은 지웠지만 Milvus 컬렉션을 다시 만들지 못했습니다. 다음 검색·적재 때 다시 만듭니다")
     return {"milvus_deleted": milvus_count, "status": "ok"}
 
 

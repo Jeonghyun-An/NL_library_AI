@@ -3,7 +3,8 @@
 화면(프론트)이 읽는 계약:
 - 라우트가 잡지 않은 예외 → 500 {"detail": INTERNAL_ERROR_DETAIL, "code": "internal_error"}. 스택은 로그에만 남긴다 —
   전에는 Starlette 기본 응답 'Internal Server Error'(JSON 아닌 글)가 그대로 화면에 갔다.
-- 검색 기반(Milvus·gRPC·연결/시간 초과) 장애 → 503 {"detail": SEARCH_UNAVAILABLE_DETAIL, "code": "search_unavailable"}
+- 검색 기반(Milvus·gRPC·연결/시간 초과) 연결 장애 → 503 {"detail": SEARCH_UNAVAILABLE_DETAIL, "code": "search_unavailable"}.
+  Milvus 가 돌려준 그 밖의 오류(컬렉션 없음·스키마·자료형 불일치 등)는 기다려도 낫지 않아 500(internal_error)이다.
 - 원문 저장소(MinIO) 연결 장애 → 503 {"detail": STORAGE_UNAVAILABLE_DETAIL, "code": "storage_unavailable"}
 - 작업 큐(Celery 브로커)에 넣지 못함 → 503 {"detail": QUEUE_UNAVAILABLE_DETAIL} — 딥리서치(api/research.py
   _broker_unavailable)와 같은 문구·꼴이다.
@@ -14,6 +15,7 @@ HTTPException·RequestValidationError 는 FastAPI 기본 처리 그대로다(Api
 pymilvus·grpc·urllib3·minio·kombu·redis 는 판별할 때만 함수 안에서 import 한다 — 이 모듈은 main.py·라우터가 머리에서
 읽으므로 무거운(또는 로컬 venv 에 없는) 모듈을 끌어오면 안 된다(recurring-gotchas 13번과 같은 이유).
 """
+import enum
 import logging
 from contextlib import contextmanager
 from typing import Iterator
@@ -71,9 +73,14 @@ def _milvus_exception():
     return MilvusException
 
 
-def _milvus_param_error():
-    from pymilvus.exceptions import ParamError
-    return ParamError
+def _milvus_unavailable():
+    from pymilvus.exceptions import MilvusUnavailableException
+    return MilvusUnavailableException
+
+
+def _milvus_connect_error():
+    from pymilvus.exceptions import ConnectError
+    return ConnectError
 
 
 def _grpc_error():
@@ -81,14 +88,67 @@ def _grpc_error():
     return grpc.RpcError
 
 
+def _grpc_future_timeout():
+    import grpc
+    return grpc.FutureTimeoutError
+
+
+# pymilvus 가 서버에 닿지 못했을 때 싣는 code(pymilvus.client.types.Status.CONNECT_FAILED) — connections.connect 는 채널이
+# 기한 안에 열리지 않으면 MilvusException(code=2, 'Fail connecting to server on …')을 던진다(운영 이미지 2.4.6 에서 확인)
+_MILVUS_CONNECT_FAILED = 2
+
+
+def _grpc_outage_codes() -> tuple:
+    """연결 장애로 보는 grpc 상태 — 서버에 닿지 못함(UNAVAILABLE)·기한 초과(DEADLINE_EXCEEDED). 그 밖의 상태(INVALID_ARGUMENT·
+    UNIMPLEMENTED·PERMISSION_DENIED·INTERNAL 등)는 기다려도 낫지 않는다. grpc 가 없거나 대역(MagicMock)이면 빈 묶음이다."""
+    try:
+        import grpc
+    except ImportError:
+        return ()
+    status = getattr(grpc, "StatusCode", None)
+    if not (isinstance(status, type) and issubclass(status, enum.Enum)):
+        return ()
+    return (status.UNAVAILABLE, status.DEADLINE_EXCEEDED)
+
+
+def _status_code(exc: BaseException):
+    """예외가 싣는 상태 코드. grpc 오류는 code() 메서드다. pymilvus 가 grpc 오류를 재시도하다 끝내 던지는 MilvusException 은
+    grpc 오류의 code 메서드를 부르지 않은 채 code 에 싣는다(decorators.retry_on_rpc_failure — 운영 이미지 2.4.6 에서 확인)
+    — 그래서 부를 수 있으면 불러 grpc 상태를 꺼낸다. 서버가 돌려준 오류(check_status)의 code 는 Milvus 오류 번호(int)다."""
+    code = getattr(exc, "code", None)
+    if callable(code):
+        try:
+            code = code()
+        except Exception:
+            return None
+    return code
+
+
 def is_search_outage(exc: BaseException) -> bool:
-    """검색 기반의 일시 장애인가 — 연결 거부·시간 초과(내장 ConnectionError·TimeoutError, httpx 전송 오류), Milvus 가
-    돌려준 오류(MilvusException — 연결 실패도 이것이다), gRPC 오류(pymilvus 는 기한 초과를 날 grpc.RpcError 로 다시
-    던진다 — research_work/membership.py). pymilvus 의 ParamError 는 클라이언트가 인자를 거른 것(코드 버그)이라 뺀다."""
+    """검색 기반에 잠시 닿지 못한 것인가 — '잠시 뒤 다시'로 나을 연결 장애만 본다:
+    - 내장 ConnectionError·TimeoutError, httpx 전송 오류(임베딩 서버 연결·시간 초과)
+    - Milvus 연결 실패 — MilvusUnavailableException·ConnectError, 연결 실패 code(2) 의 MilvusException
+    - grpc UNAVAILABLE·DEADLINE_EXCEEDED — 날 grpc.RpcError(pymilvus 는 기한 초과를 재시도 없이 그대로 다시 던진다)이든,
+      재시도 끝에 pymilvus 가 감싼 MilvusException 이든. 채널 대기 시간 초과(grpc.FutureTimeoutError)도 연결 장애다
+    그 밖의 MilvusException(컬렉션 없음·스키마 준비 안 됨·자료형 불일치·인자 오류 ParamError 등)과 다른 grpc 상태는 기다려도
+    낫지 않는다 — 503 으로 가리면 '잠시 뒤 다시'가 영영 낫지 않으니 500 으로 보낸다(search_outage_as_503 이 ERROR 로그를 남긴다)."""
     if isinstance(exc, (ConnectionError, TimeoutError, httpx.TransportError)):
         return True
-    if isinstance(exc, _types(_milvus_param_error)):
+    if isinstance(exc, _types(_milvus_unavailable, _milvus_connect_error, _grpc_future_timeout)):
+        return True
+    milvus_types = _types(_milvus_exception)
+    if not isinstance(exc, (*milvus_types, *_types(_grpc_error))):
         return False
+    code = _status_code(exc)
+    if code is None:
+        return False
+    if code in _grpc_outage_codes():
+        return True
+    return isinstance(exc, milvus_types) and isinstance(code, int) and code == _MILVUS_CONNECT_FAILED
+
+
+def _is_search_backend_error(exc: BaseException) -> bool:
+    """검색 기반(Milvus·grpc)이 돌려준 오류인가 — 장애든 아니든. 장애가 아닌 것을 500 으로 보낼 때 로그를 가른다."""
     return isinstance(exc, _types(_milvus_exception, _grpc_error))
 
 
@@ -143,12 +203,15 @@ def is_broker_outage(exc: BaseException) -> bool:
 # ── 라우트에서 쓰는 가드 ──────────────────────────────────
 @contextmanager
 def search_outage_as_503(where: str) -> Iterator[None]:
-    """블록 안의 검색 기반 장애를 503(search_unavailable)으로 바꾼다. 그 밖의 예외(HTTPException·코드 버그)는 그대로
-    올린다 — 코드 버그는 전역 처리기가 500 으로 낸다."""
+    """블록 안의 검색 기반 장애를 503(search_unavailable)으로 바꾼다. 그 밖의 예외(HTTPException·코드 버그·장애가 아닌
+    Milvus 오류)는 그대로 올린다 — 전역 처리기가 500 으로 낸다."""
     try:
         yield
     except Exception as e:
         if not is_search_outage(e):
+            if _is_search_backend_error(e):
+                # 컬렉션 없음·스키마·자료형 불일치 같은 영구 오류 — 어느 검색에서 났는지를 남긴다(스택은 전역 처리기가 남긴다)
+                log.error("[%s] 검색 서버 오류(일시 장애 아님) → 500: %s: %s", where, type(e).__name__, e)
             raise
         log.warning("[%s] 검색 기반 장애 → 503: %s: %s", where, type(e).__name__, e, exc_info=True)
         raise search_unavailable() from e
