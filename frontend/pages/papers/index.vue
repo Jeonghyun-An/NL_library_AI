@@ -20,11 +20,15 @@
                 class="skx-search__input"
                 v-model="currentQuery"
                 placeholder="탐구하고 싶은 논문을 자연어로 검색해보세요"
+                :maxlength="SEARCH_QUERY_MAX"
+                :aria-describedby="landingCountId"
                 :disabled="loading"
                 @keydown.enter.exact.prevent="handleSearch(currentQuery)"
               ></textarea>
             </label>
             <div class="skx-search__actions">
+              <!-- 글자 수 — 서버 한도(500자)를 넘는 검색어는 입력창이 먼저 막는다(넘으면 422 로 거절된다) -->
+              <SkxCharCount :id="landingCountId" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
               <button
                 type="button"
                 class="skx-send"
@@ -51,8 +55,12 @@
           type="text"
           class="skx-rsearch__input"
           v-model="currentQuery"
+          :maxlength="SEARCH_QUERY_MAX"
+          aria-label="논문 검색어"
+          :aria-describedby="barCountId"
           @keydown.enter.prevent="handleSearch(currentQuery)"
         />
+        <SkxCharCount :id="barCountId" :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
         <button
           type="button"
           class="skx-send"
@@ -71,14 +79,18 @@
           <p style="margin-top: 12px">논문을 탐색하고 있습니다...</p>
         </div>
 
-        <!-- 에러 -->
-        <div v-else-if="error" style="padding: 20px; color: #c00">
-          {{ error }}
-        </div>
+        <!-- 검색 실패 — 결과 자리에 상태 블록. 같은 검색어로 다시 보내는 [다시 시도](입력 거절·없음처럼 다시 보내도 같은 결과면 달지 않는다) -->
+        <SkxErrorState
+          v-else-if="searchError"
+          :kind="searchError.kind"
+          :title="PAPER_STATE_TEXT.searchFailed"
+          :message="searchError.message"
+          :on-retry="isRetryableKind(searchError.kind) ? retrySearch : undefined"
+        />
 
         <template v-else>
-          <!-- AI 검색 결과 — 틀(머리·DeepRead 안내·2:1 두 칸)은 소장자료 결과와 같은 AiResultPanel -->
-          <AiResultPanel :loading="aiLoading" :hint="!!aiText && !aiLoading">
+          <!-- AI 검색 결과 — 틀(머리·DeepRead 안내·2:1 두 칸)은 소장자료 결과와 같은 AiResultPanel. 결과가 0건이면 요약할 논문이 없어 그리지 않는다 -->
+          <AiResultPanel v-if="paperResult?.books.length" :loading="aiLoading" :hint="!!aiText && !aiLoading">
             <!-- 좌측: 요약 텍스트 -->
             <ClampedPanel
               v-model:expanded="aiExpanded"
@@ -99,32 +111,30 @@
                   </div>
                 </template>
                 <!-- 요약이 끝난 뒤(참고 목록이 정해진 뒤)에는 (1)·(1, 3) 인용 번호를 눌러 그 논문 카드를 본다 -->
+                <!-- 원문 보기는 팝오버가 파일을 먼저 확인하고(CitePopover — usePdfOpener) 있을 때만 알린다 -->
                 <SummaryText
                   v-else-if="aiText"
                   :html="renderedAiText"
                   :refs="summaryRefs"
                   :linked="!aiLoading"
                   @detail="(id) => navigateTo(paperDetailUrl(id))"
-                  @pdf="(id) => (pdfItem = aiRefPaperMap.get(id) ?? null)"
+                  @pdf="openCheckedPdf"
                   @chat="(id) => (chatPaperId = id)"
                   @reveal="aiExpanded = true"
                 />
-                <div v-else class="skx-pai-section">
-                  <p class="skx-pai-section__text">
-                    AI 요약 정보가 없습니다.
-                  </p>
-                </div>
+                <!-- 글 없이 끝난 요약(옛 서버의 빈 답·글 없는 기록) — 실패가 아닌 빈 상태 -->
+                <SkxErrorState v-else kind="empty" compact :title="PAPER_STATE_TEXT.summaryEmpty" />
               </div>
               <!-- 요약을 만들지 못했다(서버의 {error}·끊김) — 받은 글이 있으면 그 아래에, 글에 잇지 않고 따로. 접히는 칸 밖이라
-                   받은 글이 길어 접혀도 늘 보인다(접힌 채로는 페이드와 '전체보기'만 보여 끊긴 요약을 다 받은 것으로 읽었다) -->
+                   받은 글이 길어 접혀도 늘 보인다(접힌 채로는 페이드와 '전체보기'만 보여 끊긴 요약을 다 받은 것으로 읽었다).
+                   문구는 화면의 해요체 상수(AI_SUMMARY_FAILED — 서버 문구는 쓰지 않는다) -->
               <template #after>
-                <p
+                <SkxInlineError
                   v-if="aiError && !aiLoading"
-                  :class="['skx-pai-section__text', 'skx-pai-main__failed', !aiText && 'is-alone']"
-                  role="alert"
-                >{{ aiError }} ·
-                  <button type="button" class="skx-retry" @click="retryAiSummary">다시 시도</button>
-                </p>
+                  :class="['skx-pai-main__failed', !aiText && 'is-alone']"
+                  :message="aiError"
+                  @retry="retryAiSummary"
+                />
               </template>
             </ClampedPanel>
             <!-- 우측: 참고 논문 목록 — 번호·제목(누르면 상세)·저자만. 원문 보기·DeepRead 는 요약 속 번호의 팝오버와 결과 카드에, 출처 인용은
@@ -183,17 +193,18 @@
               />
             </ResultListHead>
 
-            <!-- 목록 없음 -->
-            <div
+            <!-- 결과 0건 — 실패(위 상태 블록)와 가른 빈 상태 -->
+            <SkxErrorState
               v-if="!filteredPapers.length"
-              style="padding: 60px; text-align: center; color: #bbb"
-            >
-              검색 결과가 없습니다.
-            </div>
+              kind="empty"
+              :title="PAPER_STATE_TEXT.searchEmpty"
+              :message="PAPER_STATE_TEXT.searchEmptyHint"
+            />
 
             <!-- 논문 목록 -->
             <div v-else class="skx-paper-list">
               <h2 class="skx-sr-only">논문 목록</h2>
+              <!-- 원문 보기는 파일을 먼저 확인하고 연다(usePdfOpener) — 없으면 그 카드 아래에 알린다 -->
               <ResultCard
                 v-for="paper in pagedPapers"
                 :key="paper.book_id"
@@ -202,9 +213,11 @@
                 show-cite
                 :anchor="resultAnchor(paper.book_id)"
                 :ai-cited-num="aiRefNumMap.get(paper.book_id) ?? null"
+                :pdf-problem="resultPdfProblem?.id === paper.book_id ? resultPdfProblem.message : ''"
+                :pdf-busy="checkingPdf"
                 @open="goToDetail(paper, $event)"
                 @chat="goToDetail(paper, $event, { chat: '1' })"
-                @pdf="pdfItem = paper"
+                @pdf="openResultPdf(paper)"
                 @cite="openPaperCitation(paper)"
               />
             </div>
@@ -224,12 +237,12 @@
       @close="citeModalOpen = false"
     />
 
-    <!-- PDF 뷰어 -->
+    <!-- PDF 뷰어 — 파일을 확인한 원문만 연다(결과 카드: openResultPdf, 요약 팝오버: CitePopover 가 확인) -->
     <PdfViewer
-      v-if="pdfItem"
-      :cnts-id="pdfItem.book_id"
-      :title="pdfItem.book_info?.title"
-      @close="pdfItem = null"
+      v-if="pdf"
+      :cnts-id="pdf.cntsId"
+      :title="pdf.title"
+      @close="closePdf"
     />
 
     <!-- 논문 채팅 패널 -->
@@ -269,8 +282,9 @@
 
 <script setup lang="ts">
 import { marked } from "marked";
-import { apiHeaders, apiUrl, useApi } from "~/composables/useApi";
+import { API_SEARCH_TIMEOUT_MS, apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
+import { usePdfOpener } from "~/composables/usePdfOpener";
 import { useDetailLeave, useRestorePosition } from "~/composables/useRestorePosition";
 import { usePageLeaving } from "~/composables/usePageLeaving";
 import { rememberListView, savedListView } from "~/composables/useListView";
@@ -298,6 +312,7 @@ import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
 import { hasQuery } from "~/utils/searchInput";
 import { AI_SUMMARY_FAILED, type AiStreamEnd, failureText, readAiStream } from "~/utils/aiStream";
+import { isRetryableKind, PAPER_STATE_TEXT, SEARCH_QUERY_MAX, shownError, type ShownError } from "~/utils/paperErrors";
 
 const api = useApi();
 const route = useRoute();
@@ -320,8 +335,14 @@ const currentQuery = ref("");
 // 결과에 묶인 이동·주소 비교는 이 값을 쓴다
 const resultQuery = ref("");
 const loading = ref(false);
-const error = ref<string | null>(null);
+// 검색 실패 — 결과 자리의 상태 블록(kind·이유). failedSearch 는 [다시 시도]가 같은 검색(기록을 채우던 검색이면 그 기록까지)으로 다시 보내게 쥔다
+const searchError = ref<ShownError | null>(null);
+let failedSearch: { query: string; reuse?: PaperEntry } | null = null;
 const paperResult = ref<BookSearchResponse | null>(null);
+
+// 글자 수(SkxCharCount) — 입력창이 aria-describedby 로 가리킨다. 랜딩 입력 상자와 결과 검색바는 함께 그려지지 않지만 id 는 따로 둔다
+const landingCountId = `papers-count-${useId()}`;
+const barCountId = `papers-bar-count-${useId()}`;
 
 // ── 상세에서 돌아온 자리 ──────────────────────────────────────
 // 결과는 기록에서 비동기로 복원해 브라우저·Nuxt 의 스크롤 복원이 목록보다 먼저 끝난다 — 맞출 자리(주소의 at·y,
@@ -347,7 +368,7 @@ const chatPaperTitle = computed(() =>
 // ── AI 요약 ──────────────────────────────────────────────────
 const aiText = ref("");
 const aiLoading = ref(false);
-// 요약을 만들지 못했을 때 보일 문구(서버의 {error} 문구, 없으면 AI_SUMMARY_FAILED) — 받은 글에 잇지 않고 따로 보인다
+// 요약을 만들지 못했을 때 보일 문구(AI_SUMMARY_FAILED — 서버의 {error} 문구는 쓰지 않는다) — 받은 글에 잇지 않고 따로 보인다
 const aiError = ref("");
 const aiExpanded = ref(false);
 const aiRefs = ref<
@@ -363,7 +384,27 @@ const pageSize = ref<PageSize>(20);
 const currentPage = ref(1);
 
 // ── PDF 뷰어 ─────────────────────────────────────────────────
-const pdfItem = ref<BookChunkGroup | null>(null);
+// 원문 보기는 파일이 있는지 먼저 확인하고 연다(usePdfOpener — 논문 상세·딥리서치와 같다). 없으면 누른 결과 카드 아래에 알린다
+const { pdf, checking: checkingPdf, openPdf, closePdf } = usePdfOpener();
+const resultPdfProblem = ref<{ id: string; message: string } | null>(null);
+
+// 결과 카드의 [원문 보기] — 확인 중에 다른 카드를 눌러도 무시한다(openPdf 가 null 을 돌려줘 안내가 지워지지 않게).
+// 확인하는 사이 결과가 바뀌었으면(랜딩으로·다른 검색) 그 결과에 없는 논문의 뷰어·안내를 남기지 않는다
+async function openResultPdf(paper: BookChunkGroup) {
+  if (checkingPdf.value) return;
+  const problem = await openPdf({ cntsId: paper.book_id, title: paper.book_info?.title ?? "" });
+  if (!aiRefPaperMap.value.has(paper.book_id)) {
+    if (!problem) closePdf();
+    return;
+  }
+  resultPdfProblem.value = problem ? { id: paper.book_id, message: problem } : null;
+}
+
+// 요약 속 인용 번호 팝오버의 [원문 보기] — 팝오버가 파일을 이미 확인했다(CitePopover)
+function openCheckedPdf(bookId: string) {
+  resultPdfProblem.value = null;
+  pdf.value = { cntsId: bookId, title: aiRefPaperMap.value.get(bookId)?.book_info?.title ?? "" };
+}
 
 // ── 인용 모달 ─────────────────────────────────────────────────
 const citeModalOpen = ref(false);
@@ -497,7 +538,9 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
   // 그 기록을 누르면 지금 주소와 같아 이동이 무시되며, 새로고침하면 이전 기록이 열린다
   router.replace({ query: { q: query } });
   loading.value = true;
-  error.value = null;
+  searchError.value = null;
+  failedSearch = null;
+  resultPdfProblem.value = null;
   paperResult.value = null;
   aiText.value = "";
   aiRefs.value = [];
@@ -519,6 +562,8 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
         use_rerank: true,
       },
       signal,
+      // 읽기 성격 POST — 게이트웨이 한도(120초)까지 스피너만 돌지 않게 검색 제한(60초)에서 끊고 시간 초과로 알린다
+      timeout: API_SEARCH_TIMEOUT_MS,
     });
     if (signal.aborted) return;
     paperResult.value = data;
@@ -533,14 +578,23 @@ async function handleSearch(q?: string, reuse?: PaperEntry) {
     currentHistoryId.value = entry.id;
     if (!leaving.value) router.replace({ query: { q: query, h: entry.id } });
     if (data.books?.length) streamAiSummary(entry.id, query, data.books, signal);
-  } catch (e: any) {
+  } catch (e) {
     if (signal.aborted) return;
-    error.value =
-      e?.data?.detail || e?.message || "검색 중 오류가 발생했습니다.";
+    // 서버 detail·ofetch 의 영문 메시지('[POST] "/api/papers/search": 500 …')는 보이지 않는다 — 이유는 오류 규칙(apiErrors)이 고른다.
+    // 일부러 끊은 요청이 아닌데 null 이면(우리 signal 은 안 끊겼다) 이유 없는 실패로 둔다
+    searchError.value = shownError(e) ?? { kind: "unknown", message: "" };
+    failedSearch = { query, reuse };
     paperResult.value = { mode: "book", query, books: [], elapsed_ms: 0 };
   } finally {
     if (!signal.aborted) loading.value = false;
   }
+}
+
+// 검색 실패의 [다시 시도] — 같은 검색어로(기록을 채우던 검색이면 그 기록까지) 다시 보낸다
+function retrySearch() {
+  if (!failedSearch) return;
+  const { query, reuse } = failedSearch;
+  void handleSearch(query, reuse);
 }
 
 // 랜딩으로 되돌린다 — 진행 중인 검색·복원·요약 묶음을 끊고 결과 화면 상태를 비운다.
@@ -550,7 +604,9 @@ function goLanding() {
   runCtrl = null;
   paperResult.value = null;
   loading.value = false;
-  error.value = null;
+  searchError.value = null;
+  failedSearch = null;
+  resultPdfProblem.value = null;
   currentQuery.value = "";
   resultQuery.value = "";
   currentHistoryId.value = null;
@@ -559,7 +615,7 @@ function goLanding() {
   aiLoading.value = false;
   aiError.value = "";
   // 결과 화면에서 연 창들도 닫는다 — 랜딩 위에 이전 결과의 논문 창이 남지 않게
-  pdfItem.value = null;
+  closePdf();
   citeModalOpen.value = false;
   chatPaperId.value = null;
 }
@@ -642,13 +698,15 @@ async function restoreFromQuery() {
     await handleSearch(retryQuery, paper ?? undefined);
     return;
   }
-  showToast("없는 기록입니다. 목록을 새로 고쳤습니다.");
+  showToast(PAPER_STATE_TEXT.missingHistory);
 }
 
 function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
   const snap = entry.snapshot as PaperSnapshot;
   loading.value = false;
-  error.value = null;
+  searchError.value = null;
+  failedSearch = null;
+  resultPdfProblem.value = null;
   currentQuery.value = entry.title;
   resultQuery.value = entry.title;
   currentHistoryId.value = entry.id;
@@ -783,3 +841,11 @@ watch(currentPage, () => {
   if (!restore.pending.value) window.scrollTo({ top: 0, behavior: "smooth" });
 });
 </script>
+
+<style scoped>
+/* 랜딩 입력 상자의 아래 줄 오른쪽 — 글자 수(SkxCharCount)와 보내기를 나란히(모양은 공통 구역의 .skx-charcount) */
+.skx-search__actions {
+  align-items: center;
+  gap: 0.6rem;
+}
+</style>

@@ -4275,13 +4275,12 @@ html.skx-scroll-lock {
   line-height: 1.5;
   margin: 0;
 }
-/* 요약을 만들지 못한 안내 — 추천 1권의 실패 안내(.skx-pick__text--muted)와 같은 색. 접히는 칸(.skx-clamp__clip) 밖 #after 자리라
+/* 요약을 만들지 못한 안내(공통 줄 안내 SkxInlineError — 모양은 공통 구역, 여기서는 자리만). 접히는 칸(.skx-clamp__clip) 밖 #after 자리라
    요약 칸 안쪽 여백(.skx-pai-main__scroll)을 따로 준다: 받은 글 아래면 위는 글 칸의 아래 여백이 맡고, 글 없이 혼자면(.is-alone) 위도 같은 여백 */
-.skx-pai-section__text.skx-pai-main__failed {
+.skx-pai-main__failed {
   padding: 0.4rem 1.2rem 1.2rem;
-  color: var(--skx-gray-1);
 }
-.skx-pai-section__text.skx-pai-main__failed.is-alone {
+.skx-pai-main__failed.is-alone {
   padding-top: 1.2rem;
 }
 

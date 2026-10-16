@@ -2,7 +2,13 @@
 // AI 글 스트림 읽기 — 논문 검색 AI 요약·논문 상세 AI 요약·관련 논문 추천 사유·소장자료 상세 추천 이유가 함께 쓴다.
 // 서버는 LLM 호출이 실패하면 [DONE] 바로 앞에 {error: 문구} 를 보낸다(app/services/search/paper_summary.py·pipeline.py)
 import { describe, expect, it, vi } from "vitest";
-import { failureText, readAiStream } from "~/utils/aiStream";
+import {
+  AI_SUMMARY_FAILED,
+  BOOK_REASON_FAILED,
+  failureText,
+  readAiStream,
+  RELATED_REASON_FAILED,
+} from "~/utils/aiStream";
 
 const enc = new TextEncoder();
 
@@ -88,9 +94,17 @@ describe("readAiStream", () => {
 });
 
 describe("failureText", () => {
-  it("끝까지 받았으면 빈 글, 실패면 서버 문구 — 없으면 화면이 정한 문구", () => {
+  // 서버의 {error} 문구는 합쇼체('AI 요약을 만들지 못했습니다')라 화면 말투(해요체)와 섞인다 — 실패면 늘 화면의 상수(사용자 결정 2026-10-16)
+  it("끝까지 받았으면 빈 글, 실패면 서버 문구가 있어도 늘 화면이 정한 문구", () => {
     expect(failureText({ ok: true }, "기본")).toBe("");
-    expect(failureText({ ok: false, error: "서버 문구" }, "기본")).toBe("서버 문구");
+    expect(failureText({ ok: false, error: "AI 요약을 만들지 못했습니다" }, "기본")).toBe("기본");
     expect(failureText({ ok: false, error: null }, "기본")).toBe("기본");
+  });
+
+  it("실패 문구 상수는 모두 해요체다", () => {
+    for (const text of [AI_SUMMARY_FAILED, RELATED_REASON_FAILED, BOOK_REASON_FAILED]) {
+      expect(text).toMatch(/못했어요$/);
+      expect(text).not.toMatch(/습니다/);
+    }
   });
 });
