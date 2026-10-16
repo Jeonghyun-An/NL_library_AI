@@ -3,7 +3,17 @@ import { describe, expect, it, vi } from "vitest";
 import type { HistoryEntry, HistoryKind } from "~/types/history";
 import { createHistoryState } from "~/utils/historyState";
 import { createHybridStore, createLocalStore, type HybridHistoryStore } from "~/utils/historyStore";
-import { ID1, ID2, ID3, bookEntry, fakeServer, httpError, paperEntry, researchEntry } from "./helpers/fakeHistory";
+import {
+  ID1,
+  ID2,
+  ID3,
+  bookEntry,
+  fakeServer,
+  httpError,
+  networkError,
+  paperEntry,
+  researchEntry,
+} from "./helpers/fakeHistory";
 import { MemoryStorage } from "./helpers/memoryStorage";
 
 const NOW = Date.parse("2026-09-26T03:00:00.000Z");
@@ -95,6 +105,55 @@ describe("createHistoryState", () => {
     expect(state.listFailed.value).toBe(true);
     await state.refresh();
     expect(state.listFailed.value).toBe(false);
+  });
+
+  it("목록을 못 읽은 종류를 failedKinds 로 알린다 — 한 종류만 거절되면 그 종류만", async () => {
+    const { store, state } = setup();
+    store.rows.set(ID1, bookEntry(ID1));
+    store.list.mockImplementation(async (kind?: HistoryKind) => {
+      if (kind === "research") throw httpError(422);
+      return { items: [...store.rows.values()].filter((e) => !kind || e.kind === kind), nextCursor: null };
+    });
+    await state.refresh();
+    expect(state.failedKinds.value).toEqual(["research"]);
+    expect(state.listFailed.value).toBe(true);
+    expect(state.byKind("book").value.map((e) => e.id)).toEqual([ID1]);
+  });
+
+  it("서버에 닿지 못했는데 이 브라우저의 사본도 통째로 비면(새 브라우저) '기록 없음'이 아니라 실패다", async () => {
+    const { server, state } = setupHybrid();
+    server.fail(networkError());
+    await state.refresh();
+    expect(state.failedKinds.value).toEqual(["book", "paper", "research"]);
+    expect(state.listFailed.value).toBe(true);
+    expect(state.loaded.value).toBe(true);
+    // 다시 닿으면 실패가 걷힌다 — 정말 빈 목록이다
+    server.recover();
+    await state.refresh();
+    expect(state.failedKinds.value).toEqual([]);
+    expect(state.listFailed.value).toBe(false);
+  });
+
+  it("서버에 닿지 못해도 사본에 기록이 있으면 사본을 보이고 실패로 보지 않는다", async () => {
+    const server = fakeServer();
+    const local = createLocalStore(new MemoryStorage());
+    await local.put(bookEntry(ID1));
+    const state = createHistoryState(() => createHybridStore(server, local), { now: () => NOW, genId: () => ID3, warn: () => {} });
+    server.fail(httpError(503));
+    await state.refresh();
+    expect(state.failedKinds.value).toEqual([]);
+    expect(state.byKind("book").value.map((e) => e.id)).toEqual([ID1]);
+  });
+
+  it("이 수명에 서버에서 읽은 종류는 지워 비운 사본으로 답해도 실패가 아니다 — 이 탭이 지운 결과다", async () => {
+    const { server, state } = setupHybrid();
+    server.rows.set(ID1, bookEntry(ID1));
+    await state.refresh();
+    server.fail(networkError());
+    await state.remove(ID1);
+    await state.refresh();
+    expect(state.failedKinds.value).toEqual([]);
+    expect(state.entries.value).toEqual([]);
   });
 
   it("add 는 새 id 로 맨 위에 넣고 서버에 저장한다", async () => {

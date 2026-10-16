@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { HistoryEntry } from "~/types/history";
 import {
   LIVE_STATUSES,
+  SIDEBAR_NOTICE,
   countLiveResearch,
   entryTime,
   formatHistoryTime,
+  groupLoadError,
   groupSidebarHistory,
   hasActiveResearch,
   isLiveResearch,
@@ -205,5 +207,33 @@ describe("formatHistoryTime", () => {
 
   it("미래 시각(시계 어긋남)은 방금으로 본다", () => {
     expect(formatHistoryTime(ago(-120), NOW)).toBe("방금");
+  });
+});
+
+describe("groupLoadError — 묶음의 목록 실패 안내", () => {
+  it("묶음의 종류 중 못 읽은 것이 없으면 null — 다른 묶음의 실패는 상관없다", () => {
+    expect(groupLoadError("research", [], 0)).toBeNull();
+    expect(groupLoadError("research", ["book", "paper"], 0)).toBeNull();
+    expect(groupLoadError("recent", ["research"], 0)).toBeNull();
+  });
+
+  it("보이는 줄이 없으면 '불러오지 못했어요', 있으면 '다 불러오지 못했어요'", () => {
+    expect(groupLoadError("research", ["research"], 0)).toBe(SIDEBAR_NOTICE.loadFailed);
+    expect(groupLoadError("research", ["research"], 3)).toBe(SIDEBAR_NOTICE.loadPartial);
+    // 최근 검색은 소장자료·논문 중 하나만 못 읽어도 그 묶음의 실패다
+    expect(groupLoadError("recent", ["book"], 0)).toBe(SIDEBAR_NOTICE.loadFailed);
+    expect(groupLoadError("recent", ["paper"], 2)).toBe(SIDEBAR_NOTICE.loadPartial);
+  });
+});
+
+describe("SIDEBAR_NOTICE — 사이드바 줄 안내 문구", () => {
+  it.each(Object.entries(SIDEBAR_NOTICE))("%s: 해요체, 한 줄 안에 두 문장을 잇지 않고 줄마다 마침표로 끝난다", (_name, text) => {
+    expect(text).not.toMatch(/[.?!] \S/);
+    for (const line of text.split("\n")) expect(line).toMatch(/요\.$/);
+  });
+
+  it("옛 문구('잠시 뒤 다시 열어 주세요')는 [다시 시도] 버튼과 맞게 바꿨다", () => {
+    expect(SIDEBAR_NOTICE.loadFailed).toBe("기록을 불러오지 못했어요.\n잠시 뒤 다시 시도해 주세요.");
+    expect(Object.values(SIDEBAR_NOTICE).join()).not.toContain("열어 주세요");
   });
 });
