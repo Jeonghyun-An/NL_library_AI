@@ -4,6 +4,7 @@ import {
   HISTORY_CACHE_KEY,
   HISTORY_FLUSH_LOCK_KEY,
   HISTORY_OUTBOX_KEY,
+  HistoryUnavailableError,
   createFlushLock,
   createHybridStore,
   createLocalStore,
@@ -569,6 +570,47 @@ describe("createHybridStore", () => {
     await local.put(bookEntry(ID1, { snapshot: snap }));
     server.fail(networkError());
     expect(await store.get(ID1)).toMatchObject({ snapshot: snap });
+  });
+
+  it("서버가 없다고 답하면 캐시에 없어도 던지지 않고 null(없는 기록)이다", async () => {
+    const { store } = setup();
+    expect(await store.get(ID1)).toBeNull();
+  });
+
+  it("서버에 닿지 못했는데 캐시에도 없으면 null(없는 기록)이 아니라 HistoryUnavailableError 를 던진다", async () => {
+    const { server, store } = setup();
+    // 서버에는 있다 — 닿지 못했을 뿐이라 '없는 기록'으로 답하면 틀린 이유를 보인다
+    server.rows.set(ID1, bookEntry(ID1));
+    server.fail(networkError());
+    await expect(store.get(ID1)).rejects.toBeInstanceOf(HistoryUnavailableError);
+    server.fail(httpError(503));
+    await expect(store.get(ID1)).rejects.toMatchObject({ name: "HistoryUnavailableError", id: ID1 });
+  });
+
+  it("편지함이 남아 서버에 묻지 못했는데 캐시에도 없으면 HistoryUnavailableError", async () => {
+    const { server, local, store } = setup();
+    local.enqueue({ op: "put", entry: bookEntry(ID2) });
+    server.put.mockRejectedValueOnce(networkError());
+    await expect(store.get(ID1)).rejects.toBeInstanceOf(HistoryUnavailableError);
+    expect(server.get).not.toHaveBeenCalled();
+    expect(pendingOps(local)).toEqual(["put"]);
+  });
+
+  it("이 브라우저에서 지우고 아직 보내지 못한 기록은 서버에 닿지 못해도 null(없는 기록)이다", async () => {
+    const { server, local, store } = setup();
+    await store.put(bookEntry(ID1));
+    server.fail(networkError());
+    await store.remove(ID1);
+    expect(pendingOps(local)).toEqual(["remove"]);
+    expect(await store.get(ID1)).toBeNull();
+  });
+
+  it("다시 보내도 같은 거절(4xx)은 못 닿은 것으로 바꾸지 않고 그대로 던진다", async () => {
+    const { server, store } = setup();
+    server.get.mockRejectedValueOnce(httpError(403));
+    const err = await store.get(ID1).catch((e: unknown) => e);
+    expect(err).toMatchObject({ status: 403 });
+    expect(err).not.toBeInstanceOf(HistoryUnavailableError);
   });
 
   it("put·patch 가 줄 선 뒤 patch 만 다시 보낼 오류로 실패해도 get 은 최근 수정을 돌려준다", async () => {

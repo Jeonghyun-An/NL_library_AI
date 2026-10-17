@@ -18,6 +18,12 @@ export interface HistoryStateOptions {
   warn?: (message: string, err: unknown) => void;
 }
 
+/** 주소(?h=)로 복원하는 화면이 토스트 이유(없는 기록·연결 문제)를 고르는 읽기 결과 */
+export interface HistoryLookup {
+  entry: HistoryEntry | null;
+  failed: boolean;
+}
+
 export interface HistoryState {
   entries: Ref<HistoryEntry[]>;
   /** 전체(종류를 안 준) refresh 가 한 번이라도 끝났는가 — 첫 로드 전의 빈 목록과 진짜 빈 목록을 가른다 */
@@ -36,7 +42,13 @@ export interface HistoryState {
   patch(id: string, partial: HistoryPatch): Promise<HistoryEntry | null>;
   remove(id: string): Promise<void>;
   clear(kind: HistoryKind): Promise<void>;
+  /** 읽지 못하면(저장소가 던지면) 없는 기록처럼 null — 못 읽은 것과 없는 것을 갈라야 하면 lookup 을 쓴다 */
   get(id: string): Promise<HistoryEntry | null>;
+  /**
+   * get 과 같이 읽되 failed 로 못 읽은 것을 알린다 — 서버에 닿지 못했고 사본에도 없음(HistoryUnavailableError)·서버의 거절 등
+   * 저장소가 던진 모든 경우다. failed 가 false 인데 entry 가 null 이면 서버가 그 기록이 없다고 답한 것이다
+   */
+  lookup(id: string): Promise<HistoryLookup>;
   upsertResearch(jobId: string, question: string): Promise<HistoryEntry | null>;
   /** 연구 화면이 아는 지금 상태를 사이드바 목록의 그 연구 줄에 바로 싣는다(서버에는 보내지 않는다 — 서버가 이미 안다) */
   setResearchStatus(jobId: string, next: { status: string; stage: string }): void;
@@ -204,13 +216,18 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
     }
   }
 
-  async function get(id: string): Promise<HistoryEntry | null> {
+  async function lookup(id: string): Promise<HistoryLookup> {
     try {
-      return await store().get(id);
+      return { entry: await store().get(id), failed: false };
     } catch (e) {
       warn("기록을 읽지 못했다", e);
-      return null;
+      return { entry: null, failed: true };
     }
+  }
+
+  // upsertResearch 처럼 못 읽었으면 새로 만들면 되는 곳은 둘을 가를 일이 없다
+  async function get(id: string): Promise<HistoryEntry | null> {
+    return (await lookup(id)).entry;
   }
 
   async function upsertResearch(jobId: string, question: string): Promise<HistoryEntry | null> {
@@ -275,6 +292,7 @@ export function createHistoryState(store: () => HybridHistoryStore, opts: Histor
     remove,
     clear,
     get,
+    lookup,
     upsertResearch,
     setResearchStatus,
   };

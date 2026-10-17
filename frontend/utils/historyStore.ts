@@ -72,6 +72,7 @@ export interface LocalHistoryStore extends HistoryStore {
   dropOutbox(opId: string): void;
 }
 
+/** get 은 서버가 그 기록이 없다고 답하면(404) null, 서버에 닿지 못했고 사본에도 없으면 HistoryUnavailableError 를 던진다 */
 export interface HybridHistoryStore extends HistoryStore {
   flush(): Promise<void>;
 }
@@ -96,6 +97,20 @@ export function errorStatus(e: unknown): number | null {
 export function isRetryable(e: unknown): boolean {
   const status = errorStatus(e);
   return status === null || status === 408 || status === 429 || status >= 500;
+}
+
+/**
+ * 하이브리드 저장소의 get 이 서버에 닿지 못했고(네트워크·시간 초과·5xx·보내지 못한 편지) 이 브라우저의 사본에도 그 기록이 없을 때 던진다.
+ * 기록이 있는지 없는지 알 수 없다 — 서버가 없다고 답한 것(null)과 갈라, 복원하는 화면이 '없는 기록' 대신 연결 문제를 알린다
+ */
+export class HistoryUnavailableError extends Error {
+  readonly id: string;
+
+  constructor(id: string) {
+    super(`서버에 닿지 못했고 사본에도 없어 기록(${id})을 읽지 못했다`);
+    this.name = "HistoryUnavailableError";
+    this.id = id;
+  }
 }
 
 export function isQuotaError(e: unknown): boolean {
@@ -716,7 +731,14 @@ export function createHybridStore(
     get: (id) =>
       shared(async () => {
         const res = await direct(() => server.get(id));
-        if (!res.ok) return local.get(id);
+        if (!res.ok) {
+          const cached = await local.get(id);
+          if (cached) return cached;
+          // 이 브라우저에서 지우고 아직 보내지 못한 기록은 사용자에게 이미 없는 기록이다
+          if (local.readOutbox().some((o) => o.op === "remove" && o.id === id)) return null;
+          // 사본에 없다고 없는 기록은 아니다(새 브라우저·종류별 상한으로 밀려난 옛 기록) — null 과 갈라 던진다
+          throw new HistoryUnavailableError(id);
+        }
         if (res.value) {
           await local.put(res.value);
           return res.value;

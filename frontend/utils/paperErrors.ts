@@ -39,8 +39,11 @@ export const PAPER_STATE_TEXT = {
   /** 클립보드에 쓰지 못함 — 운영 게이트웨이가 http 라 Clipboard API 가 없을 수 있다(utils/clipboard) */
   copyFailed: "복사하지 못했어요.\n글을 직접 복사해 주세요.",
   /** 주소의 검색 기록(h)이 없고 다시 찾을 검색어도 없음 — 토스트. 토스트는 한 줄(white-space: nowrap)이라 '\n' 이 보이지 않아
-   *  한 문장으로 둔다(소장자료 랜딩의 같은 토스트와 같은 말) */
+   *  한 문장으로 둔다(소장자료 랜딩의 같은 토스트 — utils/bookErrors BOOK_HISTORY_TEXT.missing 과 같은 말) */
   missingHistory: "없는 기록이라 목록을 새로 고쳤어요.",
+  /** 주소의 검색 기록(h)을 서버에서 읽지 못했고 이 브라우저의 사본에도 없음(있는지 없는지 모름) + 다시 찾을 검색어도 없음 — 토스트.
+   *  missingHistory 처럼 한 문장(BOOK_HISTORY_TEXT.unavailable 과 같은 말) */
+  historyUnavailable: "연결이 불안정해 기록을 불러오지 못했어요.",
   /** 원문 파일이 없을 때 건네는 외부(KCI) 원문 페이지 링크 */
   kciOriginal: "KCI에서 원문 페이지 열기",
 } as const;

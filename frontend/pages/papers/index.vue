@@ -709,7 +709,8 @@ async function restoreFromQuery() {
 
   const signal = beginRun();
   loading.value = false;
-  const entry = await historyApi.get(h);
+  // failed 는 기록을 읽지 못한 것이다(서버에 닿지 못했고 이 브라우저의 사본에도 없음 등) — 서버가 없다고 답한 것(entry null)과 가른다
+  const { entry, failed } = await historyApi.lookup(h);
   if (signal.aborted) return;
   if (entry && entry.kind !== "paper") {
     // 다른 종류의 기록 id 가 이 주소로 왔다(옛 ?restore= 등) — 그 종류의 주소로 보낸다
@@ -721,16 +722,19 @@ async function restoreFromQuery() {
     applyPaperEntry(paper, signal);
     return;
   }
-  // 없거나 남의 기록이면 검색어로 새로 찾는다(D7). 결과만 비어 있던 내 기록은 같은 id 를 채운다
-  if (!paper) void historyApi.refresh("paper");
+  // 없거나 남의 기록이면 검색어로 새로 찾는다(D7). 결과만 비어 있던 내 기록은 같은 id 를 채운다. 못 읽었을 때도 검색어가 있으면 그것으로 찾는다.
+  // 목록을 새로 고치는 것은 서버가 없다고 답한 기록을 사이드바에서 걷으려는 것이라, 못 읽었을 때는 하지 않는다 — 없다는 것을 확인하지
+  // 못했으니 걷을 것이 없고, 같은 연결로 다시 읽어도 사본으로 답할 뿐이다(연결이 돌아오면 사이드바가 'online' 에 스스로 다시 읽는다)
+  if (!paper && !failed) void historyApi.refresh("paper");
   const retryQuery = q ?? paper?.title;
   if (retryQuery) {
     await handleSearch(retryQuery, paper ?? undefined);
     return;
   }
-  // 이 복원이 beginRun 으로 끊은 요약(스트림·기록 저장 대기)이 이어받을 화면 없이 끝나는 길 — '분석 중'으로 굳지 않게 매듭짓는다
+  // 이 복원이 beginRun 으로 끊은 요약(스트림·기록 저장 대기)이 이어받을 화면 없이 끝나는 길(없는 기록·못 읽은 기록 모두) — '분석 중'으로
+  // 굳지 않게 매듭짓는다
   settleAiSummary();
-  showToast(PAPER_STATE_TEXT.missingHistory);
+  showToast(failed ? PAPER_STATE_TEXT.historyUnavailable : PAPER_STATE_TEXT.missingHistory);
 }
 
 function applyPaperEntry(entry: PaperEntry, signal: AbortSignal) {
@@ -846,7 +850,7 @@ function retryAiSummary() {
   void streamAiSummary(currentHistoryId.value, resultQuery.value, books, signal);
 }
 
-// 이 묶음이 끊겼는데 이어받는 새 묶음이 없을 때(없는 기록 토스트) 받는 중 표시가 남지 않게 매듭짓는다(소장자료 랜딩의 settleReason 과
+// 이 묶음이 끊겼는데 이어받는 새 묶음이 없을 때(없는 기록·못 읽은 기록 토스트) 받는 중 표시가 남지 않게 매듭짓는다(소장자료 랜딩의 settleReason 과
 // 같은 자리). 끊긴 요약은 만들지 못한 것으로 두어 [다시 시도]로 다시 받게 한다 — 받던 글이 있으면 그 아래에 안내가 붙는다
 function settleAiSummary() {
   if (!aiLoading.value) return;

@@ -13,6 +13,16 @@ export const BOOK_SEARCH_TEXT = {
 } as const;
 
 /**
+ * 주소(?h=)의 검색 기록을 복원하지 못했고 다시 찾을 검색어도 없을 때의 토스트(pages/index.vue). 토스트는 한 줄(white-space: nowrap)이라
+ * '\n' 이 보이지 않아 한 문장으로 둔다. missing 은 서버가 그 기록이 없다고 답했을 때, unavailable 은 서버에 닿지 못했고 이 브라우저의
+ * 사본에도 없어 있는지 없는지 모를 때다(논문 검색의 PAPER_STATE_TEXT.missingHistory·historyUnavailable 과 같은 말)
+ */
+export const BOOK_HISTORY_TEXT = {
+  missing: "없는 기록이라 목록을 새로 고쳤어요.",
+  unavailable: "연결이 불안정해 기록을 불러오지 못했어요.",
+} as const;
+
+/**
  * 추천 이유 스트림(/books/reason/stream — 결과의 SKOVIX 추천 1권·도서 상세의 [추천 이유] 탭·보존 화면)이 끝까지 오지 않았을 때.
  * 서버가 보낸 {error} 글(합쇼체)은 보이지 않는다 — 말투는 프런트가 가진다. 글 없이 실패(HTTP 오류·네트워크·{error}, 또는 끝까지 왔는데
  * 글이 없음 — 새 서버는 LLM 빈 답을 {error} 로 보내고 옛 서버는 빈 채로 [DONE] 을 보낸다)면 failed, 글 일부를 받은 뒤 실패(연결 끊김·{error})면
