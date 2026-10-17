@@ -6,7 +6,7 @@
       <h2 id="wk-continue-title" class="rs-card__title">
         {{ view.title }} <span class="wk-beta">{{ BETA_LABEL }}</span>
       </h2>
-      <p class="rs-muted">{{ view.body }}</p>
+      <p class="rs-muted rs-lines">{{ view.body }}</p>
     </div>
     <ol class="wk-continue__steps" aria-label="연구 단계 미리보기">
       <li v-for="(s, i) in view.preview" :key="s.label" class="wk-continue__step" :class="`is-${s.state}`">

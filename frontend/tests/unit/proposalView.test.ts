@@ -24,6 +24,7 @@ import {
   editParagraph,
   failedParagraphGens,
   footprint,
+  FOOTPRINT_EMPTY,
   footprintLine,
   isNoSectionPapers,
   nextAutoSection,
@@ -310,7 +311,9 @@ describe("footprint · footprintLine", () => {
       "AI 작성 9문단 중 수락 5·수정 2·검토 전 2 · 직접 쓴 문단 1",
     );
     expect(footprintLine({ proposed: 0, accepted: 0, edited: 0, authored: 3 })).toBe("직접 쓴 문단 3");
-    expect(footprintLine({ proposed: 0, accepted: 0, edited: 0, authored: 0 })).toBe("아직 쓴 문단이 없습니다");
+    // 화면(AI 기여 막대)은 해요체, 내려받은 문서의 AI 사용 공개 부록은 문서 말투(합쇼체)
+    expect(footprintLine({ proposed: 0, accepted: 0, edited: 0, authored: 0 })).toBe("아직 쓴 문단이 없어요");
+    expect(footprintLine({ proposed: 0, accepted: 0, edited: 0, authored: 0 }, FOOTPRINT_EMPTY.doc)).toBe("아직 쓴 문단이 없습니다");
   });
 });
 

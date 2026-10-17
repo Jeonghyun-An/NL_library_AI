@@ -29,7 +29,7 @@
 
       <div v-else-if="!view || !phase" class="rs-card rs-state">
         <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
-        <p class="rs-muted">연구를 불러오는 중입니다</p>
+        <p class="rs-muted">연구를 불러오는 중이에요</p>
       </div>
 
       <template v-else>
@@ -142,7 +142,7 @@
           />
           <div v-else-if="!workView" class="rs-card rs-card--wait" role="status">
             <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
-            <p>이어간 연구를 불러오는 중입니다</p>
+            <p>이어간 연구를 불러오는 중이에요</p>
           </div>
           <TopicsStep v-else-if="step === 'topics'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" />
           <ReadingStep v-else-if="step === 'reading'" :job-id="view.jobId" :work="work" :question="view.question" @go="goStep" @open-pdf="openPdf" @panel="workPanelOpen = $event" />
@@ -157,7 +157,7 @@
               <div v-if="phase === 'planning'" class="rs-card rs-card--wait" role="status">
                 <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
                 <div class="rs-card__text">
-                  <p>연구 계획을 세우는 중입니다</p>
+                  <p>연구 계획을 세우는 중이에요</p>
                   <!-- 넓히기가 끝나면 계획이 나오기 전에도 도는 계획 단계에 넓힌 질문이 먼저 실려 온다 -->
                   <p v-if="questionUsed" class="rs-muted rs-plan__understood">{{ understoodLine(questionUsed) }}</p>
                 </div>
@@ -175,7 +175,7 @@
               <div v-else-if="phase === 'queued'" class="rs-card rs-card--wait" role="status">
                 <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
                 <div class="rs-card__text">
-                  <p>앞선 연구가 끝나면 시작합니다</p>
+                  <p>앞선 연구가 끝나면 시작해요</p>
                   <p v-if="queueText" class="rs-muted">{{ queueText }}</p>
                 </div>
               </div>
@@ -206,7 +206,7 @@
                 </div>
                 <div v-else-if="reportState === 'loading'" class="rs-report-note" role="status">
                   <img :src="SPINNER_SRC" alt="" class="rs-spinner rs-spinner--small" />
-                  <p>최종 보고서를 불러오는 중입니다 — 서론과 한계가 붙은 완성본으로 곧 바뀝니다.</p>
+                  <p>최종 보고서를 불러오는 중이에요 — 서론과 한계가 붙은 완성본으로 곧 바뀌어요.</p>
                 </div>
                 <ReportView
                   :report="shownReport"
@@ -270,7 +270,7 @@
               </div>
               <div v-else class="rs-card rs-card--wait" role="status">
                 <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
-                <p>보고서를 불러오는 중입니다</p>
+                <p>보고서를 불러오는 중이에요</p>
               </div>
             </section>
           </div>
@@ -334,7 +334,7 @@ import TopicsStep from "~/components/work/TopicsStep.vue";
 import WorkStepper from "~/components/work/WorkStepper.vue";
 import { useNow } from "~/composables/useNow";
 import { usePdfOpener } from "~/composables/usePdfOpener";
-import { REPORT_EXPORT_FAILED, useReportExport } from "~/composables/useReportExport";
+import { REPORT_EXPORT_FAILED_TOAST, useReportExport } from "~/composables/useReportExport";
 import { useResearchJob, useResearchStarter } from "~/composables/useResearch";
 import { useHistory } from "~/composables/useHistory";
 import { sidebarStatusOf } from "~/utils/sidebarResearch";
@@ -351,9 +351,11 @@ import { questionUsedFromSteps, researchPhase, understoodLine, type ResearchPhas
 import {
   RESEARCH_NOT_FOUND,
   RESEARCH_STATE_TEXT,
+  RESEARCH_TOAST_TEXT,
   researchErrorMessage,
   researchFailedMessage,
   researchRetryLabel,
+  toastLine,
 } from "~/utils/researchErrors";
 import { researchModeLine, restartParams } from "~/utils/researchMode";
 import {
@@ -623,13 +625,13 @@ async function onRestart(): Promise<void> {
 }
 
 async function copyLink(): Promise<void> {
-  const url = window.location.href;
   try {
-    await navigator.clipboard.writeText(url);
-    showToast("링크를 복사했습니다");
+    await navigator.clipboard.writeText(window.location.href);
+    showToast(RESEARCH_TOAST_TEXT.linkCopied);
   } catch {
-    // 운영 게이트웨이가 http 라 clipboard API 가 없을 수 있다(보안 컨텍스트 전용)
-    window.prompt("아래 주소를 복사해 주세요", url);
+    // 운영 게이트웨이가 http 라 clipboard API 가 없을 수 있다(보안 컨텍스트 전용). 브라우저 입력창(prompt)을 띄우지 않고
+    // 화면 안 토스트로 알린다 — 복사하려던 것은 지금 화면의 주소라 주소창에서 직접 복사하면 된다
+    showToast(RESEARCH_TOAST_TEXT.linkCopyFailed);
   }
 }
 
@@ -734,7 +736,8 @@ const workPanelOpen = ref(false);
 
 async function openPdf(target: OpenPdfPayload): Promise<void> {
   const problem = await pdfOpener.openPdf(target);
-  if (problem) showToast(problem);
+  // 알릴 문구는 줄 안내용(문장마다 줄바꿈)이다 — 한 줄 토스트에는 한 문장으로 이어 싣는다
+  if (problem) showToast(toastLine(problem));
 }
 
 // ── 지금 진행하는 절 따라가기 ─────────────────────────────
@@ -817,15 +820,15 @@ async function runExport(doc: ReportDoc, format: ReportExportFormat): Promise<vo
   try {
     if (format === "docx") {
       await exportDocx(doc);
-      showToast("Word 문서를 내려받았습니다");
+      showToast(RESEARCH_TOAST_TEXT.docxSaved);
     } else if (!(await printPdf(doc))) {
       // 인쇄 창이 열리지 않았다(정책 차단·인앱 브라우저) — 조용히 성공으로 두지 않는다
-      showToast(REPORT_EXPORT_FAILED.pdf);
+      showToast(REPORT_EXPORT_FAILED_TOAST.pdf);
     }
   } catch (e) {
     console.warn("[research] 내보내기 실패", e);
     // 배포 뒤 옛 화면에서 누르면 docx 조각 파일이 사라져 동적 import 가 실패한다 — 새로고침이 답이다
-    showToast(REPORT_EXPORT_FAILED[format]);
+    showToast(REPORT_EXPORT_FAILED_TOAST[format]);
   }
 }
 

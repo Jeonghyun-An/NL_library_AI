@@ -153,7 +153,7 @@ export function pathLines(item: ReadingItem): PathLine[] {
       detail: `하위질문 ${revived.subq_idx + 1} 「${revived.subquestion}」${round}에서 자기점검이 뺀 논문${note}`,
     });
   }
-  if (item.path.user) lines.push({ label: "직접 담음", detail: "빠른검색 결과에서 담은 논문입니다" });
+  if (item.path.user) lines.push({ label: "직접 담음", detail: "빠른검색 결과에서 담은 논문이에요" });
   if (!lines.length) lines.push({ label: "들어온 경로", detail: "저장된 경로가 없어요" });
   return lines;
 }
@@ -180,10 +180,10 @@ function pickedCount(view: ReadingView): number {
 // [보고서 만들기] 를 못 누르는 까닭 — 서버 POST .../outline 의 409 두 가지(주제 없음·담음 MIN_READING_FOR_OUTLINE 편 미만)를
 // 먼저 알린다. 미리 담은 여덟 편에서 빼다 보면 나오는 말이라 '…담으면'(0 에서 담아 올라가는 말)이 아니라 '…이상이면'으로 적는다
 export function outlineHint(view: ReadingView): string | null {
-  if (view.topic_id === null) return "주제를 먼저 고르세요 — 고른 주제로 보고서를 만듭니다";
+  if (view.topic_id === null) return "주제를 먼저 골라 주세요 — 고른 주제로 보고서를 만들어요";
   const n = pickedCount(view);
   if (n < MIN_READING_FOR_OUTLINE) {
-    return `담은 논문이 ${n}편입니다 — ${MIN_READING_FOR_OUTLINE}편 이상이면 보고서를 만들 수 있습니다`;
+    return `담은 논문이 ${n}편이에요 — ${MIN_READING_FOR_OUTLINE}편 이상이면 보고서를 만들 수 있어요`;
   }
   return null;
 }
@@ -193,7 +193,7 @@ const READING_DEEP_READ_LINE = "제목을 누르면 오른쪽에서 그 논문�
 // 참고문헌 선택하기 머리 소개. 이어가기가 채택 근거 상위 편을 담음으로 미리 넣었으면(서버가 센 preselected — 뺀 행도 센다,
 // 후보가 서버 shapes.READING_PRESELECT(8)편보다 적으면 그 수) 승인 문구(사용자 결정 2026-10-13 — 글자 그대로)를 그 수로 채운다.
 // - 0(이 기능 전에 이어간 연구)이면 미리 담았다고 하면 거짓이라 옛 소개 그대로
-// - 읽기 전용(예시 연구)이면 첫 문장만 — 쓰기 API 가 409 라 '빼고·담아 주세요'가 바로 아래 '예시 연구는 읽기 전용입니다'와 어긋난다
+// - 읽기 전용(예시 연구)이면 첫 문장만 — 쓰기 API 가 409 라 '빼고·담아 주세요'가 바로 아래 '예시 연구는 읽기 전용이에요'와 어긋난다
 // - 읽기 목록을 아직 못 불러왔으면(null) 수를 모른다 — 옛 소개를 보였다가 미리 담음 문장으로 바꾸지 않게 소개를 싣지 않는다
 // 끝의 DeepRead 안내(제목 → 오른쪽 대화)는 세 경우 모두 같다
 export function readingIntro(view: ReadingView | null, question: string, readOnly = false): string | null {

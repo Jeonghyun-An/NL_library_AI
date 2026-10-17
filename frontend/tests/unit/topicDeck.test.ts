@@ -189,8 +189,8 @@ describe("cardArrived — 카드 뒤집기", () => {
 
 describe("cardNote", () => {
   it("빈 슬롯마다 정직한 문구를, 카드가 있으면 null 을 준다", () => {
-    expect(cardNote("waiting")).toBe("차례를 기다리는 중입니다");
-    expect(cardNote("making")).toBe("카드를 쓰는 중입니다");
+    expect(cardNote("waiting")).toBe("차례를 기다리는 중이에요");
+    expect(cardNote("making")).toBe("카드를 쓰는 중이에요");
     expect(cardNote("insufficient")).toBe("근거 부족 — 이 씨앗을 직접 받치는 논문을 2편 이상 찾지 못했어요");
     expect(cardNote("failed")).toBe("카드를 만들지 못했어요");
     expect(cardNote("ready")).toBeNull();
@@ -202,7 +202,7 @@ describe("canPick", () => {
     for (const status of ["queued", "running"] as const) {
       const remaking = item({ card: CARD, generation: { id: 52, status } });
       expect(canPick(remaking)).toBe(false);
-      expect(cardRemakingNote(remaking)).toBe("새 키워드로 다시 만드는 중입니다");
+      expect(cardRemakingNote(remaking)).toBe("새 키워드로 다시 만드는 중이에요");
     }
     expect(cardRemakingNote(item({ card: CARD, generation: { id: 52, status: "done" } }))).toBeNull();
     expect(cardRemakingNote(item({ card: CARD, generation: null, origin: "user" }))).toBeNull();
@@ -369,8 +369,8 @@ describe("deckQueueLine", () => {
 
 describe("moreLine", () => {
   it("남은 씨앗과 한 번에 받는 장수(최대 2)를, 다 쓰면 직접 쓰기를 안내한다", () => {
-    expect(moreLine(5)).toBe("남은 씨앗 5개 · 누르면 2장을 더 받습니다");
-    expect(moreLine(1)).toBe("남은 씨앗 1개 · 누르면 1장을 더 받습니다");
+    expect(moreLine(5)).toBe("남은 씨앗 5개 · 누르면 2장을 더 받아요");
+    expect(moreLine(1)).toBe("남은 씨앗 1개 · 누르면 1장을 더 받아요");
     expect(moreLine(0)).toBe("더 쓸 씨앗이 없어요 — [직접 쓰기] 로 주제를 더할 수 있어요");
   });
 });
@@ -424,14 +424,14 @@ describe("핵심 개념 칩", () => {
 
   it("conceptsNote — 뽑는 중이면 대기 문구를 잇고, 비었으면 넣기·다시를 안내한다", () => {
     const running = gen({ kind: "concepts", target: null, status: "running" });
-    expect(conceptsNote([], running)).toBe(`키워드를 뽑는 중입니다 · ${genQueueLine(running)}`);
+    expect(conceptsNote([], running)).toBe(`키워드를 뽑는 중이에요 · ${genQueueLine(running)}`);
     expect(conceptsNote([], gen({ kind: "concepts", target: null, status: "failed" }))).toBe(
       "키워드를 뽑지 못했어요 — 직접 넣거나 [다시] 를 눌러 주세요",
     );
     expect(conceptsNote([], gen({ kind: "concepts", target: null, status: "done" }))).toBe(
       "뽑힌 키워드가 없어요 — 직접 넣거나 [다시] 를 눌러 주세요",
     );
-    expect(conceptsNote([], null)).toBe("키워드 넣기 — 원 질문의 키워드를 칩으로 더하세요");
+    expect(conceptsNote([], null)).toBe("키워드 넣기 — 원 질문의 키워드를 칩으로 더해 주세요");
     expect(conceptsNote(["노인 우울"], null)).toBeNull();
   });
 });
@@ -536,7 +536,7 @@ describe("keywordChips·toggleKeyword·regenerateProblem", () => {
     const full = ["가", "나", "다", "라", "마"];
     expect(toggleKeyword(full, "바")).toEqual(full);
     expect(MIN_PICKED_KEYWORDS).toBe(2);
-    expect(regenerateProblem(["노인 우울"])).toBe("키워드를 2개 이상 고르면 다시 만들 수 있습니다");
+    expect(regenerateProblem(["노인 우울"])).toBe("키워드를 2개 이상 고르면 다시 만들 수 있어요");
     expect(regenerateProblem(["노인 우울", "독거노인"])).toBeNull();
   });
 });

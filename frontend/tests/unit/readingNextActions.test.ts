@@ -105,7 +105,7 @@ describe("ReadingStep — 위(소개 옆)·아래(표 밑) 두 곳에 같은 묶
 
   it("읽기 전용 줄(머리)에 고정 id 를 주고 두 묶음이 함께 가리킨다 — 한 요소를 둘이 가리키는 것이라 id 가 겹치지 않는다", () => {
     expect(js).toContain('const READ_ONLY_ID = "wk-reading-readonly";');
-    expect(tpl).toMatch(/<p v-if="readOnly" :id="READ_ONLY_ID" class="rs-muted">예시 연구는 읽기 전용입니다/);
+    expect(tpl).toMatch(/<p v-if="readOnly" :id="READ_ONLY_ID" class="rs-muted">예시 연구는 읽기 전용이에요/);
     // id 를 단 요소는 그 줄 하나 — 같은 id 를 다른 곳에 적지 않는다
     expect(count(tpl, "READ_ONLY_ID")).toBe(1);
     expect(count(tpl, "wk-reading-readonly")).toBe(0);

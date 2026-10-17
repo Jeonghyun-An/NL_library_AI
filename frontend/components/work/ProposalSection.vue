@@ -18,12 +18,12 @@
     </header>
     <p v-if="note" class="rs-muted">{{ note }}</p>
     <p v-if="stale" class="rs-muted">
-      이 절을 쓴 뒤 주제나 목차의 묶음·연구 질문이 바뀌었습니다. 쓴 문단은 그대로 두었습니다 — 바뀐 목차로 맞추려면 이
-      절을 다시 쓰세요.
+      이 절을 쓴 뒤 주제나 목차의 묶음·연구 질문이 바뀌었어요.<br />
+      쓴 문단은 그대로 두었어요 — 바뀐 목차로 맞추려면 [이 절 다시 쓰기]를 눌러 주세요.
     </p>
 
     <p v-if="status === 'queued'" class="rs-muted" role="status">
-      쓸 차례를 기다리는 중입니다{{ queueText ? ` · ${queueText}` : "" }}
+      쓸 차례를 기다리는 중이에요{{ queueText ? ` · ${queueText}` : "" }}
     </p>
     <div v-else-if="status === 'writing'" class="wk-psec__live">
       <template v-if="!finishing && live && !live.broken && live.text">
@@ -36,7 +36,7 @@
               :class="{ 'is-pending': !liveEvidence }"
               :title="paperTitle(liveEvidence?.[part.eid])"
             >{{ citeText(liveEvidence?.[part.eid], part.eid) }}</span>
-            <s v-else-if="part.type === 'badcite'" class="wk-psec__badcite" title="이 절의 근거 번호가 아닙니다 — 저장할 때 버립니다">[{{ part.eid }}]</s>
+            <s v-else-if="part.type === 'badcite'" class="wk-psec__badcite" title="이 절의 근거 번호가 아니에요 — 저장할 때 버려요">[{{ part.eid }}]</s>
             <FigureChip v-else-if="figureOf(liveFigures, part.fid)" :figure="figureOf(liveFigures, part.fid)!" />
             <span v-else class="wk-psec__cite is-pending">[{{ part.fid }}]</span>
           </template>
@@ -46,10 +46,10 @@
         <p class="rs-muted" role="status">
           {{
             finishing
-              ? "다 썼습니다 — 문단을 불러오는 중입니다"
+              ? "다 썼어요 — 문단을 불러오는 중이에요"
               : live?.broken
-                ? "글을 받는 중입니다 — 다 쓰면 한 번에 보입니다"
-                : "쓰기 시작하는 중입니다"
+                ? "글을 받는 중이에요 — 다 쓰면 한 번에 보여요"
+                : "쓰기 시작하는 중이에요"
           }}
         </p>
         <div class="rs-skeleton" aria-hidden="true">
@@ -82,7 +82,7 @@
             <span class="rs-sr-only">{{ paraName(pi) }} 고치기</span>
             <textarea v-model="editText" data-edit-box rows="6" :disabled="busy" />
           </label>
-          <p class="rs-muted">인용 표시([E1])와 수치 표시([F1])는 그대로 두세요 — 지우면 인용·수치가 빠집니다.</p>
+          <p class="rs-muted">인용 표시([E1])와 수치 표시([F1])는 그대로 둬 주세요 — 지우면 인용·수치가 빠져요.</p>
           <p v-if="editProblem" class="rs-muted" role="status">{{ editProblem }}</p>
           <div class="rs-card__actions">
             <button type="button" class="rs-btn rs-btn--small" :disabled="locked || !!editProblem" @click="saveEdit(p.id)">저장</button>
@@ -115,7 +115,7 @@
                 </template>
                 <span v-if="s.unmarked" class="rs-sr-only">(근거 표시 없음)</span>
               </span>
-              <span v-if="s.numbers.length" class="wk-psec__check" :title="`[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인하세요`">
+              <span v-if="s.numbers.length" class="wk-psec__check" title="[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인해 주세요">
                 확인 필요 {{ s.numbers.join(", ") }}
               </span>
             </template>
@@ -123,7 +123,7 @@
           <p v-if="check" class="rs-muted">{{ check }}</p>
           <SkxInlineError v-if="failedParas.has(p.id)" message="이 문단을 다시 쓰지 못했어요 — 앞의 글을 그대로 두었어요." />
           <p v-if="paragraphGens.has(p.id)" class="rs-muted" role="status">
-            이 문단을 다시 쓰는 중입니다{{ paragraphQueue(p.id) ? ` · ${paragraphQueue(p.id)}` : "" }}
+            이 문단을 다시 쓰는 중이에요{{ paragraphQueue(p.id) ? ` · ${paragraphQueue(p.id)}` : "" }}
           </p>
           <div v-else-if="!readOnly" class="wk-psec__para-actions">
             <button
@@ -174,7 +174,7 @@
       <template v-if="adding">
         <label>
           <span class="rs-sr-only">더할 문단</span>
-          <textarea v-model="addText" data-add-box rows="4" :disabled="busy" placeholder="직접 쓸 문단 — 인용하려면 이 절의 [E1] 표기를 그대로 쓰세요" />
+          <textarea v-model="addText" data-add-box rows="4" :disabled="busy" placeholder="직접 쓸 문단 — 인용하려면 이 절의 [E1] 표기를 그대로 써 주세요" />
         </label>
         <p v-if="addText && addProblem" class="rs-muted" role="status">{{ addProblem }}</p>
         <div class="rs-card__actions">
@@ -199,13 +199,14 @@
       하위질문)에 이은 논문으로 쓰는데, 이은 논문이 없어요.<br />
       다른 주제를 고른 뒤 [{{ REMAKE_REPORT }}]로 맞춰 주세요.
     </p>
-    <!-- '자동으로 씁니다'는 연쇄가 이 절을 곧 넣을 때만 — 06b 때 승인한 목차·취소로 끝난 절·연쇄가 멈춘 동안은 손으로 쓴다 -->
+    <!-- '자동으로 써요'는 연쇄가 이 절을 곧 넣을 때만 — 06b 때 승인한 목차·취소로 끝난 절·연쇄가 멈춘 동안은 손으로 쓴다 -->
     <p v-else-if="!section && status === 'empty' && autoNext" class="rs-muted">
-      아직 쓰지 않은 절입니다 — 차례가 오면 자동으로 씁니다. 지금 쓰려면 [이 절 쓰기]를 누르세요.
+      아직 쓰지 않은 절이에요 — 차례가 오면 자동으로 써요.<br />
+      지금 쓰려면 [이 절 쓰기]를 눌러 주세요.
     </p>
     <p v-else-if="!section && status === 'empty'" class="rs-muted">
-      아직 쓰지 않은 절입니다. [이 절 쓰기]를 누르면 문장이 흘러나오고, 끝나면 문단마다 [수락]·[다시]·[고치기]로 다듬을 수
-      있습니다.
+      아직 쓰지 않은 절이에요.<br />
+      [이 절 쓰기]를 누르면 문장이 흘러나오고, 끝나면 문단마다 [수락]·[다시]·[고치기]로 다듬을 수 있어요.
     </p>
   </section>
 </template>
@@ -252,7 +253,7 @@ const props = defineProps<{
   panelId?: string;
   // 보고서 자동 산출이 근거가 없어(409 no_section_papers) 건너뛴 절 — 이 방문만(06e)
   skipped?: boolean;
-  // 보고서 자동 산출이 이 절을 곧 넣을 참이다(연쇄가 돌고 멈추지 않았고 남은 절에 든다) — 쓰기 전 안내가 '자동으로 씁니다'
+  // 보고서 자동 산출이 이 절을 곧 넣을 참이다(연쇄가 돌고 멈추지 않았고 남은 절에 든다) — 쓰기 전 안내가 '자동으로 써요'
   autoNext?: boolean;
   // 이 절의 저장(PUT) 응답을 받을 때마다 오르는 수(ProposalStep) — 뒤의 다시 읽기가 실패해 절이 그대로여도 저장은 된 것이라
   // 열어 둔 고치기·직접 쓰기 칸을 닫는다(열린 채 다시 누르면 옛 version 이라 409 가 난다)
@@ -295,7 +296,7 @@ const status = computed(() => sectionStatus(props.sectionKey, props.state));
 const stale = computed(() => !!section.value && props.proposal.stale.sections[props.sectionKey] === true);
 // 자동 산출이 근거가 없어 건너뛴 쓰기 전 절 — 손으로 다시 쓰기 시작하면(대기·쓰는 중) 그 상태를 보인다
 const skippedNow = computed(() => !!props.skipped && !section.value && status.value === "empty");
-const note = computed(() => section.value?.note ?? (props.sectionKey === "gap" ? `${GAP_NOTE}로만 씁니다` : null));
+const note = computed(() => section.value?.note ?? (props.sectionKey === "gap" ? `${GAP_NOTE}로만 써요` : null));
 const openSection = computed(() => openGeneration(props.state, "section", props.sectionKey));
 const queueText = computed(() => (openSection.value ? genQueueLine(openSection.value) : null));
 // 끝났지만 계획서를 다시 읽기 전이라 아직 절에 오지 않은 결과(sectionStatus 의 쓰는 중) — 흐르던 글은 이미 지워졌다
@@ -422,7 +423,7 @@ function onCite(e: MouseEvent, pid: string, si: number, eid: string, sentence: s
 // ── 쓰기·고치기 ──────────────────────────────────────────
 function onWrite(): void {
   const kept = section.value?.paragraphs.some((p) => p.state !== "proposed") ?? false;
-  if (kept && !window.confirm("이 절을 다시 쓰면 지금 문단(수락·고친·직접 쓴 문단 포함)을 새 초안으로 바꿉니다. 다시 쓸까요?")) {
+  if (kept && !window.confirm("이 절을 다시 쓰면 지금 문단(수락·고친·직접 쓴 문단 포함)을 새 초안으로 바꿔요.\n다시 쓸까요?")) {
     return;
   }
   emit("write");

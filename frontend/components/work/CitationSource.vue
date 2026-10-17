@@ -9,7 +9,7 @@
       <blockquote class="wk-cite__quote"><span class="rs-sr-only">인용한 문장: </span>{{ quote }}</blockquote>
     </section>
 
-    <p v-if="loading" class="rs-muted" role="status">원문 대목을 불러오는 중입니다</p>
+    <p v-if="loading" class="rs-muted" role="status">원문 대목을 불러오는 중이에요</p>
     <SkxErrorState
       v-else-if="error"
       compact

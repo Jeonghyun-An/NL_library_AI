@@ -139,13 +139,20 @@ export function footprint(p: ProposalView): Footprint {
   return f;
 }
 
-export function footprintLine(f: Footprint): string {
+// 쓴 문단이 하나도 없을 때의 말 — 화면(AI 기여 막대 AiFootprintMeter)은 해요체, 내려받은 보고서의 AI 사용 공개 부록
+// (proposalDocument.disclosureLines)은 문서 말투(합쇼체)로 둔다
+export const FOOTPRINT_EMPTY = {
+  screen: "아직 쓴 문단이 없어요",
+  doc: "아직 쓴 문단이 없습니다",
+} as const;
+
+export function footprintLine(f: Footprint, empty: string = FOOTPRINT_EMPTY.screen): string {
   const ai = f.proposed + f.accepted + f.edited;
   const head = ai
     ? `AI 작성 ${ai}문단 중 수락 ${f.accepted}·수정 ${f.edited}${f.proposed ? `·검토 전 ${f.proposed}` : ""}`
     : "";
   const own = f.authored ? `직접 쓴 문단 ${f.authored}` : "";
-  return [head, own].filter(Boolean).join(" · ") || "아직 쓴 문단이 없습니다";
+  return [head, own].filter(Boolean).join(" · ") || empty;
 }
 
 // 서버가 문단을 검사하며 남긴 것 — 버린 인용·수치 표기, 고친 단정 표현, 근거 표시 없는 문장, [F#] 밖 숫자

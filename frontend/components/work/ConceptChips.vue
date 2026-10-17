@@ -15,7 +15,7 @@
       :on-retry="retryable ? retry : undefined"
     />
     <p v-if="editable && chips.length" id="wk-concepts-help" class="rs-muted">
-      카드 제목에 넣을 키워드를 고르세요 — 고른 키워드가 하나 이상 들어간 제목으로 카드를 만듭니다.
+      카드 제목에 넣을 키워드를 골라 주세요 — 고른 키워드가 하나 이상 들어간 제목으로 카드를 만들어요.
     </p>
 
     <ul v-if="chips.length" ref="listEl" class="wk-concepts__list" aria-label="키워드 후보">
@@ -42,7 +42,7 @@
         class="wk-edit__input wk-concepts__input"
         type="text"
         :maxlength="CONCEPT_LEN_MAX"
-        :placeholder="full ? `키워드는 ${CONCEPTS_MAX}개까지 고릅니다` : '후보에 없는 키워드 — Enter 로 더합니다'"
+        :placeholder="full ? `키워드는 ${CONCEPTS_MAX}개까지 고를 수 있어요` : '후보에 없는 키워드 — Enter 로 더해요'"
         aria-label="키워드 직접 더하기"
         :disabled="busy || full"
         @keydown.enter="onEnter"

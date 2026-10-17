@@ -26,6 +26,22 @@ export function pdfCheckProblem(status: number | null): string | null {
   return "원문을 불러오지 못했어요.\n잠시 뒤 다시 시도해 주세요.";
 }
 
+// 토스트(.skx-toast — 한 줄로 그리고 줄을 바꾸지 않는다)에 실을 한 문장. 줄 안내(SkxInlineError)에 쓰는 두 줄 문구
+// ('무엇을 못 했어요.\n할 일.')를 '무엇을 못 했어요 — 할 일.'로 잇는다 — 줄 안내 쪽 문구는 그대로 두고 토스트만 이렇게 고쳐 싣는다.
+// 이미 한 줄이면 그대로
+export function toastLine(message: string): string {
+  const lines = message.split("\n").map((line) => line.trim()).filter(Boolean);
+  return lines.map((line, i) => (i < lines.length - 1 ? line.replace(/\.$/, "") : line)).join(" — ");
+}
+
+// 딥리서치 화면(pages/research/[id].vue)의 토스트 문구 — 한 줄이라 한 문장. 실패는 '무엇을 못 했는지 — 할 일'
+export const RESEARCH_TOAST_TEXT = {
+  linkCopied: "링크를 복사했어요.",
+  // 운영 게이트웨이가 http 라 클립보드 API 가 없을 수 있다(보안 컨텍스트 전용). 복사하려던 것은 지금 화면의 주소라 주소창에서 직접 복사하면 된다
+  linkCopyFailed: "링크를 복사하지 못했어요 — 주소창의 주소를 복사해 주세요.",
+  docxSaved: "Word 문서를 내려받았어요.",
+} as const;
+
 // 같은 브라우저의 다른 딥리서치가 진행 중이라 승인·재시도가 막혔다(api/research.py _to_run_queue 의 429
 // detail {code: "browser_active", message, job_id}). 서버 문구(운영 서버는 합쇼체)는 쓰지 않고 늘 이 화면 문구 — 말투를 한 벌로 둔다
 export const BROWSER_ACTIVE_MESSAGE = `진행 중인 ${DEEP_RESEARCH}가 있어요 — 끝나거나 취소한 뒤 다시 시작해 주세요`;

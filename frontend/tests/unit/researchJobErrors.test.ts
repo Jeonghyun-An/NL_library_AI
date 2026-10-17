@@ -256,8 +256,8 @@ describe("딥리서치 화면 — 공통 오류 컴포넌트로 옮긴 표시(�
     expect(tpl).toContain(':message="RESEARCH_STATE_TEXT.closePending"');
     expect(tpl).toMatch(/<div v-if="closeWaitEnded" class="rs-report-note">/);
     expect(page).not.toMatch(/못했습니다|시도합니다|초안입니다|복사하세요/);
-    // 내보내기 실패 문구는 작업대 영역이 useReportExport 의 REPORT_EXPORT_FAILED 한 곳으로 모았다 — 화면은 그 상수를 쓴다
-    expect(page).toContain("showToast(REPORT_EXPORT_FAILED[format]);");
+    // 내보내기 실패 문구는 useReportExport 한 곳에 모았다 — 토스트는 한 줄이라 그 문구의 토스트판(REPORT_EXPORT_FAILED_TOAST)을 쓴다
+    expect(page).toContain("showToast(REPORT_EXPORT_FAILED_TOAST[format]);");
     const exportSrc = read("composables/useReportExport.ts");
     expect(exportSrc).toContain('docx: "Word 문서를 만들지 못했어요.\\n새로고침한 뒤 다시 시도해 주세요."');
     expect(exportSrc).toContain('pdf: "인쇄 창을 열지 못했어요.\\n다시 시도해 주세요."');

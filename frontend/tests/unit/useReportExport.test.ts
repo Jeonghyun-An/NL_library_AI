@@ -147,7 +147,7 @@ describe("인쇄가 시작되지 않았을 때 화면(소스)", () => {
 
   it("딥리서치 보고서는 실패 안내 토스트, 작업대 보고서는 실패 줄 — 완료 처리(markDone)는 하지 않는다", () => {
     const page = read("pages/research/[id].vue");
-    expect(page).toMatch(/\} else if \(!\(await printPdf\(doc\)\)\) \{[\s\S]*?showToast\(REPORT_EXPORT_FAILED\.pdf\);/);
+    expect(page).toMatch(/\} else if \(!\(await printPdf\(doc\)\)\) \{[\s\S]*?showToast\(REPORT_EXPORT_FAILED_TOAST\.pdf\);/);
     const step = read("components/work/ProposalStep.vue");
     expect(step).toMatch(/else printed = await printPdf\(doc\);/);
     expect(step).toMatch(/if \(!printed\) \{\s*say\(REPORT_EXPORT_FAILED\.pdf, true\);\s*return;\s*\}[\s\S]*?await markDone\(\);/);

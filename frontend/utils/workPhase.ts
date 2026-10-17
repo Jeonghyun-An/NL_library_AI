@@ -19,6 +19,14 @@ export const MAKE_REPORT = `${FINAL_STEP_NAME} 만들기`;
 // 단계 막대 옆에 같은 글로 단다
 export const BETA_LABEL = "Beta";
 export const REMAKE_REPORT = `${FINAL_STEP_NAME} 다시 만들기`;
+// [보고서 다시 만들기] 를 누르면 묻는 확인 — 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 덮는다(계약 보강 4).
+// 새 반영은 다시 자동 승인하지만 절 연쇄는 절도 생성 기록도 없는 키만 쓴다 — 이미 쓴 절은 다시 쓰지 않는다(06e 정함 4).
+// 참고문헌 선택하기·보고서 두 화면이 같은 글을 쓴다. 해요체·문장마다 줄바꿈(브라우저 확인 창은 '\n' 을 줄로 그린다)
+export const REMAKE_CONFIRM =
+  "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀌어요.\n" +
+  "연구 배경은 그대로 둬요.\n" +
+  "이미 쓴 절은 지우지 않고 아직 쓰지 않은 절만 자동으로 써요 — 주제·묶음·연구 질문이 바뀐 절에는 '다시 맞춤 필요'가 붙어요.\n" +
+  "계속할까요?";
 
 // 진행 막대는 ① 탐색(딥리서치 — 이어갈 때 이미 끝나 있다)부터 센다
 type StepKey = "explore" | WorkStep;
@@ -178,17 +186,18 @@ export function continueCard(exists: boolean | null, work: WorkView | null, writ
   if (exists === true) {
     return {
       title: "이어간 연구",
-      body: work ? stepLine(work.phase, written) : "이어간 연구가 있습니다.",
+      body: work ? stepLine(work.phase, written) : "이어간 연구가 있어요.",
       preview: continuePreview(work?.phase ?? null),
       label: "이어간 연구 열기",
       action: "open",
       // 예시 연구(is_example)는 쓰기 API 가 409 다 — 둘러보기만 한다는 것을 누르기 전에 알린다
-      note: work?.is_example ? "예시 연구는 읽기 전용입니다 — 둘러볼 수 있고 바꿀 수는 없습니다." : null,
+      note: work?.is_example ? "예시 연구는 읽기 전용이에요 — 둘러볼 수 있고 바꿀 수는 없어요." : null,
     };
   }
   return {
     title: "이 연구 이어가기",
-    body: `탐색이 끝났습니다. ${STEP_NAMES.topics} → ${STEP_NAMES.reading} → ${STEP_NAMES.proposal} 3단계를 거쳐 보고서 초안까지 이어 갈 수 있습니다.`,
+    // 두 문장 — 카드(ContinueResearchCard)가 rs-lines 로 '\n' 을 줄로 그린다
+    body: `탐색이 끝났어요.\n${STEP_NAMES.topics} → ${STEP_NAMES.reading} → ${STEP_NAMES.proposal} 3단계를 거쳐 보고서 초안까지 이어 갈 수 있어요.`,
     preview: continuePreview(null),
     label: "이 연구 이어가기",
     action: "continue",

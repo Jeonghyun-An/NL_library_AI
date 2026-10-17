@@ -38,7 +38,7 @@
       </h3>
       <p v-if="kwWarning" class="wk-topic__kwwarn">{{ kwWarning }}</p>
       <p class="wk-topic__question">{{ card.question }}</p>
-      <p v-if="kwChanged" class="wk-topic__kwchanged">키워드가 바뀌었습니다</p>
+      <p v-if="kwChanged" class="wk-topic__kwchanged">키워드가 바뀌었어요</p>
       <p v-if="remakingNote" class="wk-topic__note">{{ remakingNote }}</p>
       <ul v-if="chips.length" class="wk-topic__chips" aria-label="근거 논문">
         <li v-for="chip in chips" :key="chip.cntsId">
@@ -53,7 +53,7 @@
       </p>
       <p v-if="card.latest_year !== null" class="rs-muted">근거 중 최신 {{ card.latest_year }}년</p>
       <p v-if="numbersLine" class="wk-topic__check">
-        <span class="wk-psec__check" title="[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인하세요">{{ numbersLine }}</span>
+        <span class="wk-psec__check" title="[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인해 주세요">{{ numbersLine }}</span>
       </p>
     </template>
 

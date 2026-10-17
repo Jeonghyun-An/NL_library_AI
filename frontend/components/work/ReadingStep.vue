@@ -13,9 +13,9 @@
           <ReadingNextActions class="wk-screen__lead-actions" where="top" v-bind="nextActions" @go="emit('go', $event)" @make="makeOutline" />
         </div>
         <p v-if="topicTitle" class="wk-screen__picked">고른 주제 <strong>{{ topicTitle }}</strong></p>
-        <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었습니다 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]로 맞추세요.</p>
+        <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었어요 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]를 눌러 맞춰 주세요.</p>
         <!-- 읽기 전용으로 꺼진 [보고서 만들기]·[보고서 다시 만들기](위·아래 두 묶음)가 이 줄을 까닭으로 가리킨다(aria-describedby) -->
-        <p v-if="readOnly" :id="READ_ONLY_ID" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
+        <p v-if="readOnly" :id="READ_ONLY_ID" class="rs-muted">예시 연구는 읽기 전용이에요 — 미리 돌린 실제 기록을 그대로 보여 드려요.</p>
       </header>
 
       <CorpusScopeNote :corpus="corpus" />
@@ -34,7 +34,7 @@
       />
       <div v-else-if="!reading" class="rs-card rs-card--wait">
         <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
-        <p>참고문헌 후보를 불러오는 중입니다</p>
+        <p>참고문헌 후보를 불러오는 중이에요</p>
       </div>
       <template v-else>
         <FunnelCounter :funnel="reading.funnel" />
@@ -86,8 +86,8 @@
           >
             담음
           </button>
-          <span v-if="readOnly" class="rs-muted">예시 연구는 담을 수 없습니다 — 대화는 할 수 있습니다.</span>
-          <span v-else-if="panelItem.state === 'out'" class="rs-muted">뺀 논문입니다 — 표에서 [되돌리기]를 누르면 담을 수 있습니다.</span>
+          <span v-if="readOnly" class="rs-muted">예시 연구는 담을 수 없어요 — 대화는 할 수 있어요.</span>
+          <span v-else-if="panelItem.state === 'out'" class="rs-muted">뺀 논문이에요 — 표에서 [되돌리기]를 누르면 담을 수 있어요.</span>
         </div>
         <details v-if="panelPath" class="wk-panel__path">
           <summary>들어온 경로 — {{ panelPath.label }}</summary>
@@ -121,18 +121,13 @@ import { httpStatus } from "~/utils/apiErrors";
 import { workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick } from "~/utils/restorePosition";
 import { WORK_SAVED_STALE, WORK_SLOW_MESSAGE } from "~/utils/workErrors";
-import { REMAKE_REPORT } from "~/utils/workPhase";
+import { REMAKE_CONFIRM, REMAKE_REPORT } from "~/utils/workPhase";
 
 // 읽기 목록 단계 화면(?s=reading, spec §4 S4). 표·서랍의 의도를 받아 PUT .../reading/{cnts_id} 로 저장하고 다시 읽는다.
 // 담은 논문이 MIN_READING_FOR_OUTLINE 편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로
 // 넣는다 — 06e D20)
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
 const emit = defineEmits<{ go: [step: WorkStep]; "open-pdf": [payload: OpenPdfPayload]; panel: [open: boolean] }>();
-
-// 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 바꾼다 — 다시 만들기 전에 묻는다. 새 반영은 다시 자동 승인하지만
-// 절 연쇄는 절도 생성 기록도 없는 키만 쓴다 — 이미 쓴 절은 다시 쓰지 않는다(06e 정함 4)
-const REMAKE_CONFIRM =
-  "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다 — 연구 배경은 그대로 둡니다. 이미 쓴 절은 지우지 않고(주제·묶음·연구 질문이 바뀐 절에는 '다시 맞춤 필요'가 붙습니다) 아직 쓰지 않은 절만 자동으로 씁니다. 계속할까요?";
 
 const api = useWorkApi();
 const busy = ref(false);

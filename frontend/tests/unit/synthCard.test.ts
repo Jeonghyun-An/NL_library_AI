@@ -121,7 +121,7 @@ describe("newlyFinished", () => {
 describe("finishedAnnouncement", () => {
   it("끝난 절을 번호·제목으로 한 번에 알린다", () => {
     const slots = [slot({ idx: 0, heading: "가", status: "done" }), slot({ idx: 1, heading: "나", status: "failed" })];
-    expect(finishedAnnouncement(slots, [0, 1])).toBe("절 1 작성 완료: 가. 절 2 서술 받지 못함, 논문 목록만 싣습니다: 나");
+    expect(finishedAnnouncement(slots, [0, 1])).toBe("절 1 작성 완료: 가. 절 2 서술을 받지 못해 논문 목록만 실어요: 나");
     expect(finishedAnnouncement(slots, [])).toBe("");
   });
 });

@@ -8,7 +8,7 @@ describe("queueLine — 옮긴 자리", () => {
     // 같은 이름을 두 파일이 내보내면 Nuxt 자동 import 가 'Duplicated imports' 경고를 내고 한쪽을 버린다(06b 이월 §7-5)
     expect("queueLine" in events).toBe(false);
     expect(queueLine({ ahead: 2, etaSec: 1500 })).toBe("앞에 2건 · 약 25분");
-    expect(queueLine({ ahead: 0, etaSec: null })).toBe("바로 다음 차례입니다");
+    expect(queueLine({ ahead: 0, etaSec: null })).toBe("바로 다음 차례예요");
     expect(queueLine(null)).toBeNull();
   });
 });
