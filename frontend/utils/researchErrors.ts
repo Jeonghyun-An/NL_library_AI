@@ -188,8 +188,8 @@ export function researchErrorMessage(err: unknown, fallback: string): string {
   return base;
 }
 
-// 이어간 연구 단계 화면(주제·읽기 목록·계획서)의 쓰기 오류 문구. 404 는 서버 문구('주제가 없습니다'·'논문이
-// 없습니다'·'문단이 없습니다' 등)를 그대로 보인다 — researchErrorMessage 는 딥리서치 화면 그대로 모든 404 를
+// 이어간 연구 단계 화면(주제·읽기 목록·계획서)의 쓰기 오류 문구. 404 는 서버 문구('주제를 찾을 수 없어요'·'논문을
+// 찾을 수 없어요'·'문단을 찾을 수 없어요' 등)를 그대로 보인다 — researchErrorMessage 는 딥리서치 화면 그대로 모든 404 를
 // RESEARCH_NOT_FOUND('찾을 수 없는 연구예요')로 바꾼다. 문구가 없는 404 와 그 밖의 상태는 researchErrorMessage 와 같다
 export function workErrorMessage(err: unknown, fallback: string): string {
   if (httpStatus(err) === 404) {

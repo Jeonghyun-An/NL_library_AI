@@ -227,7 +227,7 @@ class TestQueuedEvent:
             "model": None, "result": None}
 
     def test_open_same_is_the_06a_retry_text(self):
-        assert OPEN_SAME == "같은 생성이 이미 대기 중이거나 진행 중입니다"
+        assert OPEN_SAME == "같은 작업이 이미 대기 중이거나 진행 중이에요"
 
 
 # ── 진행 요약 ────────────────────────────────────────────────────────

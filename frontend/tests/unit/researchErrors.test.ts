@@ -197,7 +197,7 @@ describe("versionConflict", () => {
   });
 
   it("다른 409·다른 상태·version 이 정수가 아닌 detail·네트워크 오류는 null", () => {
-    expect(versionConflict(fetchError(409, "목차를 만드는 중입니다"))).toBeNull();
+    expect(versionConflict(fetchError(409, "목차를 만드는 중이에요"))).toBeNull();
     expect(versionConflict(fetchError(409, { code: "other", version: 4 }))).toBeNull();
     expect(versionConflict(fetchError(409, { ...CONFLICT, version: "4" }))).toBeNull();
     expect(versionConflict(fetchError(409, { ...CONFLICT, version: 1.5 }))).toBeNull();
@@ -209,20 +209,20 @@ describe("versionConflict", () => {
 
 describe("workErrorMessage", () => {
   it("404 는 서버 문구(주제·논문·문단이 없음)를 그대로 보이고, 문구가 없으면 연구 화면과 같은 문구", () => {
-    expect(workErrorMessage(fetchError(404, "문단이 없습니다"), "실패")).toBe("문단이 없습니다");
+    expect(workErrorMessage(fetchError(404, "문단을 찾을 수 없어요"), "실패")).toBe("문단을 찾을 수 없어요");
     expect(workErrorMessage(fetchError(404), "실패")).toBe("찾을 수 없는 연구예요");
     // 개발자용 404 문구(예외 원문이 섞임)는 문구가 없는 404 와 같다
     expect(workErrorMessage(fetchError(404, "PDF 없음: NoSuchKey"), "실패")).toBe("찾을 수 없는 연구예요");
   });
 
   it("404 밖은 researchErrorMessage 와 같다", () => {
-    expect(workErrorMessage(fetchError(409, "카드가 아직 없습니다"), "실패")).toBe("카드가 아직 없습니다");
+    expect(workErrorMessage(fetchError(409, "카드가 아직 없어요"), "실패")).toBe("카드가 아직 없어요");
     expect(workErrorMessage(fetchError(500), "실패")).toBe("실패");
   });
 
   it("절 PUT 의 422(검사 뒤 글이 상한을 넘음)는 서버 문구를 그대로 보인다 — 화면 검사는 보낸 글만 보아 통과시킨다", () => {
     // 서버 api/research_proposal.PARAGRAPH_TOO_LONG — 이유(단정 표현 바꾸기로 늘어남)가 보여야 사용자가 줄일 곳을 안다
-    const tooLong = "검사 뒤 글이 3000자를 넘습니다 — 단정 표현을 바꾸면서 글이 늘었을 수 있습니다. 조금 줄여 주세요";
+    const tooLong = "검사 뒤 문단이 3000자를 넘어요 — 단정 표현을 고치면서 늘었을 수 있으니 조금 줄여 주세요";
     expect(workErrorMessage(fetchError(422, tooLong), "문단을 저장하지 못했습니다")).toBe(tooLong);
   });
 });

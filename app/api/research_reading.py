@@ -30,7 +30,7 @@ from services.research_work.shapes import GROUP_LABEL_MAX, READING_NOTE_MAX
 
 router = APIRouter(tags=["research-work"])
 
-NO_PAPER = "논문이 없습니다"
+NO_PAPER = "논문을 찾을 수 없어요"
 STATE_REQUIRED = "state 는 비울 수 없습니다"
 MAX_POSITION = 1_000_000       # 순서 값 상한 — integer 칼럼을 넘는 값이 500 으로 끝나지 않게
 

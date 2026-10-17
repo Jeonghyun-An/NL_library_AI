@@ -587,7 +587,7 @@ class TestCreateOutline:
     def test_five_picked_papers_are_needed(self, api):
         jid = _work_job(api.engine, picked=("C1", "C2", "C3", "C4"))
         res = api.client.post(f"/api/research/{jid}/outline")
-        assert res.status_code == 409 and res.json()["detail"] == "담은 논문이 5편 이상이어야 보고서를 만듭니다"
+        assert res.status_code == 409 and res.json()["detail"] == "담은 논문이 5편 이상이어야 보고서를 만들 수 있어요"
         assert api.affinity.calls == []
 
     def test_second_request_while_one_is_open_is_409(self, api):
@@ -1039,25 +1039,25 @@ class TestGenerateSection:
 
         # 06e — 화면의 절 연쇄는 문구가 아니라 code 로 '이 절만 건너뜀' 을 가른다. 문구는 message 그대로(detailMessage 가 읽는다)
         assert (res.status_code, res.json()["detail"]) == (
-            409, {"code": "no_section_papers", "message": "이 절에 넣을 논문이 없습니다"})
+            409, {"code": "no_section_papers", "message": "이 절에 넣을 논문이 없어요"})
         assert _sec_gens(api.engine, jid) == []
 
     @pytest.mark.parametrize("key", ["background", "prior.g5", "topic"])
     def test_sections_06b_does_not_write_are_422(self, api, heavy, key):
         jid = _sec_work(api.engine)
         res = api.client.post(f"/api/research/{jid}/sections/{key}/generate")
-        assert (res.status_code, res.json()["detail"]) == (422, "이 절은 아직 쓸 수 없습니다")
+        assert (res.status_code, res.json()["detail"]) == (422, "이 절은 아직 쓸 수 없어요")
 
     @pytest.mark.parametrize("state, proposal", [("draft", True), ("approved", False)])
     def test_outline_must_be_approved(self, api, heavy, state, proposal):
         jid = _sec_work(api.engine, state=state, proposal=proposal)
         res = api.client.post(f"/api/research/{jid}/sections/prior.g1/generate")
-        assert (res.status_code, res.json()["detail"]) == (409, "목차를 먼저 승인하세요")
+        assert (res.status_code, res.json()["detail"]) == (409, "목차를 먼저 승인해 주세요")
 
     def test_group_missing_from_the_outline_is_404(self, api, heavy):
         jid = _sec_work(api.engine)
         res = api.client.post(f"/api/research/{jid}/sections/prior.g2/generate")
-        assert (res.status_code, res.json()["detail"]) == (404, "묶음이 없습니다")
+        assert (res.status_code, res.json()["detail"]) == (404, "묶음을 찾을 수 없어요")
 
     @pytest.mark.parametrize("kind, target, status", [
         ("section", "prior.g1", "queued"), ("section", "prior.g1", "running"),
@@ -1069,7 +1069,7 @@ class TestGenerateSection:
 
         res = api.client.post(f"/api/research/{jid}/sections/prior.g1/generate")
 
-        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓰는 중입니다")
+        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓰는 중이에요")
         assert len(_sec_gens(api.engine, jid)) == 1 and heavy == []
 
     def test_other_sections_being_written_do_not_block(self, api, heavy):
@@ -1226,12 +1226,12 @@ class TestPutSection:
 
         res = _put(api, jid, [{"id": "p1", "text": "고친다 [E1].", "state": "proposed"}])
 
-        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓰는 중입니다")
+        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓰는 중이에요")
 
     def test_section_not_written_yet_is_404(self, api):
         jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
         res = _put(api, jid, [], key="gap")
-        assert (res.status_code, res.json()["detail"]) == (404, "절이 없습니다")
+        assert (res.status_code, res.json()["detail"]) == (404, "절을 찾을 수 없어요")
 
     def test_same_paragraph_twice_is_422(self, api):
         jid = _sec_work(api.engine, sections={"prior.g1": SEC_STORED})
@@ -1282,7 +1282,7 @@ class TestPutSection:
         assert (res.status_code, res.json()["detail"]) == (422, api.router.PARAGRAPH_TOO_LONG)
         # 화면 검사(paragraphProblem)는 보낸 글만 보아 통과시킨다 — 검사 뒤 글이 늘어 넘은 이유가 문구에 보여야 한다
         assert api.router.PARAGRAPH_TOO_LONG == (
-            f"검사 뒤 글이 {MAX_PARAGRAPH_CHARS}자를 넘습니다 — 단정 표현을 바꾸면서 글이 늘었을 수 있습니다. 조금 줄여 주세요")
+            f"검사 뒤 문단이 {MAX_PARAGRAPH_CHARS}자를 넘어요 — 단정 표현을 고치면서 늘었을 수 있으니 조금 줄여 주세요")
         assert _sec_proposal(api.engine, jid)["sections"]["prior.g1"] == SEC_STORED
         assert _sec_proposal(api.engine, jid)["version"] == 3
 
@@ -1343,13 +1343,13 @@ class TestRegenerateParagraph:
 
         res = api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p1/regenerate")
 
-        assert (res.status_code, res.json()["detail"]) == (409, "다시 쓸 수 없는 문단입니다")
+        assert (res.status_code, res.json()["detail"]) == (409, "다시 쓸 수 없는 문단이에요")
 
     @pytest.mark.parametrize("key, pid", [("prior.g1", "p9"), ("gap", "p1"), ("prior.g1", "x" * 80)])
     def test_unknown_paragraph_is_404(self, api, key, pid):
         jid, _ = _para_work(api.engine)
         res = api.client.post(f"/api/research/{jid}/sections/{key}/paragraphs/{pid}/regenerate")
-        assert (res.status_code, res.json()["detail"]) == (404, "문단이 없습니다")
+        assert (res.status_code, res.json()["detail"]) == (404, "문단을 찾을 수 없어요")
 
     @pytest.mark.parametrize("kind, target", [("section", "prior.g1"), ("paragraph", "prior.g1#p1"),
                                               ("paragraph", "prior.g1#p2")])
@@ -1359,7 +1359,7 @@ class TestRegenerateParagraph:
 
         res = api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p2/regenerate")
 
-        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓰는 중입니다")
+        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓰는 중이에요")
 
     def test_other_sections_being_written_do_not_block(self, api):
         jid, _ = _para_work(api.engine)
@@ -1374,7 +1374,7 @@ class TestRegenerateParagraph:
 
         res = api.client.post(f"/api/research/{jid}/sections/prior.g1/paragraphs/p2/regenerate")
 
-        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓴 생성 기록이 없어 문단을 다시 쓸 수 없습니다")
+        assert (res.status_code, res.json()["detail"]) == (409, "이 절을 쓴 작업 기록이 없어 문단을 다시 쓸 수 없어요")
 
     def test_example_work_is_read_only(self, api):
         jid, _ = _para_work(api.engine, is_example=True)
@@ -1472,7 +1472,7 @@ class TestGetSectionSources:
 
         for gen in (other_key, paragraph, other_work, 999999):
             res = _sources(api, jid, gen=gen)
-            assert (res.status_code, res.json()["detail"]) == (404, "이 절의 생성 기록이 아닙니다")
+            assert (res.status_code, res.json()["detail"]) == (404, "이 절의 작업 기록이 아니에요")
 
     def test_no_section_and_no_open_generation_is_404(self, api):
         jid, _ = _src_work(api.engine)
@@ -1482,15 +1482,15 @@ class TestGetSectionSources:
 
         res = _sources(api, jid, key="gap")
 
-        assert (res.status_code, res.json()["detail"]) == (404, "절이 없습니다")
+        assert (res.status_code, res.json()["detail"]) == (404, "절을 찾을 수 없어요")
         missing = _sources(api, uuid.uuid4())
-        assert (missing.status_code, missing.json()["detail"]) == (404, "이어간 연구가 없습니다")
+        assert (missing.status_code, missing.json()["detail"]) == (404, "이어간 연구를 찾을 수 없어요")
 
     @pytest.mark.parametrize("key", ["background", "prior.g5", "topic"])
     def test_unknown_key_is_422(self, api, key):
         jid, _ = _src_work(api.engine)
         res = _sources(api, jid, key=key)
-        assert (res.status_code, res.json()["detail"]) == (422, "이 절은 아직 쓸 수 없습니다")
+        assert (res.status_code, res.json()["detail"]) == (422, "이 절은 아직 쓸 수 없어요")
 
     def test_example_work_can_be_read(self, api):
         jid, source = _src_work(api.engine, is_example=True)

@@ -14,7 +14,7 @@ from sqlalchemy import func, insert, select
 
 from models.research_work import GEN_OPEN_STATUSES, PRIORITY_USER, ResearchGeneration
 
-OPEN_SAME = "같은 생성이 이미 대기 중이거나 진행 중입니다"
+OPEN_SAME = "같은 작업이 이미 대기 중이거나 진행 중이에요"
 
 
 def lock_key(work_id: uuid.UUID | str, kind: str, target: str | None) -> int:
