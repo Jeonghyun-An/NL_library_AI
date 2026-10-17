@@ -221,8 +221,8 @@ describe("연구 화면([id].vue) — 이어간 연구 조회 실패·연결 끊
     );
   });
 
-  it("내보내기 실패 토스트는 공통 문구(해요체)를 쓴다", () => {
-    expect(page).toContain("showToast(REPORT_EXPORT_FAILED[format]);");
+  it("내보내기 실패 토스트는 공통 문구(해요체)의 한 줄판을 쓴다", () => {
+    expect(page).toContain("showToast(REPORT_EXPORT_FAILED_TOAST[format]);");
     expect(page).not.toContain("Word 문서를 만들지 못했습니다");
   });
 });

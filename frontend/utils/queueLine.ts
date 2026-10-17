@@ -10,7 +10,7 @@ function etaPart(etaSec: number | null | undefined): string {
 // 대기 카드·진행 패널의 queued 문구 뒤에 덧붙이는 순번. 순번을 모르면(옛 서버·대기 아님) 덧붙이지 않는다
 export function queueLine(q: QueueView | null): string | null {
   if (!q) return null;
-  if (q.ahead === 0) return "바로 다음 차례입니다";
+  if (q.ahead === 0) return "바로 다음 차례예요";
   return `앞에 ${q.ahead}건${etaPart(q.etaSec)}`;
 }
 

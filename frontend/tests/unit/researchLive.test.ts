@@ -39,19 +39,19 @@ function subq(idx: number, over: Partial<SubqView> = {}): SubqView {
 describe("liveRunning · liveNowLine — 지금 AI가 하는 일 한 줄", () => {
   it("도는 하위질문이 없으면 다음을 준비하거나 마무리하는 중", () => {
     expect(liveRunning([subq(0, { status: "done" }), subq(1)])).toBeNull();
-    expect(liveNowLine([subq(0, { status: "done" }), subq(1)])).toBe("다음 하위질문을 준비하고 있습니다");
-    expect(liveNowLine([subq(0, { status: "done" }), subq(1, { status: "done" })])).toBe("탐색을 마무리하고 있습니다");
+    expect(liveNowLine([subq(0, { status: "done" }), subq(1)])).toBe("다음 하위질문을 준비하고 있어요");
+    expect(liveNowLine([subq(0, { status: "done" }), subq(1, { status: "done" })])).toBe("탐색을 마무리하고 있어요");
   });
 
   it("도는 하위질문의 마지막 회차로 지금 일을 말한다 — 검색 → 점검 → 다시 찾기 → 확인", () => {
     const at = (rounds: RoundView[]) => liveNowLine([subq(0, { status: "done" }), subq(1, { status: "running", rounds }), subq(2)]);
-    expect(at([])).toBe("하위질문 2/3 — 검색어를 정해 논문을 찾고 있습니다");
-    expect(at([round({ foundChunks: 12 })])).toBe("하위질문 2/3 — 찾은 대목 12개를 질문에 맞는지 스스로 점검하고 있습니다");
-    expect(at([round()])).toBe("하위질문 2/3 — 찾은 논문을 질문에 맞는지 스스로 점검하고 있습니다");
+    expect(at([])).toBe("하위질문 2/3 — 검색어를 정해 논문을 찾고 있어요");
+    expect(at([round({ foundChunks: 12 })])).toBe("하위질문 2/3 — 찾은 대목 12개를 질문에 맞는지 스스로 점검하고 있어요");
+    expect(at([round()])).toBe("하위질문 2/3 — 찾은 논문을 질문에 맞는지 스스로 점검하고 있어요");
     expect(at([round({ verdict: "insufficient", nextQuery: "농촌 노인 우울" })])).toBe(
-      "하위질문 2/3 — 근거가 부족해 ‘농촌 노인 우울’(으)로 다시 찾고 있습니다",
+      "하위질문 2/3 — 근거가 부족해 ‘농촌 노인 우울’(으)로 다시 찾고 있어요",
     );
-    expect(at([round({ verdict: "sufficient" })])).toBe("하위질문 2/3 — 근거를 확인했습니다");
+    expect(at([round({ verdict: "sufficient" })])).toBe("하위질문 2/3 — 근거를 확인했어요");
   });
 
   it("이전 시도에 남은 running 행은 지금 도는 하위질문이 아니다(재시도)", () => {

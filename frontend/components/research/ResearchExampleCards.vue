@@ -5,7 +5,7 @@
 <template>
   <section v-if="examples?.length" class="rs-examples" aria-labelledby="rs-examples-title">
     <h2 id="rs-examples-title" class="rs-examples__title">예시 연구</h2>
-    <p class="rs-examples__note">미리 돌려 둔 실제 연구입니다. 둘러볼 수 있고 바꿀 수는 없습니다.</p>
+    <p class="rs-examples__note">미리 돌려 둔 실제 연구예요.<br />둘러볼 수 있고 바꿀 수는 없어요.</p>
     <ul class="rs-examples__list">
       <li v-for="ex in examples" :key="ex.id">
         <NuxtLink :to="exampleRoute(ex)" class="rs-examples__card">

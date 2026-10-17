@@ -137,6 +137,11 @@ html:has(.rs-page.has-progressbar) {
   color: var(--skx-gray-1);
   line-height: 1.5;
 }
+/* 두 문장 이상인 안내 문구(글 속 '\n')는 문장마다 줄을 바꾼다 — 공통 오류 블록·줄 안내와 같은 규칙(사용자 요청 2026-10-16).
+   템플릿에 바로 쓴 글은 <br /> 로 나누고, 상수·함수가 만든 글은 이 클래스로 '\n' 을 줄로 그린다 */
+.rs-lines {
+  white-space: pre-line;
+}
 .rs-alert {
   margin: 0;
   padding: 0.6rem 0.8rem;
@@ -548,6 +553,8 @@ html:has(.rs-page.has-progressbar) {
   font-size: 0.7rem;
   background: var(--skx-white);
   border-left: 3px solid var(--skx-primary);
+  /* 초안의 안내(draftIntro — 해요체 여러 문장)는 문장마다 줄을 바꾼다. 최종본 서론(reportIntro)은 한 문장이라 그대로다 */
+  white-space: pre-line;
 }
 .rs-section {
   display: flex;

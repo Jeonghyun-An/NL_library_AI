@@ -3,11 +3,14 @@
   <section class="rs-card rs-progress">
     <h2 class="rs-card__title">{{ title }}</h2>
 
-    <p v-if="phase === 'planning'" class="rs-muted">계획이 확정되면 탐색 과정이 여기에 나타납니다.</p>
+    <p v-if="phase === 'planning'" class="rs-muted">계획이 확정되면 탐색 과정이 여기에 나타나요.</p>
     <p v-else-if="phase === 'awaiting'" class="rs-muted">
-      계획을 승인하면 하위질문마다 논문을 찾고, 근거가 부족하다고 판단하면 검색어를 바꿔 다시 찾습니다.
+      계획을 승인하면 하위질문마다 논문을 찾고, 근거가 부족하다고 판단하면 검색어를 바꿔 다시 찾아요.
     </p>
-    <p v-else-if="phase === 'queued'" class="rs-muted">순서 대기 중입니다. 앞선 연구가 끝나면 시작합니다.<span v-if="queueNote">{{ " " + queueNote }}</span></p>
+    <!-- 순번(queueNote — '앞에 N건 · 약 M분'·'바로 다음 차례예요')은 문장 뒤에 잇지 않고 줄을 바꿔 단다 -->
+    <p v-else-if="phase === 'queued'" class="rs-muted">
+      순서 대기 중이에요.<br />앞선 연구가 끝나면 시작해요.<template v-if="queueNote"><br />{{ queueNote }}</template>
+    </p>
 
     <template v-else>
       <dl class="rs-counters">
@@ -38,7 +41,7 @@
 
       <p v-if="phase === 'synthesizing'" class="rs-progress__synth">{{ synthLine }}</p>
       <p v-if="view.source === 'trail' || view.source === 'queries'" class="rs-muted rs-progress__note">
-        회차별 판정을 기록하기 전에 만든 연구라, 검색어 이력과 마지막 판정만 보여 줍니다.
+        회차별 판정을 기록하기 전에 만든 연구라, 검색어 이력과 마지막 판정만 보여 드려요.
       </p>
 
       <ol class="rs-timeline">

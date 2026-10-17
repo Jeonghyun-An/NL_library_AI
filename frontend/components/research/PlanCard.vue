@@ -4,7 +4,7 @@
     <header class="rs-card__head">
       <h2 class="rs-card__title">{{ editable ? "연구 계획 확인" : "연구 계획" }}</h2>
       <p v-if="questionUsed" class="rs-muted rs-plan__understood">{{ understoodLine(questionUsed) }}</p>
-      <p v-if="editable" class="rs-muted">하위질문을 고치거나 지우고 더할 수 있습니다. 최대 {{ max }}개까지입니다.</p>
+      <p v-if="editable" class="rs-muted">하위질문을 고치거나 지우고 더할 수 있어요.<br />최대 {{ max }}개까지예요.</p>
     </header>
 
     <ol v-if="editable" ref="list" class="rs-plan__list">

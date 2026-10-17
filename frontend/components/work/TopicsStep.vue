@@ -5,9 +5,10 @@
       <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
       <h2 id="wk-topics-title" class="wk-screen__title" tabindex="-1">제목 고르기</h2>
       <p class="rs-muted">
-        「{{ question }}」 {{ DEEP_RESEARCH }} 보고서에서 이어 갈 주제를 하나 고릅니다. 고른 주제로 참고문헌을 고르고 보고서를 만듭니다.
+        「{{ question }}」 {{ DEEP_RESEARCH }} 보고서에서 이어 갈 주제를 하나 골라 주세요.<br />
+        고른 주제로 참고문헌을 고르고 보고서를 만들어요.
       </p>
-      <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
+      <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용이에요 — 미리 돌린 실제 기록을 그대로 보여 드려요.</p>
     </header>
 
     <!-- 쓰기 실패 · 다시 읽기 실패(이미 읽어 둔 카드가 옛 값일 수 있다 — [다시 시도]) · 쓰기가 오래 걸림 -->
@@ -39,7 +40,7 @@
     />
     <div v-else-if="!topics" class="rs-card rs-card--wait">
       <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
-      <p>주제 카드를 불러오는 중입니다</p>
+      <p>주제 카드를 불러오는 중이에요</p>
     </div>
     <template v-else>
       <p v-if="queueNote" class="rs-muted" aria-live="polite">{{ queueNote }}</p>

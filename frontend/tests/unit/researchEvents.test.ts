@@ -1376,7 +1376,7 @@ describe("queueLine — queued 문구 뒤에 덧붙이는 순번", () => {
   });
 
   it("앞에 없으면 다음 차례라고, 있으면 건수와 분 단위 어림(올림·최소 1분)을 쓴다", () => {
-    expect(queueLine({ ahead: 0, etaSec: 300 })).toBe("바로 다음 차례입니다");
+    expect(queueLine({ ahead: 0, etaSec: 300 })).toBe("바로 다음 차례예요");
     expect(queueLine({ ahead: 2, etaSec: null })).toBe("앞에 2건");
     expect(queueLine({ ahead: 2, etaSec: 1500 })).toBe("앞에 2건 · 약 25분");
     expect(queueLine({ ahead: 1, etaSec: 61 })).toBe("앞에 1건 · 약 2분");

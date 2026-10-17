@@ -25,11 +25,11 @@
     />
     <div v-else-if="!proposal" class="rs-card rs-card--wait" role="status">
       <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
-      <p>보고서를 불러오는 중입니다</p>
+      <p>보고서를 불러오는 중이에요</p>
     </div>
 
     <div v-else-if="!proposal.outline && outlineGen" class="rs-card">
-      <p class="rs-card__title">목차를 만드는 중입니다</p>
+      <p class="rs-card__title">목차를 만드는 중이에요</p>
       <p v-if="genQueueLine(outlineGen)" class="rs-muted" role="status">{{ genQueueLine(outlineGen) }}</p>
     </div>
     <!-- 목차가 없음 — 공통 빈 상태(버튼은 슬롯의 .skx-state__action — 첫 버튼이 주 버튼) -->
@@ -57,10 +57,13 @@
 
     <template v-else>
       <p v-if="outlineGen" class="rs-muted" role="status">
-        목차를 다시 만드는 중입니다{{ genQueueLine(outlineGen) ? ` · ${genQueueLine(outlineGen)}` : "" }}
+        목차를 다시 만드는 중이에요{{ genQueueLine(outlineGen) ? ` · ${genQueueLine(outlineGen)}` : "" }}
       </p>
       <div v-else-if="canRemake && proposal.stale.outline" class="wk-proposal__remake">
-        <p class="rs-muted">주제나 참고문헌이 바뀌었습니다 — 목차를 다시 만들면 지금 담은 논문으로 묶음을 새로 나눕니다(지금 목차를 바꿉니다).</p>
+        <p class="rs-muted">
+          주제나 참고문헌이 바뀌었어요.<br />
+          [{{ REMAKE_REPORT }}]를 누르면 지금 담은 논문으로 묶음을 새로 나눠요 — 지금 목차는 새 목차로 바뀌어요.
+        </p>
         <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="busy" @click="makeOutline">
           {{ REMAKE_REPORT }}
         </button>
@@ -129,7 +132,7 @@
           <button type="button" class="wk-review__jump" @click="jumpToReview">
             {{ reviewText }}<span class="rs-sr-only"> — 첫 자리로 가기</span>
           </button>
-          <span class="rs-muted">코드 검사가 표시한 곳입니다. 원문과 맞는지 확인하세요.</span>
+          <span class="rs-muted">코드 검사가 표시한 곳이에요.<br />원문과 맞는지 확인해 주세요.</span>
         </p>
       </template>
       <!-- [목차 고치기] — 승인 목차는 접어 두고, 초안 목차(06b·질문이 없어 자동 승인하지 못한 목차)는 승인하러 늘 편다.
@@ -149,11 +152,12 @@
           <AiFootprintMeter :proposal="proposal" />
           <!-- 절을 차례로 쓰는 것은 [보고서 만들기]가 자동 승인한 목차(auto)뿐 — 06b 때 승인했거나 초안을 손으로 승인한 목차는 손으로 쓴다 -->
           <p v-if="proposal.outline.auto" class="rs-muted">
-            [{{ MAKE_REPORT }}]로 목차가 서면 선행연구 묶음·연구 공백 절을 차례로 씁니다. 다 쓴 문단은 그대로 두어도 되고,
-            [수락]·[다시]·[고치기]로 다듬을 수 있습니다.
+            [{{ MAKE_REPORT }}]로 목차가 서면 선행연구 묶음·연구 공백 절을 차례로 써요.<br />
+            다 쓴 문단은 그대로 두어도 되고, [수락]·[다시]·[고치기]로 다듬을 수 있어요.
           </p>
           <p v-else class="rs-muted">
-            절마다 [이 절 쓰기]를 누르면 씁니다. 다 쓴 문단은 [수락]·[다시]·[고치기]로 다듬을 수 있습니다.
+            절마다 [이 절 쓰기]를 누르면 써요.<br />
+            다 쓴 문단은 [수락]·[다시]·[고치기]로 다듬을 수 있어요.
           </p>
         </div>
         <div class="wk-doc">
@@ -168,7 +172,7 @@
               label="연구 배경"
               :value="background"
               :max="OUTLINE_BACKGROUND_MAX"
-              placeholder="이 연구가 왜 필요한지 — 연구 대상과 문제 상황, 이 주제를 보게 된 맥락을 적습니다. AI 는 이 칸을 쓰지 않습니다."
+              :placeholder="BACKGROUND_PLACEHOLDER"
               :read-only="readOnly"
               :busy="busy || !!outlineGen"
               :saved-seq="savedSeq.background ?? 0"
@@ -207,7 +211,7 @@
               label="방법"
               :value="proposal.outline?.method ?? ''"
               :max="OUTLINE_METHOD_MAX"
-              placeholder="연구 설계·대상·자료 수집과 분석 방법을 적습니다. AI 는 이 칸을 쓰지 않습니다."
+              :placeholder="METHOD_PLACEHOLDER"
               :read-only="readOnly"
               :busy="busy || !!outlineGen"
               :saved-seq="savedSeq.method ?? 0"
@@ -221,9 +225,9 @@
           <label class="wk-proposal__toggle">
             <!-- 켠 채 검토 전 문단이 0 이 되어도(다 [수락]) 끌 수 있게 켜져 있으면 막지 않는다 — 그때 문서는 모든 문단과 같다(exportProposal) -->
             <input v-model="acceptedOnly" type="checkbox" :disabled="!printedProposed && !acceptedOnly" />
-            수락한 문단만 싣기 — 검토 전 AI 작성 {{ printedProposed }}문단을 뺍니다
+            수락한 문단만 싣기 — 검토 전 AI 작성 {{ printedProposed }}문단을 빼요
           </label>
-          <p class="rs-muted">기본은 모든 문단을 싣습니다. 끝에 참고문헌과 AI 사용 공개 부록(문단 상태별 개수)이 붙습니다.</p>
+          <p class="rs-muted">기본은 모든 문단을 실어요.<br />끝에 참고문헌과 AI 사용 공개 부록(문단 상태별 개수)이 붙어요.</p>
           <div class="rs-card__actions">
             <button type="button" class="rs-btn" :disabled="exporting" @click="exportProposal('docx')">
               {{ exportingAs === "docx" ? "만드는 중…" : "Word 로 내려받기" }}
@@ -232,10 +236,10 @@
               {{ exportingAs === "pdf" ? "인쇄 창을 여는 중…" : "PDF 로 내려받기" }}
             </button>
           </div>
-          <p class="rs-muted">PDF 는 인쇄 창에서 대상을 ‘PDF로 저장’으로 고릅니다. Word 와 같은 문서·같은 기본값입니다.</p>
+          <p class="rs-muted">PDF 는 인쇄 창에서 대상을 ‘PDF로 저장’으로 골라 주세요.<br />Word 와 같은 문서·같은 기본값이에요.</p>
         </div>
       </template>
-      <p v-else class="rs-muted">목차를 승인하면 선행연구 검토(묶음마다)와 연구 공백 절을 쓸 수 있습니다.</p>
+      <p v-else class="rs-muted">목차를 승인하면 선행연구 검토(묶음마다)와 연구 공백 절을 쓸 수 있어요.</p>
     </template>
   </section>
   <DeepReadPanel
@@ -322,7 +326,7 @@ import {
   workFailure,
   type WorkFailure,
 } from "~/utils/workErrors";
-import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
+import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_CONFIRM, REMAKE_REPORT } from "~/utils/workPhase";
 
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
 const emit = defineEmits<{
@@ -335,10 +339,10 @@ const emit = defineEmits<{
 
 // 목차가 없는 보고서의 빈 상태 설명 — 두 문장이라 줄을 바꾼다(공통 상태 블록은 '\n' 을 줄로 그린다)
 const NO_OUTLINE_MESSAGE = `참고문헌에 담은 논문이 ${MIN_READING_FOR_OUTLINE}편 이상이면 보고서를 만들 수 있어요.\n선행연구 묶음의 수와 배정은 담은 논문의 키워드 소속으로 서버가 정해요.`;
-// 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 덮는다(계약 보강 4) — 다시 만들기 전에 묻는다. 새 반영은 다시
-// 자동 승인하지만 절 연쇄는 절도 생성 기록도 없는 키만 쓴다 — 이미 쓴 절은 다시 쓰지 않는다(06e 정함 4)
-const REMAKE_CONFIRM =
-  "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다 — 연구 배경은 그대로 둡니다. 이미 쓴 절은 지우지 않고(주제·묶음·연구 질문이 바뀐 절에는 '다시 맞춤 필요'가 붙습니다) 아직 쓰지 않은 절만 자동으로 씁니다. 계속할까요?";
+// 연구 배경·방법 칸의 자리 글 — 두 문장이라 줄을 바꾼다(textarea 의 placeholder 는 '\n' 을 줄로 그린다)
+const BACKGROUND_PLACEHOLDER =
+  "이 연구가 왜 필요한지 — 연구 대상과 문제 상황, 이 주제를 보게 된 맥락을 적어 주세요.\nAI 는 이 칸을 쓰지 않아요.";
+const METHOD_PLACEHOLDER = "연구 설계·대상·자료 수집과 분석 방법을 적어 주세요.\nAI 는 이 칸을 쓰지 않아요.";
 
 const api = useWorkApi();
 // PDF 는 딥리서치 보고서와 같은 인쇄 경로다 — printDoc 이 차면 템플릿 끝의 ReportPrint 가 body 에 붙고 인쇄 창이 열린다
@@ -560,7 +564,7 @@ function saveOutline(body: OutlinePut): void {
     await api.putOutline(props.jobId, p.version, body);
     // 성공 안내는 다시 읽기까지 됐을 때만 — 아니면 화면은 옛 목차라 위 한 줄이 '승인했지만 화면을 새로 고치지 못했어요'를 알린다
     if (await refresh(["proposal"], body.approve ? WORK_SAVED_STALE.approved : WORK_SAVED_STALE.saved)) {
-      say(body.approve ? "목차를 승인했습니다 — 이제 절을 쓸 수 있습니다" : "목차를 저장했습니다");
+      say(body.approve ? "목차를 승인했어요 — 이제 절을 쓸 수 있어요." : "목차를 저장했어요.");
     }
   }, "목차를 저장하지 못했어요");
 }
@@ -586,7 +590,7 @@ function saveField(field: "background" | "method", text: string): void {
       // 저장은 됐다 — 다시 읽기가 실패해도 칸을 닫는다(DocField 의 savedSeq). 성공 안내는 다시 읽기까지 됐을 때만
       markWritten(field);
       if (await refresh(["proposal"], WORK_SAVED_STALE.saved)) {
-        say(field === "background" ? "연구 배경을 저장했습니다" : "방법을 저장했습니다");
+        say(field === "background" ? "연구 배경을 저장했어요." : "방법을 저장했어요.");
       }
     },
     field === "background" ? "연구 배경을 저장하지 못했어요" : "방법을 저장하지 못했어요",
@@ -670,7 +674,7 @@ async function exportProposal(format: ReportExportFormat): Promise<void> {
     return;
   }
   // PDF 는 인쇄 창 자체가 결과다 — 딥리서치 보고서의 PDF 도 안내를 띄우지 않는다
-  if (format === "docx") say("Word 문서를 내려받았습니다");
+  if (format === "docx") say("Word 문서를 내려받았어요.");
   await markDone();
 }
 

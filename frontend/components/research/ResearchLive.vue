@@ -59,7 +59,7 @@
         <div v-if="isOpen(sq)" :id="stepsId(sq.idx)" class="rs-live__body">
           <!-- 재검색 알림 — 지금 도는 하위질문의 자기점검이 근거 부족을 내면 그 줄 안에 크게 -->
           <p v-if="highlightFor(sq)" class="rs-live__alert">
-            <strong>근거 부족</strong> → ‘{{ highlightFor(sq)!.nextQuery }}’(으)로 다시 찾습니다
+            <strong>근거 부족</strong> → ‘{{ highlightFor(sq)!.nextQuery }}’(으)로 다시 찾아요
             <span v-if="highlightFor(sq)!.note" class="rs-live__alert-note">{{ highlightFor(sq)!.note }}</span>
           </p>
           <!-- 새 단계는 CSS 애니메이션으로 떠오른다(Vue 전환은 화면 프레임이 돌아야 끝나 숨은 탭에서 투명한 채로 남았다) -->

@@ -2,14 +2,24 @@
 import { nextTick, ref, shallowRef } from "vue";
 import type { ReportDoc, ReportExportFormat } from "~/utils/reportDocument";
 import { downloadBlob, toDocxBlob } from "~/utils/reportDocx";
+import { toastLine } from "~/utils/researchErrors";
 
 /**
- * 내보내기 실패 안내(딥리서치 보고서의 토스트·작업대 보고서의 줄 안내가 함께 쓴다). Word 는 배포 뒤 옛 화면에서 누르면 docx 조각
- * 파일이 사라져 동적 import 가 실패한다 — 새로고침이 답이다. 해요체·문장마다 줄바꿈(줄을 그리지 않는 토스트에서는 공백 하나)
+ * 내보내기 실패 안내 — 작업대 보고서(ProposalStep)의 줄 안내(SkxInlineError)가 쓴다. Word 는 배포 뒤 옛 화면에서 누르면 docx 조각
+ * 파일이 사라져 동적 import 가 실패한다 — 새로고침이 답이다. 해요체·문장마다 줄바꿈
  */
 export const REPORT_EXPORT_FAILED: Record<ReportExportFormat, string> = {
   docx: "Word 문서를 만들지 못했어요.\n새로고침한 뒤 다시 시도해 주세요.",
   pdf: "인쇄 창을 열지 못했어요.\n다시 시도해 주세요.",
+};
+
+/**
+ * 같은 안내의 토스트판 — 딥리서치 보고서 화면의 토스트는 한 줄(nowrap)이라 한 문장으로 잇는다('Word 문서를 만들지 못했어요 —
+ * 새로고침한 뒤 다시 시도해 주세요.'). 줄 안내 문구에서 만들어 두 곳이 다른 말을 하지 않게 한다
+ */
+export const REPORT_EXPORT_FAILED_TOAST: Record<ReportExportFormat, string> = {
+  docx: toastLine(REPORT_EXPORT_FAILED.docx),
+  pdf: toastLine(REPORT_EXPORT_FAILED.pdf),
 };
 
 /**

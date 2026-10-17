@@ -268,13 +268,13 @@ describe("synthEta", () => {
     expect(eta.runningElapsedMs).toBe(11877);
   });
 
-  it("모든 절이 끝났으면 남은 시간은 0 — '곧 끝납니다'", () => {
+  it("모든 절이 끝났으면 남은 시간은 0 — '곧 끝나요'", () => {
     const eta = synthEta(viewWith({
       total: 2,
       sections: [sec(0, "done", { durationMs: 30000, section: section("가") }), sec(1, "done", { durationMs: 20000, section: section("나") })],
     }), NOW);
     expect(eta).toEqual({ done: 2, total: 2, runningIdx: null, runningElapsedMs: null, remainingMs: 0 });
-    expect(formatRemaining(eta.remainingMs, eta.done)).toBe("곧 끝납니다");
+    expect(formatRemaining(eta.remainingMs, eta.done)).toBe("곧 끝나요");
   });
 
   it("걸린 시간이 없는 끝난 절(옛 워커)만 있으면 남은 시간을 모른다 — 남은 시간 칸을 쓰지 않는다", () => {
@@ -302,7 +302,7 @@ describe("formatRemaining", () => {
   it("첫 절 전·10초 미만·1분 미만·1분 이상(10초 단위 반올림)을 나눠 쓴다", () => {
     expect(formatRemaining(null, 0)).toBe("첫 절을 쓰는 중");
     expect(formatRemaining(40_000, 0)).toBe("첫 절을 쓰는 중");
-    expect(formatRemaining(9_400, 2)).toBe("곧 끝납니다");
+    expect(formatRemaining(9_400, 2)).toBe("곧 끝나요");
     expect(formatRemaining(40_000, 2)).toBe("약 40초 남음");
     expect(formatRemaining(59_700, 1)).toBe("약 1분 남음");
     expect(formatRemaining(90_000, 2)).toBe("약 1분 30초 남음");

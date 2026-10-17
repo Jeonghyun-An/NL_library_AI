@@ -3,8 +3,9 @@
   <details class="wk-drawer">
     <summary class="wk-drawer__summary">자기점검이 뺀 논문 {{ excluded.length }}편</summary>
     <p class="rs-muted">
-      탐색 중 자기점검이 하위질문과 무관하다고 보고 뺀 논문입니다. 논문별 사유는 남지 않아 뺀 회차와 그 회차의
-      자기점검 메모를 함께 보입니다. [되살리기] 를 누르면 참고문헌 후보로 들어옵니다 — {{ DEEP_RESEARCH }} 보고서는 바뀌지 않습니다.
+      탐색 중 자기점검이 하위질문과 무관하다고 보고 뺀 논문이에요.<br />
+      논문별 사유는 남지 않아 뺀 회차와 그 회차의 자기점검 메모를 함께 보여 드려요.<br />
+      [되살리기] 를 누르면 참고문헌 후보로 들어와요 — {{ DEEP_RESEARCH }} 보고서는 바뀌지 않아요.
     </p>
     <section v-for="group in groups" :key="group.subqIdx" class="wk-drawer__group">
       <h4 class="wk-drawer__subq">하위질문 {{ group.subqIdx + 1 }} · {{ group.subquestion }}</h4>

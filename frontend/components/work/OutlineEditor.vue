@@ -6,9 +6,10 @@
       <span class="rs-badge" :class="approved ? 'rs-badge--done' : 'rs-badge--running'">{{ approved ? "승인함" : "초안" }}</span>
       <span v-if="proposal.stale.outline" class="rs-badge wk-outline__stale">다시 맞춤 필요</span>
     </header>
+    <!-- 누를 버튼([보고서 다시 만들기])은 보고서 화면(ProposalStep)의 목차 위 줄에 있다 -->
     <p v-if="proposal.stale.outline" class="rs-muted">
-      목차를 만든 뒤 주제나 참고문헌이 바뀌었습니다. 지금 목차는 지우지 않고 그대로 두었습니다 — 바뀐 목록으로 묶음을
-      다시 나누려면 목차를 다시 만드세요.
+      목차를 만든 뒤 주제나 참고문헌이 바뀌었어요.<br />
+      지금 목차는 지우지 않고 그대로 두었어요 — 바뀐 목록으로 묶음을 다시 나누려면 [{{ REMAKE_REPORT }}]를 눌러 주세요.
     </p>
     <p v-if="fallback" class="rs-muted">
       모델이 목차 초안을 만들지 못해 묶음 이름은 묶음의 키워드로, 연구 질문 후보는 고른 주제의 질문으로 채웠어요.<br />
@@ -22,11 +23,11 @@
       </li>
       <li class="wk-outline__row">
         <h4 class="wk-outline__label">2. {{ LABELS.background }}</h4>
-        <p class="rs-muted">이 초안에는 아직 없습니다 — 다음 단계에서 씁니다.</p>
+        <p class="rs-muted">이 초안에는 아직 없어요 — 다음 단계에서 써요.</p>
       </li>
       <li class="wk-outline__row">
         <h4 class="wk-outline__label">3. {{ LABELS.prior }}</h4>
-        <p class="rs-muted">{{ basisNote }}</p>
+        <p class="rs-muted rs-lines">{{ basisNote }}</p>
         <div class="wk-outline__groups">
           <div
             v-for="(g, gi) in draft.groups"
@@ -89,7 +90,7 @@
       </li>
       <li class="wk-outline__row">
         <h4 class="wk-outline__label">4. {{ LABELS.gap }}</h4>
-        <p class="rs-muted">{{ DEEP_RESEARCH }} 보고서의 향후 과제와 근거가 부족했던 하위질문으로 씁니다 — {{ gapNote }}로만 적습니다.</p>
+        <p class="rs-muted">{{ DEEP_RESEARCH }} 보고서의 향후 과제와 근거가 부족했던 하위질문으로 써요 — {{ gapNote }}로만 적어요.</p>
       </li>
       <li class="wk-outline__row">
         <h4 class="wk-outline__label">5. {{ LABELS.question }}</h4>
@@ -108,7 +109,7 @@
             </label>
           </fieldset>
           <label class="wk-outline__field">
-            <span class="rs-muted">고른 질문을 다듬으세요</span>
+            <span class="rs-muted">고른 질문을 다듬어 주세요</span>
             <textarea :value="draft.question" rows="2" :disabled="busy" @input="onQuestionInput" />
           </label>
         </template>
@@ -117,13 +118,13 @@
       <li class="wk-outline__row">
         <h4 class="wk-outline__label">6. {{ LABELS.method }}</h4>
         <label v-if="editing" class="wk-outline__field">
-          <span class="rs-muted">연구 방법을 직접 적으세요 — 이 단계에는 고를 선택지가 없습니다</span>
+          <span class="rs-muted">연구 방법을 직접 적어 주세요 — 이 단계에는 고를 선택지가 없어요</span>
           <textarea :value="draft.method" rows="3" :disabled="busy" @input="onMethodInput" />
         </label>
         <p v-else class="wk-outline__text">{{ outline.method || "아직 적지 않았어요" }}</p>
       </li>
     </ol>
-    <p class="rs-muted">결과·논의 — 연구 후 직접 씁니다.</p>
+    <p class="rs-muted">결과·논의 — 연구 후 직접 써요.</p>
 
     <ul v-if="editing && problems.length" class="wk-outline__problems">
       <li v-for="p in problems" :key="p">{{ p }}</li>
@@ -161,6 +162,7 @@ import {
   type OutlineDraft,
 } from "~/utils/outlineEdit";
 import { GAP_NOTE, OUTLINE_EDIT, SECTION_LABELS } from "~/utils/proposalView";
+import { REMAKE_REPORT } from "~/utils/workPhase";
 
 const props = defineProps<{ proposal: ProposalView; readOnly: boolean; busy: boolean }>();
 const emit = defineEmits<{ save: [body: OutlinePut] }>();
@@ -199,9 +201,10 @@ const canApprove = computed(() => !props.busy && problems.value.length === 0 && 
 const basisNote = computed(() => {
   const why =
     outline.value?.basis === "subq"
-      ? "키워드가 비어 담은 논문의 하위질문 소속으로 묶음을 나눴습니다."
-      : "묶음 수와 배정은 담은 논문의 키워드 소속으로 서버가 정했습니다.";
-  return editing.value ? `${why} 논문을 끌어 놓거나 [옮기기]로 다른 묶음에 넣을 수 있습니다.` : why;
+      ? "키워드가 비어 담은 논문의 하위질문 소속으로 묶음을 나눴어요."
+      : "묶음 수와 배정은 담은 논문의 키워드 소속으로 서버가 정했어요.";
+  // 두 문장이면 문장마다 줄을 바꾼다(템플릿의 rs-lines 가 '\n' 을 줄로 그린다)
+  return editing.value ? `${why}\n논문을 끌어 놓거나 [옮기기]로 다른 묶음에 넣을 수 있어요.` : why;
 });
 
 function paperTitle(cnts: string): string {
@@ -298,7 +301,7 @@ function move(cnts: string, to: string, refocus: boolean): void {
   const { [cnts]: _done, ...rest } = chosen.value;
   chosen.value = rest;
   const target = next.groups.find((g) => g.key === to);
-  moveNote.value = `「${paperTitle(cnts)}」을 「${target ? groupName(target) : to}」 묶음으로 옮겼습니다`;
+  moveNote.value = `「${paperTitle(cnts)}」을 「${target ? groupName(target) : to}」 묶음으로 옮겼어요`;
   if (!refocus) return;
   void nextTick(() => {
     document.querySelector<HTMLSelectElement>(`[data-paper="${CSS.escape(cnts)}"] select`)?.focus();

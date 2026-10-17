@@ -126,7 +126,7 @@ export function formatRemaining(ms: number | null, done: number): string | null 
   // 나오지 않으므로 "계산 중"이라 적으면 끝까지 틀린 말이 된다
   if (ms === null) return null;
   const sec = Math.round(Math.max(0, ms) / 1000);
-  if (sec < 10) return "곧 끝납니다";
+  if (sec < 10) return "곧 끝나요";
   if (sec < 60) return `약 ${sec}초 남음`;
   // 1분을 넘으면 초 자리를 10초 단위로 반올림한다 — 긴 추정을 초 단위로 적으면 매초 흔들려 읽기 어렵다
   const rounded = Math.round(sec / 10) * 10;

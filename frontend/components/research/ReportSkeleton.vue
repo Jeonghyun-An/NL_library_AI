@@ -8,7 +8,7 @@
     <header class="rs-report__head">
       <div>
         <h2 id="rs-slots-title" class="rs-report__question">보고서 자리</h2>
-        <p class="rs-muted">하위질문마다 근거를 모으면 그 자리에 절이 쓰입니다.</p>
+        <p class="rs-muted">하위질문마다 근거를 모으면 그 자리에 절이 쓰여요.</p>
       </div>
     </header>
 

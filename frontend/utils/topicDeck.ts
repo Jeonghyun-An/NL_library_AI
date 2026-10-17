@@ -107,9 +107,9 @@ export function cardArrived(before: CardStatus | undefined, now: CardStatus): bo
 export function cardNote(status: CardStatus, readOnly = false): string | null {
   switch (status) {
     case "waiting":
-      return "차례를 기다리는 중입니다";
+      return "차례를 기다리는 중이에요";
     case "making":
-      return "카드를 쓰는 중입니다";
+      return "카드를 쓰는 중이에요";
     case "insufficient":
       return `근거 부족 — 이 씨앗을 직접 받치는 논문을 ${MIN_TOPIC_EVIDENCE}편 이상 찾지 못했어요`;
     case "failed":
@@ -138,7 +138,7 @@ export function canPick(item: TopicItem): boolean {
 
 // 다시 만드는 중인 카드에 붙이는 줄 — 새 결과가 반영될 때까지 지금 카드를 그대로 보인다
 export function cardRemakingNote(item: TopicItem): string | null {
-  return remaking(item) ? "새 키워드로 다시 만드는 중입니다" : null;
+  return remaking(item) ? "새 키워드로 다시 만드는 중이에요" : null;
 }
 
 // 자른 끝의 공백은 떼고 말줄임을 붙인다 — '… 미치는 …' 가 아니라 '… 미치는…'
@@ -236,7 +236,7 @@ export function deckQueueLine(generations: readonly WorkGeneration[]): string | 
 // [다른 방향] 옆 안내 — 쓰지 않은 보고서 씨앗으로 한 번에 최대 2장
 export function moreLine(seedsLeft: number): string {
   if (seedsLeft <= 0) return "더 쓸 씨앗이 없어요 — [직접 쓰기] 로 주제를 더할 수 있어요";
-  return `남은 씨앗 ${seedsLeft}개 · 누르면 ${Math.min(OTHER_DIRECTION_CARDS, seedsLeft)}장을 더 받습니다`;
+  return `남은 씨앗 ${seedsLeft}개 · 누르면 ${Math.min(OTHER_DIRECTION_CARDS, seedsLeft)}장을 더 받아요`;
 }
 
 // [직접 쓰기]·[직접 고치기] 입력 검사 — 서버 TopicCreate·TopicPatch 와 같은 경계(앞뒤 공백을 뺀 코드포인트)
@@ -289,14 +289,14 @@ export function conceptsNote(concepts: string[], generation: WorkGeneration | nu
   switch (conceptsStatus(concepts, generation)) {
     case "making": {
       const line = generation ? genQueueLine(generation) : null;
-      return line ? `키워드를 뽑는 중입니다 · ${line}` : "키워드를 뽑는 중입니다";
+      return line ? `키워드를 뽑는 중이에요 · ${line}` : "키워드를 뽑는 중이에요";
     }
     case "failed":
       return "키워드를 뽑지 못했어요 — 직접 넣거나 [다시] 를 눌러 주세요";
     case "empty":
       return generation
         ? "뽑힌 키워드가 없어요 — 직접 넣거나 [다시] 를 눌러 주세요"
-        : "키워드 넣기 — 원 질문의 키워드를 칩으로 더하세요";
+        : "키워드 넣기 — 원 질문의 키워드를 칩으로 더해 주세요";
     case "ready":
       return null;
   }
@@ -434,7 +434,7 @@ export function chipFocusAfterToggle(
 // [이 키워드로 다시 만들기] 를 막는 까닭 — 선행연구 묶음 수가 키워드 수 이하라 둘 이상 골라야 한다(서버도 409)
 export function regenerateProblem(picked: readonly string[]): string | null {
   return picked.length < MIN_PICKED_KEYWORDS
-    ? `키워드를 ${MIN_PICKED_KEYWORDS}개 이상 고르면 다시 만들 수 있습니다`
+    ? `키워드를 ${MIN_PICKED_KEYWORDS}개 이상 고르면 다시 만들 수 있어요`
     : null;
 }
 

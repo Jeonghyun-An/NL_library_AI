@@ -135,7 +135,7 @@ describe("확인·취소를 스크린리더에 알리는 문구", () => {
     expect(NOTICE_CANCEL_CONFIRM_TEXT.startsWith("정말 취소할까요?")).toBe(true);
     expect(NOTICE_CANCEL_CONFIRM_TEXT).toContain("그대로 두기");
     expect(NOTICE_CANCEL_CONFIRM_TEXT).toContain("Esc");
-    expect(NOTICE_CANCEL_DONE_TEXT).toBe(`${DEEP_RESEARCH}를 취소했습니다`);
+    expect(NOTICE_CANCEL_DONE_TEXT).toBe(`${DEEP_RESEARCH}를 취소했어요`);
   });
 });
 
@@ -195,7 +195,7 @@ describe("SearchPlusMenu 알림 줄 — 한 번 확인하는 과정의 초점·�
   const cancelBtn = noteEls.find((n) => n.tag === "button" && interpolations(n).some((s) => s.startsWith("noticeCancelLabel(")))!;
   const keepBtn = noteEls.find((n) => n.tag === "button" && textOf(n) === "그대로 두기")!;
 
-  it("+ 메뉴 뿌리에 늘 DOM 에 있는(조건 없는) 숨김 live 영역이 있다 — 줄째 사라져도 '취소했습니다'가 들린다", () => {
+  it("+ 메뉴 뿌리에 늘 DOM 에 있는(조건 없는) 숨김 live 영역이 있다 — 줄째 사라져도 '취소했어요'가 들린다", () => {
     const live = (root.children ?? []).filter(
       (n) => n.type === ELEMENT && attr(n, "role") === "status" && hasClass(n, "rs-sr-only") && !conditional(n),
     );
