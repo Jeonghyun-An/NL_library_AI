@@ -410,7 +410,7 @@ class TestContinue:
 
         assert res.status_code == 409
         # 화면이 detail 을 그대로 보인다(researchErrorMessage 의 409) — 화면 표기 DeepResearch(round08 사용자 결정)
-        assert res.json()["detail"] == "완료된 DeepResearch만 이어갈 수 있습니다"
+        assert res.json()["detail"] == "완료된 DeepResearch만 이어갈 수 있어요"
         assert _rows(api.engine, ResearchWork) == []
         assert api.dispatch.calls == 0
 
@@ -435,7 +435,7 @@ class TestContinue:
 
         res = api.client.post(f"/api/research/{jid}/work/continue", headers=A)
 
-        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용입니다"
+        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용이에요"
         assert _rows(api.engine, ResearchGeneration) == []
 
 
@@ -611,7 +611,7 @@ class TestPatchWork:
         res = api.client.patch(f"/api/research/{jid}/work", json={"concepts": ["청소년"]})
 
         assert res.status_code == 409
-        assert res.json()["detail"] == "키워드를 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
+        assert res.json()["detail"] == "키워드를 만드는 중이에요 — 끝난 뒤 고쳐 주세요"
         assert _rows(api.engine, ResearchWork)[0]["concepts"] == ["독서 격차"]
 
     def test_memo_and_same_concepts_pass_while_concepts_are_being_made(self, api):
@@ -658,7 +658,7 @@ class TestPatchWork:
     def test_example_work_is_read_only(self, api):
         jid = _work_job(api.engine, is_example=True)
         res = api.client.patch(f"/api/research/{jid}/work", json={"memo": "메모"})
-        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용입니다"
+        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용이에요"
 
     def test_404_until_continued(self, api):
         jid = _job(api.engine)
@@ -688,7 +688,7 @@ class TestPatchPhase:
 
         res = api.client.patch(f"/api/research/{jid}/work", json={"phase": asked, "memo": "메모"})
 
-        assert res.status_code == 409 and res.json()["detail"] == "단계를 되돌릴 수 없습니다"
+        assert res.status_code == 409 and res.json()["detail"] == "단계를 되돌릴 수 없어요"
         (work,) = _rows(api.engine, ResearchWork)
         assert (work["phase"], work["memo"]) == (now, None)
         assert api.events == []
@@ -826,7 +826,7 @@ class TestCancelGeneration:
         res = api.client.post(f"/api/research/{jid}/generations/{gid}/cancel")
 
         assert res.status_code == 409
-        assert res.json()["detail"] == "진행 중인 생성은 끝날 때까지 기다립니다"
+        assert res.json()["detail"] == "진행 중인 작업은 끝날 때까지 기다려야 해요"
         assert _rows(api.engine, ResearchGeneration)[0]["status"] == "running"
         assert api.events == [] and api.dispatch.calls == 0
 
