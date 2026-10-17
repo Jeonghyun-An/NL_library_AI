@@ -36,7 +36,7 @@ describe("httpStatus(apiErrors 에 정의 — 연구 화면도 그것을 쓴다)
 
 describe("detailMessage", () => {
   it("깨끗한 한글 문자열 detail 은 그대로, 배열 detail 은 pydantic 의 영문 msg 대신 사람 말(validationMessage)", () => {
-    expect(detailMessage("하위질문은 6개까지다")).toBe("하위질문은 6개까지다");
+    expect(detailMessage("하위질문은 6개까지 넣을 수 있어요")).toBe("하위질문은 6개까지 넣을 수 있어요");
     expect(detailMessage([{ loc: ["body", "question"], msg: "String should have at least 2 characters", type: "string_too_short", ctx: { min_length: 2 } }]))
       .toBe("2자 이상 입력해 주세요");
     expect(detailMessage([{ loc: ["body", "question"], msg: "String should have at most 500 characters", type: "string_too_long", ctx: { max_length: 500 } }]))
@@ -57,7 +57,7 @@ describe("detailMessage", () => {
 
 describe("researchErrorMessage", () => {
   it("422 는 두 모양의 detail 을 모두 사람 말로 보여 준다", () => {
-    expect(researchErrorMessage(fetchError(422, "중복된 하위질문이다: 가"), "실패")).toBe("중복된 하위질문이다: 가");
+    expect(researchErrorMessage(fetchError(422, "같은 하위질문이 두 번 있어요: 가"), "실패")).toBe("같은 하위질문이 두 번 있어요: 가");
     expect(researchErrorMessage(fetchError(422, [{ msg: "too long" }]), "실패")).toBe("입력값이 올바르지 않아요");
     expect(researchErrorMessage(fetchError(422, [{ msg: "String should have at most 500 characters", type: "string_too_long", ctx: { max_length: 500 } }]), "실패"))
       .toBe("500자까지 입력할 수 있어요");

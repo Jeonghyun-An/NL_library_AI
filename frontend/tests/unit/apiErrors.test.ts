@@ -219,7 +219,7 @@ describe("serverMessage — 서버의 깨끗한 한글 사유만", () => {
   it("한글만 있는 문장(숫자·문장 부호·줄표는 괜찮다)은 앞뒤 공백만 걷어 그대로", () => {
     expect(serverMessage(" 목차를 만드는 중이에요 ")).toBe("목차를 만드는 중이에요");
     expect(serverMessage("검사 뒤 문단이 3000자를 넘어요 — 단정 표현을 고치면서 늘었을 수 있으니 조금 줄여 주세요")).toBe("검사 뒤 문단이 3000자를 넘어요 — 단정 표현을 고치면서 늘었을 수 있으니 조금 줄여 주세요");
-    expect(serverMessage("중복된 하위질문이다: 가")).toBe("중복된 하위질문이다: 가");
+    expect(serverMessage("같은 하위질문이 두 번 있어요: 가")).toBe("같은 하위질문이 두 번 있어요: 가");
     expect(serverMessage({ code: "version_conflict", version: 3, message: "다른 곳에서 보고서가 바뀌었어요 — 다시 불러온 뒤 고쳐 주세요" })).toBe("다른 곳에서 보고서가 바뀌었어요 — 다시 불러온 뒤 고쳐 주세요");
   });
 

@@ -398,6 +398,16 @@ class TestApprove:
         assert api.db.jobs[jid]["status"] == "awaiting_approval"
         assert api.celery.sent == []
 
+    @pytest.mark.parametrize("plan, detail", [
+        (["하위1", "하위2", "하위3", "하위4"], "하위질문은 3개까지 넣을 수 있어요"),
+        (["독서  격차", "독서 격차"], "같은 하위질문이 두 번 있어요: 독서 격차"),
+    ])
+    def test_plan_limit_and_duplicate_details_are_screen_copy(self, api, plan, detail):
+        # 화면(DeepResearch 계획 승인)이 이 detail 을 그대로 보인다 — 해요체 한 문장
+        jid = api.db.add_job(status="awaiting_approval", plan=["가설 A"])
+        res = api.client.post(f"/api/research/{jid}/approve", json={"plan": plan})
+        assert res.status_code == 422 and res.json()["detail"] == detail
+
     def test_wrong_status_is_409(self, api):
         jid = api.db.add_job(status="planning")
         assert api.client.post(f"/api/research/{jid}/approve").status_code == 409

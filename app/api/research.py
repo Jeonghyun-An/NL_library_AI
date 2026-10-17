@@ -219,12 +219,12 @@ def _validated_plan(plan: list[str], *, limit: int) -> list[str]:
     max_subquestions 상한(요청 하나로 워커를 묶는 자해 경로 차단)이 승인에서 뚫린다.
     """
     if len(plan) > limit:
-        raise HTTPException(status_code=422, detail=f"하위질문은 {limit}개까지다")
+        raise HTTPException(status_code=422, detail=f"하위질문은 {limit}개까지 넣을 수 있어요")
     seen: set[str] = set()
     for text in plan:
         key = query_key(text)        # planner 의 중복 제거와 같은 규칙
         if key in seen:
-            raise HTTPException(status_code=422, detail=f"중복된 하위질문이다: {text}")
+            raise HTTPException(status_code=422, detail=f"같은 하위질문이 두 번 있어요: {text}")
         seen.add(key)
     return plan
 
