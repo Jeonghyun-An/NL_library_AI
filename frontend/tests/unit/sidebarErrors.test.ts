@@ -86,3 +86,25 @@ describe("사이드바 — 줄 안내 자리", () => {
     expect(rule.trim()).toBe("padding: 0.2rem 0.4rem;");
   });
 });
+
+// 오류 목록 재감사(2026-10-17): 지우기 확인 칸(앱 안 alertdialog)의 문구가 합쇼체이고 두 문장이 한 줄이었다
+describe("사이드바 — 지우기 확인 문구", () => {
+  const texts = js.slice(js.indexOf("const CLEAR_TEXT"), js.indexOf("const POLL_MS"));
+
+  it("해요체이고 문장마다 줄을 바꾼다 — 확인 칸 글은 pre-line", () => {
+    expect(texts).not.toMatch(/습니다|하세요/);
+    expect(texts).toContain("기록을 모두 지울까요?\\n보고서 자체는 지워지지 않아요.");
+    expect(texts).toContain("기록은 지워지지 않아요.");
+    expect(texts).toContain('"이 연구 기록을 지울까요?\\n보고서 자체는 지워지지 않아요."');
+    const css = src.match(/<style scoped>([\s\S]*?)<\/style>/)?.[1] ?? "";
+    expect(css.match(/\.skx-history__confirm-text \{([^}]*)\}/)?.[1]).toContain("white-space: pre-line;");
+  });
+});
+
+describe("보존 화면 분류 목록(CategoryAccordion) — 빈 상태", () => {
+  it("해요체 — 구조는 그대로 두고 말만 바꾼다", () => {
+    const accordion = read("components/CategoryAccordion.vue");
+    expect(accordion).toContain("<p>검색 결과가 표시돼요</p>");
+    expect(accordion).not.toContain("표시됩니다");
+  });
+});

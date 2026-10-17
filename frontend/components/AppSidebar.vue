@@ -453,14 +453,14 @@ const emit = defineEmits<{ cart: []; save: [] }>();
 // DeepResearch 묶음이 처음 보이는 행 수 — 넘치는 만큼은 구분선 아래 '이전 연구 [n]' 한 줄로 이 자리에서 펼친다
 const RESEARCH_ROW_LIMIT = 5;
 type ClearGroup = SidebarGroupKey;
-// 묶음별 전체 삭제 확인 문구 — 최근 검색은 도서·논문만, 딥리서치는 따로 지운다
+// 묶음별 전체 삭제 확인 문구 — 최근 검색은 도서·논문만, 딥리서치는 따로 지운다. 해요체, 문장마다 줄을 바꾼다(.skx-history__confirm-text pre-line)
 const CLEAR_TEXT: Record<ClearGroup, string> = {
-  research: `${DEEP_RESEARCH} 기록을 모두 지울까요? 보고서 자체는 지워지지 않습니다.`,
-  recent: `최근 검색 기록(소장자료·논문)을 모두 지울까요? ${DEEP_RESEARCH} 기록은 지워지지 않습니다.`,
+  research: `${DEEP_RESEARCH} 기록을 모두 지울까요?\n보고서 자체는 지워지지 않아요.`,
+  recent: `최근 검색 기록(소장자료·논문)을 모두 지울까요?\n${DEEP_RESEARCH} 기록은 지워지지 않아요.`,
 };
 // 한 줄 삭제 확인 문구 — 묶음 전체 삭제와 같은 말투
 const ROW_CLEAR_TEXT: Record<ClearGroup, string> = {
-  research: "이 연구 기록을 지울까요? 보고서 자체는 지워지지 않습니다.",
+  research: "이 연구 기록을 지울까요?\n보고서 자체는 지워지지 않아요.",
   recent: "이 검색 기록을 지울까요?",
 };
 // 진행 중인 연구가 있을 때만 도는 다시 읽기 간격 — 30초는 본문과 세 번 어긋났다(2026-10-14 운영 확인). 연구 화면이 열려 있으면
@@ -1152,6 +1152,7 @@ onBeforeUnmount(() => {
   font-size: 0.6rem;
   line-height: 1.5;
   color: var(--skx-ink);
+  white-space: pre-line;
 }
 .skx-history__confirm-actions {
   display: flex;

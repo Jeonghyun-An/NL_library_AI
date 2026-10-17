@@ -1220,7 +1220,7 @@ const OUTSIDE_SECTIONS: { id: string; title: string; note: string; samples: Outs
     title: "⑦ 토스트 (.skx-toast)",
     note:
       "토스트는 한 문장·한 줄이에요(white-space: nowrap — 줄을 바꾸지 않아요).\n" +
-      "두 문장 문구는 줄바꿈이 공백 하나로 붙어 한 줄이 돼요.\n" +
+      "두 가지를 말할 때는 '무엇을 못 했는지 — 할 일'로 이어 한 문장으로 써요.\n" +
       "실제 화면에서는 아래 가운데에 2.4~2.5초 떠 있다가 사라져요 — 여기서는 같은 마크업을 칸 안에 늘 보이게 그렸어요.\n" +
       "공통 컴포넌트가 없어 화면마다(Teleport) 같은 마크업을 직접 그려요.",
     samples: [TOAST_SAMPLE],
@@ -1266,7 +1266,6 @@ const SKIPPED: { name: string; lines: string[] }[] = [
   {
     name: "표시가 없는 상태",
     lines: [
-      "없는 상황 번호(/recommend/99) — 404 없이 01번 상황으로 그려요",
       "예시 연구 목록을 읽지 못함 — 카드 칸을 그리지 않아요",
       "사이드바 기록 지우기 실패 — 화면 안내 없이 목록에서 빼요",
       "작성 중인 보고서의 [초안 저장]이 막힘 — 버튼 툴팁(title)만 있어요",
@@ -1276,7 +1275,7 @@ const SKIPPED: { name: string; lines: string[] }[] = [
     name: "SKOVIX 디자인 밖",
     lines: [
       "관리자 잡 화면(/admin/jobs) — Tailwind 운영자 화면이에요(오류 줄은 왼쪽 호박색 선)",
-      "보존 화면(/search-classic) — 구조를 그대로 두는 첫 화면이라 자체 scoped 스타일(.error-area·.empty·.ch-empty·.cart-empty)을 써요",
+      "보존 화면(/search-classic) — 구조를 그대로 두는 첫 화면이라 자체 scoped 스타일(.error-area·.empty·.ch-empty·.cart-empty·.ca-empty·.reason-error)을 써요",
       "DeepRead 첫 인사·멈춘 답의 꼬리 글 — 오류 표시가 아니라 평범한 AI 말풍선이에요",
     ],
   },
