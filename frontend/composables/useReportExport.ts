@@ -43,9 +43,12 @@ export function useReportExport() {
   // 모바일처럼 print() 가 곧바로 돌아오고 인쇄 창은 나중에 뜨는 브라우저에서 돌아오자마자 떼면 보고서 대신 앱 화면이 찍혔다.
   // 그래서 afterprint 로 뗀다. 정책으로 인쇄를 막았거나 인앱 브라우저처럼 창 없이 돌아오는 곳은 afterprint 도 오지 않으므로
   // beforeprint(인쇄 시작)가 PRINT_START_GRACE_MS 안에 오지 않으면 바로, 왔는데 afterprint 가 없으면 PRINT_END_FALLBACK_MS 뒤에
-  // 되돌린다. 돌려주는 약속은 되돌린 뒤에 풀린다 — 부르는 쪽은 그 뒤에 완료 처리를 한다
-  async function printPdf(doc: ReportDoc): Promise<void> {
-    if (exporting.value) return;
+  // 되돌린다. 돌려주는 약속은 되돌린 뒤에 풀린다 — 부르는 쪽은 그 뒤에 완료 처리를 한다.
+  // 돌려주는 값은 인쇄가 시작됐는가(beforeprint·afterprint 를 받았다). false 면 인쇄 창이 열리지 않은 것이라 부르는 쪽은 조용히 성공으로
+  // 두지 않고 실패 안내(REPORT_EXPORT_FAILED.pdf)를 보이며 완료 처리를 하지 않는다(인쇄 창을 열었다가 취소했는지는 브라우저가 알려 주지
+  // 않아 시작했으면 true 다). 이미 내보내는 중이면 아무 일 없이 false — 부르는 쪽이 exporting 으로 먼저 막는다
+  async function printPdf(doc: ReportDoc): Promise<boolean> {
+    if (exporting.value) return false;
     exporting.value = true;
     const previousTitle = document.title;
     let started = false;
@@ -60,13 +63,19 @@ export function useReportExport() {
       started = true;
     }
 
+    // beforeprint 를 알리지 않고 afterprint 만 주는 브라우저도 인쇄는 한 것이다
+    function onAfter(): void {
+      started = true;
+      restore();
+    }
+
     function restore(): void {
       if (done) return;
       done = true;
       if (timer) clearTimeout(timer);
       timer = null;
       window.removeEventListener?.("beforeprint", onBefore);
-      window.removeEventListener?.("afterprint", restore);
+      window.removeEventListener?.("afterprint", onAfter);
       document.title = previousTitle;
       printDoc.value = null;
       exporting.value = false;
@@ -80,7 +89,7 @@ export function useReportExport() {
       // 인쇄 창의 "PDF로 저장"은 문서 제목을 기본 파일 이름으로 쓴다
       document.title = doc.fileName.replace(/\.docx$/i, "");
       window.addEventListener?.("beforeprint", onBefore);
-      window.addEventListener?.("afterprint", restore);
+      window.addEventListener?.("afterprint", onAfter);
       window.print();
     } catch (e) {
       restore();
@@ -97,6 +106,7 @@ export function useReportExport() {
       }, PRINT_START_GRACE_MS);
     }
     await finished;
+    return started;
   }
 
   return { exporting, printDoc, exportDocx, printPdf };

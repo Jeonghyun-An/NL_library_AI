@@ -1,4 +1,6 @@
 // frontend/tests/unit/useReportExport.test.ts
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PRINT_END_FALLBACK_MS, PRINT_START_GRACE_MS, useReportExport } from "~/composables/useReportExport";
 import type { ReportDoc } from "~/utils/reportDocument";
@@ -54,7 +56,8 @@ describe("printPdf", () => {
       during = { title: document.title, printDoc: printDoc.value, exporting: exporting.value };
       fire("afterprint");
     });
-    await printPdf(doc);
+    // 인쇄가 시작됐다 — 부르는 쪽이 완료 처리를 한다
+    expect(await printPdf(doc)).toBe(true);
     expect(during).toEqual({ title: "DeepResearch_질문_20260928", printDoc: doc, exporting: true });
     expect(document.title).toBe("DeepResearch");
     expect(printDoc.value).toBeNull();
@@ -75,10 +78,16 @@ describe("printPdf", () => {
     expect(run.done()).toBe(false);
 
     fire("afterprint");
-    await run.p;
+    expect(await run.p).toBe(true);
     expect(printDoc.value).toBeNull();
     expect(document.title).toBe("DeepResearch");
     expect(exporting.value).toBe(false);
+  });
+
+  it("beforeprint 없이 afterprint 만 주는 브라우저도 인쇄한 것으로 본다", async () => {
+    const { printPdf } = useReportExport();
+    stubPage((f) => f("afterprint"));
+    expect(await printPdf(doc)).toBe(true);
   });
 
   it("인쇄가 시작되지 않으면(beforeprint 없음 — 정책 차단·인앱 브라우저) 잠깐 뒤 되돌려 버튼이 멈추지 않는다", async () => {
@@ -88,7 +97,8 @@ describe("printPdf", () => {
     await flush();
     expect(exporting.value).toBe(true);
     vi.advanceTimersByTime(PRINT_START_GRACE_MS);
-    await run.p;
+    // 인쇄 창이 열리지 않았다 — 부르는 쪽이 실패 안내를 보이고 완료 처리를 하지 않게 false
+    expect(await run.p).toBe(false);
     expect(printDoc.value).toBeNull();
     expect(document.title).toBe("DeepResearch");
     expect(exporting.value).toBe(false);
@@ -103,7 +113,7 @@ describe("printPdf", () => {
     await flush();
     expect(run.done()).toBe(false);
     vi.advanceTimersByTime(1);
-    await run.p;
+    expect(await run.p).toBe(true);
     expect(exporting.value).toBe(false);
   });
 
@@ -124,9 +134,22 @@ describe("printPdf", () => {
     const fire = stubPage(print);
     const first = tracked(printPdf(doc));
     await flush();
-    await printPdf(doc);
+    // 이 누름은 인쇄를 시작하지 않았다 — 부르는 쪽은 exporting 으로 먼저 막는다
+    expect(await printPdf(doc)).toBe(false);
     expect(print).toHaveBeenCalledTimes(1);
     fire("afterprint");
     await first.p;
+  });
+});
+
+describe("인쇄가 시작되지 않았을 때 화면(소스)", () => {
+  const read = (rel: string): string => readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), "utf8");
+
+  it("딥리서치 보고서는 실패 안내 토스트, 작업대 보고서는 실패 줄 — 완료 처리(markDone)는 하지 않는다", () => {
+    const page = read("pages/research/[id].vue");
+    expect(page).toMatch(/\} else if \(!\(await printPdf\(doc\)\)\) \{[\s\S]*?showToast\(REPORT_EXPORT_FAILED\.pdf\);/);
+    const step = read("components/work/ProposalStep.vue");
+    expect(step).toMatch(/else printed = await printPdf\(doc\);/);
+    expect(step).toMatch(/if \(!printed\) \{\s*say\(REPORT_EXPORT_FAILED\.pdf, true\);\s*return;\s*\}[\s\S]*?await markDone\(\);/);
   });
 });

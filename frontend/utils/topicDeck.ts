@@ -103,7 +103,8 @@ export function cardArrived(before: CardStatus | undefined, now: CardStatus): bo
   return now === "ready" && (before === "waiting" || before === "making");
 }
 
-export function cardNote(status: CardStatus): string | null {
+// readOnly(예시 연구)면 버튼이 꺼져 있어 '누르면…' 처럼 할 수 없는 일을 권하는 문장은 뺀다
+export function cardNote(status: CardStatus, readOnly = false): string | null {
   switch (status) {
     case "waiting":
       return "차례를 기다리는 중입니다";
@@ -113,8 +114,12 @@ export function cardNote(status: CardStatus): string | null {
       return `근거 부족 — 이 씨앗을 직접 받치는 논문을 ${MIN_TOPIC_EVIDENCE}편 이상 찾지 못했어요`;
     case "failed":
       return "카드를 만들지 못했어요";
+    // 키워드 생성이 실패해 씨앗 카드가 들어가지 않았다 — 키워드를 다시 부르면(ConceptChips 의 [다시]) 카드가 들어가고,
+    // [이 키워드로 다시 만들기]도 이 자리를 다시 만든다(aiCardsStale)
     case "blocked":
-      return "키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다";
+      return readOnly
+        ? "키워드를 만들지 못해 카드가 들어가지 않았어요."
+        : "키워드를 만들지 못해 카드가 들어가지 않았어요.\n키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만들어요.";
     case "ready":
       return null;
   }

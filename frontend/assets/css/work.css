@@ -646,6 +646,8 @@ button.wk-stepper__step {
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--skx-ink-2);
+  /* 두 문장 안내(키워드를 만들지 못한 자리 — cardNote)는 문장마다 줄을 바꾼다 */
+  white-space: pre-line;
 }
 /* 카드는 기다리던 슬롯에 실제로 도착했을 때만 한 번 뒤집힌다(cardArrived). 움직임 줄이기를 켠 브라우저에는 효과가 없다 */
 @media (prefers-reduced-motion: no-preference) {

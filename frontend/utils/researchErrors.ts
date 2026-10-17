@@ -30,6 +30,10 @@ export function pdfCheckProblem(status: number | null): string | null {
 // detail {code: "browser_active", message, job_id}). 서버 문구(운영 서버는 합쇼체)는 쓰지 않고 늘 이 화면 문구 — 말투를 한 벌로 둔다
 export const BROWSER_ACTIVE_MESSAGE = `진행 중인 ${DEEP_RESEARCH}가 있어요 — 끝나거나 취소한 뒤 다시 시작해 주세요`;
 
+// 입력창 줄(SearchPlusMenu)의 [취소]가 409 를 받았다 — 그 사이 끝났거나(완료·실패) 이미 취소된 연구다(api/research.py cancel_research 는
+// CANCELLABLE_STATUSES 밖이면 409 '취소할 수 없는 상태입니다' — 합쇼체라 쓰지 않는다)
+export const CANCEL_ENDED_MESSAGE = "이미 끝난 연구예요";
+
 // 딥리서치 화면의 404 — 연구 주소가 잘못됐거나 지워졌다(링크만 알면 누구나 열 수 있어 권한 문제는 없다)
 export const RESEARCH_NOT_FOUND = "찾을 수 없는 연구예요";
 
@@ -166,11 +170,14 @@ export function researchErrorMessage(err: unknown, fallback: string): string {
   // code 가 없는 옛 서버는 아래 규칙 그대로다
   const byCode = codeMessage(data && typeof data === "object" ? (data as { code?: unknown }).code : undefined);
   if (byCode) return withReason(base, byCode);
-  // 공유 큐 제한(shared_queue)·code 가 없는 429 와 503 은 몰림 안내 하나로(apiErrors 의 busy 이유와 같은 말)
-  if (status === 429 || status === 503) return ERROR_HINTS.busy;
+  // 공유 큐 제한(shared_queue)·code 가 없는 429 는 몰림 안내 하나로(apiErrors 의 busy 이유와 같은 말) — 서버 문구는 합쇼체·해라체다
+  if (status === 429) return ERROR_HINTS.busy;
   const detail = data && typeof data === "object" && "detail" in data
     ? detailMessage((data as { detail: unknown }).detail)
     : null;
+  // 503 은 서버가 지은 '잠시 뒤' 안내(작업 큐 — core/errors.QUEUE_UNAVAILABLE_DETAIL)가 깨끗한 한글이면 그대로(apiErrorMessage 와 같다),
+  // 없으면 무엇을 못 했는지 뒤에 몰림 이유
+  if (status === 503) return detail ?? withReason(base, ERROR_HINTS.busy);
   if (status === 409 || status === 422) return detail ?? base;
   // 응답이 없으면 시간 초과(읽기 요청의 30초 제한 — 폴링 GET 이 여기에 걸린다)와 연결 실패를 나눠 알린다.
   // 응답 없이 끝난 요청이 아닌 것(코드 버그 등 — errorKind 'unknown')은 연결 탓으로 돌리지 않고 대체 문구만

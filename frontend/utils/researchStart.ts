@@ -85,14 +85,6 @@ export function noticeCancelBack(step: NoticeCancelStep): NoticeCancelStep | nul
 export const NOTICE_CANCEL_CONFIRM_TEXT = "정말 취소할까요? 한 번 더 누르면 멈추고, 그대로 두기 버튼이나 Esc 키로 물러납니다";
 export const NOTICE_CANCEL_DONE_TEXT = `${DEEP_RESEARCH}를 취소했습니다`;
 
-// 입력창의 aria-describedby 에 id 하나를 더하거나 뺀 값 — 페이지가 단 다른 id 는 그대로 두고, 남는 것이 없으면 null(속성을 지운다).
-// DeepResearch 모드인 동안 + 메뉴가 질문 글자 수(SkxCharCount)를 입력창에 잇는 데 쓴다(입력창은 페이지의 요소라 마크업을 고치지 않는다)
-export function describedByWith(current: string | null, id: string, on: boolean): string | null {
-  const ids = (current ?? "").split(/\s+/).filter((t) => t && t !== id);
-  if (on) ids.push(id);
-  return ids.length ? ids.join(" ") : null;
-}
-
 interface FocusCandidate {
   isConnected: boolean;
 }

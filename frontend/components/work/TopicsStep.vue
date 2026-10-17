@@ -34,6 +34,7 @@
       :kind="loadFailure.kind"
       title="주제 카드를 불러오지 못했어요"
       :message="loadFailure.reason"
+      :busy="work.reloading('topics')"
       @retry="reloadAll(['topics'])"
     />
     <div v-else-if="!topics" class="rs-card rs-card--wait">

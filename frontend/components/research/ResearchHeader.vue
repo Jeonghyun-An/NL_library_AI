@@ -17,11 +17,27 @@
       <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" @click="$emit('copy-link')">링크 복사</button>
       <!-- 취소는 화면 안 한 번 확인('정말 취소' + [그대로 두기]) — 메인 입력창의 연구 줄과 같다 -->
       <CancelConfirm v-if="cancellable" small :disabled="busy" @confirm="$emit('cancel')" />
-      <button v-if="phase === 'failed' && canRetry" type="button" class="rs-btn rs-btn--small" :disabled="busy" @click="$emit('retry')">
-        다시 시도
+      <!-- 멈춘 연구의 두 버튼 — 글은 머리 아래 상태 카드의 버튼과 같다(멈춘 단계를 따른다 — researchRetryLabel). 일하는 동안은 disabled 가
+           아니라 aria-disabled·aria-busy 로 알리고 누름만 무시한다(disabled 면 누른 버튼이 초점을 잃어 body 로 떨어진다) -->
+      <button
+        v-if="phase === 'failed' && canRetry"
+        type="button"
+        class="rs-btn rs-btn--small"
+        :aria-disabled="busy ? 'true' : undefined"
+        :aria-busy="busy ? 'true' : undefined"
+        @click="!busy && $emit('retry')"
+      >
+        {{ retryLabel }}
       </button>
-      <button v-if="restartable" type="button" class="rs-btn rs-btn--small" :disabled="busy" @click="$emit('restart')">
-        같은 질문으로 다시 시작
+      <button
+        v-if="restartable"
+        type="button"
+        class="rs-btn rs-btn--small"
+        :aria-disabled="busy ? 'true' : undefined"
+        :aria-busy="busy ? 'true' : undefined"
+        @click="!busy && $emit('restart')"
+      >
+        {{ RESEARCH_STATE_TEXT.restart }}
       </button>
     </div>
   </header>
@@ -31,6 +47,7 @@
 import { computed } from "vue";
 import CancelConfirm from "~/components/research/CancelConfirm.vue";
 import { DEEP_RESEARCH } from "~/utils/brand";
+import { RESEARCH_STATE_TEXT } from "~/utils/researchErrors";
 import { phaseLabel, type ResearchPhase } from "~/utils/researchEvents";
 import type { ResearchLayout } from "~/utils/researchLayout";
 
@@ -40,6 +57,8 @@ const props = defineProps<{
   layout: ResearchLayout;
   canToggle: boolean;
   canRetry: boolean;
+  // [다시 시도] 버튼 글 — 상태 카드와 같은 researchRetryLabel(stage)('보고서 작성부터 다시 시도'·'다시 시도')
+  retryLabel: string;
   busy: boolean;
   // '탐색 방식 · 정밀하게' 꼴(researchModeLine) — 없거나 null 이면 그리지 않는다
   modeLine?: string | null;

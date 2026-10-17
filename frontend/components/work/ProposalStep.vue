@@ -20,6 +20,7 @@
       :kind="loadFailure.kind"
       title="보고서를 불러오지 못했어요"
       :message="loadFailure.reason"
+      :busy="work.reloading('proposal')"
       @retry="work.reload('proposal')"
     />
     <div v-else-if="!proposal" class="rs-card rs-card--wait" role="status">
@@ -40,7 +41,16 @@
     >
       <!-- 예시 연구는 슬롯을 두지 않는다(빈 버튼 줄이 그려지지 않게) -->
       <template v-if="!readOnly" #default>
-        <button type="button" class="skx-state__action" :disabled="busy" @click="makeOutline">{{ MAKE_REPORT }}</button>
+        <!-- 만드는 동안은 disabled 가 아니라 aria-disabled·aria-busy(누른 단추가 초점을 잃지 않게) — 누름은 makeOutline 이 무시한다 -->
+        <button
+          type="button"
+          class="skx-state__action"
+          :aria-disabled="busy ? 'true' : undefined"
+          :aria-busy="busy ? 'true' : undefined"
+          @click="makeOutline"
+        >
+          {{ MAKE_REPORT }}
+        </button>
         <button type="button" class="skx-state__action" @click="emit('go', 'reading')">참고문헌 선택하기로</button>
       </template>
     </SkxErrorState>
@@ -530,6 +540,8 @@ async function act(run: () => Promise<void>, fallback: string): Promise<void> {
 }
 
 function makeOutline(): void {
+  // 쓰는 중(aria-disabled 단추의 누름)은 무시한다 — 확인 창도 띄우지 않는다
+  if (busy.value) return;
   if (proposal.value?.outline && !window.confirm(REMAKE_CONFIRM)) return;
   void act(async () => {
     await api.createOutline(props.jobId);
@@ -640,9 +652,11 @@ async function exportProposal(format: ReportExportFormat): Promise<void> {
     new Date(),
   );
   exportingAs.value = format;
+  // PDF 는 인쇄 창이 열렸는가(printPdf) — 열리지 않았으면(정책 차단·인앱 브라우저) 실패로 알리고 완료 처리를 하지 않는다
+  let printed = true;
   try {
     if (format === "docx") await exportDocx(doc);
-    else await printPdf(doc);
+    else printed = await printPdf(doc);
   } catch (e) {
     console.warn("[research] 보고서 내보내기 실패", e);
     // 배포 뒤 옛 화면에서 누르면 docx 조각 파일이 사라져 동적 import 가 실패한다 — 새로고침이 답이다
@@ -651,13 +665,18 @@ async function exportProposal(format: ReportExportFormat): Promise<void> {
   } finally {
     exportingAs.value = null;
   }
+  if (!printed) {
+    say(REPORT_EXPORT_FAILED.pdf, true);
+    return;
+  }
   // PDF 는 인쇄 창 자체가 결과다 — 딥리서치 보고서의 PDF 도 안내를 띄우지 않는다
   if (format === "docx") say("Word 문서를 내려받았습니다");
   await markDone();
 }
 
 // 처음 내려받으면 연구를 마친 것으로 둔다(phase done) — 단계는 앞으로만 가므로 이미 done 이면 보내지 않는다.
-// PDF 는 인쇄 창을 취소했는지 브라우저가 알려 주지 않아, 창이 닫히고 오류 없이 돌아오면 내려받은 것으로 본다
+// PDF 는 인쇄 창을 취소했는지 브라우저가 알려 주지 않아, 인쇄 창이 열렸다 닫히면(printPdf 가 true) 내려받은 것으로 본다 —
+// 인쇄 창이 아예 열리지 않았으면 부르지 않는다
 async function markDone(): Promise<void> {
   const w = workView.value;
   if (!w || w.phase !== "proposal" || readOnly.value) return;

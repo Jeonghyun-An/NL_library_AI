@@ -29,6 +29,7 @@
         :kind="loadFailure.kind"
         title="참고문헌 후보를 불러오지 못했어요"
         :message="loadFailure.reason"
+        :busy="work.reloading('reading')"
         @retry="reloadAll(['reading'])"
       />
       <div v-else-if="!reading" class="rs-card rs-card--wait">
