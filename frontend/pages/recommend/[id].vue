@@ -1,8 +1,8 @@
 <template>
   <div class="skx-app">
     <AppSidebar
-      @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
-      @save="showToast('저장목록 기능은 준비 중입니다.')"
+      @cart="showToast('대출 장바구니 기능은 준비 중이에요.')"
+      @save="showToast('저장목록 기능은 준비 중이에요.')"
     />
 
     <main class="skx-result">
@@ -15,8 +15,8 @@
           <span class="skx-detail-back__label">돌아가기</span>
         </button>
 
-        <!-- 히어로 배너 -->
-        <div :class="['skx-rcd-hero', `skx-rcd-hero--${meta.heroType}`]">
+        <!-- 히어로 배너 — 목록에 없는 상황 번호면 그리지 않는다(다른 상황의 제목을 대신 보이지 않게) -->
+        <div v-if="scenarioKnown" :class="['skx-rcd-hero', `skx-rcd-hero--${meta.heroType}`]">
           <template v-if="meta.heroType === '02'">
             <span class="skx-mt-deco skx-mt-deco--1" aria-hidden="true"
               ><i></i
@@ -55,7 +55,7 @@
         </div>
 
         <!-- 불러오지 못함 — 소개·도서 칸 대신 상태 블록. 서버 404(이 고민으로 찾은 도서 없음)·빈 목록은 빈 결과,
-             그 밖은 이유 + [다시 시도] -->
+             목록에 없는 상황 번호는 찾을 수 없음(둘 다 [다른 상황 고르기]), 그 밖은 이유 + [다시 시도] -->
         <SkxErrorState
           v-if="loadFailure && !loading"
           :kind="loadFailure.kind"
@@ -63,7 +63,11 @@
           :message="loadFailure.message"
           :on-retry="loadFailure.retry ? retryLoad : undefined"
         >
-          <NuxtLink v-if="loadFailure.kind === 'empty'" to="/recommend" class="skx-state__action">
+          <NuxtLink
+            v-if="loadFailure.kind === 'empty' || loadFailure.kind === 'notFound'"
+            to="/recommend"
+            class="skx-state__action"
+          >
             {{ SCENARIO_TEXT.pickAnother }}
           </NuxtLink>
         </SkxErrorState>
@@ -275,7 +279,7 @@
             v-if="SHOW_MOCKS"
             type="button"
             class="skx-rcd-modal__btn skx-rcd-modal__btn--dark"
-            @click="showToast('준비 중입니다.')"
+            @click="showToast('준비 중이에요.')"
           >
             <img src="/img/ico-download.svg" alt="" />솔루션 저장하기
           </button>
@@ -295,7 +299,7 @@
 import { API_SEARCH_TIMEOUT_MS, useApi } from "~/composables/useApi";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { SPINNER_SRC } from "~/utils/brand";
-import { SCENARIO_TEXT, failureView, scenarioAiFailed, type StateView } from "~/utils/bookErrors";
+import { SCENARIO_TEXT, failureView, isKnownScenario, scenarioAiFailed, type StateView } from "~/utils/bookErrors";
 import { focusRegion } from "~/utils/detailView";
 
 const route = useRoute();
@@ -354,8 +358,12 @@ const SCENARIO_META: Record<string, ScenarioMeta> = {
   },
 };
 
+// 목록에 없는 상황 번호(/recommend/99 등) — 예전엔 01 을 대신 그렸다. 없는 상황이라 알리고(찾을 수 없음 + [다른 상황 고르기]) 추천은 묻지 않는다
+const scenarioKnown = isKnownScenario(SCENARIO_META, scenarioId);
+
+// 없는 번호면 히어로·소개를 그리지 않고 추천도 묻지 않으므로 01 은 타입을 채우는 자리일 뿐 화면에 나오지 않는다
 const meta = computed((): ScenarioMeta => {
-  return (SCENARIO_META[scenarioId] ?? SCENARIO_META["01"]) as ScenarioMeta;
+  return (scenarioKnown ? SCENARIO_META[scenarioId] : SCENARIO_META["01"]) as ScenarioMeta;
 });
 
 // ── API 데이터 ─────────────────────────────────────────────
@@ -368,8 +376,9 @@ interface RecommendedBook {
 
 const recommendedBooks = ref<RecommendedBook[]>([]);
 const loading = ref(false);
-// 불러오지 못함(서버 오류·네트워크) 또는 추천할 도서 없음(404·빈 목록) — 토스트로 잠깐 알리고 빈 칸으로 두던 것을 화면 안 상태 블록으로
-const loadFailure = ref<StateView | null>(null);
+// 불러오지 못함(서버 오류·네트워크) 또는 추천할 도서 없음(404·빈 목록) — 토스트로 잠깐 알리고 빈 칸으로 두던 것을 화면 안 상태 블록으로.
+// 목록에 없는 상황 번호면 처음부터 찾을 수 없음 상태다(fetchRecommend 가 묻지 않아 지워지지 않는다)
+const loadFailure = ref<StateView | null>(scenarioKnown ? null : scenarioUnknown());
 // 새 서버의 ai_failed=true — 도서는 왔지만 소개·추천 사유가 빈 값이다. 옛 서버(필드 없음)는 false 라 예전처럼 기본 문구를 타이핑한다
 const aiFailed = ref(false);
 // 화면을 떠나면 받던 추천을 끊는다 — 늦은 응답이 떠난 화면의 상태를 고치지 않게
@@ -417,9 +426,9 @@ function openModal(book: RecommendedBook) {
 }
 
 // ── API 호출 ──────────────────────────────────────────────
-// 처음 열 때와 [다시 시도](불러오기 실패·ai_failed)가 부른다
+// 처음 열 때와 [다시 시도](불러오기 실패·ai_failed)가 부른다. 목록에 없는 상황 번호면 묻지 않는다(물을 고민이 없다)
 async function fetchRecommend() {
-  if (loading.value) return;
+  if (loading.value || !scenarioKnown) return;
   loading.value = true;
   loadFailure.value = null;
   aiFailed.value = false;
@@ -473,6 +482,11 @@ function retryAi() {
 // 추천할 도서가 없다 — 서버 404(검색 0건)·빈 목록. 고장이 아니라 빈 결과라 [다시 시도] 대신 [다른 상황 고르기]
 function scenarioEmpty(): StateView {
   return { kind: "empty", title: SCENARIO_TEXT.emptyTitle, message: SCENARIO_TEXT.emptyMessage, retry: false };
+}
+
+// 목록에 없는 상황 번호 — 찾을 수 없음. 같은 번호로 다시 물어도 없으므로 [다시 시도] 대신 [다른 상황 고르기]
+function scenarioUnknown(): StateView {
+  return { kind: "notFound", title: SCENARIO_TEXT.unknownTitle, message: SCENARIO_TEXT.unknownMessage, retry: false };
 }
 
 function onKeydown(e: KeyboardEvent) {

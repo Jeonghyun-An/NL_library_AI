@@ -1,8 +1,8 @@
 <template>
   <div class="skx-app">
     <AppSidebar
-      @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
-      @save="showToast('저장목록 기능은 준비 중입니다.')"
+      @cart="showToast('대출 장바구니 기능은 준비 중이에요.')"
+      @save="showToast('저장목록 기능은 준비 중이에요.')"
     />
 
     <!-- 상세 틀(Figma 2536:16714, 논문 상세와 같은 틀) — 위 알약 검색바 → 큰 틀(돌아가기 · 머리 · AI 큐레이션 · 관련 자료 추천 · 상세 서지 정보).

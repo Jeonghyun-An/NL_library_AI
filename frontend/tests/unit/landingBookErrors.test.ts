@@ -1,7 +1,7 @@
 // frontend/tests/unit/landingBookErrors.test.ts
 // 랜딩·소장자료 검색·SKOVIX 추천 1권·도서 상세·상황별 추천·보존 화면(/search-classic)의 오류·빈 상태(에러 처리 2단계, 2026-10-16).
 // 문구·판정은 utils/bookErrors.ts 의 순수 함수로 돌려 보고, 화면은 Nuxt 없이 돌지 않아 소스 글로 고정한다(aiStreamConsumers.test 와 같은 방식)
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CODE_MESSAGES, DEFAULT_ERROR_MESSAGE, ERROR_HINTS, apiErrorMessage, charLimitMessage } from "~/utils/apiErrors";
@@ -13,10 +13,11 @@ import {
   BOOK_SEARCH_TEXT,
   SCENARIO_TEXT,
   failureView,
+  isKnownScenario,
   reasonFailureText,
   scenarioAiFailed,
 } from "~/utils/bookErrors";
-import { PAPER_STATE_TEXT } from "~/utils/paperErrors";
+import { PAPER_STATE_TEXT, shownError } from "~/utils/paperErrors";
 import { SEARCH_QUERY_MAX } from "~/utils/searchInput";
 
 const root = resolve(__dirname, "../..");
@@ -103,8 +104,78 @@ describe("failureView — 요청 실패를 상태 블록으로", () => {
       message: ERROR_HINTS.server,
       retry: true,
     });
-    // notFound 를 주지 않으면 404 도 일반 실패(대체 문구가 비어 기본 문구)
-    expect(failureView(fetchError(404), "x")).toMatchObject({ kind: "notFound", message: DEFAULT_ERROR_MESSAGE, retry: true });
+    // notFound 를 주지 않으면 404 도 일반 실패 — 이유가 없어 설명 줄은 비고(기본 문구를 되풀이하지 않는다) 제목과 [다시 시도]만
+    expect(failureView(fetchError(404), "x")).toEqual({ kind: "notFound", title: "x", message: "", retry: true });
+  });
+
+  // 사용자 지적(2026-10-17): 소장자료 검색 실패가 이유 없이도 제목 아래 '요청을 처리하지 못했어요'를 한 줄 더 보였다 — 논문 검색(shownError)은
+  // 그 줄을 빼고 제목과 [다시 시도]만 보인다. 같은 규칙(paperErrors.shownError)을 써서 소장자료 쪽 모든 상태 블록이 같게 한다
+  describe("이유가 없으면 설명 줄을 비운다 — 논문 검색과 같은 규칙", () => {
+    const codeBug = new TypeError("Cannot read properties of undefined (reading 'books')");
+    const noReason: [string, unknown][] = [
+      ["화면 코드 오류(상태 없음)", codeBug],
+      ["409(사유 없음)", fetchError(409)],
+      ["403(사유 없음)", fetchError(403)],
+      ["404(notFound 를 주지 않음)", fetchError(404)],
+      ["그 밖의 상태(418)", fetchError(418)],
+    ];
+    // 5xx 의 개발자용 한글 detail(예외를 감싼 글)은 쓰지 않고 서버 오류 이유를 보인다(apiErrorMessage (a))
+    const devDetail500 = fetchError(500, { detail: "잡 생성 실패: 연결 거부" });
+
+    it.each(noReason)("%s: 제목만(설명 줄 빈 글) — '요청을 처리하지 못했어요'를 되풀이하지 않는다", (_name, err) => {
+      for (const title of [
+        BOOK_SEARCH_TEXT.failedTitle,
+        BOOK_DETAIL_TEXT.failedTitle,
+        BOOK_DETAIL_TEXT.relatedFailedTitle,
+        SCENARIO_TEXT.failedTitle,
+      ]) {
+        const view = failureView(err, title);
+        expect(view?.title).toBe(title);
+        expect(view?.message).toBe("");
+      }
+    });
+
+    it("도서 상세(notFound 갈음)·상황별 추천(빈 결과 갈음)도 404 밖의 사유 없는 실패는 제목만", () => {
+      const notFound = { kind: "notFound" as const, title: BOOK_DETAIL_TEXT.notFoundTitle, message: BOOK_DETAIL_TEXT.notFoundMessage };
+      const empty = { kind: "empty" as const, title: SCENARIO_TEXT.emptyTitle, message: SCENARIO_TEXT.emptyMessage };
+      expect(failureView(fetchError(409), BOOK_DETAIL_TEXT.failedTitle, notFound)).toEqual({
+        kind: "conflict",
+        title: BOOK_DETAIL_TEXT.failedTitle,
+        message: "",
+        retry: true,
+      });
+      expect(failureView(codeBug, SCENARIO_TEXT.failedTitle, empty)).toEqual({
+        kind: "unknown",
+        title: SCENARIO_TEXT.failedTitle,
+        message: "",
+        retry: true,
+      });
+    });
+
+    it("진짜 이유(연결·시간 초과·몰림·서버·서버 code·글자 수·깨끗한 한글 사유)는 오늘처럼 설명 줄에 보인다", () => {
+      const t = BOOK_SEARCH_TEXT.failedTitle;
+      expect(failureView(offline, t)?.message).toBe(ERROR_HINTS.network);
+      expect(failureView(fetchError(504), t)?.message).toBe(ERROR_HINTS.timeout);
+      expect(failureView(fetchError(429), t)?.message).toBe(ERROR_HINTS.busy);
+      expect(failureView(devDetail500, t)?.message).toBe(ERROR_HINTS.server);
+      expect(failureView(fetchError(503, { detail: "x", code: "search_unavailable" }), t)?.message).toBe(CODE_MESSAGES.search_unavailable);
+      expect(failureView(fetchError(409, { detail: "이미 다른 곳에서 바뀐 자료예요." }), t)?.message).toBe("이미 다른 곳에서 바뀐 자료예요.");
+    });
+
+    it.each([...noReason, ["5xx 개발자용 detail", devDetail500], ["연결 실패", offline]] as [string, unknown][])(
+      "%s: 설명 줄이 논문 검색(shownError)과 같고, 기본 문구는 어느 경우에도 나오지 않는다",
+      (_name, err) => {
+        expect(failureView(err, "x")?.message).toBe(shownError(err)?.message);
+        expect(failureView(err, "x")?.message).not.toBe(DEFAULT_ERROR_MESSAGE);
+      },
+    );
+
+    it("bookErrors 는 이유 고르기를 따로 두지 않고 paperErrors.shownError 를 쓴다", () => {
+      const src = read("utils/bookErrors.ts");
+      expect(src).toContain('import { shownError } from "./paperErrors";');
+      expect(src).toMatch(/export function failureView\([\s\S]*?const shown = shownError\(err\);\s*if \(!shown\) return null;/);
+      expect(src).not.toMatch(/apiErrorMessage\(/);
+    });
   });
 
   it("상황별 추천의 404(이 고민으로 찾은 도서 없음)는 빈 결과로 바꿔 쓸 수 있다", () => {
@@ -345,7 +416,52 @@ describe("상황별 추천 — pages/recommend/[id].vue", () => {
     expect(src).toContain("loadFailure.value = failureView(e, SCENARIO_TEXT.failedTitle, scenarioEmpty());");
     expect(src).toMatch(/if \(!recommendedBooks\.value\.length\) \{\s*loadFailure\.value = scenarioEmpty\(\);/);
     expect(src).toMatch(/<SkxErrorState\s+v-if="loadFailure && !loading"[\s\S]*?:on-retry="loadFailure\.retry \? retryLoad : undefined"\s*>/);
-    expect(src).toMatch(/<NuxtLink v-if="loadFailure\.kind === 'empty'" to="\/recommend" class="skx-state__action">/);
+    expect(src).toMatch(
+      /<NuxtLink\s+v-if="loadFailure\.kind === 'empty' \|\| loadFailure\.kind === 'notFound'"\s+to="\/recommend"\s+class="skx-state__action"\s*>/,
+    );
+  });
+
+  // 사용자 지적(2026-10-17): /recommend/99 처럼 목록에 없는 번호가 첫 상황(01)을 대신 그렸다
+  describe("목록에 없는 상황 번호(/recommend/99)", () => {
+    it("문구 — '없는 상황이에요' + 한 줄 안내(상황별 추천 상수에 둔다)", () => {
+      expect(SCENARIO_TEXT.unknownTitle).toBe("없는 상황이에요");
+      expect(SCENARIO_TEXT.unknownMessage).toBe("목록에서 다른 상황을 골라 주세요.");
+      expect(SCENARIO_TEXT.unknownMessage).not.toContain("\n");
+    });
+
+    it("isKnownScenario — 표의 자기 키만 있다고 본다(상속 이름·문자열 아닌 값에 속지 않는다)", () => {
+      const table = { "01": {}, "02": {} };
+      expect(isKnownScenario(table, "01")).toBe(true);
+      expect(isKnownScenario(table, "02")).toBe(true);
+      for (const id of ["99", "1", "", "toString", "__proto__", "constructor", "hasOwnProperty", ["01"], undefined, null, 1]) {
+        expect(isKnownScenario(table, id), String(id)).toBe(false);
+      }
+    });
+
+    it("상황 목록(pages/recommend/index.vue)의 카드는 모두 이 화면의 상황 표(SCENARIO_META)에 있다 — 목록의 상황이 '없는 상황'이 되지 않는다", () => {
+      const ids = [...read("pages/recommend/index.vue").matchAll(/to="\/recommend\/([^"]+)"/g)].map((m) => m[1]);
+      expect(ids.length).toBeGreaterThan(0);
+      const table = src.match(/const SCENARIO_META: Record<string, ScenarioMeta> = \{([\s\S]*?)\r?\n\};/)?.[1] ?? "";
+      const keys = [...table.matchAll(/^ {2}"(\w+)": \{/gm)].map((m) => m[1]);
+      expect(keys).toEqual(ids);
+    });
+
+    it("없는 번호는 처음부터 찾을 수 없음 상태(다시 시도 없음 + [다른 상황 고르기]) — 01 을 대신 그리지 않는다", () => {
+      expect(src).toContain("const scenarioKnown = isKnownScenario(SCENARIO_META, scenarioId);");
+      expect(src).toContain("const loadFailure = ref<StateView | null>(scenarioKnown ? null : scenarioUnknown());");
+      expect(src).toMatch(
+        /function scenarioUnknown\(\): StateView \{\s*return \{ kind: "notFound", title: SCENARIO_TEXT\.unknownTitle, message: SCENARIO_TEXT\.unknownMessage, retry: false \};\s*\}/,
+      );
+      // 히어로(상황 제목·부제)도 그리지 않는다 — 다른 상황의 제목이 보이지 않게
+      expect(src).toContain('<div v-if="scenarioKnown" :class="[\'skx-rcd-hero\', `skx-rcd-hero--${meta.heroType}`]">');
+      expect(src).not.toMatch(/SCENARIO_META\[scenarioId\] \?\? SCENARIO_META\["01"\]/);
+    });
+
+    it("없는 번호면 추천 API 를 부르지 않는다 — 처음 열 때도 [다시 시도]로도", () => {
+      expect(src).toMatch(/async function fetchRecommend\(\) \{\s*if \(loading\.value \|\| !scenarioKnown\) return;/);
+      // 추천 POST 는 fetchRecommend 한 곳에서만
+      expect(src.match(/"\/scenario\/recommend"/g)).toHaveLength(1);
+    });
   });
 
   it("새 서버의 ai_failed 면 소개 자리에 '추천 이유를 만들지 못했어요' 한 줄 + [다시 시도](다시 받기), 옛 서버는 예전처럼 타이핑", () => {
@@ -377,6 +493,47 @@ describe("상황 목록 — pages/recommend/index.vue", () => {
     expect(read("pages/recommend/index.vue")).toContain(
       '<div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>',
     );
+  });
+});
+
+// 목업 버튼(SHOW_MOCKS=false 라 지금은 숨김)의 '준비 중' 토스트 — 켜면 보이므로 해요체 한 문장으로 둔다(토스트는 한 줄 nowrap)
+describe("목업 '준비 중' 토스트 — 해요체 한 문장", () => {
+  /** pages·components 아래 .vue·.ts 전부(소스 글) */
+  function sources(dir: string): string[] {
+    return readdirSync(resolve(root, dir), { withFileTypes: true }).flatMap((d) => {
+      const rel = `${dir}/${d.name}`;
+      if (d.isDirectory()) return sources(rel);
+      return /\.(vue|ts)$/.test(d.name) ? [rel] : [];
+    });
+  }
+  const files = [...sources("pages"), ...sources("components")];
+
+  it("pages·components 어디에도 합쇼체 '준비 중입니다'가 없고, '준비 중'은 모두 '준비 중이에요.'(한 문장)다", () => {
+    expect(files.length).toBeGreaterThan(10);
+    for (const file of files) {
+      const text = read(file);
+      expect(text, file).not.toContain("준비 중입니다");
+      expect(text, file).not.toMatch(/준비 중(?!이에요\.)/);
+    }
+  });
+
+  it("사이드바 장바구니·저장목록, 소장자료 대출 신청, 상황별 추천 솔루션 저장의 토스트", () => {
+    const sidebarPages = [
+      "pages/index.vue",
+      "pages/books/[cnts_id].vue",
+      "pages/papers/index.vue",
+      "pages/papers/[id].vue",
+      "pages/recommend/index.vue",
+      "pages/recommend/[id].vue",
+      "pages/research/[id].vue",
+    ];
+    for (const page of sidebarPages) {
+      const src = read(page);
+      expect(src, page).toContain(`@cart="showToast('대출 장바구니 기능은 준비 중이에요.')"`);
+      expect(src, page).toContain(`@save="showToast('저장목록 기능은 준비 중이에요.')"`);
+    }
+    expect(read("pages/index.vue")).toContain('`"${item.book_info?.title || item.book_id}" 대출 신청 기능은 준비 중이에요.`');
+    expect(read("pages/recommend/[id].vue")).toContain(`@click="showToast('준비 중이에요.')"`);
   });
 });
 
