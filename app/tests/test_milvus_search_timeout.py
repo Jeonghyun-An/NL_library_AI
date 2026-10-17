@@ -88,6 +88,17 @@ def test_an_empty_collection_stops_after_the_count_which_also_has_the_timeout(in
     assert col.searches == []
 
 
+def test_without_the_private_connection_method_the_count_falls_back_to_num_entities(indexer, monkeypatch):
+    # _get_connection 은 pymilvus 비공개 메서드 — 판이 바뀌어 없어져도 검색은 예전처럼(한도 없는 num_entities) 돈다
+    class _NewerCollection:
+        name = "nl_lib_embeddings"
+        num_entities = 0
+
+    assert indexer._entity_count(_NewerCollection(), 20) == 0
+    _NewerCollection.num_entities = 4
+    assert indexer._entity_count(_NewerCollection(), 20) == 4
+
+
 def test_the_timeout_follows_the_setting_and_stays_an_int(indexer, monkeypatch):
     # 실수가 들어와도 정수로 넘긴다 — pymilvus 는 실수 timeout 이면 재시도 시간 한도로 쓰지 않는다
     monkeypatch.setattr(indexer.cfg, "MILVUS_SEARCH_TIMEOUT", 5)

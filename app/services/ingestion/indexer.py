@@ -282,8 +282,12 @@ def search_timeout() -> int:
 
 def _entity_count(col: Collection, timeout: int) -> int:
     """col.num_entities 와 같은 값(봉인된 세그먼트 기준 — 실시간 아님)을 시간 한도와 함께 읽는다. num_entities 는 속성이라
-    timeout 을 넘길 수 없어, 그 속성이 부르는 연결의 get_collection_stats 를 같은 꼴로 timeout 과 함께 부른다(pymilvus 2.4.6)."""
-    stats = col._get_connection().get_collection_stats(collection_name=col.name, timeout=timeout)
+    timeout 을 넘길 수 없어, 그 속성이 부르는 연결의 get_collection_stats 를 같은 꼴로 timeout 과 함께 부른다(pymilvus 2.4.6).
+    _get_connection 은 비공개 메서드다 — pymilvus 를 올려 없어지면 검색이 통째로 깨지지 않게 한도 없는 num_entities 로 돌아간다."""
+    get_connection = getattr(col, "_get_connection", None)
+    if get_connection is None:
+        return col.num_entities
+    stats = get_connection().get_collection_stats(collection_name=col.name, timeout=timeout)
     return int({stat.key: stat.value for stat in stats}["row_count"])
 
 
