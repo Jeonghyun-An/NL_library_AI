@@ -155,9 +155,8 @@ describe("랜딩·결과 — pages/index.vue", () => {
   it("랜딩 두 입력창과 결과 검색바 모두 maxlength=500 이고, 글자 수(SkxCharCount)를 aria-describedby 로 가리킨다", () => {
     expect(src.match(/:maxlength="SEARCH_QUERY_MAX"/g)).toHaveLength(3);
     for (const id of ["skx-count-book", "skx-count-paper", "skx-count-result"]) {
-      // 늘 같은 id 를 가리킨다(바인딩이 아니라 고정 속성) — 바인딩을 바꾸면 + 메뉴가 덧붙인 DeepResearch 글자 수 id 를 지운다
       expect(src).toContain(`aria-describedby="${id}"`);
-      expect(src).toMatch(new RegExp(`<SkxCharCount (?:v-if="!deepResearch" )?id="${id}" quiet :length="currentQuery\\.length" :max="SEARCH_QUERY_MAX" />`));
+      expect(src).toContain(`<SkxCharCount id="${id}" quiet :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />`);
     }
   });
 
@@ -170,9 +169,11 @@ describe("랜딩·결과 — pages/index.vue", () => {
     expect(src).toContain('<SkxCharCount id="skx-count-result" quiet');
   });
 
-  it("DeepResearch 모드인 동안 논문 칸의 글자 수는 + 메뉴(SearchPlusMenu)의 것 하나만 — 이 화면의 것은 모드를 바꿀 때만 붙였다 뗀다", () => {
-    expect(src).toContain('<SkxCharCount v-if="!deepResearch" id="skx-count-paper" quiet');
+  it("DeepResearch 모드여도 논문 칸의 글자 수는 이 화면의 것 하나 — 모드에 따라 붙였다 떼지 않고, + 메뉴는 따로 그리지 않는다", () => {
+    expect(src).toContain('<SkxCharCount id="skx-count-paper" quiet');
+    expect(src).not.toMatch(/<SkxCharCount v-if=/);
     expect(src).not.toMatch(/:aria-describedby=/);
+    expect(read("components/research/SearchPlusMenu.vue")).not.toMatch(/<SkxCharCount\b/);
   });
 
   it("랜딩 입력 상자의 보내기 줄은 글자 수와 보내기를 세로 가운데로 맞추고 띄운다(보내기만 있을 때 모양은 그대로)", () => {

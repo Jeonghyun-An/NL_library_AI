@@ -129,10 +129,8 @@
                 ></textarea>
               </label>
               <div class="skx-search__actions">
-                <!-- DeepResearch 모드인 동안은 + 메뉴(SearchPlusMenu)가 질문 글자 수를 따로 달고 aria-describedby 에 잇는다 — 한 입력에
-                     글자 수 하나만 두려고 이 칸은 뺀다(입력창이 가리키는 id 는 그대로 두어도 없는 요소라 읽히지 않는다. 바인딩으로 바꾸면
-                     + 메뉴가 덧붙인 id 를 지운다). 모드를 바꿀 때만 붙였다 떼므로 한도 알림 영역은 입력 중에 새로 생기지 않는다 -->
-                <SkxCharCount v-if="!deepResearch" id="skx-count-paper" quiet :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
+                <!-- DeepResearch 모드여도 글자 수는 이 칸 하나 — 질문 한도(ResearchCreate.question)도 500 이라 + 메뉴는 따로 그리지 않는다 -->
+                <SkxCharCount id="skx-count-paper" quiet :length="currentQuery.length" :max="SEARCH_QUERY_MAX" />
                 <button
                   type="button"
                   class="skx-send"
