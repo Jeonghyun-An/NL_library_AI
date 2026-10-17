@@ -2,14 +2,14 @@
 // 딥리서치 화면(pages/research/[id].vue·composables/useResearch.ts)의 오류 처리 — 첫 로드·재동기화 실패, 보던 연구가 사라짐(404),
 // 409 뒤 맞추기, 취소 뒤 종합 단계 기다리기의 끝, 연결 띠 상태. 컴포넌트를 띄우지 않는 Node 환경이라 composable 은 직접 부르고
 // (EventSource 는 import.meta.client 가 없어 열리지 않는다), 화면·스타일의 계약은 소스 텍스트로 본다
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useResearchJob } from "~/composables/useResearch";
 import type { ResearchJob, ResearchStepRow } from "~/types/research";
 import { ERROR_HINTS } from "~/utils/apiErrors";
-import { RESEARCH_STATE_TEXT } from "~/utils/researchErrors";
-import { describedByWith } from "~/utils/researchStart";
+import { CANCEL_ENDED_MESSAGE, RESEARCH_STATE_TEXT } from "~/utils/researchErrors";
+import { QUESTION_MAX } from "~/utils/researchInput";
 
 const { api } = vi.hoisted(() => ({ api: vi.fn() }));
 vi.mock("~/composables/useApi", () => ({ apiUrl: (path: string) => `/api${path}`, useApi: () => api }));
@@ -79,11 +79,25 @@ describe("useResearchJob — 첫 로드", () => {
     const offline = useResearchJob(ID);
     await offline.load();
     expect(offline.loadError.value).toEqual({ kind: "network", message: ERROR_HINTS.network });
-    // [다시 불러오기] 가 성공하면 오류가 걷힌다
-    route({ get: [job()] });
-    await offline.load();
+    // [다시 불러오기] — 읽는 동안 상태 블록이 버튼째 사라지지 않게 오류를 두고(블록은 loading 으로 busy), 성공하면 걷힌다
+    let respond: (v: ResearchJob) => void = () => {};
+    api.mockImplementation(() => new Promise<ResearchJob>((resolve) => (respond = resolve)));
+    const again = offline.load();
+    expect(offline.loading.value).toBe(true);
+    expect(offline.loadError.value).toEqual({ kind: "network", message: ERROR_HINTS.network });
+    respond(job());
+    await again;
+    expect(offline.loading.value).toBe(false);
     expect(offline.loadError.value).toBeNull();
     expect(offline.view.value?.status).toBe("running");
+
+    // 다시 읽다 없는 연구로 판명되면 오류 대신 '찾을 수 없는 연구'
+    route({ get: [networkError(), httpError(404)] });
+    const gone = useResearchJob(ID);
+    await gone.load();
+    await gone.load();
+    expect(gone.loadError.value).toBeNull();
+    expect(gone.notFound.value).toBe(true);
   });
 });
 
@@ -185,17 +199,6 @@ describe("useResearchJob — 취소 뒤 종합 단계 닫힘 기다리기", () =
   });
 });
 
-describe("describedByWith — 입력창의 aria-describedby 에 글자 수 id 를 잇고 뗀다", () => {
-  it("페이지가 단 다른 id 는 그대로 두고, 남는 것이 없으면 null", () => {
-    expect(describedByWith(null, "c1", true)).toBe("c1");
-    expect(describedByWith("hint", "c1", true)).toBe("hint c1");
-    expect(describedByWith("hint c1", "c1", true)).toBe("hint c1");
-    expect(describedByWith("hint c1", "c1", false)).toBe("hint");
-    expect(describedByWith("c1", "c1", false)).toBeNull();
-    expect(describedByWith("  ", "c1", false)).toBeNull();
-  });
-});
-
 const read = (rel: string): string => readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), "utf8");
 
 describe("딥리서치 화면 — 공통 오류 컴포넌트로 옮긴 표시(소스)", () => {
@@ -222,6 +225,24 @@ describe("딥리서치 화면 — 공통 오류 컴포넌트로 옮긴 표시(�
     // 덮개·흐림 없음, 서버 last_error 원문을 그리지 않는다
     expect(tpl).not.toContain("view.lastError");
     expect(page).toContain("researchFailedMessage(view.value.stage, canRetry.value, view.value.lastError)");
+  });
+
+  it("머리의 [다시 시도]는 상태 카드와 같은 글(researchRetryLabel)이고, 일하는 동안 disabled 대신 aria-disabled(초점 유지)", () => {
+    expect(tpl).toMatch(/<ResearchHeader[\s\S]*?:can-retry="canRetry"\s+:retry-label="retryLabel"/);
+    expect(page).toContain("const retryLabel = computed(() => researchRetryLabel(view.value?.stage));");
+    const header = read("components/research/ResearchHeader.vue");
+    const headerTpl = header.slice(0, header.indexOf("<script"));
+    expect(headerTpl).toMatch(/\{\{ retryLabel \}\}/);
+    expect(headerTpl).not.toMatch(/>\s*다시 시도\s*</);
+    expect(headerTpl).toMatch(/:aria-disabled="busy \? 'true' : undefined"[\s\S]*?@click="!busy && \$emit\('retry'\)"/);
+    expect(headerTpl).toMatch(/:aria-disabled="busy \? 'true' : undefined"[\s\S]*?@click="!busy && \$emit\('restart'\)"/);
+    expect(headerTpl).not.toMatch(/class="rs-btn rs-btn--small" :disabled="busy"/);
+    // 흐림은 머리 안으로 좁힌다 — 내려받기 단추(.rs-dl__btn)는 만드는 중에 흐리지 않는다
+    expect(read("assets/css/research.css")).toContain('.rs-head__actions .rs-btn[aria-disabled="true"] {');
+  });
+
+  it("토스트는 낭독기에 알린다(role=status, aria-live=polite)", () => {
+    expect(tpl).toContain('<div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>');
   });
 
   it("연결 띠는 늘 그려 두고 상태만 — [다시 연결]은 reconnect", () => {
@@ -267,6 +288,12 @@ describe("useResearch — 스트림 감시(소스)", () => {
   it("끊기면(onerror) 실패 수를 쌓아 연결 띠가 알린다", () => {
     expect(src).toMatch(/es\.onerror = \(\) => \{[\s\S]*?drops\.value \+= 1;/);
   });
+
+  it("재동기화 GET 이 성공했을 때 스트림이 이미 열려 있으면 실패 수를 지운다 — onopen 이 다시 오지 않아 연결 띠가 남지 않게", () => {
+    expect(src).toMatch(
+      /if \(!isTerminalStatus\(view\.value\.status\)\) \{\s*connect\(\);\s*if \(source && source\.readyState === EventSource\.OPEN\) drops\.value = 0;/,
+    );
+  });
 });
 
 describe("하위질문 부분 실패·입력 오류 — 공통 줄 안내(소스)", () => {
@@ -276,6 +303,8 @@ describe("하위질문 부분 실패·입력 오류 — 공통 줄 안내(소스
     expect(live).toContain('<SkxInlineError v-if="sq.status === \'failed\'" :message="subqFailureText(sq.error)" />');
     expect(live).not.toContain("{{ sq.error }}");
     expect(panel).toContain(':message="subqFailureText(sq.error)"');
+    // 진행 패널은 지난 실패를 화면을 열 때마다 다시 그린다 — 거듭 끊고 읽지 않게 status(탐색 중 본문의 새 실패는 alert 그대로)
+    expect(panel).toMatch(/<SkxInlineError v-if="sq\.status === 'failed'" class="rs-subq__error" role="status"/);
     expect(panel).not.toContain("stoppedSubq.error }}");
     expect(panel).not.toMatch(/멈췄습니다/);
   });
@@ -286,13 +315,39 @@ describe("하위질문 부분 실패·입력 오류 — 공통 줄 안내(소스
     expect(css).not.toMatch(/(^|[^-])color:\s*var\(--skx-danger\)/m);
   });
 
-  it("계획 편집값 오류·시작 실패는 줄 안내, DeepResearch 질문 입력에는 maxlength 500 과 글자 수", () => {
+  it("계획 편집값 오류·시작 실패는 줄 안내", () => {
     const plan = read("components/research/PlanCard.vue");
     expect(plan).toContain('<SkxInlineError v-if="problem" :message="problem" />');
     const menu = read("components/research/SearchPlusMenu.vue");
     expect(menu).toContain('<SkxInlineError v-if="error" class="rs-plus__error" :message="error" />');
-    expect(menu).toMatch(/<SkxCharCount\s+v-if="researchActive"\s+:id="countId"[\s\S]*?:max="QUESTION_MAX"/);
-    expect(menu).toContain('field.setAttribute("maxlength", String(QUESTION_MAX));');
-    expect(menu).toContain("describedByWith(field.getAttribute(\"aria-describedby\"), countId, on)");
+  });
+
+  it("DeepResearch 질문의 한도·글자 수는 + 메뉴가 따로 그리지 않고 품은 입력창의 것을 쓴다 — 한 입력에 글자 수 하나", () => {
+    const menu = read("components/research/SearchPlusMenu.vue");
+    expect(menu).not.toMatch(/<SkxCharCount/);
+    expect(menu).not.toContain("rs-plus__count");
+    expect(menu).not.toMatch(/setAttribute\("maxlength"/);
+    expect(read("assets/css/research.css")).not.toContain(".rs-plus__count");
+    // 메뉴를 품은 입력창(메인 랜딩의 논문 칸·/papers 랜딩·결과 검색바)은 검색어 한도의 maxlength 와 제 글자 수를 가진다
+    for (const page of ["pages/index.vue", "pages/papers/index.vue"]) {
+      const src = read(page);
+      expect(src).toContain("<ResearchSearchPlusMenu");
+      expect(src).toContain(':maxlength="SEARCH_QUERY_MAX"');
+      expect(src).toContain("<SkxCharCount");
+    }
+    // 검색어 한도는 DeepResearch 질문 한도(서버 ResearchCreate.question max_length)와 같아야 그 maxlength 가 질문도 막는다
+    const limits = readdirSync(fileURLToPath(new URL("../../utils", import.meta.url)))
+      .filter((name) => name.endsWith(".ts"))
+      .map((name) => read(`utils/${name}`).match(/export const SEARCH_QUERY_MAX = (\d+);/)?.[1])
+      .filter((v): v is string => !!v)
+      .map(Number);
+    expect(limits.length).toBeGreaterThan(0);
+    for (const limit of limits) expect(limit).toBe(QUESTION_MAX);
+  });
+
+  it("입력창 줄의 [취소]가 409(그 사이 끝난 연구)면 서버 합쇼체 대신 화면 문구", () => {
+    expect(CANCEL_ENDED_MESSAGE).toBe("이미 끝난 연구예요");
+    const menu = read("components/research/SearchPlusMenu.vue");
+    expect(menu).toMatch(/httpStatus\(e\) === 409 \? CANCEL_ENDED_MESSAGE : researchErrorMessage\(e, `\$\{DEEP_RESEARCH\}를 취소하지 못했어요`\)/);
   });
 });

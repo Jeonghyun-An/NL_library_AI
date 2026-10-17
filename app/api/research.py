@@ -35,6 +35,7 @@ from sqlalchemy.orm import load_only
 
 from core.config import get_settings
 from core.deps import get_browser_id_optional, get_db
+from core.errors import queue_unavailable
 from db.postgres import AsyncSessionLocal
 from models.research import (
     RUNNABLE_STATUSES, STATUS_APPROVED, STATUS_CANCELED, STATUS_QUEUED, TERMINAL_STATUSES,
@@ -207,7 +208,8 @@ async def _announce(jid: uuid.UUID, status: str, stage: str) -> None:
 
 
 def _broker_unavailable() -> HTTPException:
-    return HTTPException(status_code=503, detail="작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요")
+    """작업 큐에 넣지 못했다 — 503 문구·꼴은 core/errors 한 곳(QUEUE_UNAVAILABLE_DETAIL — 적재·관리 API 의 큐 장애와 같은 말)."""
+    return queue_unavailable()
 
 
 def _validated_plan(plan: list[str], *, limit: int) -> list[str]:

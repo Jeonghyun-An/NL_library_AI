@@ -128,6 +128,8 @@ export interface ResearchWorkHandle {
   errorOf(kind: WorkErrorKind): string | null;
   // 그 조회가 낸 오류의 종류·이유 — 화면의 오류 블록(SkxErrorState 의 kind·이유)이 읽는다
   failureOf(kind: WorkErrorKind): WorkFailure | null;
+  // 그 조회를 다시 읽는 중 — 오류는 다시 읽기가 성공할 때까지 남으므로 오류 블록이 이것으로 [다시 시도]의 busy 를 보인다
+  reloading(kind: WorkResource): boolean;
   // 연구 스트림(SSE)의 연결 상태 — SkxConnectionBanner 의 state(끊겨 다시 붙는 동안 진행 표시가 멈춰 보이지 않게 알린다)
   connection: Readonly<Ref<ConnectionState>>;
   load(): Promise<void>;
@@ -152,10 +154,14 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
   const state = shallowRef<WorkState>(initialWorkState());
   const exists = ref<boolean | null>(null);
   const loading = ref(false);
-  // 조회마다 따로 둔 오류 칸. 같은 조회를 다시 읽기 시작하거나 성공할 때만 그 칸을 비운다 — 칸이 하나면 다른 조회의
+  // 조회마다 따로 둔 오류 칸. 같은 조회의 다시 읽기가 성공할 때만 그 칸을 비운다 — 칸이 하나면 다른 조회의
   // 오류가 처음 여는 단계에 '불러오는 중' 대신 보이고, 다른 조회의 성공이 지우면 실패해 비어 있는 단계가 요청 없이
-  // '불러오는 중'에 멈춘다. 새로 쓸 때 맨 뒤로 옮겨 error 가 가장 늦게 난 오류를 보이게 한다
+  // '불러오는 중'에 멈춘다. 다시 읽기를 시작할 때 비우면 [다시 시도]를 누른 오류 줄·블록이 버튼째 사라져(초점이 body 로,
+  // busy 도 보이지 않는다) 배경 다시 읽기(이벤트)마다 줄이 깜빡이고, 쓰기 뒤 머리(useWorkStale 의 savedHead)까지 지워졌다.
+  // 새로 쓸 때 맨 뒤로 옮겨 error 가 가장 늦게 난 오류를 보이게 한다
   const errors = shallowRef<Partial<Record<WorkErrorKind, WorkFailure>>>({});
+  // 조회마다 지금 도는 다시 읽기의 순번(tokens) — 있으면 다시 읽는 중(reloading). 더 늦게 보낸 같은 조회가 갈음하면 그 순번으로 바뀐다
+  const inflight = shallowRef<Partial<Record<WorkResource, number>>>({});
   const error = computed(() => Object.values(errors.value).at(-1)?.message ?? null);
   const connection = ref<ConnectionState>("connected");
 
@@ -181,6 +187,17 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
 
   function failureOf(kind: WorkErrorKind): WorkFailure | null {
     return errors.value[kind] ?? null;
+  }
+
+  function reloading(kind: WorkResource): boolean {
+    return inflight.value[kind] !== undefined;
+  }
+
+  // 다시 읽기가 끝났다 — token 을 주면 그 순번의 요청일 때만(더 늦게 보낸 같은 조회가 돌고 있으면 그대로 둔다)
+  function settleInflight(kind: WorkResource, token?: number): void {
+    if (inflight.value[kind] === undefined || (token !== undefined && inflight.value[kind] !== token)) return;
+    const { [kind]: _done, ...rest } = inflight.value;
+    inflight.value = rest;
   }
 
   function setError(kind: WorkErrorKind, failure: WorkFailure): void {
@@ -222,6 +239,7 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
     state.value = initialWorkState();
     exists.value = null;
     errors.value = {};
+    inflight.value = {};
     loaded.clear();
     if (!opts.enabled.value) {
       loading.value = false;
@@ -255,8 +273,8 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
     const gen = generation;
     const token = ++tokens[kind];
     loaded.add(kind);
-    // 이 조회가 낸 오류는 다시 읽는 동안 비운다 — [다시 불러오기] 뒤 응답을 기다리는 동안 '불러오는 중'이 보이게
-    clearErrorOf(kind);
+    // 이 조회가 낸 오류는 다시 읽기가 성공할 때까지 둔다 — 오류 줄·블록은 그대로 서고 [다시 시도]가 busy(reloading)를 보인다
+    inflight.value = { ...inflight.value, [kind]: token };
     try {
       const apply = await fetchResource(kind, toValue(jobId));
       if (gen !== generation || token !== tokens[kind]) return true;
@@ -267,6 +285,8 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
       if (gen !== generation || token !== tokens[kind]) return true;
       setError(kind, workFailure(e, WORK_REFRESH_FAILED));
       return false;
+    } finally {
+      if (gen === generation) settleInflight(kind, token);
     }
   }
 
@@ -284,6 +304,8 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
   function setWork(view: WorkView): void {
     if (disposed || view.id.toLowerCase() !== toValue(jobId).toLowerCase()) return;
     tokens.work += 1;
+    // 도는 reload('work') 는 이 응답이 갈음한다(그 응답은 버려진다) — 다시 읽는 중 표시를 걷는다
+    settleInflight("work");
     state.value = withWork(state.value, view);
     exists.value = true;
     loaded.add("work");
@@ -415,6 +437,7 @@ export function useResearchWork(jobId: MaybeRefOrGetter<string>, opts: { enabled
     error,
     errorOf,
     failureOf,
+    reloading,
     connection,
     load,
     reload,
@@ -451,7 +474,8 @@ export function useWorkStale(work: ResearchWorkHandle, kinds: readonly WorkResou
     if (!first) return null;
     return withWorkReason(savedHead.value ?? WORK_REFRESH_FAILED, work.failureOf(first)?.reason ?? "");
   });
-  // 실패가 모두 걷히면(다시 읽기 성공) 쓰기 뒤 머리도 걷는다 — [다시 시도] 로 다시 읽는 동안(오류 칸이 잠시 빈다)은 기다린다
+  // 실패가 모두 걷히면(다시 읽기 성공) 쓰기 뒤 머리도 걷는다. 오류 칸은 다시 읽는 동안에도 남아(성공할 때만 비운다) [다시 시도]·
+  // 배경 다시 읽기 사이에 줄이 사라지거나 머리가 지워지지 않는다 — [다시 시도] 가 도는 동안은 retry 가 끝에서 맞춘다
   watch(
     () => failed.value.length === 0,
     (none) => {

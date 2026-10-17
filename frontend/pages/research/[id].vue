@@ -39,6 +39,7 @@
           :layout="layout"
           :can-toggle="canToggle"
           :can-retry="canRetry"
+          :retry-label="retryLabel"
           :busy="busy || restarting"
           :mode-line="modeLine"
           @toggle-layout="toggleLayout"
@@ -130,12 +131,14 @@
             <p class="wk-summary__line">{{ band ? summaryLine(band) : view.question }}</p>
             <button type="button" class="rs-btn rs-btn--ghost rs-btn--small" @click="goStep(null)">{{ DEEP_RESEARCH }} 보고서 보기</button>
           </div>
+          <!-- 다시 읽는 동안(load 가 오류 칸을 비운다)에도 이 자리를 지켜 [다시 시도]가 버튼째 사라지지 않게 — 보고서 화면의 이어가기 카드 자리와 같다 -->
           <SkxErrorState
-            v-if="!workView && workLoadFailure"
-            :kind="workLoadFailure.kind"
+            v-if="!workView && (workLoadFailure || workLoadRetrying)"
+            :kind="workLoadFailure?.kind ?? 'error'"
             :title="WORK_LOAD_FAILED"
-            :message="workLoadFailure.reason"
-            @retry="work.load()"
+            :message="workLoadFailure?.reason ?? ''"
+            :busy="workLoadRetrying"
+            @retry="retryWorkLoad"
           />
           <div v-else-if="!workView" class="rs-card rs-card--wait" role="status">
             <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
@@ -303,7 +306,7 @@
 
     <Teleport to="body">
       <Transition name="skx-toast">
-        <div v-if="toast" class="skx-toast">{{ toast }}</div>
+        <div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>
       </Transition>
     </Teleport>
   </div>
@@ -809,12 +812,15 @@ function researchUrl(jobId: string): string {
 }
 
 async function runExport(doc: ReportDoc, format: ReportExportFormat): Promise<void> {
+  // 이미 내보내는 중이면 exportDocx·printPdf 가 아무 일 없이 돌아온다 — 여기서 먼저 막아 실패 안내가 헛돌지 않게 한다
+  if (exporting.value) return;
   try {
     if (format === "docx") {
       await exportDocx(doc);
       showToast("Word 문서를 내려받았습니다");
-    } else {
-      await printPdf(doc);
+    } else if (!(await printPdf(doc))) {
+      // 인쇄 창이 열리지 않았다(정책 차단·인앱 브라우저) — 조용히 성공으로 두지 않는다
+      showToast(REPORT_EXPORT_FAILED.pdf);
     }
   } catch (e) {
     console.warn("[research] 내보내기 실패", e);

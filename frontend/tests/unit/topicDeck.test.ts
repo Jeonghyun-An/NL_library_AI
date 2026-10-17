@@ -159,7 +159,11 @@ describe("cardStatus", () => {
     expect(cardStatus(item({ generation: null }), concepts("done"))).toBe("waiting");
     expect(cardStatus(item({ generation: null }), concepts("canceled"))).toBe("waiting");
     expect(cardStatus(item({ generation: null }), concepts("failed"))).toBe("blocked");
-    expect(cardNote("blocked")).toBe("키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만듭니다");
+    expect(cardNote("blocked")).toBe(
+      "키워드를 만들지 못해 카드가 들어가지 않았어요.\n키워드를 다시 부르거나 [이 키워드로 다시 만들기]를 누르면 카드를 만들어요.",
+    );
+    // 예시 연구는 버튼이 꺼져 있다 — '누르면…' 문장은 뺀다
+    expect(cardNote("blocked", true)).toBe("키워드를 만들지 못해 카드가 들어가지 않았어요.");
     // 씨앗 자리가 아닌 빈 카드는 지금처럼 failed, 근거 부족은 그대로, 생성이 있으면 생성 상태가 먼저다
     expect(cardStatus(item({ generation: null, slot: null, origin: "other" }), concepts("done"))).toBe("failed");
     expect(cardStatus(item({ generation: null, slot: null, origin: "other" }), concepts("failed"))).toBe("failed");

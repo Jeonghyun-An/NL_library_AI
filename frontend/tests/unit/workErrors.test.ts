@@ -164,6 +164,12 @@ describe("단계 화면 — 다시 읽기 실패·쓰기 오류·느린 쓰기�
     expect(tpl).toMatch(new RegExp(`<SkxErrorState\\s+v-if="![a-z]+ && loadFailure"\\s+:kind="loadFailure.kind"\\s+title="${title}"\\s+:message="loadFailure.reason"`));
   });
 
+  it.each(steps)("%s: [다시 시도]로 다시 읽는 동안 블록이 버튼째 사라지지 않고 busy(오류는 성공할 때만 비운다)", (file, kinds) => {
+    const main = kinds.slice(kinds.lastIndexOf(", ") + 2).replace(/"/g, "");
+    const tpl = template(read(file));
+    expect(tpl).toMatch(new RegExp(`:message="loadFailure\\.reason"\\s+:busy="work\\.reloading\\('${main}'\\)"`));
+  });
+
   it.each(steps)("%s: 빨간 안내 줄(rs-alert role=alert)·옛 오류 카드를 쓰지 않는다", (file) => {
     const tpl = template(read(file));
     expect(tpl).not.toMatch(/rs-alert"\s+role="alert"|rs-card--error|class="rs-card rs-state"/);
@@ -209,13 +215,40 @@ describe("연구 화면([id].vue) — 이어간 연구 조회 실패·연결 끊
     );
   });
 
-  it("단계 화면의 첫 조회 실패도 공통 상태 블록으로", () => {
-    expect(tpl).toMatch(/<SkxErrorState\s+v-if="!workView && workLoadFailure"[\s\S]*?:title="WORK_LOAD_FAILED"[\s\S]*?@retry="work\.load\(\)"/);
+  it("단계 화면의 첫 조회 실패도 공통 상태 블록으로 — 다시 읽는 동안(load 가 오류 칸을 비운다)에도 자리를 지키고 busy", () => {
+    expect(tpl).toMatch(
+      /<SkxErrorState\s+v-if="!workView && \(workLoadFailure \|\| workLoadRetrying\)"[\s\S]*?:title="WORK_LOAD_FAILED"[\s\S]*?:busy="workLoadRetrying"\s+@retry="retryWorkLoad"/,
+    );
   });
 
   it("내보내기 실패 토스트는 공통 문구(해요체)를 쓴다", () => {
     expect(page).toContain("showToast(REPORT_EXPORT_FAILED[format]);");
     expect(page).not.toContain("Word 문서를 만들지 못했습니다");
+  });
+});
+
+describe("작업대 — 버튼이 초점을 잃지 않게·할 수 없는 일을 권하지 않게", () => {
+  it("보고서 빈 상태의 [보고서 만들기]는 쓰는 동안 disabled 대신 aria-disabled(누름은 makeOutline 이 무시한다)", () => {
+    const src = read("components/work/ProposalStep.vue");
+    const tpl = template(src);
+    expect(tpl).toMatch(
+      /class="skx-state__action"\s+:aria-disabled="busy \? 'true' : undefined"\s+:aria-busy="busy \? 'true' : undefined"\s+@click="makeOutline"/,
+    );
+    expect(tpl).not.toMatch(/class="skx-state__action" :disabled/);
+    expect(src).toMatch(/function makeOutline\(\): void \{\s*\/\/[^\n]*\n\s*if \(busy\.value\) return;/);
+  });
+
+  it("예시 연구(읽기 전용)의 실패한 절은 '다시 시도하거나…'를 권하지 않는다 — 버튼이 없다", () => {
+    const src = read("components/work/ProposalSection.vue");
+    expect(src).toContain("return props.readOnly ? `${head}.` : `${head}.\\n다시 시도하거나 잠시 뒤 다시 써 주세요.`;");
+  });
+
+  it("주제 카드 [직접 고치기] 저장 뒤 초점 — 쓰기가 끝나(busy 풀림) 단추가 풀린 뒤 그 단추로", () => {
+    const src = read("components/work/TopicCard.vue");
+    expect(src).toMatch(/watch\(editing, \(now\) => \{\s*focusOpenerLater = !now;/);
+    expect(src).toMatch(/\(\) => props\.busy,\s*\(busy\) => \{\s*if \(!busy && focusOpenerLater\) void nextTick\(focusOpener\);/);
+    expect(src).toContain("if (btn?.disabled) return;");
+    expect(src).toContain("cardNote(status.value, props.readOnly)");
   });
 });
 

@@ -156,10 +156,12 @@ class TestApiError:
 
     def test_queue_message_matches_deep_research(self):
         # api.research 는 redis·relay 를 물고 와 여기서 import 하지 않는다(test_research_api 가 대역 위에서 올린다) —
-        # 그 503 문구가 같은 글자인지만 본다
+        # 그 503 이 문구를 따로 적지 않고 이 공장(queue_unavailable)을 쓰는지만 본다
         from pathlib import Path
         source = (Path(__file__).resolve().parents[1] / "api" / "research.py").read_text(encoding="utf-8")
-        assert f'detail="{QUEUE_UNAVAILABLE_DETAIL}"' in source
+        body = source.split("def _broker_unavailable()", 1)[1].split("\ndef ", 1)[0]
+        assert "return queue_unavailable()" in body
+        assert "작업 큐에 연결하지" not in source
 
 
 # ── 가드 ─────────────────────────────────────────────────

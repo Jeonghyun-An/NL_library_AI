@@ -311,9 +311,9 @@ const failedText = computed(() => {
       : section.value
         ? "이 절을 다시 쓰지 못했어요"
         : "이 절을 쓰지 못했어요";
-  return section.value?.paragraphs.length
-    ? `${head} — 앞서 쓴 문단은 그대로 두었어요.`
-    : `${head}.\n다시 시도하거나 잠시 뒤 다시 써 주세요.`;
+  if (section.value?.paragraphs.length) return `${head} — 앞서 쓴 문단은 그대로 두었어요.`;
+  // 예시 연구는 읽기 전용이라 [다시 시도]도 쓰기 버튼도 없다 — 할 수 없는 일을 권하지 않는다
+  return props.readOnly ? `${head}.` : `${head}.\n다시 시도하거나 잠시 뒤 다시 써 주세요.`;
 });
 
 function retryFailed(): void {

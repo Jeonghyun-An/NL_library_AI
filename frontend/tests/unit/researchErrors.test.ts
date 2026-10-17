@@ -65,9 +65,25 @@ describe("researchErrorMessage", () => {
     expect(researchErrorMessage(fetchError(422, "파라미터 max_rounds 는 int 여야 한다: 'x'"), "실패")).toBe("실패");
   });
 
-  it("429·503 은 잠시 뒤 다시 안내한다", () => {
+  it("429 는 잠시 뒤 다시 안내한다", () => {
     expect(researchErrorMessage(fetchError(429, "x"), "실패")).toBe("요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.");
-    expect(researchErrorMessage(fetchError(503, "작업 큐"), "실패")).toBe("요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.");
+  });
+
+  it("503 은 서버가 지은 깨끗한 사유(작업 큐에 넣지 못함)를 먼저, 없거나 개발자용이면 무엇을 못 했는지 뒤에 몰림 이유", () => {
+    // app/core/errors.py QUEUE_UNAVAILABLE_DETAIL — 승인·재시도·시작이 작업 큐에 닿지 못했다(api/research.py _broker_unavailable)
+    const queue = "작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요";
+    expect(researchErrorMessage(fetchError(503, queue), "계획을 승인하지 못했어요")).toBe(queue);
+    expect(researchErrorMessage(fetchError(503, queue), "")).toBe(queue);
+    expect(researchErrorMessage(fetchError(503), "계획을 승인하지 못했어요"))
+      .toBe("계획을 승인하지 못했어요 — 요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.");
+    expect(researchErrorMessage(fetchError(503, "Service Unavailable"), "실패"))
+      .toBe("실패 — 요청이 몰려 있어요.\n잠시 뒤 다시 시도해 주세요.");
+    // code 가 있으면(검색 기반·원문 저장소 장애) 화면 문구가 먼저다
+    const search = Object.assign(new Error("HTTP 503"), {
+      status: 503,
+      data: { detail: "검색 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요", code: "search_unavailable" },
+    });
+    expect(researchErrorMessage(search, "실패")).toBe("실패 — 검색 서버가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.");
   });
 
   it("409 는 서버의 깨끗한 사유를, 사유가 없거나 개발자용(상태 값이 섞임)이면 대체 문구를 쓴다", () => {

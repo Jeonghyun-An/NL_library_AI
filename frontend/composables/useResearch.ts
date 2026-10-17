@@ -106,7 +106,8 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
   const view = shallowRef<ResearchView | null>(null);
   const loading = ref(false);
   const notFound = ref(false);
-  // 첫 로드 실패(404·422 밖) — kind 는 상태 블록(SkxErrorState)의 모양, message 는 제목('연구를 불러오지 못했어요') 아래 이유(없으면 빈 글)
+  // 첫 로드 실패(404·422 밖) — kind 는 상태 블록(SkxErrorState)의 모양, message 는 제목('연구를 불러오지 못했어요') 아래 이유(없으면 빈 글).
+  // [다시 불러오기] 로 다시 읽는 동안에는 지우지 않는다 — 상태 블록이 버튼째 사라지면 초점이 body 로 떨어진다. 블록은 loading 으로 busy 를 보인다
   const loadError = ref<UserFacingError | null>(null);
   const actionError = ref("");
   // 같은 브라우저의 다른 딥리서치에 막힌 승인·재시도(429 browser_active)면 그 연구 id — 화면이 링크를 단다.
@@ -164,7 +165,6 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
     view.value = null;
     loading.value = true;
     notFound.value = false;
-    loadError.value = null;
     syncFailed.value = false;
     drops.value = 0;
     closeChecks = null;
@@ -175,14 +175,17 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
     try {
       const job = await research.get(toValue(jobId));
       if (gen !== generation) return;
+      loadError.value = null;
       view.value = initialResearchView(job);
       connect();
     } catch (e) {
       if (gen !== generation) return;
       view.value = null;
       const status = httpStatus(e);
-      if (status === 404 || status === 422) notFound.value = true;
-      else loadError.value = { kind: errorKind(e), message: researchErrorMessage(e, "") };
+      if (status === 404 || status === 422) {
+        loadError.value = null;
+        notFound.value = true;
+      } else loadError.value = { kind: errorKind(e), message: researchErrorMessage(e, "") };
     } finally {
       if (gen === generation) loading.value = false;
     }
@@ -195,6 +198,7 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
     disconnect();
     view.value = null;
     notFound.value = true;
+    loadError.value = null;
     syncFailed.value = false;
     drops.value = 0;
     closeChecks = null;
@@ -218,10 +222,13 @@ export function useResearchJob(jobId: MaybeRefOrGetter<string>) {
       lastSyncMessage = "";
       if (syncError && actionError.value === syncError) actionError.value = "";
       syncError = "";
-      // 끝나지 않은 잡은 다시 붙고, 붙어 열려야(onopen) 연결 띠가 걷힌다. 끝난 잡은 스트림이 필요 없어 실패 수를 지운다 — 남기면
-      // 재시도로 다시 돌 때 붙기도 전에 '다시 연결하는 중'이 선다
-      if (!isTerminalStatus(view.value.status)) connect();
-      else {
+      // 끝나지 않은 잡은 다시 붙고, 붙어 열려야(onopen) 연결 띠가 걷힌다. 스트림이 이미 열려 있으면(재동기화 GET 만 실패했던 것 —
+      // 실패 수가 쌓였어도 onopen 은 다시 오지 않는다) 여기서 지운다 — 남기면 붙어 있는데도 띠가 선다. 끝난 잡은 스트림이 필요 없어
+      // 실패 수를 지운다 — 남기면 재시도로 다시 돌 때 붙기도 전에 '다시 연결하는 중'이 선다
+      if (!isTerminalStatus(view.value.status)) {
+        connect();
+        if (source && source.readyState === EventSource.OPEN) drops.value = 0;
+      } else {
         drops.value = 0;
         awaitSynthClose(view.value);
       }

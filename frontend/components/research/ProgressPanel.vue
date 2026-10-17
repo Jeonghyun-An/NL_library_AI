@@ -57,8 +57,9 @@
             {{ stoppedSubq.started ? "여기서 멈췄어요" : "이 하위질문을 시작하기 전에 멈췄어요" }}
           </p>
           <!-- 부분 실패의 이유 — 탐색 중에는 본문 과정(ResearchLive)이 보이고, 탐색이 끝난 뒤(작성 중·완료·다시 열기)·멈춘 연구에는
-               여기서 보인다. 단계 result.error 는 예외 원문이라 알아보는 사유만 해요체로 붙인다(subqFailureText) -->
-          <SkxInlineError v-if="sq.status === 'failed'" class="rs-subq__error" :message="subqFailureText(sq.error)" />
+               여기서 보인다. 단계 result.error 는 예외 원문이라 알아보는 사유만 해요체로 붙인다(subqFailureText). 지난 실패를 화면을
+               열 때마다 다시 그리는 자리라 status — alert 면 낭독기가 하던 말을 끊고 하위질문마다 거듭 읽는다 -->
+          <SkxInlineError v-if="sq.status === 'failed'" class="rs-subq__error" role="status" :message="subqFailureText(sq.error)" />
           <ol v-if="sq.rounds.length" class="rs-rounds">
             <li v-for="r in sq.rounds" :key="r.round" class="rs-round" :class="{ 'is-recheck': !!r.nextQuery }">
               <p class="rs-round__line">

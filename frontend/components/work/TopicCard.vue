@@ -140,7 +140,7 @@ const emit = defineEmits<{ pick: []; edit: [body: TopicPatch]; retry: [genId: nu
 const status = computed(() => cardStatus(props.item, props.conceptsGen));
 const pending = computed(() => status.value === "waiting" || status.value === "making");
 const card = computed(() => (status.value === "ready" ? props.item.card : null));
-const note = computed(() => cardNote(status.value));
+const note = computed(() => cardNote(status.value, props.readOnly));
 const pickable = computed(() => canPick(props.item));
 const chips = computed(() => (card.value ? evidenceChips(card.value, props.papers) : []));
 // 제목·질문에 [F#] 밖 숫자가 있으면 '확인 필요' — 서버가 센 값(card.checks.numbers)을 계획서 문단과 같은 모양으로 보인다
@@ -206,10 +206,34 @@ const draftQuestion = ref("");
 const problem = ref<string | null>(null);
 
 // 열면 제목 칸으로, 닫으면 [직접 고치기]로 포커스를 옮긴다 — 여는 버튼과 칸이 v-if 로 번갈아 사라져 그대로 두면
-// 포커스가 body 로 떨어진다(운영 확인 2026-10-08)
+// 포커스가 body 로 떨어진다(운영 확인 2026-10-08). [저장]으로 닫히면 그때는 쓰기가 아직 돌아(busy) [직접 고치기]가 disabled 라
+// 초점을 받지 못한다 — busy 가 풀린 뒤 옮긴다(focusOpenerLater). 그새 사용자가 카드 밖으로 옮긴 초점은 빼앗지 않는다
+let focusOpenerLater = false;
+
+function focusOpener(): void {
+  const btn = rootEl.value?.querySelector<HTMLButtonElement>("[data-edit-open]");
+  // 단추가 아직 잠겨 있으면 busy 가 풀릴 때 다시 본다. 단추가 없으면(카드가 기다리는 자리로 바뀜) 그만둔다
+  if (btn?.disabled) return;
+  focusOpenerLater = false;
+  const active = document.activeElement;
+  if (!btn || (active && active !== document.body && !rootEl.value?.contains(active))) return;
+  btn.focus();
+}
+
 watch(editing, (now) => {
-  void nextTick(() => rootEl.value?.querySelector<HTMLElement>(now ? "[data-edit-box]" : "[data-edit-open]")?.focus());
+  focusOpenerLater = !now;
+  void nextTick(() => {
+    if (now) rootEl.value?.querySelector<HTMLElement>("[data-edit-box]")?.focus();
+    else focusOpener();
+  });
 });
+
+watch(
+  () => props.busy,
+  (busy) => {
+    if (!busy && focusOpenerLater) void nextTick(focusOpener);
+  },
+);
 
 function startEdit(): void {
   draftTitle.value = props.item.card?.title ?? "";
