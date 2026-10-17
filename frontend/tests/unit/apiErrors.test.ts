@@ -329,6 +329,7 @@ describe("apiErrorMessage — (0) 백엔드 오류 code 의 문구(CODE_MESSAGES
       internal_error: "서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.",
       search_unavailable: "검색 서버가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
       storage_unavailable: "원문 저장소가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
+      queue_unavailable: "작업 대기열이 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
       not_found: "자료를 찾을 수 없어요",
       empty_answer: "답을 만들지 못했어요",
       retrieval_failed: "자료 내용을 읽지 못했어요.\n잠시 뒤 다시 시도해 주세요.",
@@ -342,6 +343,8 @@ describe("apiErrorMessage — (0) 백엔드 오류 code 의 문구(CODE_MESSAGES
     expect(apiErrorMessage(codedError(500, "internal_error"), "실패")).toBe(`실패 — ${CODE_MESSAGES.internal_error}`);
     expect(apiErrorMessage(codedError(503, "storage_unavailable", "원문 저장소가 잠시 응답하지 않아요."), "원문을 불러오지 못했어요"))
       .toBe(`원문을 불러오지 못했어요 — ${CODE_MESSAGES.storage_unavailable}`);
+    expect(apiErrorMessage(codedError(503, "queue_unavailable", "작업 대기열이 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"), "적재를 시작하지 못했어요"))
+      .toBe("적재를 시작하지 못했어요 — 작업 대기열이 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.");
     // 서버의 detail 이 무엇이든(영문·개발자용 포함) code 문구만 보인다
     expect(apiErrorMessage(codedError(500, "internal_error", "Internal Server Error"), "")).toBe(CODE_MESSAGES.internal_error);
   });

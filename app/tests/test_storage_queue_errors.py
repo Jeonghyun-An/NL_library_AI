@@ -27,7 +27,7 @@ from pipeline_stub import stubbed_pipeline
 
 _FORGET = ("api.book", "api.admin")
 STORAGE_503 = {"detail": STORAGE_UNAVAILABLE_DETAIL, "code": "storage_unavailable"}
-QUEUE_503 = {"detail": QUEUE_UNAVAILABLE_DETAIL}
+QUEUE_503 = {"detail": QUEUE_UNAVAILABLE_DETAIL, "code": "queue_unavailable"}
 
 
 def _minio_down():

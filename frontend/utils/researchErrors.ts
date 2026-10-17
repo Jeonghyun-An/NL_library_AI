@@ -175,8 +175,8 @@ export function researchErrorMessage(err: unknown, fallback: string): string {
   const detail = data && typeof data === "object" && "detail" in data
     ? detailMessage((data as { detail: unknown }).detail)
     : null;
-  // 503 은 서버가 지은 '잠시 뒤' 안내(작업 큐 — core/errors.QUEUE_UNAVAILABLE_DETAIL)가 깨끗한 한글이면 그대로(apiErrorMessage 와 같다),
-  // 없으면 무엇을 못 했는지 뒤에 몰림 이유
+  // code 없는 503 은 서버가 지은 '잠시 뒤' 안내가 깨끗한 한글이면 그대로(apiErrorMessage 와 같다 — 작업 큐 503 은 이제
+  // queue_unavailable code 로 위에서 고른다), 없으면 무엇을 못 했는지 뒤에 몰림 이유
   if (status === 503) return detail ?? withReason(base, ERROR_HINTS.busy);
   if (status === 409 || status === 422) return detail ?? base;
   // 응답이 없으면 시간 초과(읽기 요청의 30초 제한 — 폴링 GET 이 여기에 걸린다)와 연결 실패를 나눠 알린다.

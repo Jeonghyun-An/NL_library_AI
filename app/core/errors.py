@@ -7,8 +7,8 @@
   Milvus 가 돌려준 그 밖의 오류(컬렉션 없음·스키마·자료형 불일치 등)는 대개 기다려도 낫지 않아 500(internal_error)이다
   (기다리면 낫는 서버 오류 — 재시작 직후 준비 안 됨·속도 제한 — 도 지금은 500 이 되는 한계는 is_search_outage 에 적었다).
 - 원문 저장소(MinIO) 연결 장애 → 503 {"detail": STORAGE_UNAVAILABLE_DETAIL, "code": "storage_unavailable"}
-- 작업 큐(Celery 브로커)에 넣지 못함 → 503 {"detail": QUEUE_UNAVAILABLE_DETAIL} — 딥리서치(api/research.py
-  _broker_unavailable)와 같은 문구·꼴이다.
+- 작업 큐(Celery 브로커)에 넣지 못함 → 503 {"detail": QUEUE_UNAVAILABLE_DETAIL, "code": "queue_unavailable"} — 딥리서치
+  (api/research.py _broker_unavailable)와 같은 문구·꼴이다. 화면은 code 로 제 문구를 고른다(서버 detail 은 옛 화면용).
 HTTPException·RequestValidationError 는 FastAPI 기본 처리 그대로다(ApiError 만 code 를 더 싣는다).
 
 장애 판별은 일시적인 연결·시간 초과·저장소/검색 서버 예외만 본다 — 코드 버그(TypeError·KeyError 등)까지 503 으로
@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 INTERNAL_ERROR_DETAIL = "서버에 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요"
 SEARCH_UNAVAILABLE_DETAIL = "검색 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"
 STORAGE_UNAVAILABLE_DETAIL = "원문 저장소가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"
-QUEUE_UNAVAILABLE_DETAIL = "작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요"
+QUEUE_UNAVAILABLE_DETAIL = "작업 대기열이 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"
 
 
 class ApiError(HTTPException):
@@ -50,8 +50,8 @@ def storage_unavailable() -> ApiError:
     return ApiError(503, STORAGE_UNAVAILABLE_DETAIL, "storage_unavailable")
 
 
-def queue_unavailable() -> HTTPException:
-    return HTTPException(status_code=503, detail=QUEUE_UNAVAILABLE_DETAIL)
+def queue_unavailable() -> ApiError:
+    return ApiError(503, QUEUE_UNAVAILABLE_DETAIL, "queue_unavailable")
 
 
 # ── 장애 판별 ─────────────────────────────────────────────

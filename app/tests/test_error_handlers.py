@@ -148,11 +148,10 @@ class TestApiError:
         s, m, q = errors.search_unavailable(), errors.storage_unavailable(), errors.queue_unavailable()
         assert (s.status_code, s.detail, s.code) == (503, SEARCH_UNAVAILABLE_DETAIL, "search_unavailable")
         assert (m.status_code, m.detail, m.code) == (503, STORAGE_UNAVAILABLE_DETAIL, "storage_unavailable")
-        assert (q.status_code, q.detail) == (503, QUEUE_UNAVAILABLE_DETAIL)
-        assert not hasattr(q, "code")      # 딥리서치 _broker_unavailable 과 같은 꼴(detail 만)
+        assert (q.status_code, q.detail, q.code) == (503, QUEUE_UNAVAILABLE_DETAIL, "queue_unavailable")
         assert SEARCH_UNAVAILABLE_DETAIL == "검색 서버가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"
         assert STORAGE_UNAVAILABLE_DETAIL == "원문 저장소가 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"
-        assert QUEUE_UNAVAILABLE_DETAIL == "작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요"
+        assert QUEUE_UNAVAILABLE_DETAIL == "작업 대기열이 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"
 
     def test_queue_message_matches_deep_research(self):
         # api.research 는 redis·relay 를 물고 와 여기서 import 하지 않는다(test_research_api 가 대역 위에서 올린다) —
@@ -161,7 +160,7 @@ class TestApiError:
         source = (Path(__file__).resolve().parents[1] / "api" / "research.py").read_text(encoding="utf-8")
         body = source.split("def _broker_unavailable()", 1)[1].split("\ndef ", 1)[0]
         assert "return queue_unavailable()" in body
-        assert "작업 큐에 연결하지" not in source
+        assert "작업 대기열이" not in source
 
 
 # ── 가드 ─────────────────────────────────────────────────
@@ -225,6 +224,7 @@ class TestGuards:
             with broker_outage_as_503("테스트"):
                 raise ConnectionRefusedError(111, "Connection refused")
         assert caught.value.status_code == 503 and caught.value.detail == QUEUE_UNAVAILABLE_DETAIL
+        assert caught.value.code == "queue_unavailable"
 
     def test_guards_let_code_bugs_through(self):
         for guard in (search_outage_as_503, storage_outage_as_503, broker_outage_as_503):

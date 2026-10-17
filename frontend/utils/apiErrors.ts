@@ -27,13 +27,15 @@ export const ERROR_HINTS = {
 /**
  * 백엔드 오류 code 별 문구 — 응답 본문 {detail, code}(HTTP)·DeepRead 스트림 {error, code} 의 code 로 고른다.
  * 서버 detail 은 쓰지 않는다 — 서버가 문구를 바꿔도 화면 말투(해요체)가 섞이지 않게 문구는 프런트가 가진다.
- * apiErrorMessage 는 HTTP 의 code(internal_error·search_unavailable·storage_unavailable)를 ERROR_HINTS 처럼 이유 자리에 쓴다
+ * apiErrorMessage 는 HTTP 의 code(internal_error·search_unavailable·storage_unavailable·queue_unavailable)를 ERROR_HINTS 처럼 이유 자리에 쓴다
  * (대체 문구 뒤 ' — '). not_found·empty_answer·retrieval_failed 는 DeepRead 스트림의 code 다
  */
 export const CODE_MESSAGES = {
   internal_error: "서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.",
   search_unavailable: "검색 서버가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
   storage_unavailable: "원문 저장소가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
+  // 작업 큐(Celery 브로커)에 넣지 못함 — 딥리서치 시작·승인·재시도, 연구 작업대·적재·관리 작업
+  queue_unavailable: "작업 대기열이 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
   not_found: "자료를 찾을 수 없어요",
   empty_answer: "답을 만들지 못했어요",
   retrieval_failed: "자료 내용을 읽지 못했어요.\n잠시 뒤 다시 시도해 주세요.",
