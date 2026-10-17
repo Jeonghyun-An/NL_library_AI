@@ -2,7 +2,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { HistoryEntry, HistoryKind } from "~/types/history";
 import { createHistoryState } from "~/utils/historyState";
-import { createHybridStore, createLocalStore, type HybridHistoryStore } from "~/utils/historyStore";
+import {
+  HistoryUnavailableError,
+  createHybridStore,
+  createLocalStore,
+  type HybridHistoryStore,
+} from "~/utils/historyStore";
 import {
   ID1,
   ID2,
@@ -366,6 +371,41 @@ describe("createHistoryState", () => {
     expect(state.entries.value).toBe(after);
     expect(store.put).not.toHaveBeenCalled();
     expect(store.patch).not.toHaveBeenCalled();
+  });
+
+  it("lookup 은 읽은 기록과 없는 기록(null)을 failed: false 로 돌려준다", async () => {
+    const { store, state } = setup();
+    store.rows.set(ID1, bookEntry(ID1, { snapshot: snap }));
+    expect(await state.lookup(ID1)).toEqual({ entry: expect.objectContaining({ id: ID1, snapshot: snap }), failed: false });
+    expect(await state.lookup(ID2)).toEqual({ entry: null, failed: false });
+  });
+
+  it("lookup 은 저장소가 던지면 failed: true 로 못 읽은 것을 알린다 — get 은 예전처럼 null", async () => {
+    const warn = vi.fn();
+    const server = fakeServer();
+    // 서버에는 있지만 닿지 못하고, 이 브라우저의 사본에는 없다
+    server.rows.set(ID1, bookEntry(ID1));
+    const hybrid = createHybridStore(server, createLocalStore(new MemoryStorage()));
+    const state = createHistoryState(() => hybrid, { now: () => NOW, genId: () => ID3, warn });
+    server.fail(networkError());
+    expect(await state.lookup(ID1)).toEqual({ entry: null, failed: true });
+    expect(warn).toHaveBeenCalledWith("기록을 읽지 못했다", expect.any(HistoryUnavailableError));
+    expect(await state.get(ID1)).toBeNull();
+    // 서버의 거절(4xx)도 읽지 못한 것이다 — 서버가 없다고 답한 것(404 → null)과 다르다
+    server.recover();
+    server.get.mockRejectedValueOnce(httpError(403));
+    expect(await state.lookup(ID1)).toEqual({ entry: null, failed: true });
+    expect(await state.lookup(ID2)).toEqual({ entry: null, failed: false });
+  });
+
+  it("upsertResearch 는 서버에 닿지 못해 기록을 읽지 못해도 잡 id 로 딥리서치 기록을 만든다(보낼 편지함에 줄 선다)", async () => {
+    const { server, state } = setupHybrid();
+    server.fail(networkError());
+    expect(await state.upsertResearch(ID2, "국내 AI 규제 연구 동향")).toMatchObject({ id: ID2, kind: "research", refId: ID2 });
+    expect(state.byKind("research").value.map((e) => e.id)).toEqual([ID2]);
+    server.recover();
+    await state.refresh("research");
+    expect(server.rows.has(ID2)).toBe(true);
   });
 
   it("upsertResearch 는 이미 목록에 있으면 서버에 묻지 않는다", async () => {

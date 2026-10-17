@@ -447,7 +447,7 @@ import {
 } from "~/utils/resultPaging";
 import { rememberListView, savedListView } from "~/composables/useListView";
 import { SPINNER_SRC } from "~/utils/brand";
-import { BOOK_REASON_TEXT, BOOK_SEARCH_TEXT, failureView, type StateView } from "~/utils/bookErrors";
+import { BOOK_HISTORY_TEXT, BOOK_REASON_TEXT, BOOK_SEARCH_TEXT, failureView, type StateView } from "~/utils/bookErrors";
 
 // ── 상수 ──────────────────────────────────────────────────
 // 예시 질의는 운영 검색으로 고른 것이다(2026-10-08 — 후보마다 상위 결과를 판정자 둘 이상이 따로 봤다).
@@ -900,7 +900,8 @@ async function restoreFromQuery() {
 
   const signal = beginRun();
   loading.value = false;
-  const entry = await historyApi.get(h);
+  // failed 는 기록을 읽지 못한 것이다(서버에 닿지 못했고 이 브라우저의 사본에도 없음 등) — 서버가 없다고 답한 것(entry null)과 가른다
+  const { entry, failed } = await historyApi.lookup(h);
   if (signal.aborted) return;
   if (entry && entry.kind !== "book") {
     // 다른 종류의 기록 id 가 이 주소로 왔다(옛 ?restore= 등) — 그 종류의 주소로 보낸다
@@ -912,17 +913,19 @@ async function restoreFromQuery() {
     applyBookEntry(book, signal);
     return;
   }
-  // 없거나 남의 기록이면 검색어로 새로 찾는다(D7). 결과만 비어 있던 내 기록은 같은 id 를 채운다
-  if (!book) void historyApi.refresh("book");
+  // 없거나 남의 기록이면 검색어로 새로 찾는다(D7). 결과만 비어 있던 내 기록은 같은 id 를 채운다. 못 읽었을 때도 검색어가 있으면 그것으로 찾는다.
+  // 목록을 새로 고치는 것은 서버가 없다고 답한 기록을 사이드바에서 걷으려는 것이라, 못 읽었을 때는 하지 않는다 — 없다는 것을 확인하지
+  // 못했으니 걷을 것이 없고, 같은 연결로 다시 읽어도 사본으로 답할 뿐이다(연결이 돌아오면 사이드바가 'online' 에 스스로 다시 읽는다)
+  if (!book && !failed) void historyApi.refresh("book");
   const retryQuery = q ?? book?.title;
   if (retryQuery) {
     showBookMode();
     await handleSearch(retryQuery, book ?? undefined);
     return;
   }
-  // 이 복원이 beginRun 으로 끊은 이유 스트림이 이어받을 화면 없이 끝나는 길 — '정리하는 중'으로 굳지 않게 매듭짓는다
+  // 이 복원이 beginRun 으로 끊은 이유 스트림이 이어받을 화면 없이 끝나는 길(없는 기록·못 읽은 기록 모두) — '정리하는 중'으로 굳지 않게 매듭짓는다
   settleReason();
-  showToast("없는 기록이라 목록을 새로 고쳤어요.");
+  showToast(failed ? BOOK_HISTORY_TEXT.unavailable : BOOK_HISTORY_TEXT.missing);
 }
 
 function applyBookEntry(entry: BookEntry, signal: AbortSignal) {
@@ -1040,7 +1043,7 @@ function resetReason() {
   keywordChips.value = [];
 }
 
-// 이 묶음이 끊겼는데 이어받는 새 묶음이 없을 때(없는 기록 토스트 등) 받는 중 표시가 남지 않게 매듭짓는다 —
+// 이 묶음이 끊겼는데 이어받는 새 묶음이 없을 때(없는 기록·못 읽은 기록 토스트 등) 받는 중 표시가 남지 않게 매듭짓는다 —
 // 받은 글이 있으면 끊긴 글, 없으면 실패. 끊기지 않은 스트림은 건드리지 않는다
 function settleReason() {
   if (reasonStatus.value !== "loading" || !reasonSignal?.aborted) return;

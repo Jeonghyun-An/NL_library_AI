@@ -88,6 +88,12 @@ describe("문구 — 해요체, 두 문장 이상은 문장마다 줄을 바꾼�
     expect(PAPER_STATE_TEXT.missingHistory).not.toContain("\n");
   });
 
+  it("토스트 문구(기록을 못 읽음)도 한 문장 — 없는 기록과 다른 이유(연결)를 말한다. 소장자료 랜딩의 같은 토스트와 같은 말", () => {
+    expect(PAPER_STATE_TEXT.historyUnavailable).toBe("연결이 불안정해 기록을 불러오지 못했어요.");
+    expect(PAPER_STATE_TEXT.historyUnavailable).not.toContain("\n");
+    expect(PAPER_STATE_TEXT.historyUnavailable).not.toBe(PAPER_STATE_TEXT.missingHistory);
+  });
+
   it("논문 404 설명은 주소 확인을 시키지 않고 사실만 — 앱 안 링크로 왔는데 카탈로그에 그 논문이 없다", () => {
     expect(PAPER_STATE_TEXT.detailNotFoundHint).toBe("목록에서 빠졌거나 아직 등록되지 않은 논문이에요.");
     expect(Object.values(PAPER_STATE_TEXT).join("\n")).not.toMatch(/주소가 맞는지/);
@@ -276,8 +282,18 @@ describe("논문 검색 — pages/papers/index.vue", () => {
     expect(src).toMatch(/if \(signal\.aborted\) return;\s*aiLoading\.value = false;\s*aiRefs\.value = refs;/);
   });
 
-  it("없는 기록 토스트로 끝나는 복원은 끊긴 요약을 '분석 중'으로 남기지 않는다", () => {
-    expect(src).toMatch(/settleAiSummary\(\);\s*showToast\(PAPER_STATE_TEXT\.missingHistory\);/);
+  it("주소의 기록(?h=)은 lookup 으로 읽어, 서버에 닿지 못해 못 읽은 것(failed)을 없는 기록과 가른다", () => {
+    expect(src).toContain("const { entry, failed } = await historyApi.lookup(h);");
+    expect(src).not.toContain("historyApi.get(");
+    // 못 읽었으면 '없는 기록'으로 보고 목록을 새로 고치지 않는다. 다시 찾을 검색어가 있으면 예전처럼 그것으로 찾는다
+    expect(src).toContain('if (!paper && !failed) void historyApi.refresh("paper");');
+    expect(src).toMatch(/const retryQuery = q \?\? paper\?\.title;\s*if \(retryQuery\) \{\s*await handleSearch\(retryQuery, paper \?\? undefined\);/);
+  });
+
+  it("없는 기록·못 읽은 기록 토스트로 끝나는 복원은 끊긴 요약을 '분석 중'으로 남기지 않는다", () => {
+    expect(src).toMatch(
+      /settleAiSummary\(\);\s*showToast\(failed \? PAPER_STATE_TEXT\.historyUnavailable : PAPER_STATE_TEXT\.missingHistory\);/,
+    );
     expect(src).toMatch(/function settleAiSummary\(\) \{\s*if \(!aiLoading\.value\) return;\s*aiLoading\.value = false;\s*aiError\.value = AI_SUMMARY_FAILED;/);
   });
 

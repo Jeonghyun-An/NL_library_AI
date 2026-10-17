@@ -8,6 +8,7 @@ import { CODE_MESSAGES, DEFAULT_ERROR_MESSAGE, ERROR_HINTS, apiErrorMessage, cha
 import * as bookErrors from "~/utils/bookErrors";
 import {
   BOOK_DETAIL_TEXT,
+  BOOK_HISTORY_TEXT,
   BOOK_REASON_TEXT,
   BOOK_SEARCH_TEXT,
   SCENARIO_TEXT,
@@ -15,6 +16,7 @@ import {
   reasonFailureText,
   scenarioAiFailed,
 } from "~/utils/bookErrors";
+import { PAPER_STATE_TEXT } from "~/utils/paperErrors";
 import { SEARCH_QUERY_MAX } from "~/utils/searchInput";
 
 const root = resolve(__dirname, "../..");
@@ -134,6 +136,7 @@ describe("상황별 추천 ai_failed", () => {
 describe("문구 — 해요체·문장마다 줄바꿈", () => {
   const copies: [string, string][] = [
     ...Object.entries(BOOK_SEARCH_TEXT),
+    ...Object.entries(BOOK_HISTORY_TEXT),
     ...Object.entries(BOOK_REASON_TEXT),
     ...Object.entries(BOOK_DETAIL_TEXT).filter(([k]) => k !== "home"),
     ...Object.entries(SCENARIO_TEXT).filter(([k]) => k !== "pickAnother"),
@@ -210,6 +213,27 @@ describe("랜딩·결과 — pages/index.vue", () => {
 
   it("토스트는 낭독기에도 알린다(role=status, aria-live=polite)", () => {
     expect(src).toContain('<div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>');
+  });
+
+  it("기록 복원 토스트는 한 문장(토스트는 한 줄 nowrap) — 없는 기록과 못 읽은 기록을 다른 말로, 논문 검색의 같은 토스트와 같은 말", () => {
+    expect(BOOK_HISTORY_TEXT.missing).toBe("없는 기록이라 목록을 새로 고쳤어요.");
+    expect(BOOK_HISTORY_TEXT.unavailable).toBe("연결이 불안정해 기록을 불러오지 못했어요.");
+    for (const text of Object.values(BOOK_HISTORY_TEXT)) expect(text).not.toContain("\n");
+    expect(BOOK_HISTORY_TEXT.missing).toBe(PAPER_STATE_TEXT.missingHistory);
+    expect(BOOK_HISTORY_TEXT.unavailable).toBe(PAPER_STATE_TEXT.historyUnavailable);
+  });
+
+  it("주소의 기록(?h=)은 lookup 으로 읽어, 서버에 닿지 못해 못 읽은 것(failed)을 없는 기록과 가른다", () => {
+    expect(src).toContain("const { entry, failed } = await historyApi.lookup(h);");
+    expect(src).not.toContain("historyApi.get(");
+    // 못 읽었으면 '없는 기록'으로 보고 목록을 새로 고치지 않는다. 다시 찾을 검색어가 있으면 예전처럼 그것으로 찾는다
+    expect(src).toContain('if (!book && !failed) void historyApi.refresh("book");');
+    expect(src).toMatch(
+      /const retryQuery = q \?\? book\?\.title;\s*if \(retryQuery\) \{\s*showBookMode\(\);\s*await handleSearch\(retryQuery, book \?\? undefined\);/,
+    );
+    // 끊긴 추천 이유 스트림을 매듭지은 뒤 이유에 맞는 토스트 — 문구는 utils/bookErrors 상수에서만
+    expect(src).toMatch(/settleReason\(\);\s*showToast\(failed \? BOOK_HISTORY_TEXT\.unavailable : BOOK_HISTORY_TEXT\.missing\);/);
+    expect(src).not.toContain("없는 기록이라");
   });
 
   it("0건(books 없음·0건 기록 복원)은 결과가 정해진 뒤에만 '검색 결과가 없어요' 빈 상태", () => {
