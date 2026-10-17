@@ -26,7 +26,7 @@ export interface DeepReadChatOptions {
 // 답을 받지 못한 질문과 보일 문구(ChatFailureCopy — 까닭별 화면 문구와 [다시 시도]를 보일지), 실패 전까지 받던 글(partial — 없으면 "").
 // 질문도 오류도 받던 글도 대화(messages·store)에는 남기지 않는다 — 남기면 오류 문구·끊긴 답이 답처럼 굳고 다음 질문의
 // history 로 모델에게까지 간다. 받던 글은 실패 안내에만 둔다: 다른 AI 글 화면(논문 검색·상세 요약·추천 이유)처럼 읽던 글이
-// 실패 순간 사라지지 않게. 다음 질문·[다시 시도]·논문 바꾸기가 failure 와 함께 걷는다
+// 실패 순간 사라지지 않게(공백뿐이면 ""). 다음 질문·[다시 시도]·논문 바꾸기가 failure 와 함께 걷는다
 export interface DeepReadFailure extends ChatFailureCopy {
   question: string;
   partial: string;
@@ -85,8 +85,9 @@ export function useDeepReadChat(opts: DeepReadChatOptions): DeepReadChat {
     if (!run) return;
     current = null;
     run.ctrl.abort();
+    // 공백뿐인 조각만 받았으면 받은 글이 없는 것과 같다(빈 줄 + 꼬리가 되지 않게)
     const got = streamingText.value;
-    run.list.push({ role: "assistant", content: got ? `${got}\n\n${CHAT_STOPPED_TEXT}` : CHAT_STOPPED_EMPTY });
+    run.list.push({ role: "assistant", content: got.trim() ? `${got}\n\n${CHAT_STOPPED_TEXT}` : CHAT_STOPPED_EMPTY });
     streamingText.value = "";
     isStreaming.value = false;
   }
@@ -170,11 +171,13 @@ export function useDeepReadChat(opts: DeepReadChatOptions): DeepReadChat {
       run.list.push({ role: "assistant", content: streamingText.value, ...(sources ? { sources } : {}) });
     } else {
       // 받던 글은 대화에 넣지 않고 질문도 대화에서 뺀다 — 오류가 답처럼 굳거나 다음 질문의 history 에 실리지 않게.
-      // 받던 글은 실패 안내에만 남긴다
+      // 받던 글은 실패 안내에만 남긴다. 공백뿐이면(새 서버의 빈 답 — 공백 조각 뒤 {error, code: empty_answer}) 받은 글이 없는
+      // 것으로 친다 — 화면이 빈 흐린 칸을 그리지 않게
       const at = run.list.lastIndexOf(asked);
       if (at >= 0) run.list.splice(at, 1);
       const copy = failed ?? { message: CHAT_ERROR_TEXT, retryable: true };
-      failure.value = { question: text, message: copy.message, retryable: copy.retryable, partial: streamingText.value };
+      const partial = streamingText.value.trim() ? streamingText.value : "";
+      failure.value = { question: text, message: copy.message, retryable: copy.retryable, partial };
     }
     streamingText.value = "";
     isStreaming.value = false;

@@ -2,8 +2,10 @@
 
 화면(프론트)이 읽는 계약:
 - 라우트가 잡지 않은 예외 → 500 {"detail": INTERNAL_ERROR_DETAIL, "code": "internal_error"}. 스택은 로그에만 남긴다 —
-  전에는 Starlette 기본 응답 'Internal Server Error'(JSON 아닌 글)가 그대로 화면에 갔다.
+  전에는 Starlette 기본 응답 'Internal Server Error'(JSON 아닌 글)가 그대로 화면에 갔다. 응답 머리가 이미 나간 뒤(스트리밍
+  응답 도중)의 예외는 500 을 보낼 수 없어 응답이 중간에 끊긴다 — 로그도 그렇게 따로 적는다.
 - 검색 기반(Milvus·gRPC·연결/시간 초과) 연결 장애 → 503 {"detail": SEARCH_UNAVAILABLE_DETAIL, "code": "search_unavailable"}.
+  검색 경로의 Milvus 호출은 시간 한도(MILVUS_SEARCH_TIMEOUT — indexer.search_chunks)가 있어 Milvus 가 죽어도 그 안에 이리 온다.
   Milvus 가 돌려준 그 밖의 오류(컬렉션 없음·스키마·자료형 불일치 등)는 대개 기다려도 낫지 않아 500(internal_error)이다
   (기다리면 낫는 서버 오류 — 재시작 직후 준비 안 됨·속도 제한 — 도 지금은 500 이 되는 한계는 is_search_outage 에 적었다).
 - 원문 저장소(MinIO) 연결 장애 → 503 {"detail": STORAGE_UNAVAILABLE_DETAIL, "code": "storage_unavailable"}
@@ -127,7 +129,9 @@ def _status_code(exc: BaseException):
 
 def is_search_outage(exc: BaseException) -> bool:
     """검색 기반에 잠시 닿지 못한 것인가 — '잠시 뒤 다시'로 나을 연결 장애만 본다:
-    - 내장 ConnectionError·TimeoutError, httpx 전송 오류(임베딩 서버 연결·시간 초과)
+    - 내장 ConnectionError·TimeoutError, httpx 전송 오류(연결·시간 초과). 임베딩은 같은 프로세스의 BGE-M3(FlagEmbedding)라
+      httpx 를 쓰지 않고, 지금 검색 가드 안에서 httpx 로 부르는 단계(질의 재작성·메타데이터 필터 LLM)는 실패를 스스로 잡고
+      원문 질의로 넘어가 여기까지 오지 않는다 — 가드 안에 HTTP 로 부르는 의존이 생길 때를 위한 것이다
     - Milvus 연결 실패 — MilvusUnavailableException·ConnectError, 연결 실패 code(2) 의 MilvusException
     - grpc UNAVAILABLE·DEADLINE_EXCEEDED — 날 grpc.RpcError(pymilvus 는 기한 초과를 재시도 없이 그대로 다시 던진다)이든,
       재시도 끝에 pymilvus 가 감싼 MilvusException 이든. 채널 대기 시간 초과(grpc.FutureTimeoutError)도 연결 장애다
@@ -253,16 +257,49 @@ async def _api_error_handler(request: Request, exc: ApiError) -> JSONResponse:
                         headers=getattr(exc, "headers", None))
 
 
+# 응답 머리(http.response.start)가 나갔는지 적어 두는 scope 키 — _ResponseStartMarker 가 적고 _unhandled_error_handler 가 읽는다
+_RESPONSE_STARTED = "skx.response_started"
+
+
+class _ResponseStartMarker:
+    """응답 머리가 나가면 scope 에 _RESPONSE_STARTED 를 적는 ASGI 미들웨어. Starlette 의 ServerErrorMiddleware 는 응답이 이미
+    시작된 뒤(스트리밍 도중)의 예외에도 전역 처리기를 부르고, 그 500 응답은 보내지 않는다(0.38 확인) — 처리기는 그것을 모르니
+    '→ 500' 으로 적었다. 이 미들웨어는 ServerErrorMiddleware 바로 안쪽에 서서 같은 scope 를 받으므로, 처리기가 Request.scope 로
+    읽을 수 있다. 메시지는 손대지 않고 그대로 넘긴다."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def _send(message):
+            if message["type"] == "http.response.start":
+                scope[_RESPONSE_STARTED] = True
+            await send(message)
+
+        await self.app(scope, receive, _send)
+
+
 async def _unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
     # Starlette 의 ServerErrorMiddleware 는 이 응답을 보낸 뒤에도 예외를 다시 올려 uvicorn 도 스택을 남긴다 — 여기서는
-    # 어느 요청이었는지(메서드·경로)를 함께 남긴다. 쿼리 문자열은 남기지 않는다(검색어 등 사용자 입력)
-    log.error("처리하지 못한 예외 → 500: %s %s — %s: %s", request.method, request.url.path,
-              type(exc).__name__, exc, exc_info=exc)
+    # 어느 요청이었는지(메서드·경로)를 함께 남긴다. 쿼리 문자열은 남기지 않는다(검색어 등 사용자 입력).
+    # 응답 머리가 이미 나갔으면 이 500 은 보내지지 않고 화면은 받던 응답이 중간에 끊긴다 — 로그를 그렇게 가른다
+    if request.scope.get(_RESPONSE_STARTED):
+        log.error("응답을 보내던 중 처리하지 못한 예외 → 응답이 중간에 끊김(상태 코드는 이미 나갔다): %s %s — %s: %s",
+                  request.method, request.url.path, type(exc).__name__, exc, exc_info=exc)
+    else:
+        log.error("처리하지 못한 예외 → 500: %s %s — %s: %s", request.method, request.url.path,
+                  type(exc).__name__, exc, exc_info=exc)
     return JSONResponse({"detail": INTERNAL_ERROR_DETAIL, "code": "internal_error"}, status_code=500)
 
 
 def install_error_handlers(app: FastAPI) -> None:
     """ApiError → {"detail", "code"}, 잡지 않은 예외 → 500 internal_error. HTTPException·RequestValidationError 의 기본
-    처리기는 건드리지 않는다 — ApiError 처리기는 하위 클래스라 Starlette 가 MRO 순으로 먼저 고른다."""
+    처리기는 건드리지 않는다 — ApiError 처리기는 하위 클래스라 Starlette 가 MRO 순으로 먼저 고른다.
+    응답이 시작된 뒤의 예외를 로그에서 가르려고 _ResponseStartMarker 를 단다(앱이 돌기 전에 불러야 한다 — main.py 는 모듈 머리)."""
     app.add_exception_handler(ApiError, _api_error_handler)
     app.add_exception_handler(Exception, _unhandled_error_handler)
+    app.add_middleware(_ResponseStartMarker)

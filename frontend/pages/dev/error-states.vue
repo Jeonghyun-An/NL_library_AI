@@ -4,8 +4,9 @@
      표시는 모두 실제 컴포넌트다(SkxErrorPage·SkxErrorState·SkxInlineError·SkxConnectionBanner·SkxCharCount) — 복제 마크업이 없어
      style_skovix.css 의 '[S] 공통 오류·빈 상태' 구역을 고치면 이 페이지와 실제 화면이 함께 바뀐다.
      문구도 여기 새로 짓지 않는다 — 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage·researchFailedMessage)에 본보기 오류를 넣어
-     만든 글과 상수(ERROR_PAGE_TEXT·CONNECTION_HINTS·AI_SUMMARY_FAILED·charLimitMessage·RESEARCH_STATE_TEXT)를 그대로 보여 문구가 바뀌면 같이 바뀐다.
-     화면마다 다른 대체 문구('검색하지 못했어요' 등)와 실제 화면에 아직 없는 빈 연구 안내만 본보기로 적는다.
+     만든 글과 상수(ERROR_PAGE_TEXT·CONNECTION_HINTS·AI_SUMMARY_FAILED·charLimitMessage·RESEARCH_STATE_TEXT·PAPER_STATE_TEXT·
+     WORK_SOURCES_FAILED·SIDEBAR_NOTICE)를 그대로 보여 문구가 바뀌면 같이 바뀐다. 상태 블록의 제목('검색하지 못했어요' 등)도 실제 화면의
+     상수를 읽는다 — 이 페이지에서 새로 짓는 글은 실제 화면에 아직 없는 빈 연구 안내뿐이다.
      항목마다 '생기는 곳'은 그 모양이 실제로 나오는 대표 화면이다(공통 컴포넌트를 쓰는 곳 — 2~4곳).
      ③ 딥리서치 상태는 후배 시안의 네 변형(실패·취소·찾을 수 없음·결과 없음)을 실제 동작(pages/research/[id].vue·api/research.py)에 맞춘 것 —
      딥리서치 화면과 같은 상수·함수를 읽고, 항목마다 '시안 대비'에 바꾼 점을 적는다.
@@ -213,14 +214,15 @@
         </div>
       </section>
 
-      <!-- ⑥ 글자 수 — 세 상태 + 직접 쳐 보는 입력창 -->
+      <!-- ⑥ 글자 수 — 세 상태 + quiet(평소엔 숨김) + 직접 쳐 보는 입력창(quiet 켜고 끄기) -->
       <section class="dev-gallery__section" aria-labelledby="dev-sec-count">
         <h2 id="dev-sec-count" class="dev-gallery__h2">⑥ 글자 수 (SkxCharCount)</h2>
+        <p class="dev-gallery__note">{{ COUNT_QUIET_NOTE }}</p>
         <div class="dev-gallery__grid">
-          <article v-for="n in COUNT_SAMPLES" :key="n.length" class="dev-item">
+          <article v-for="n in COUNT_SAMPLES" :key="n.name" class="dev-item">
             <h3 class="dev-item__name">{{ n.name }}</h3>
             <div class="dev-item__stage">
-              <SkxCharCount :length="n.length" :max="CHAR_MAX" />
+              <SkxCharCount :length="n.length" :max="CHAR_MAX" :quiet="n.quiet" />
             </div>
             <dl class="dev-item__meta">
               <dt>생기는 곳</dt>
@@ -244,7 +246,11 @@
                 :maxlength="CHAR_MAX"
                 :aria-describedby="countId"
               ></textarea>
-              <SkxCharCount :id="countId" :length="typed.length" :max="CHAR_MAX" />
+              <SkxCharCount :id="countId" :length="typed.length" :max="CHAR_MAX" :quiet="typedQuiet" />
+              <label class="dev-item__check">
+                <input v-model="typedQuiet" type="checkbox" />
+                quiet — 검색창·질문 칸처럼 한도 가까이부터만 보이기
+              </label>
               <div class="dev-item__tools">
                 <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" @click="fillTo(COUNT_NEAR_DEMO)">
                   {{ COUNT_NEAR_DEMO }}자로 맞추기
@@ -257,6 +263,7 @@
             </div>
             <p class="dev-gallery__note">
               입력창은 aria-describedby 로 글자 수를 가리킵니다. 한도에 닿으면 안내 글이 화면 낭독기에도 읽힙니다(aria-live="polite").
+              quiet 를 켜면 {{ COUNT_NEAR_DEMO }}자로 맞출 때 처음 나타납니다.
             </p>
           </article>
         </div>
@@ -290,9 +297,11 @@ import {
   researchFailedMessage,
   researchRetryLabel,
 } from "~/utils/researchErrors";
+import { PAPER_STATE_TEXT } from "~/utils/paperErrors";
 import { QUESTION_MAX } from "~/utils/researchInput";
+import { SIDEBAR_EMPTY, SIDEBAR_NOTICE } from "~/utils/sidebarGroups";
 import { THEMES, THEME_LABELS } from "~/utils/theme";
-import { WORK_STREAM_LOST_MS } from "~/utils/workErrors";
+import { WORK_SOURCES_FAILED, WORK_STREAM_LOST_MS } from "~/utils/workErrors";
 
 useHead({
   title: "오류 화면 모음 — SKOVIX",
@@ -413,7 +422,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "error",
     name: "일반 실패 + 다시 시도",
     kind: "error",
-    title: "논문 정보를 불러오지 못했어요",
+    title: PAPER_STATE_TEXT.detailFailed,
     retry: true,
     uses: [
       "딥리서치 — 멈춘 연구 카드(③ 실패 — kind 를 주지 않아 기본값)",
@@ -426,7 +435,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "network",
     name: "네트워크 끊김",
     kind: errorKind(SAMPLE.network),
-    title: "검색하지 못했어요",
+    title: PAPER_STATE_TEXT.searchFailed,
     message: reasonOf(SAMPLE.network),
     retry: true,
     uses: [
@@ -441,7 +450,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "timeout",
     name: "시간 초과",
     kind: errorKind(SAMPLE.timeout),
-    title: "관련 자료를 불러오지 못했어요",
+    title: PAPER_STATE_TEXT.relatedFailed,
     message: reasonOf(SAMPLE.timeout),
     retry: true,
     uses: [
@@ -455,7 +464,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "busy",
     name: "요청 몰림",
     kind: errorKind(SAMPLE.busy),
-    title: "검색하지 못했어요",
+    title: PAPER_STATE_TEXT.searchFailed,
     message: reasonOf(SAMPLE.busy),
     retry: true,
     uses: ["소장자료·논문 검색 결과 — 요청 몰림(429·503)", "논문·도서 상세·관련 자료 — 503", "딥리서치·연구 작업대 불러오기 — 503"],
@@ -465,7 +474,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "server",
     name: "서버 오류",
     kind: errorKind(SAMPLE.server),
-    title: "논문 정보를 불러오지 못했어요",
+    title: PAPER_STATE_TEXT.detailFailed,
     message: reasonOf(SAMPLE.server),
     retry: true,
     uses: ["논문·도서 상세 — 정보 읽기(5xx)", "소장자료·논문 검색 결과", "연구 작업대 — 주제 카드·참고문헌 후보·보고서 불러오기"],
@@ -475,7 +484,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "searchDown",
     name: "서버가 알린 장애(code)",
     kind: errorKind(SAMPLE.searchDown),
-    title: "검색하지 못했어요",
+    title: PAPER_STATE_TEXT.searchFailed,
     message: reasonOf(SAMPLE.searchDown),
     retry: true,
     uses: [
@@ -499,10 +508,11 @@ const STATE_SAMPLES: StateSample[] = [
     id: "empty",
     name: "결과 없음",
     kind: "empty",
-    title: "검색 결과가 없어요",
-    message: "다른 검색어로 다시 검색해 주세요.",
+    // 논문 검색 결과 0건의 실제 문구(소장자료 검색은 같은 모양에 설명 줄만 다르다 — BOOK_SEARCH_TEXT)
+    title: PAPER_STATE_TEXT.searchEmpty,
+    message: PAPER_STATE_TEXT.searchEmptyHint,
     uses: [
-      "소장자료·논문 검색 결과 0건",
+      "논문·소장자료 검색 결과 0건",
       "논문·도서 상세 — 관련 자료·AI 큐레이션 없음(compact)",
       "연구 작업대 — 후보 논문·주제 카드·목차 없음",
     ],
@@ -520,7 +530,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "retrying",
     name: "재시도 중",
     kind: errorKind(SAMPLE.network),
-    title: "검색하지 못했어요",
+    title: PAPER_STATE_TEXT.searchFailed,
     message: reasonOf(SAMPLE.network),
     retry: true,
     busy: true,
@@ -535,7 +545,7 @@ const STATE_SAMPLES: StateSample[] = [
     id: "compact",
     name: "좁은 칸 (compact)",
     kind: "error",
-    title: "원문 대목을 불러오지 못했어요",
+    title: WORK_SOURCES_FAILED,
     message: reasonOf(SAMPLE.network),
     compact: true,
     retry: true,
@@ -625,7 +635,8 @@ const STATE_SECTIONS = [
     note:
       "제목은 화면마다 다른 '무엇을 못 했는지', 설명 줄은 오류 규칙(apiErrorMessage)이 붙이는 이유입니다. 색은 아이콘 원에만 씁니다 — 실패 갈래는 경고 삼각형(위험색), " +
       "빈 결과는 문서+돋보기(청록), 찾을 수 없음은 돋보기+X(회색), 취소는 둥근 네모(포인트색). 여기 없는 kind(invalid·conflict·forbidden·unknown)는 " +
-      '실패 갈래([data-tone="error"])로 같은 모양이고, .skx-state--{kind} 로 따로 꾸밀 수 있습니다. 버튼 줄의 첫 버튼이 주 버튼(포인트색 채움)입니다.',
+      '실패 갈래([data-tone="error"])로 같은 모양이고, .skx-state--{kind} 로 따로 꾸밀 수 있습니다. 버튼 줄의 첫 버튼이 주 버튼(포인트색 채움)입니다. ' +
+      `사이드바의 빈 기록 안내(‘${SIDEBAR_EMPTY}’ — .skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아 공통 디자인 훅 밖입니다(디자인 대상 아님).`,
     samples: STATE_SAMPLES,
   },
   {
@@ -673,7 +684,8 @@ const INLINE_SAMPLES: Record<"basic" | "retry" | "busy", SpecInfo> = {
       "딥리서치 — 취소 뒤 정리 안내의 [다시 불러오기]",
     ],
     hooks: ['.skx-inline-error__retry[aria-disabled="true"]', '[aria-busy="true"]'],
-    texts: [apiErrorMessage(SAMPLE.network, "목록을 불러오지 못했어요"), RETRY_TEXT],
+    // 사이드바가 실제로 보이는 목록 실패 안내(utils/sidebarGroups — 묶음의 목록을 못 읽었고 보이는 줄도 없을 때)
+    texts: [SIDEBAR_NOTICE.loadFailed, RETRY_TEXT],
   },
 };
 
@@ -714,26 +726,38 @@ const CHAR_MAX = 500;
 /** [N자로 맞추기] — 한도 가까이(기본 90%) 모양을 바로 볼 수 있는 길이 */
 const COUNT_NEAR_DEMO = 460;
 const COUNT_USES = [
-  `소장자료·논문 검색어(${SEARCH_QUERY_MAX}자 — 소장자료 검색은 한도 가까이부터 보인다)`,
+  `소장자료·논문 검색어(${SEARCH_QUERY_MAX}자)`,
   `${DEEP_RESEARCH} 질문(${QUESTION_MAX}자)`,
   `DeepRead 질문(${CHAT_MAX_CHARS}자)`,
 ];
+/** 검색창·질문 칸의 글자 수는 quiet 다(사용자 결정 2026-10-16) — 평소에는 화면에서만 숨고 한도 가까이부터 보인다 */
+const COUNT_QUIET_NOTE =
+  "검색창·질문 칸은 quiet 를 써서 한도 가까이(90%)부터만 보입니다 — 평소에는 화면에서만 숨고, 낭독기 알림 영역과 aria-describedby 는 그대로 남습니다. " +
+  "그래서 ‘평소’ 모양(숫자만)은 quiet 를 쓰지 않는 칸에서만 보입니다.";
 
 const COUNT_SAMPLES = [
   { length: 120, name: "평소" },
+  { length: 120, name: "평소 — quiet (검색창·질문 칸 — 화면에 보이지 않음)", quiet: true },
   { length: COUNT_NEAR_DEMO, name: "한도 가까이 (90%부터)" },
   { length: CHAR_MAX, name: "한도" },
-].map(({ length, name }): SpecInfo & { length: number } => {
+].map(({ length, name, quiet }): SpecInfo & { length: number; quiet: boolean } => {
   const state = charCountState(length, CHAR_MAX);
   const hooks =
     state === "limit"
       ? [".skx-charcount--limit", '[data-state="limit"]', ".skx-charcount__msg", 'aria-live="polite"']
       : state === "near"
         ? [".skx-charcount--near", '[data-state="near"]']
-        : [".skx-charcount", '[data-state="normal"]', ".skx-charcount__num"];
+        : quiet
+          ? [".skx-charcount--quiet", '[data-state="normal"](화면에서만 숨김 — 공통 구역 규칙)']
+          : [".skx-charcount", '[data-state="normal"]', ".skx-charcount__num"];
   const texts = [`${length}/${CHAR_MAX}`, ...(state === "limit" ? [charLimitMessage(CHAR_MAX)] : [])];
-  return { length, name, uses: COUNT_USES, hooks, texts };
+  // 숫자만 보이는 평소 모양은 quiet 를 쓰지 않는 칸의 것이다 — 검색창·질문 칸은 평소에 숨는다(위 quiet 본보기)
+  const uses = state === "normal" && !quiet ? ["quiet 를 쓰지 않는 글자 수 칸(검색창·질문 칸은 quiet 라 평소에 숨는다)"] : COUNT_USES;
+  return { length, name, quiet: !!quiet, uses, hooks, texts };
 });
+
+/** 직접 입력해 보기의 quiet 켜기 — 켜면 검색창·질문 칸처럼 한도 가까이부터만 보인다 */
+const typedQuiet = ref(false);
 
 const typed = ref("공공도서관의 비대면 서비스가 청소년 이용자의 독서 습관에 준 영향은 무엇인가?");
 const FILLER = " 도서관 이용 연구";
@@ -926,6 +950,14 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
+}
+.dev-item__check {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  color: var(--skx-ink-2);
+  cursor: pointer;
 }
 .dev-item__meta {
   display: grid;

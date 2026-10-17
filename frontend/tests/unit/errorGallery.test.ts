@@ -191,7 +191,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(tpl).toContain("<SkxConnectionBanner");
     expect(tpl.match(/<SkxCharCount/g)).toHaveLength(2);
     // 직접 쳐 보는 입력창 — maxlength 와 글자 수가 같은 한도
-    expect(tpl).toMatch(/<textarea\s+:id="typeId"[\s\S]*?:maxlength="CHAR_MAX"[\s\S]*?:aria-describedby="countId"[\s\S]*?<\/textarea>\s*<SkxCharCount :id="countId" :length="typed\.length" :max="CHAR_MAX" \/>/);
+    expect(tpl).toMatch(/<textarea\s+:id="typeId"[\s\S]*?:maxlength="CHAR_MAX"[\s\S]*?:aria-describedby="countId"[\s\S]*?<\/textarea>\s*<SkxCharCount :id="countId" :length="typed\.length" :max="CHAR_MAX" :quiet="typedQuiet" \/>/);
   });
 
   it("복제 마크업 없음 — 공통 구역의 클래스를 페이지가 직접 그리지 않는다(슬롯 링크 .skx-state__action 만)", () => {
@@ -228,9 +228,21 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     }
     expect(js).toMatch(/id: "retrying",[\s\S]*?busy: true,/);
     expect(js).toMatch(/id: "compact",[\s\S]*?compact: true,/);
-    for (const title of ["검색하지 못했어요", "논문 정보를 불러오지 못했어요", "검색 결과가 없어요"]) {
-      expect(js, title).toContain(`title: "${title}"`);
+    // 제목·설명은 실제 화면의 상수를 읽는다 — 화면 문구가 바뀌면 모음도 같이 바뀐다(하드코딩 금지)
+    for (const ref of [
+      "title: PAPER_STATE_TEXT.searchFailed,",
+      "title: PAPER_STATE_TEXT.detailFailed,",
+      "title: PAPER_STATE_TEXT.relatedFailed,",
+      "title: WORK_SOURCES_FAILED,",
+    ]) {
+      expect(js, ref).toContain(ref);
     }
+    expect(js).toMatch(/id: "empty",[\s\S]*?title: PAPER_STATE_TEXT\.searchEmpty,\s*message: PAPER_STATE_TEXT\.searchEmptyHint,/);
+    for (const text of ["검색하지 못했어요", "논문 정보를 불러오지 못했어요", "관련 자료를 불러오지 못했어요", "원문 대목을 불러오지 못했어요", "검색 결과가 없어요", "다른 검색어로"]) {
+      expect(js, text).not.toContain(`"${text}`);
+    }
+    // 상태 블록 제목 중 글로 적은 것은 실제 화면에 없는 빈 연구 안내뿐
+    expect(js.match(/\n {4}title: "[^"]*"/g)).toEqual(['\n    title: "아직 진행한 연구가 없어요"', '\n    title: "② 섹션 상태 블록 (SkxErrorState)"', '\n    title: "③ 딥리서치 상태 (후배 시안 네 변형)"']);
     // 취소 kind·서버 code 문구(CODE_MESSAGES — 서버 detail 은 쓰지 않는다)
     expect(js).toMatch(/id: "canceled",[\s\S]*?kind: "canceled",/);
     expect(js).toMatch(/searchDown: \{ status: 503, data: \{ detail: "[^"]*", code: "search_unavailable" \} \}/);
@@ -319,6 +331,33 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(chat).toContain(':max="CHAT_MAX_CHARS"');
   });
 
+  it("④ 재시도 중 본보기는 사이드바가 실제로 보이는 목록 실패 문구(SIDEBAR_NOTICE.loadFailed)", () => {
+    expect(js).toMatch(/busy: \{[\s\S]*?사이드바 기록[\s\S]*?texts: \[SIDEBAR_NOTICE\.loadFailed, RETRY_TEXT\],/);
+    expect(js).not.toContain('"목록을 불러오지 못했어요"');
+  });
+
+  it("사이드바 빈 기록 안내는 공통 훅 밖(사이드바 모양 유지)이라고 ② 설명에 적는다 — 문구는 사이드바 상수", () => {
+    expect(js).toContain("import { SIDEBAR_EMPTY, SIDEBAR_NOTICE } from \"~/utils/sidebarGroups\";");
+    expect(js).toContain("사이드바의 빈 기록 안내(‘${SIDEBAR_EMPTY}’ — .skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아 공통 디자인 훅 밖입니다");
+    expect(read("components/AppSidebar.vue")).toContain("{{ SIDEBAR_EMPTY }}");
+  });
+
+  it("⑥ 글자 수 — quiet(평소엔 숨김) 본보기와 '검색창·질문 칸은 한도 가까이부터만' 설명, 직접 입력에서 quiet 를 켜 본다", () => {
+    expect(tpl).toContain('<SkxCharCount :length="n.length" :max="CHAR_MAX" :quiet="n.quiet" />');
+    expect(js).toContain('{ length: 120, name: "평소 — quiet (검색창·질문 칸 — 화면에 보이지 않음)", quiet: true },');
+    expect(js).toContain('".skx-charcount--quiet"');
+    expect(js).toMatch(/const COUNT_QUIET_NOTE =\s*"검색창·질문 칸은 quiet 를 써서 한도 가까이\(90%\)부터만 보입니다/);
+    expect(tpl).toContain('<p class="dev-gallery__note">{{ COUNT_QUIET_NOTE }}</p>');
+    expect(tpl).toMatch(/<input v-model="typedQuiet" type="checkbox" \/>/);
+    expect(js).toContain("const typedQuiet = ref(false);");
+  });
+
+  it("도서·논문 404 문구를 모음이 글로 적지 않는다 — 그 문구는 각 화면 상수에만 있다", () => {
+    for (const text of ["도서를 찾을 수 없어요", "논문을 찾을 수 없어요", "주소가 맞는지", "등록되지 않은"]) {
+      expect(galleryVue, text).not.toContain(text);
+    }
+  });
+
   it("① 액자 속 배경 띠가 굵어 보이는 까닭(실제 창 크기 기준)을 캡션에 적는다", () => {
     expect(tpl).toContain("액자 속 배경 띠는 실제 창 크기(vmax·vh) 기준이라 줄인 액자에서는 굵게 보입니다");
   });
@@ -401,6 +440,12 @@ describe("CSS — 새 표시도 '[S] 공통 오류·빈 상태' 구역 안에", 
   it("낡은 주석이 지운 규칙을 가리키지 않는다 — DeepRead 말풍선의 .skx-retry 규칙은 없어졌다", () => {
     expect(rawCss).not.toContain(".skx-chat-msg--ai .skx-retry");
     expect(rawCss).not.toMatch(/실패 안내는 \.skx-retry/);
+  });
+
+  // 옛 [다시 시도] 글자 버튼(.skx-retry·.skx-pick__retry)은 모든 실패 안내가 SkxInlineError(.skx-inline-error__retry)로 옮겨 쓰는
+  // 화면이 없다 — 규칙도, 그것을 가리키는 주석도 남기지 않는다
+  it("쓰지 않는 옛 재시도 버튼 규칙(.skx-retry·.skx-pick__retry)이 없다", () => {
+    expect(rawCss).not.toMatch(/\.skx-(?:pick__)?retry\b/);
   });
 
   it("슬롯 링크(.skx-state__action)는 지나간·마우스 올린 링크도 같은 색 — 공통 리셋 a:hover 를 이긴다(보조·주 버튼 둘 다)", () => {

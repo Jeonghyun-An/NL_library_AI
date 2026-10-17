@@ -93,10 +93,13 @@ describe("문구 — 해요체, 두 문장 이상은 문장마다 줄을 바꾼�
     expect(Object.values(PAPER_STATE_TEXT).join("\n")).not.toMatch(/주소가 맞는지/);
   });
 
+  // 모음은 이 상수를 그대로 읽는다 — 문구를 바꾸면 모음 본보기도 같이 바뀐다(모음에 글로 다시 적지 않는다)
   it("오류 화면 모음의 본보기 제목과 같은 말(검색 실패·상세 실패·결과 없음)", () => {
     const gallery = read("pages/dev/error-states.vue");
-    for (const title of [PAPER_STATE_TEXT.searchFailed, PAPER_STATE_TEXT.detailFailed, PAPER_STATE_TEXT.searchEmpty, PAPER_STATE_TEXT.searchEmptyHint]) {
-      expect(gallery, title).toContain(`"${title}"`);
+    expect(gallery).toContain('import { PAPER_STATE_TEXT } from "~/utils/paperErrors";');
+    for (const key of ["searchFailed", "detailFailed", "searchEmpty", "searchEmptyHint"] as const) {
+      expect(gallery, key).toContain(`PAPER_STATE_TEXT.${key},`);
+      expect(gallery, key).not.toContain(`"${PAPER_STATE_TEXT[key]}"`);
     }
   });
 });

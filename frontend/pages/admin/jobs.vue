@@ -148,6 +148,8 @@ async function poll(): Promise<void> {
   }
 }
 
+// 제어·재시도 응답을 기다리는 사이 다른 잡을 고르면(selectJob 이 그 칸을 비운다) 늦게 온 실패는 버린다 — 이전 잡의 오류가
+// 새 잡 자리에 뜨지 않게, 보낼 때의 잡(id)이 아직 골라져 있을 때만 쓴다
 async function control(action: string) {
   const id = selectedId.value;
   if (!id || loading.value) return;
@@ -156,7 +158,7 @@ async function control(action: string) {
   try {
     await $fetch(`${api}/${id}/${action}`, { method: "POST" });
   } catch (e) {
-    controlError.value = apiErrorMessage(e, `잡을 ${CONTROL_LABEL[action] ?? action}하지 못했어요`);
+    if (selectedId.value === id) controlError.value = apiErrorMessage(e, `잡을 ${CONTROL_LABEL[action] ?? action}하지 못했어요`);
     return;
   } finally {
     loading.value = false;
@@ -173,7 +175,7 @@ async function sendRetry(key: string, body: Record<string, unknown>) {
   try {
     await $fetch(`${api}/${id}/retry`, { method: "POST", body });
   } catch (e) {
-    retryError.value = apiErrorMessage(e, "재시도하지 못했어요");
+    if (selectedId.value === id) retryError.value = apiErrorMessage(e, "재시도하지 못했어요");
     return;
   } finally {
     retrying.value = null;

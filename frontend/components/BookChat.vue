@@ -77,7 +77,8 @@
     <div class="skx-sr-only" aria-live="polite" v-html="liveHtml" />
 
     <div class="skx-chat-input-wrap">
-      <!-- 질문은 서버 한도(CHAT_MAX_CHARS)까지 — maxlength 가 막고 글자 수(SkxCharCount)가 얼마나 썼는지 보인다 -->
+      <!-- 질문은 서버 한도(CHAT_MAX_CHARS)까지 — maxlength 가 막고 글자 수(SkxCharCount)가 얼마나 썼는지 보인다. 질문 칸이라
+           quiet — 한도 가까이(90%)부터만 보인다(검색창과 같다, 사용자 결정 2026-10-16). 낭독기 알림 영역은 늘 남는다 -->
       <textarea
         ref="inputEl"
         v-model="inputText"
@@ -88,10 +89,10 @@
         :aria-label="copy.inputLabel"
         :aria-describedby="countId"
         :disabled="isStreaming"
-        @keydown.enter.exact.prevent="send"
+        @keydown.enter.exact.prevent="onInputEnter"
         @keydown.enter.shift.exact="() => {}"
       />
-      <SkxCharCount :id="countId" class="skx-chat-count" :length="inputText.length" :max="CHAT_MAX_CHARS" />
+      <SkxCharCount :id="countId" class="skx-chat-count" quiet :length="inputText.length" :max="CHAT_MAX_CHARS" />
       <!-- 보내기 — 답을 받는 동안은 같은 단추가 [멈춤]이다(한 요소라 누른 초점이 그대로 남는다) -->
       <button
         ref="sendEl"
@@ -102,6 +103,7 @@
         :title="isStreaming ? copy.stopLabel : undefined"
         :disabled="!isStreaming && !inputText.trim()"
         @click="onSendButton"
+        @keydown.enter="onSendKeydown"
       >
         <svg v-if="isStreaming" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
           <rect x="3" y="3" width="10" height="10" rx="2" fill="currentColor" />
@@ -190,6 +192,30 @@ function onSendButton(e: MouseEvent) {
   else if (e.detail < 2) stopChat();
 }
 
+// Enter 를 누른 채 있으면 자동 반복 keydown(e.repeat)이 이어진다 — 한 번 누른 것의 꼬리라 어디서든 누름으로 치지 않는다.
+// 질문 칸: Enter 로 보낸다(Shift+Enter 는 줄바꿈). 반복은 다시 보내지 않는다 — 답을 받지 못해 질문이 칸에 되살아난 뒤 같은
+// 질문이 또 나가지 않게
+function onInputEnter(e: KeyboardEvent) {
+  if (!e.repeat) void send();
+}
+
+// [멈춤] 단추: 보낸 뒤 초점이 이 단추로 옮겨 오면(ask) 이어지는 반복 keydown 이 단추의 키보드 click(detail 0)이 되어 방금 보낸
+// 질문을 바로 멈췄다 — 반복이면 기본 동작(click)을 막는다. 손을 뗐다 다시 누른 Enter 는 그대로 [멈춤]이다
+function onSendKeydown(e: KeyboardEvent) {
+  if (e.repeat) e.preventDefault();
+}
+
+// 답을 받지 못해 입력 칸에 되살린 질문(ask) — 그 논문에 묻던 질문이라 논문을 바꾸면 칸에서 비운다(실패 안내도 함께 걷힌다 —
+// useDeepReadChat). 고쳐 쓴 글은 사용자 글이라 둔다
+let restoredQuestion: string | null = null;
+watch(
+  () => props.cntsId,
+  () => {
+    if (restoredQuestion !== null && inputText.value.trim() === restoredQuestion) inputText.value = "";
+    restoredQuestion = null;
+  },
+);
+
 // [다시 시도] — 답을 받지 못한 질문을 그대로 다시 보낸다. 입력 칸에 되살려 둔 그 질문은 비운다(답을 받은 뒤 칸에 남지 않게) —
 // 고쳐 쓴 글은 둔다
 async function retry() {
@@ -200,6 +226,7 @@ async function retry() {
 
 async function ask(request: () => Promise<void>) {
   liveHtml.value = "";
+  restoredQuestion = null;
   const sentFor = props.cntsId;
   const answered = request();
   // 보내는 동안 입력 칸이 막혀 초점이 떨어지면(Enter 로 보냄) 같은 자리의 [멈춤] 단추로 옮긴다 — 키보드로도 바로 멈출 수 있고
@@ -212,7 +239,10 @@ async function ask(request: () => Promise<void>) {
   // 답을 다 받았을 때만 읽고 입력 칸으로 돌아간다 — 논문을 바꿔 끊긴 경우 초점은 사용자가 누른 곳에 둔다
   if (props.cntsId !== sentFor) return;
   // 답을 받지 못했으면 보낸 질문을 입력 칸에 되살린다 — 보낼 때 비운 칸이라 고쳐 다시 보낼 수 있게(그새 쓴 글이 있으면 두지 않는다)
-  if (failure.value && !inputText.value.trim()) inputText.value = failure.value.question;
+  if (failure.value && !inputText.value.trim()) {
+    inputText.value = failure.value.question;
+    restoredQuestion = failure.value.question;
+  }
   const last = messages.value.at(-1);
   // 답을 받지 못했으면 앞 답을 다시 읽히지 않는다 — 실패 안내는 role=alert 가 읽는다
   if (!failure.value && last?.role === "assistant") liveHtml.value = formatText(last.content);

@@ -108,6 +108,35 @@ class TestInternalError:
         assert "GET /boom" in msg and "RuntimeError" in msg
         assert "사용자 검색어" not in msg                              # 쿼리 문자열은 남기지 않는다
 
+    def test_an_exception_after_the_response_started_is_logged_as_a_cut_stream_not_a_500(self, caplog):
+        # 스트리밍 응답이 머리(200)를 보낸 뒤 예외가 나면 Starlette 는 처리기를 부르되 그 500 을 보내지 않는다 — 화면은
+        # 받던 응답이 중간에 끊긴다. 로그도 '→ 500' 이 아니라 그렇게 적는다
+        from fastapi.responses import StreamingResponse
+
+        app = _app()
+
+        @app.get("/stream-boom")
+        async def stream_boom():
+            async def body():
+                yield b"data: first\n\n"
+                raise RuntimeError("mid-stream failure")
+            return StreamingResponse(body(), media_type="text/event-stream")
+
+        with caplog.at_level(logging.ERROR, logger=errors.log.name):
+            resp = _client(app).get("/stream-boom")
+        assert resp.status_code == 200     # 머리는 이미 200 으로 나갔다 — 처리기의 500 은 보내지지 않는다
+        records = [r for r in caplog.records if r.name == errors.log.name]
+        assert len(records) == 1
+        msg = records[0].getMessage()
+        assert "응답이 중간에 끊김" in msg and "GET /stream-boom" in msg and "→ 500" not in msg
+        assert records[0].exc_info      # 스택은 그대로 남는다(StreamingResponse 의 task group 이 ExceptionGroup 으로 감싼다)
+
+    def test_an_exception_before_the_response_is_still_logged_as_a_500(self, caplog):
+        with caplog.at_level(logging.ERROR, logger=errors.log.name):
+            _client(_app()).get("/boom")
+        msg = [r for r in caplog.records if r.name == errors.log.name][0].getMessage()
+        assert msg.startswith("처리하지 못한 예외 → 500: GET /boom")
+
     def test_without_the_handlers_it_was_plain_text(self):
         # 바꾸기 전 모습 — 화면이 JSON 으로 읽지 못하던 응답
         resp = _client(_app(handlers=False)).get("/boom")

@@ -5,7 +5,9 @@
 보낼 이벤트 없이 CHAT_PING_INTERVAL(15초) 가 지나면 SSE 주석 줄 ': ping' 을 끼운다(딥리서치 SSE 와 같은 간격 — 그쪽은
 EventSource 가 받도록 이름 붙은 ping 이벤트이고, 이쪽은 화면이 fetch 로 바이트를 읽어 주석 줄로도 시계가 다시 걸린다).
 
-- 느린 질의 재구성·느린 청크 검색(동기 — 스레드에서 돌아 루프를 막지 않는다)·느린 LLM 조각 사이에 ping 이 나온다.
+- 느린 질의 재구성·느린 LLM 조각 사이에 ping 이 나온다. 청크 검색(임베딩·Milvus — 동기)은 스레드로 옮기지 않고 루프에서
+  끝까지 돈다(메인 검색과 같은 모델·토크나이저를 다른 스레드에서 동시에 쓰지 않게) — 짧아 ping 을 오래 막지 않고, Milvus 가
+  죽어도 indexer.search_chunks 의 시간 한도(MILVUS_SEARCH_TIMEOUT) 안에 retrieval_failed 로 끝난다.
 - ping 을 빼면 이벤트(글 조각·sources·{error, code}·[DONE])의 순서·모양은 그대로다. [DONE] 뒤에는 아무것도 없다.
 - 화면이 끊으면(aclose·소비 task 취소) 기다리던 걸음(질의 재구성·LLM 스트림)을 취소하고 남은 task 가 없다.
 
