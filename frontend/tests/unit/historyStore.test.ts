@@ -67,6 +67,8 @@ function wire(over: Partial<HistoryItemDetail> = {}): HistoryItemDetail {
   };
 }
 
+const pendingOps = (local: ReturnType<typeof createLocalStore>) => local.readOutbox().map((o) => o.op);
+
 function fakeFetcher(respond: (path: string, opts?: HistoryFetchOptions) => unknown) {
   const calls: Array<{ path: string; opts?: HistoryFetchOptions }> = [];
   const fetcher: HistoryFetcher = async <T,>(path: string, opts?: HistoryFetchOptions) => {
@@ -392,6 +394,36 @@ describe("createLocalStore", () => {
       expect(JSON.parse(storage.getItem(HISTORY_OUTBOX_KEY)!)).toHaveLength(200);
       expect(warn).toHaveBeenCalledTimes(1);
       expect(warn.mock.calls[0]![0]).toContain("1건을 버렸다");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("메모리 모드에서 상한으로 버린 편지가 넘어갈 때 저장소에서 가져온 것이면 저장소에서도 뺀다 — 새로고침 뒤 다시 나가지 않게", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const storage = new MemoryStorage(1200);
+      // v1 백업처럼 지워지지 않고 쿼터를 차지하는 값
+      storage.setItem("skx_search_history_backup_v1", "x".repeat(600));
+      // 새로고침 전 인스턴스가 남긴 편지 — 수정(버릴 순위가 가장 앞)과 지우기
+      const before = createLocalStore(storage);
+      before.enqueue({ op: "patch", id: ID1, partial: { title: "옛 제목" } });
+      before.enqueue({ op: "remove", id: ID2 });
+      // 새로고침한 인스턴스가 긴 저장으로 쿼터에 막혀 메모리로 넘어가며 두 편지를 가져온다
+      const local = createLocalStore(storage);
+      local.enqueue({ op: "put", entry: bookEntry(ID3, { title: "긴 제목".repeat(100) }) });
+      expect(pendingOps(local)).toEqual(["patch", "remove", "put"]);
+      // 메모리에서 계속 쌓여 상한(200)을 넘으면 가져온 수정 편지가 먼저 버려진다
+      for (let i = 0; i < 198; i++) {
+        local.enqueue({ op: "put", entry: bookEntry(`00000000-0000-4000-8000-${String(i).padStart(12, "0")}`) });
+      }
+      const ops = local.readOutbox();
+      expect(ops).toHaveLength(200);
+      expect(ops.some((o) => o.op === "patch")).toBe(false);
+      // 저장소 편지함에서도 빠졌다 — 가져온 지우기는 남는다(아직 보내지 않았다)
+      const stored = JSON.parse(storage.getItem(HISTORY_OUTBOX_KEY)!) as OutboxOp[];
+      expect(stored.map((o) => o.op)).toEqual(["remove"]);
+      expect(createLocalStore(storage).readOutbox().map((o) => o.op)).toEqual(["remove"]);
     } finally {
       warn.mockRestore();
     }

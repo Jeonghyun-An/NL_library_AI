@@ -61,7 +61,7 @@ describe("관리자 잡 화면 — 제어·재시도", () => {
   it("제어 실패를 알리고, 제어가 된 뒤의 다시 읽기 실패는 제어 실패로 보이지 않는다", () => {
     const body = fnBody("control");
     expect(body).toMatch(
-      /try \{\s*await \$fetch\(`\$\{api\}\/\$\{id\}\/\$\{action\}`, \{ method: "POST" \}\);\s*\} catch \(e\) \{\s*controlError\.value = apiErrorMessage\(e, `잡을 \$\{CONTROL_LABEL\[action\] \?\? action\}하지 못했어요`\);\s*return;\s*\} finally \{\s*loading\.value = false;\s*\}/,
+      /try \{\s*await \$fetch\(`\$\{api\}\/\$\{id\}\/\$\{action\}`, \{ method: "POST" \}\);\s*\} catch \(e\) \{\s*if \(selectedId\.value === id\) controlError\.value = apiErrorMessage\(e, `잡을 \$\{CONTROL_LABEL\[action\] \?\? action\}하지 못했어요`\);\s*return;\s*\} finally \{\s*loading\.value = false;\s*\}/,
     );
     expect(body.indexOf("await Promise.all([loadJobs(), loadDetail()])")).toBeGreaterThan(body.indexOf("} finally {"));
     expect(tpl).toContain('<p v-if="controlError" role="alert" :class="[ERROR_LINE, \'mb-4\']">{{ controlError }}</p>');
@@ -70,10 +70,23 @@ describe("관리자 잡 화면 — 제어·재시도", () => {
   it("재시도는 도는 동안 다시 보내지 않고(버튼도 막는다), 실패를 알린다", () => {
     const body = fnBody("sendRetry");
     expect(body).toMatch(/if \(!id \|\| retrying\.value\) return;\s*retrying\.value = key;/);
-    expect(body).toMatch(/catch \(e\) \{\s*retryError\.value = apiErrorMessage\(e, "재시도하지 못했어요"\);\s*return;\s*\} finally \{\s*retrying\.value = null;/);
+    expect(body).toMatch(/catch \(e\) \{\s*if \(selectedId\.value === id\) retryError\.value = apiErrorMessage\(e, "재시도하지 못했어요"\);\s*return;\s*\} finally \{\s*retrying\.value = null;/);
     expect(tpl).toMatch(/@click="retryAllFailed"\s+:disabled="!!retrying"/);
     expect(tpl).toMatch(/@click="retryGroup\(g\.error_group\)"\s+:disabled="!!retrying"/);
     expect(tpl).toContain('<p v-if="retryError" role="alert" :class="[ERROR_LINE, \'mb-3\']">{{ retryError }}</p>');
+  });
+
+  it("응답을 기다리는 사이 다른 잡을 고르면 늦게 온 실패를 새 잡 자리에 쓰지 않는다 — 보낼 때 잡은 id 로 견준다", () => {
+    for (const name of ["control", "sendRetry"]) {
+      const body = fnBody(name);
+      expect(body, name).toMatch(/const id = selectedId\.value;/);
+      // catch 안의 오류 쓰기는 모두 id 비교 뒤에만
+      const catchBody = body.slice(body.indexOf("} catch (e) {"), body.indexOf("} finally {"));
+      expect(catchBody, name).toMatch(/if \(selectedId\.value === id\) \w+Error\.value = /);
+      expect(catchBody.match(/Error\.value = /g), name).toHaveLength(1);
+    }
+    // 잡을 바꾸면 제어·재시도 오류 칸도 비운다
+    expect(fnBody("selectJob")).toMatch(/controlError\.value = "";\s*retryError\.value = "";/);
   });
 });
 

@@ -119,6 +119,9 @@ export const SIDEBAR_NOTICE = {
   storageBlocked: "이 브라우저는 사이트 데이터 저장이 막혀 있어 새로 고치면 기록이 사라져요.",
 } as const;
 
+/** 두 묶음 모두 진짜 비었을 때(실패 없음)의 한 줄 — 사이드바 모양을 지키려 공통 빈 상태 블록이 아닌 .skx-history__empty 로 그린다 */
+export const SIDEBAR_EMPTY = "아직 검색 기록이 없어요.";
+
 /** 묶음의 목록 실패 안내 — 그 묶음의 종류 중 못 읽은 것이 없으면 null. rowCount 는 그 묶음에 보이는(자르기 전) 줄 수 */
 export function groupLoadError(
   group: SidebarGroupKey,

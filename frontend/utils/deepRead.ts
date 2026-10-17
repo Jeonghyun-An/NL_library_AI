@@ -42,7 +42,7 @@ export function chatCopy(kind: DocKind): ChatCopy {
 }
 
 // 출처 칩 글자 — 저장값 그대로(0부터 센 쪽). 서버가 같은 값으로 LLM 문맥 [p.X–Y] 를 만들어 답 글에도 그 숫자가 나온다
-// (book_chat.py:155). citations.pageLabel(+1)로 바꾸면 칩이 답 글과 한 쪽씩 어긋난다(06e 정함 22)
+// (book_chat.py _chat_events 의 컨텍스트 블록). citations.pageLabel(+1)로 바꾸면 칩이 답 글과 한 쪽씩 어긋난다(06e 정함 22)
 export function sourceLabel(src: DeepReadSource): string {
   return `p.${src.page_start}${src.page_end !== src.page_start ? `–${src.page_end}` : ""}`;
 }

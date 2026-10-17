@@ -7,11 +7,14 @@ core/errors.is_search_outage 가 연결 장애(503)와 영구 오류(500)를 가
   (UNAVAILABLE·INTERNAL 등)면 재시도 끝에 MilvusException 이 오는데, code 에 grpc 오류의 code 메서드가 부르지 않은 채
   실린다. 재시도하지 않는 상태(DEADLINE_EXCEEDED·INVALID_ARGUMENT 등)면 날 grpc.RpcError 가 그대로 온다
 - milvus_connect_failure(): 닫힌 포트로 connections.connect 를 불러 받은 MilvusException(code=2, 'Fail connecting …')
+- milvus_retry_timeout_error(code, timeout): pymilvus 기본 재시도(75회)로 감싼 호출에 정수 timeout 을 넘겨, 그 상태로 계속
+  실패할 때 받는 예외와 걸린 시간 — 정수 timeout 이 재시도 전체 시간 한도가 되는지 본다(indexer.search_chunks 의 한도)
 pymilvus·grpc 가 없는 환경(로컬 venv)에서는 importorskip 으로 그 테스트를 건너뛴다.
 
-쓰는 곳: test_error_handlers.py·test_search_outage_api.py.
+쓰는 곳: test_error_handlers.py·test_search_outage_api.py·test_milvus_search_timeout.py.
 """
 import socket
+import time
 from concurrent import futures
 from contextlib import contextmanager
 
@@ -76,6 +79,25 @@ def milvus_retry_error(code_name: str) -> BaseException:
             _Handler().search(call)
         except Exception as e:      # noqa: BLE001 — 무엇이 오는지를 보려는 것이다
             return e
+    pytest.fail(f"{code_name} 로 끝나야 할 호출이 성공했다")
+
+
+def milvus_retry_timeout_error(code_name: str, timeout) -> tuple[BaseException, float]:
+    """pymilvus 기본 재시도 데코레이터(retry_times=75)로 감싼 호출에 timeout 을 kwargs 로 넘겨(pymilvus 의 GrpcHandler 처럼 —
+    데코레이터는 kwargs 의 timeout 만 읽는다) 그 상태로 계속 실패시킬 때 받는 예외와 걸린 시간(초)."""
+    decorators = pytest.importorskip("pymilvus.decorators")
+
+    class _Handler:
+        @decorators.retry_on_rpc_failure()
+        def search(self, call, timeout=None):
+            return call(b"", timeout=timeout)
+
+    with _search_call(code_name) as call:
+        start = time.monotonic()
+        try:
+            _Handler().search(call, timeout=timeout)
+        except Exception as e:      # noqa: BLE001 — 무엇이 오는지를 보려는 것이다
+            return e, time.monotonic() - start
     pytest.fail(f"{code_name} 로 끝나야 할 호출이 성공했다")
 
 

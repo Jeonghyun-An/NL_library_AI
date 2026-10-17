@@ -3071,26 +3071,6 @@ html.skx-scroll-lock {
 
 /* 제목 버튼 — 키보드로 상세를 여는 길. 모양은 제목 글자 그대로 */
 
-/* [다시 시도] — 안내 글 끝의 글자 버튼(추천 1권은 .skx-pick__retry, 그 밖은 .skx-retry). 지금은 두 클래스를 쓰는 화면이 없다 —
-   추천 이유·논문 AI 요약·상세 AI 큐레이션·DeepRead 대화의 실패 안내는 모두 SkxInlineError(.skx-inline-error__retry)로 옮겼다 */
-.skx-pick__retry,
-.skx-retry {
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  font-weight: 600;
-  color: var(--skx-primary);
-  text-decoration: underline;
-  cursor: pointer;
-}
-.skx-pick__retry:focus-visible,
-.skx-retry:focus-visible {
-  outline: 2px solid var(--skx-accent);
-  outline-offset: 2px;
-  border-radius: var(--skx-radius-sm);
-}
-
 /* [E] SKOVIX 추천 1권 */
 
 /* [S] 도서 결과 목록 */
@@ -5274,7 +5254,7 @@ html.skx-scroll-lock {
   }
 }
 
-/* 줄 단위 안내 — 글은 본문색, 앞의 작은 경고 삼각형(16px)만 위험색. 글 뒤에 [다시 시도] 글자 버튼(.skx-retry 와 같은 모양), 좁으면 버튼이 다음 줄로.
+/* 줄 단위 안내 — 글은 본문색, 앞의 작은 경고 삼각형(16px)만 위험색. 글 뒤에 [다시 시도] 글자 버튼(포인트색 밑줄 글자), 좁으면 버튼이 다음 줄로.
    뿌리는 첫 줄 기준선으로 맞춘다 — 아이콘(글자가 없어 아래 끝이 기준선)을 글의 가운데로 조금 내린다 */
 .skx-inline-error {
   display: flex;

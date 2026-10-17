@@ -366,14 +366,16 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
     }
   }
 
-  // 메모리 모드에서 보낸 편지는 메모리에서만 빠진다. 저장소 사본에 남으면 다음 새로고침에 한 번 더 나가,
-  // 그 사이 지운 기록을 upsert 가 되살리고 고친 값을 옛 값으로 덮는다 — 저장소에서도 그 편지만 뺀다.
+  // 메모리 모드에서 보냈거나(dropOutbox) 상한으로 버린(writeOutbox) 편지는 메모리에서만 빠진다. 저장소 사본에 남으면 다음
+  // 새로고침에 한 번 더 나가, 그 사이 지운 기록을 upsert 가 되살리고 고친 값을 옛 값으로 덮는다 — 저장소에서도 그 편지만 뺀다.
   // 줄어드는 쓰기라 쿼터에는 걸리지 않고, 그래도 막히면 저장소 자체가 막힌 것이라 할 수 있는 일이 없다
-  function forgetStored(opId: string): void {
+  function forgetStored(opIds: readonly string[]): void {
+    if (!opIds.length) return;
+    const gone = new Set(opIds);
     const stored = load<OutboxOp>(HISTORY_OUTBOX_KEY);
-    if (!storage || !stored?.some((o) => o.opId === opId)) return;
+    if (!storage || !stored?.some((o) => gone.has(o.opId))) return;
     try {
-      storage.setItem(HISTORY_OUTBOX_KEY, JSON.stringify(stored.filter((o) => o.opId !== opId)));
+      storage.setItem(HISTORY_OUTBOX_KEY, JSON.stringify(stored.filter((o) => !gone.has(o.opId))));
     } catch {
       // 위 이유로 무시한다
     }
@@ -433,6 +435,11 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
       );
     }
     outboxMem = write(HISTORY_OUTBOX_KEY, kept, shedForOutbox);
+    // 메모리 모드에서 버린 편지 중 넘어갈 때 가져온 것(adopted)은 저장소에도 남아 있다 — 두면 새로고침 뒤 다시 나가 그 뒤의
+    // 변경(메모리에서 보낸 지우기 등)을 거스른다. 이번 쓰기에서 메모리로 넘어간 경우도 같아 쓰고 난 뒤에 본다
+    if (memoryOnly && dropped.length) {
+      forgetStored(dropped.filter((o) => adopted.delete(o.opId)).map((o) => o.opId));
+    }
   };
 
   return {
@@ -496,7 +503,7 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
     dropOutbox(opId) {
       writeOutbox(readOutboxList().filter((o) => o.opId !== opId));
       // 메모리 모드에서 저장소에 남아 있을 수 있는 편지는 넘어갈 때 가져온 것뿐이다
-      if (memoryOnly && adopted.delete(opId)) forgetStored(opId);
+      if (memoryOnly && adopted.delete(opId)) forgetStored([opId]);
     },
   };
 }

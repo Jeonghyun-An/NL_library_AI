@@ -5,6 +5,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { SIDEBAR_EMPTY } from "~/utils/sidebarGroups";
 
 const read = (rel: string) =>
   readFileSync(fileURLToPath(new URL(`../../${rel}`, import.meta.url)), "utf-8").replace(/\r\n/g, "\n");
@@ -28,7 +29,7 @@ describe("사이드바 — 목록을 못 읽은 묶음", () => {
   it("DeepResearch 패널은 늘 보이고, 실패면 [연구 시작하기] 대신 줄 안내 + [다시 시도]", () => {
     expect(tpl).toMatch(/<section class="skx-history__group skx-history__group--research" aria-labelledby="skx-history-research">/);
     expect(researchSection).toMatch(
-      /<SkxInlineError\s+v-if="researchLoadError"\s+class="skx-history__notice"\s+:message="researchLoadError"\s+:busy="retrying"\s+@retry="retryLoad"\s+\/>\s*<button\s+v-else-if="!researchRows.length"[^>]*class="skx-history__start"/,
+      /<SkxInlineError\s+v-if="researchLoadError"\s+class="skx-history__notice"\s+role="status"\s+:message="researchLoadError"\s+:busy="retrying"\s+@retry="retryLoad"\s+\/>\s*<button\s+v-else-if="!researchRows.length"[^>]*class="skx-history__start"/,
     );
     // 머리 'DeepResearch · 전체 삭제' 는 기록이 있을 때만 전체 삭제
     expect(researchSection).toMatch(/<button\s+v-if="researchRows.length"\s+ref="researchClearBtn"/);
@@ -38,15 +39,16 @@ describe("사이드바 — 목록을 못 읽은 묶음", () => {
     expect(tpl).toMatch(/<section\s+v-if="recentRows.length \|\| recentLoadError"\s+class="skx-history__group"\s+aria-labelledby="skx-history-recent"/);
     expect(recentSection).toMatch(/<button\s+v-if="recentRows.length"\s+ref="recentClearBtn"/);
     expect(recentSection).toMatch(
-      /<SkxInlineError\s+v-if="recentLoadError"\s+class="skx-history__notice"\s+:message="recentLoadError"\s+:busy="retrying"\s+@retry="retryLoad"\s+\/>/,
+      /<SkxInlineError\s+v-if="recentLoadError"\s+class="skx-history__notice"\s+role="status"\s+:message="recentLoadError"\s+:busy="retrying"\s+@retry="retryLoad"\s+\/>/,
     );
     expect(recentSection).toMatch(/<ul v-if="recentRows.length" class="skx-history__list">/);
   });
 
   it("'아직 검색 기록이 없어요'는 두 묶음 모두 비었고 실패가 없을 때만 — 옛 한 줄 실패 문구는 없다", () => {
     expect(tpl).toMatch(
-      /<p\s+v-if="!researchRows.length && !recentRows.length && !researchLoadError && !recentLoadError"\s+class="skx-history__empty"\s+role="status"\s*>\s*아직 검색 기록이 없어요\.\s*<\/p>/,
+      /<p\s+v-if="!researchRows.length && !recentRows.length && !researchLoadError && !recentLoadError"\s+class="skx-history__empty"\s+role="status"\s*>\s*\{\{ SIDEBAR_EMPTY \}\}\s*<\/p>/,
     );
+    expect(SIDEBAR_EMPTY).toBe("아직 검색 기록이 없어요.");
     expect(src).not.toContain("잠시 뒤 다시 열어 주세요");
     expect(src).not.toContain("listFailed");
   });
@@ -63,8 +65,17 @@ describe("사이드바 — 사이트 데이터 저장이 막힌 브라우저", (
     expect(js).toContain('import { useBrowserIdPersisted } from "~/composables/useBrowserId";');
     expect(js).toContain("storageBlocked.value = !useBrowserIdPersisted();");
     expect(tpl).toMatch(
-      /<SkxInlineError v-if="storageBlocked" class="skx-history__notice" :message="SIDEBAR_NOTICE\.storageBlocked" \/>\s*<\/template>\s*<\/ClientOnly>/,
+      /<SkxInlineError\s+v-if="storageBlocked"\s+class="skx-history__notice"\s+role="status"\s+:message="SIDEBAR_NOTICE\.storageBlocked"\s+\/>\s*<\/template>\s*<\/ClientOnly>/,
     );
+  });
+});
+
+describe("사이드바 — 줄 안내의 알림 세기", () => {
+  // 사이드바는 페이지마다 새로 그려진다 — 지난 목록 실패·저장 차단 안내가 화면을 옮길 때마다 alert 로 다시 끊고 읽히지 않게 status
+  it("사이드바의 줄 안내는 모두 role=status 다", () => {
+    const notices = tpl.match(/<SkxInlineError\b[^>]*>/g) ?? [];
+    expect(notices).toHaveLength(3);
+    for (const n of notices) expect(n).toMatch(/\srole="status"/);
   });
 });
 

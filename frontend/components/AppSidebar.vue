@@ -142,10 +142,13 @@
                 </button>
               </div>
               <!-- 목록을 못 읽었으면(서버 거절·서버에 닿지 못했는데 이 브라우저의 사본도 빔) [연구 시작하기] 대신 줄 안내 + [다시 시도] —
-                   기록이 없는 것처럼 보이지 않게. 앞서 읽은 줄이 있으면 그 줄은 그대로 두고 안내만 얹는다 -->
+                   기록이 없는 것처럼 보이지 않게. 앞서 읽은 줄이 있으면 그 줄은 그대로 두고 안내만 얹는다.
+                   사이드바는 페이지마다 새로 그려져 같은 실패가 화면을 옮길 때마다 다시 나온다 — alert 면 낭독기가 하던 말을 끊고
+                   거듭 읽으므로 status(차분한 알림)로 둔다(아래 최근 검색·저장 차단 줄도 같다) -->
               <SkxInlineError
                 v-if="researchLoadError"
                 class="skx-history__notice"
+                role="status"
                 :message="researchLoadError"
                 :busy="retrying"
                 @retry="retryLoad"
@@ -276,13 +279,14 @@
               </button>
             </section>
 
-            <!-- 진짜 빈 목록일 때만 — 못 읽은 묶음은 제자리에서 실패를 말한다 -->
+            <!-- 진짜 빈 목록일 때만 — 못 읽은 묶음은 제자리에서 실패를 말한다. 사이드바 모양(작은 회색 한 줄)을 지키려 공통 빈 상태
+                 블록(SkxErrorState empty)을 쓰지 않는다 — 공통 디자인 훅 밖이다(오류 화면 모음에도 그렇게 적었다) -->
             <p
               v-if="!researchRows.length && !recentRows.length && !researchLoadError && !recentLoadError"
               class="skx-history__empty"
               role="status"
             >
-              아직 검색 기록이 없어요.
+              {{ SIDEBAR_EMPTY }}
             </p>
 
             <!-- 최근 검색: 소장자료·논문. 목록을 못 읽었으면 줄이 없어도 묶음을 그려 그 자리에 실패를 말한다(통째로 숨으면 기록이 없는 것처럼 보인다) -->
@@ -306,6 +310,7 @@
               <SkxInlineError
                 v-if="recentLoadError"
                 class="skx-history__notice"
+                role="status"
                 :message="recentLoadError"
                 :busy="retrying"
                 @retry="retryLoad"
@@ -391,8 +396,13 @@
             </section>
 
             <!-- 브라우저 ID 를 저장하지 못하는 브라우저(사이트 데이터 차단) — 새로 고칠 때마다 새 ID 라 이전 기록이 사이드바에서 사라진다.
-                 목록 아래에 한 번만 알린다 -->
-            <SkxInlineError v-if="storageBlocked" class="skx-history__notice" :message="SIDEBAR_NOTICE.storageBlocked" />
+                 목록 아래에 한 번만 알린다. 그 브라우저에서는 어느 화면에나 계속 남는 안내라 status(낭독기가 화면마다 끊고 읽지 않게) -->
+            <SkxInlineError
+              v-if="storageBlocked"
+              class="skx-history__notice"
+              role="status"
+              :message="SIDEBAR_NOTICE.storageBlocked"
+            />
           </template>
         </ClientOnly>
       </div>
@@ -424,6 +434,7 @@ import { deepResearchStartRoute } from "~/utils/landingStart";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { NARROW_QUERY, trapTabTarget } from "~/utils/sidebarDrawer";
 import {
+  SIDEBAR_EMPTY,
   SIDEBAR_NOTICE,
   countLiveResearch,
   entryTime,

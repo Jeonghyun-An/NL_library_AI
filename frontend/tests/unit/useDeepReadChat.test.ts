@@ -335,7 +335,7 @@ describe("useDeepReadChat", () => {
     expect(chat.messages.value).toEqual([]);
   });
 
-  it("stop 은 fetch 의 signal 을 abort 하고 받은 글을 '멈췄습니다'와 남긴다 — 받은 글이 없으면 그 문구만", async () => {
+  it("stop 은 fetch 의 signal 을 abort 하고 받은 글을 '멈췄어요'와 남긴다 — 받은 글이 없으면(공백뿐 포함) 그 문구만", async () => {
     const { chat, calls, push } = setup();
     const first = chat.send("첫 질문");
     await flush();
@@ -355,6 +355,38 @@ describe("useDeepReadChat", () => {
     // 멈춘 뒤에 부른 stop 은 아무것도 하지 않는다
     chat.stop();
     expect(chat.messages.value).toHaveLength(4);
+
+    // 공백 조각만 받고 멈추면 받은 글이 없는 것과 같다 — 빈 줄 + 꼬리가 되지 않는다
+    const third = chat.send("셋째 질문");
+    await flush();
+    push('data: {"text": "  "}\n\n');
+    await flush();
+    chat.stop();
+    await third;
+    expect(chat.messages.value.at(-1)).toEqual({ role: "assistant", content: CHAT_STOPPED_EMPTY });
+  });
+
+  // 새 서버는 공백뿐인 빈 답을 {error, code: empty_answer} 로 끝낸다 — 그 앞에 흘린 공백 조각은 받은 글(partial)이 아니다
+  it("공백 조각만 받고 실패하면 failure.partial 은 빈 글이다 — 화면이 빈 흐린 칸을 그리지 않는다", async () => {
+    const { chat, push } = setup();
+    const sent = chat.send("질문");
+    await flush();
+    push('data: {"text": " \\n "}\n\n');
+    await flush();
+    expect(chat.streamingText.value).toBe(" \n ");
+    push('data: {"error": "답을 만들지 못했어요", "code": "empty_answer"}\n\ndata: [DONE]\n\n');
+    await sent;
+    expect(chat.failure.value).toEqual({ question: "질문", message: CODE_MESSAGES.empty_answer, retryable: true, partial: "" });
+
+    // 글이 있으면 그대로(앞뒤 공백 포함) 남긴다
+    const again = setup();
+    const next = again.chat.send("질문");
+    await flush();
+    again.push('data: {"text": "받다 만 "}\n\n');
+    await flush();
+    again.end();
+    await next;
+    expect(again.chat.failure.value?.partial).toBe("받다 만 ");
   });
 
   it("scope 가 끝나면(패널을 닫아 BookChat 이 내려가면) 스트림을 끊는다", async () => {

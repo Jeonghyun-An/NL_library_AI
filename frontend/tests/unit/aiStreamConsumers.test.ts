@@ -173,15 +173,35 @@ describe("DeepRead 대화 칸 — components/BookChat.vue", () => {
   });
 
   // 서버 BookChatRequest.message 는 max_length=2000(422) — 입력 칸이 미리 막고 얼마나 썼는지 보인다
-  it("입력 칸은 서버 한도(CHAT_MAX_CHARS)까지 — maxlength 와 글자 수(SkxCharCount)를 aria-describedby 로 잇는다", () => {
+  // 질문 칸의 글자 수는 검색창처럼 한도 가까이(90%)부터만 보인다(사용자 결정 2026-10-16) — quiet 는 평소 화면에서만 숨기고 낭독기
+  // 알림 영역·aria-describedby 는 남긴다(v-if 로 붙였다 떼지 않는다)
+  it("입력 칸은 서버 한도(CHAT_MAX_CHARS)까지 — maxlength 와 글자 수(SkxCharCount quiet)를 aria-describedby 로 잇는다", () => {
     expect(src).toMatch(
-      /<textarea[\s\S]*?:maxlength="CHAT_MAX_CHARS"[\s\S]*?:aria-describedby="countId"[\s\S]*?\/>\s*<SkxCharCount :id="countId" class="skx-chat-count" :length="inputText\.length" :max="CHAT_MAX_CHARS" \/>/,
+      /<textarea[\s\S]*?:maxlength="CHAT_MAX_CHARS"[\s\S]*?:aria-describedby="countId"[\s\S]*?\/>\s*<SkxCharCount :id="countId" class="skx-chat-count" quiet :length="inputText\.length" :max="CHAT_MAX_CHARS" \/>/,
     );
+    expect(src).not.toMatch(/<SkxCharCount[^>]*v-if/);
   });
 
   it("답을 받지 못하면 보낸 질문을 입력 칸에 되살리고(보낼 때 비운 칸), [다시 시도]는 되살린 그 질문을 칸에서 비운다", () => {
-    expect(src).toContain("if (failure.value && !inputText.value.trim()) inputText.value = failure.value.question;");
+    expect(src).toMatch(
+      /if \(failure\.value && !inputText\.value\.trim\(\)\) \{\s*inputText\.value = failure\.value\.question;\s*restoredQuestion = failure\.value\.question;\s*\}/,
+    );
     expect(src).toMatch(/async function retry\(\)[\s\S]*?if \(inputText\.value\.trim\(\) === failure\.value\?\.question\) inputText\.value = "";/);
+  });
+
+  it("되살린 질문은 논문을 바꾸면 칸에서 비운다 — 고쳐 쓴 글은 둔다, 새로 보내면 되살린 표시를 지운다", () => {
+    expect(src).toMatch(
+      /watch\(\s*\(\) => props\.cntsId,\s*\(\) => \{\s*if \(restoredQuestion !== null && inputText\.value\.trim\(\) === restoredQuestion\) inputText\.value = "";\s*restoredQuestion = null;\s*\},?\s*\);/,
+    );
+    expect(src).toMatch(/async function ask\(request: \(\) => Promise<void>\) \{\s*liveHtml\.value = "";\s*restoredQuestion = null;/);
+  });
+
+  // Enter 를 누른 채 보내면 초점이 [멈춤]으로 옮겨 오고 자동 반복 keydown 이 키보드 click(detail 0)이 되어 바로 멈췄다
+  it("누른 채 있는 Enter 의 자동 반복은 누름이 아니다 — 질문 칸은 다시 보내지 않고, [멈춤]은 click 을 막는다", () => {
+    expect(src).toContain('@keydown.enter.exact.prevent="onInputEnter"');
+    expect(src).toMatch(/function onInputEnter\(e: KeyboardEvent\) \{\s*if \(!e\.repeat\) void send\(\);\s*\}/);
+    expect(src).toMatch(/@click="onSendButton"\s+@keydown\.enter="onSendKeydown"/);
+    expect(src).toMatch(/function onSendKeydown\(e: KeyboardEvent\) \{\s*if \(e\.repeat\) e\.preventDefault\(\);\s*\}/);
   });
 
   it("답을 받는 동안 보내기 단추가 [멈춤](stop)이 된다 — 더블클릭의 둘째 누름은 무시하고, Enter 로 보내 떨어진 초점은 그 단추로", () => {
