@@ -414,7 +414,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     // 설명 — 토스트는 한 문장·한 줄
     expect(js).toContain('"토스트는 한 문장·한 줄이에요(white-space: nowrap — 줄을 바꾸지 않아요).\\n"');
     // 문구는 상수·규칙에서
-    for (const ref of ["BOOK_HISTORY_TEXT.missing,", "BOOK_HISTORY_TEXT.unavailable,", "pdfCheckProblem(404),", "REPORT_EXPORT_FAILED.docx,"]) {
+    for (const ref of ["BOOK_HISTORY_TEXT.missing,", "BOOK_HISTORY_TEXT.unavailable,", "toastOf(pdfCheckProblem(404)),", "REPORT_EXPORT_FAILED_TOAST.docx,", "RESEARCH_TOAST_TEXT.linkCopyFailed,"]) {
       expect(js, ref).toContain(ref);
     }
   });
@@ -514,9 +514,11 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
   it("⑩ 그리지 않은 것 — 글이 부품 안에만 있는 자리·표시 없는 상태·디자인 밖 화면", () => {
     expect(tpl).toContain('<h2 id="dev-sec-skip" class="dev-gallery__h2">⑩ 이 모음에 그리지 않은 것</h2>');
     expect(js).toMatch(/const SKIPPED: \{ name: string; lines: string\[\] \}\[\] = \[/);
-    for (const hook of [".rs-subq__stopped", ".skx-aip__notice", ".skx-history-badge", ".dt-rc__why-text", "/admin/jobs", "/search-classic", "window.prompt"]) {
+    for (const hook of [".rs-subq__stopped", ".skx-aip__notice", ".skx-history-badge", ".dt-rc__why-text", "/admin/jobs", "/search-classic"]) {
       expect(js, hook).toContain(hook);
     }
+    // [링크 복사] 실패는 이제 화면 안 토스트(⑦)다 — 브라우저 대화상자로 적지 않는다
+    expect(js).not.toContain("window.prompt");
   });
 
   it("여러 문장 설명은 문장마다 줄을 바꾼다(pre-line)", () => {

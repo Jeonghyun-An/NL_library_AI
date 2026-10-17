@@ -394,7 +394,7 @@ import ReportView from "~/components/research/ReportView.vue";
 import SynthProgressCard from "~/components/research/SynthProgressCard.vue";
 import ReadingNextActions from "~/components/work/ReadingNextActions.vue";
 import TopicCard from "~/components/work/TopicCard.vue";
-import { REPORT_EXPORT_FAILED } from "~/composables/useReportExport";
+import { REPORT_EXPORT_FAILED_TOAST } from "~/composables/useReportExport";
 import { useTheme } from "~/composables/useTheme";
 import type { ResearchReport, SubqView } from "~/types/research";
 import type { ReadingItem, ReadingView, TopicItem } from "~/types/work";
@@ -422,10 +422,12 @@ import type { DraftSlot, SynthEta } from "~/utils/researchDraft";
 import {
   LOST_AFTER_DROPS,
   RESEARCH_STATE_TEXT,
+  RESEARCH_TOAST_TEXT,
   pdfCheckProblem,
   researchErrorMessage,
   researchFailedMessage,
   researchRetryLabel,
+  toastLine,
 } from "~/utils/researchErrors";
 import { phaseLabel, subqStatusLabel, type ResearchPhase } from "~/utils/researchEvents";
 import { INTROLESS, NO_LIMITS, draftBadge, draftIntro, type DraftState } from "~/utils/researchReport";
@@ -906,6 +908,8 @@ function styleLine(where: string): string {
 
 /** 규칙이 null 을 줄 수 있는 글(해당 없음)을 걸러 문구 목록으로 */
 const present = (texts: (string | null)[]): string[] => texts.filter((t): t is string => !!t);
+/** 줄 안내용 문구를 토스트 한 줄로 — 딥리서치 화면이 원문 확인 실패를 토스트에 실을 때와 같다(문구가 없으면 null) */
+const toastOf = (text: string | null): string | null => (text ? toastLine(text) : null);
 
 type OutsideId =
   | "toast"
@@ -945,18 +949,22 @@ const TOAST_SAMPLE: OutsideSample = {
     "첫 화면·논문 검색 — 주소의 검색 기록을 복원하지 못함(없는 기록·서버에 닿지 못해 못 읽음)",
     "딥리서치 — [원문 보기]가 원문을 찾지 못하거나 불러오지 못함",
     "딥리서치 — Word·PDF 내려받기 실패",
+    "딥리서치 — [링크 복사] 실패(주소창에서 직접 복사하도록 안내)",
     "딥리서치 — 링크 복사·Word 내려받기를 마쳤다는 안내",
   ],
   hooks: [".skx-toast", ".skx-toast-enter-active·-leave-active·-enter-from·-leave-to(나타남·사라짐)", 'role="status"', 'aria-live="polite"'],
   styleAt: "style_skovix.css 의 ‘── 토스트 ──’ 구역 .skx-toast",
-  // 첫 화면의 기록 토스트(논문 검색의 PAPER_STATE_TEXT.missingHistory·historyUnavailable 도 같은 말)와 딥리서치의 원문·내려받기 실패
+  // 첫 화면의 기록 토스트(논문 검색의 PAPER_STATE_TEXT.missingHistory·historyUnavailable 도 같은 말)와 딥리서치의 원문·내려받기·링크 복사.
+  // 딥리서치는 줄 안내용 두 줄 문구를 토스트에 실을 때 toastLine 으로 한 줄('A — B.')로 바꾼다 — 화면과 같은 함수·상수를 쓴다
   texts: present([
     BOOK_HISTORY_TEXT.missing,
     BOOK_HISTORY_TEXT.unavailable,
-    pdfCheckProblem(404),
-    pdfCheckProblem(500),
-    REPORT_EXPORT_FAILED.docx,
-    REPORT_EXPORT_FAILED.pdf,
+    toastOf(pdfCheckProblem(404)),
+    toastOf(pdfCheckProblem(500)),
+    REPORT_EXPORT_FAILED_TOAST.docx,
+    REPORT_EXPORT_FAILED_TOAST.pdf,
+    RESEARCH_TOAST_TEXT.linkCopyFailed,
+    RESEARCH_TOAST_TEXT.linkCopied,
   ]),
 };
 
@@ -1269,7 +1277,6 @@ const SKIPPED: { name: string; lines: string[] }[] = [
     lines: [
       "관리자 잡 화면(/admin/jobs) — Tailwind 운영자 화면이에요(오류 줄은 왼쪽 호박색 선)",
       "보존 화면(/search-classic) — 구조를 그대로 두는 첫 화면이라 자체 scoped 스타일(.error-area·.empty·.ch-empty·.cart-empty)을 써요",
-      "딥리서치 [링크 복사] 실패 — 브라우저 대화상자(window.prompt)라 꾸밀 수 없어요",
       "DeepRead 첫 인사·멈춘 답의 꼬리 글 — 오류 표시가 아니라 평범한 AI 말풍선이에요",
     ],
   },
