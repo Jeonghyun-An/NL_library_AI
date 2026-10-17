@@ -241,19 +241,25 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     for (const text of ["검색하지 못했어요", "논문 정보를 불러오지 못했어요", "관련 자료를 불러오지 못했어요", "원문 대목을 불러오지 못했어요", "검색 결과가 없어요", "다른 검색어로"]) {
       expect(js, text).not.toContain(`"${text}`);
     }
-    // 상태 블록 제목 중 글로 적은 것은 실제 화면에 없는 빈 연구 안내뿐
-    expect(js.match(/\n {4}title: "[^"]*"/g)).toEqual(['\n    title: "아직 진행한 연구가 없어요"', '\n    title: "② 섹션 상태 블록 (SkxErrorState)"', '\n    title: "③ 딥리서치 상태 (후배 시안 네 변형)"']);
+    // 상태 블록 제목을 글로 적지 않는다 — 글로 적은 title 은 섹션 제목뿐(실제 화면에 없는 빈 연구 안내는 지웠다)
+    expect(js.match(/\n {4}title: "[^"]*"/g)).toEqual([
+      '\n    title: "② 섹션 상태 블록 (SkxErrorState)"',
+      '\n    title: "③ 딥리서치 상태 (후배 시안 변형)"',
+      '\n    title: "⑦ 토스트 (.skx-toast)"',
+      '\n    title: "⑧ 상태 배지·줄 상태 (공통 구역 밖)"',
+      '\n    title: "⑨ 흐린 안내 글·카드 안 안내 (공통 구역 밖)"',
+    ]);
     // 취소 kind·서버 code 문구(CODE_MESSAGES — 서버 detail 은 쓰지 않는다)
     expect(js).toMatch(/id: "canceled",[\s\S]*?kind: "canceled",/);
     expect(js).toMatch(/searchDown: \{ status: 503, data: \{ detail: "[^"]*", code: "search_unavailable" \} \}/);
     expect(js).toContain("message: reasonOf(SAMPLE.searchDown)");
   });
 
-  it("③ 딥리서치 상태 — 시안 네 변형(실패·취소·찾을 수 없음·결과 없음)을 실제 동작에 맞춰, 항목마다 시안 대비 바꾼 점", () => {
-    for (const id of ["researchFailed", "researchCanceled", "researchNotFound", "researchEmpty"]) {
+  it("③ 딥리서치 상태 — 시안 변형(실패·취소·찾을 수 없음)을 실제 동작에 맞춰, 항목마다 시안 대비 바꾼 점", () => {
+    for (const id of ["researchFailed", "researchCanceled", "researchNotFound"]) {
       expect(js, id).toMatch(new RegExp(`id: "${id}",[\\s\\S]*?diff:`));
     }
-    expect(js.match(/\n {4}diff:/g)).toHaveLength(4);
+    expect(js.match(/\n {4}diff:/g)).toHaveLength(3);
     expect(tpl).toContain('<template v-if="s.diff">');
     expect(tpl).toContain("<dt>시안 대비</dt>");
     // 제목·설명·버튼은 딥리서치 화면과 같은 상수·함수 — 실패의 설명·[다시 시도] 글도 같은 함수(보고서 작성 단계에서 멈춤)
@@ -268,11 +274,21 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     // 설명을 이 페이지에서 새로 짓지 않는다(실제 화면과 갈라지지 않게)
     expect(js).not.toMatch(/message: "[^"]*(근거는 남아 있어요|이어 갈 수 없어요)/);
     expect(js).toContain("message: RESEARCH_STATE_TEXT.notFoundMessage,");
-    expect(js).toContain("action: { label: \"연구 시작하기\", href: START_RESEARCH_HREF },");
-    expect(js).toContain("deepResearchStartRoute()");
     // 실제와 다른 시안 문구는 버튼·설명으로 쓰지 않는다(시안 대비 설명에서만 말한다)
     expect(js).not.toMatch(/label: "(문의하기|이어서 연구하기|새 연구 시작)"/);
     expect(js).not.toMatch(/(title|message): "[^"]*(접근 권한|중단된 지점부터|연구를 불러오지 못했어요|연구가 중단되었어요)/);
+  });
+
+  // 시안의 넷째 변형(결과 없음 — 아직 연구가 없음)은 실제 앱에 없다: 연구 기록이 없으면 사이드바 묶음이 [연구 시작하기] 버튼만 둔다
+  it("③ 실제 앱에 없는 '결과 없음(아직 연구가 없음)'은 그리지 않고, 그 까닭을 ③ 설명에 적는다", () => {
+    expect(js).not.toContain('id: "researchEmpty"');
+    expect(galleryVue).not.toContain("아직 진행한 연구가 없어요");
+    expect(js).not.toContain("START_RESEARCH_HREF");
+    expect(js).toContain("시안의 넷째 변형(결과 없음 — 아직 연구가 없음)은 실제 앱에 없어 그리지 않았어요.");
+    // 실제 앱 어디에도 그 빈 상태 문구가 없고, 사이드바는 [연구 시작하기] 버튼을 둔다
+    const sidebar = read("components/AppSidebar.vue");
+    expect(sidebar).not.toContain("진행한 연구가 없");
+    expect(sidebar).toMatch(/v-else-if="!researchRows\.length"\s+type="button"\s+class="skx-history__start"/);
   });
 
   it("딥리서치 화면도 같은 상수를 쓴다 — 모음과 실제 화면의 문구가 함께 바뀐다", () => {
@@ -336,17 +352,39 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(js).not.toContain('"목록을 불러오지 못했어요"');
   });
 
-  it("사이드바 빈 기록 안내는 공통 훅 밖(사이드바 모양 유지)이라고 ② 설명에 적는다 — 문구는 사이드바 상수", () => {
+  it("사이드바 빈 기록 안내 — ② 설명은 ⑨ 를 가리키고, ⑨ 가 사이드바 상수 글을 사이드바의 scoped 규칙으로 그린다", () => {
     expect(js).toContain("import { SIDEBAR_EMPTY, SIDEBAR_NOTICE } from \"~/utils/sidebarGroups\";");
-    expect(js).toContain("사이드바의 빈 기록 안내(‘${SIDEBAR_EMPTY}’ — .skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아 공통 디자인 훅 밖입니다");
-    expect(read("components/AppSidebar.vue")).toContain("{{ SIDEBAR_EMPTY }}");
+    expect(js).toContain("사이드바의 빈 기록 안내(.skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아요 — ⑨ 에 따로 그렸어요.");
+    expect(js).not.toContain("디자인 대상 아님");
+    // 모양은 AppSidebar.vue 의 scoped 규칙 — 그 컴포넌트의 scope 속성(__scopeId)을 같은 줄에 붙여 입힌다
+    expect(tpl).toMatch(/<div v-else-if="s\.id === 'sidebarEmpty'" class="dev-side">\s*<p class="skx-history__empty" role="status" v-bind="SIDEBAR_SCOPE">\{\{ SIDEBAR_EMPTY \}\}<\/p>/);
+    expect(js).toContain('import AppSidebar from "~/components/AppSidebar.vue";');
+    expect(js).toContain("const scopeId = (AppSidebar as unknown as { __scopeId?: string }).__scopeId;");
+    expect(js).toContain('return scopeId ? { [scopeId]: "" } : {};');
+    // 실제 사이드바도 같은 상수·같은 클래스, 그 클래스의 모양은 사이드바 scoped 스타일에만 있다
+    const sidebar = read("components/AppSidebar.vue");
+    expect(sidebar).toContain("{{ SIDEBAR_EMPTY }}");
+    expect(sidebar).toMatch(/<style scoped>[\s\S]*\.skx-history__empty \{/);
+    expect(rawCss).not.toContain(".skx-history__empty");
+    // 사이드바 바탕 — 사이드바 틀과 같은 면·글자 토큰(색 리터럴 없이)
+    expect(css).toMatch(/\.dev-side \{[^}]*background: var\(--skx-frost-side-bg\);[^}]*--skx-gray-1: var\(--skx-side-gray-1\);/);
   });
 
   it("⑥ 글자 수 — quiet(평소엔 숨김) 본보기와 '검색창·질문 칸은 한도 가까이부터만' 설명, 직접 입력에서 quiet 를 켜 본다", () => {
     expect(tpl).toContain('<SkxCharCount :length="n.length" :max="CHAR_MAX" :quiet="n.quiet" />');
     expect(js).toContain('{ length: 120, name: "평소 — quiet (검색창·질문 칸 — 화면에 보이지 않음)", quiet: true },');
     expect(js).toContain('".skx-charcount--quiet"');
-    expect(js).toMatch(/const COUNT_QUIET_NOTE =\s*"검색창·질문 칸은 quiet 를 써서 한도 가까이\(90%\)부터만 보입니다/);
+    expect(js).toMatch(/const COUNT_QUIET_NOTE =\s*"검색창·질문 칸\(DeepResearch·DeepRead 질문 포함\)은 모두 quiet 라 한도 가까이\(90%\)부터만 글자 수가 보여요\.\\n"/);
+    // '평소' 모양은 지금 앱 어디에도 보이지 않는다 — 설명·이름·생기는 곳이 모두 그렇게 말한다
+    expect(js).toContain("그래서 ‘평소’ 모양(숫자만)은 지금 앱 어디에도 보이지 않아요");
+    expect(js).toContain('{ length: 120, name: "평소 (지금 앱에는 보이는 곳 없음)" },');
+    expect(js).toContain('"지금 앱에는 없음 — 글자 수 칸이 모두 quiet 라 평소에는 숨어요(quiet 를 쓰지 않는 칸이 생기면 이 모양)"');
+    // 그 말이 사실이다 — 앱의 글자 수 칸은 모두 quiet
+    for (const rel of ["pages/index.vue", "pages/papers/index.vue", "components/detail/SearchBar.vue", "components/BookChat.vue"]) {
+      const uses = read(rel).match(/<SkxCharCount\b[^>]*\/>/g) ?? [];
+      expect(uses.length, rel).toBeGreaterThan(0);
+      for (const use of uses) expect(use, rel).toMatch(/\squiet\s/);
+    }
     expect(tpl).toContain('<p class="dev-gallery__note">{{ COUNT_QUIET_NOTE }}</p>');
     expect(tpl).toMatch(/<input v-model="typedQuiet" type="checkbox" \/>/);
     expect(js).toContain("const typedQuiet = ref(false);");
@@ -360,6 +398,129 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
 
   it("① 액자 속 배경 띠가 굵어 보이는 까닭(실제 창 크기 기준)을 캡션에 적는다", () => {
     expect(tpl).toContain("액자 속 배경 띠는 실제 창 크기(vmax·vh) 기준이라 줄인 액자에서는 굵게 보입니다");
+  });
+
+  it("⑦ 토스트 — 화면들과 같은 마크업을 늘 보이게(타이머·전환 없이), transform 을 준 칸이 position: fixed 를 가둔다", () => {
+    expect(tpl).toMatch(
+      /<div v-if="s\.id === 'toast'" class="dev-toast-stage">[\s\S]*?<div class="skx-toast" role="status" aria-live="polite">\{\{ BOOK_HISTORY_TEXT\.missing \}\}<\/div>/,
+    );
+    // 실제 화면은 같은 마크업을 v-if + Transition 으로 2.5초만 — 모음은 v-if·Transition 없이 늘 보인다
+    expect(read("pages/index.vue")).toContain('<div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>');
+    expect(tpl).not.toContain('<Transition name="skx-toast">');
+    expect(tpl).not.toContain('v-if="toast"');
+    expect(css).toMatch(/\.dev-toast-stage \{[^}]*overflow: hidden;[^}]*transform: translateZ\(0\);/);
+    // 모양은 공통 구역 밖(style_skovix.css 의 '── 토스트 ──') — 고정 위치·한 줄(nowrap)
+    expect(rawCss).toMatch(/\.skx-toast \{[^}]*position: fixed;[^}]*white-space: nowrap;/);
+    // 설명 — 토스트는 한 문장·한 줄
+    expect(js).toContain('"토스트는 한 문장·한 줄이에요(white-space: nowrap — 줄을 바꾸지 않아요).\\n"');
+    // 문구는 상수·규칙에서
+    for (const ref of ["BOOK_HISTORY_TEXT.missing,", "BOOK_HISTORY_TEXT.unavailable,", "pdfCheckProblem(404),", "REPORT_EXPORT_FAILED.docx,"]) {
+      expect(js, ref).toContain(ref);
+    }
+  });
+
+  it("⑧ 상태 배지·줄 상태 — 실제 클래스·실제 부품, 글은 화면과 같은 함수", () => {
+    expect(tpl).toContain(
+      '<span v-for="p in STOPPED_PHASES" :key="p" class="rs-status" :class="`rs-status--${p}`">{{ phaseLabel(p) }}</span>',
+    );
+    expect(js).toContain('const STOPPED_PHASES = ["failed", "canceled"] as const satisfies readonly ResearchPhase[];');
+    expect(tpl).toContain('<span class="rs-badge rs-badge--failed">{{ subqStatusLabel(FAILED_SUBQ) }}</span>');
+    expect(tpl).toContain(`<SynthProgressCard v-else-if="s.id === 'synthFailed'" :slots="DRAFT_SLOTS" :eta="DRAFT_ETA" />`);
+    expect(tpl).toContain(`<ReportSkeleton v-else-if="s.id === 'slotStates'" :slots="PLAN_SLOTS" />`);
+    expect(js).toContain("texts: [slotStateLabel(DRAFT_SLOTS[1]!, DRAFT_ETA)],");
+    expect(js).toContain('texts: PLAN_SLOTS.filter((slot) => slot.state !== "collected").map((slot) => planSlotLabel(slot)),');
+    // 실제 화면도 같은 클래스·같은 함수 — 연구 머리·탐색 경로
+    expect(read("components/research/ResearchHeader.vue")).toContain(
+      '<span class="rs-status" :class="`rs-status--${phase}`">{{ phaseLabel(phase) }}</span>',
+    );
+    expect(read("components/research/ProgressPanel.vue")).toContain(
+      '<span class="rs-badge" :class="`rs-badge--${sq.status}`">{{ subqStatusLabel(sq) }}</span>',
+    );
+    // 모양은 research.css 에 따로 있다
+    const researchCss = read("assets/css/research.css");
+    for (const rule of [".rs-status--failed,", ".rs-badge--failed {", ".rs-synth__item.is-failed .rs-synth__icon {", ".rs-slot.is-failed .rs-slot__state {", ".rs-slot.is-empty {"]) {
+      expect(researchCss, rule).toContain(rule);
+    }
+  });
+
+  it("⑨ 흐린 안내 글·카드 안 안내 — 실제 클래스·실제 부품, 글은 화면과 같은 상수·함수", () => {
+    expect(tpl).toContain('<p v-for="t in s.texts" :key="t" class="rs-muted">{{ t }}</p>');
+    expect(js).toContain("texts: [moreLine(0), NO_LIMITS],");
+    expect(tpl).toMatch(/<ReadingNextActions\s+class="wk-screen__next"\s+where="bottom"[\s\S]*?make-disabled\s+:hint="READING_HINT"/);
+    expect(js).toContain("const READING_HINT = outlineHint({");
+    expect(js).toContain('texts: present([READING_HINT, regenerateProblem([]), paragraphProblem("")]),');
+    expect(tpl).toMatch(/<ReportView\s+v-else-if="s\.id === 'reportDraft'"\s+:report="DRAFT_REPORT"[\s\S]*?:draft="DRAFT_STOPPED"/);
+    expect(js).toContain('const DRAFT_STOPPED = { slots: DRAFT_SLOTS, state: "interrupted" as DraftState, excluded: [] };');
+    expect(js).toContain('texts: [draftBadge("interrupted").label, draftIntro(DRAFT_SLOTS, "interrupted"), INTROLESS],');
+    expect(tpl).toMatch(/<TopicCard\s+v-else-if="s\.id === 'topicFailed' \|\| s\.id === 'topicChecks'"/);
+    expect(js).toContain('texts: present([cardNote("failed"), cardNote("insufficient"), cardNote("blocked")]),');
+    expect(js).toContain(
+      "texts: present([keywordWarning(CHECKED_CARD), cardNumbersLine(CHECKED_CARD), reviewLine({ unmarked: 2, numbers: 1, first: null })]),",
+    );
+    expect(tpl).toContain('<ul class="wk-outline__problems">');
+    expect(js).toContain('const OUTLINE_PROBLEMS = outlineProblems({ groups: [{ key: "g1", name: "", papers: [] }], question: "", method: "" }, true);');
+    // 표지는 브라우저에서만 불러 실패(@error)를 놓치지 않는다
+    expect(tpl).toMatch(/<ClientOnly>\s*<BookCover :book-id="MISSING_BOOK_ID" size="small" \/>\s*<\/ClientOnly>/);
+    // 실제 부품이 같은 클래스·같은 함수로 그린다
+    expect(read("components/work/TopicCard.vue")).toContain(`<p class="wk-topic__note" :aria-live="pending ? 'polite' : undefined">{{ note }}</p>`);
+    expect(read("components/work/ReadingNextActions.vue")).toContain('<p v-if="hint" :id="hintId" class="rs-muted">{{ hint }}</p>');
+    expect(read("components/research/ReportView.vue")).toContain('<p class="rs-report__intro">{{ intro }}</p>');
+  });
+
+  it("⑦~⑨ 항목마다 스타일 위치 — 고칠 파일·클래스와 '공통 구역을 따르지 않는다'는 말", () => {
+    expect(tpl).toContain('<p class="dev-gallery__lead">{{ OUTSIDE_LEAD }}</p>');
+    const ids = js.match(/type OutsideId =([\s\S]*?);/)?.[1]?.match(/"\w+"/g) ?? [];
+    expect(ids).toHaveLength(13);
+    for (const id of ids) {
+      expect(js, id).toMatch(new RegExp(`id: ${id},[\\s\\S]*?styleAt: "[^"]+\\.(css|vue) 의 `));
+    }
+    expect(tpl).toContain("<dt>스타일 위치</dt>");
+    expect(tpl).toContain("<dd>{{ styleLine(s.styleAt) }}</dd>");
+    expect(js).toContain("return `${where} — ‘[S] 공통 오류·빈 상태’ 구역을 따르지 않는 따로 꾸미는 자리예요.`;");
+    // 세 섹션이 같은 틀을 돈다
+    expect(tpl).toMatch(/<section v-for="g in OUTSIDE_SECTIONS"/);
+    for (const id of ["dev-sec-toast", "dev-sec-badge", "dev-sec-muted"]) {
+      expect(js, id).toContain(`id: "${id}",`);
+    }
+  });
+
+  it("⑦~⑨ 문구를 다시 적지 않는다 — 화면 문구는 상수·함수·부품이 만든 글만", () => {
+    for (const text of [
+      "없는 기록이라",
+      "연결이 불안정해",
+      "원문 파일이 없어요",
+      "Word 문서를 만들지",
+      "더 쓸 씨앗이",
+      "자동 점검에서 보고할",
+      "카드를 만들지 못했어요",
+      "근거 부족 —",
+      "제목에 「",
+      "확인 필요 37%",
+      "검토할 곳:",
+      "묶음의 이름을 적어",
+      "5편 이상이면",
+      "다시 만들 수 있습니다",
+      "빈 문단은",
+      "완성되지 않은 초안",
+      "멈춘 초안입니다",
+      "도입 서술을 받지",
+      "서술 받지 못함",
+      "아직 검색 기록이 없어요",
+    ]) {
+      expect(galleryVue, text).not.toContain(text);
+    }
+  });
+
+  it("⑩ 그리지 않은 것 — 글이 부품 안에만 있는 자리·표시 없는 상태·디자인 밖 화면", () => {
+    expect(tpl).toContain('<h2 id="dev-sec-skip" class="dev-gallery__h2">⑩ 이 모음에 그리지 않은 것</h2>');
+    expect(js).toMatch(/const SKIPPED: \{ name: string; lines: string\[\] \}\[\] = \[/);
+    for (const hook of [".rs-subq__stopped", ".skx-aip__notice", ".skx-history-badge", ".dt-rc__why-text", "/admin/jobs", "/search-classic", "window.prompt"]) {
+      expect(js, hook).toContain(hook);
+    }
+  });
+
+  it("여러 문장 설명은 문장마다 줄을 바꾼다(pre-line)", () => {
+    expect(css).toMatch(/\.dev-gallery__note \{[^}]*white-space: pre-line;/);
   });
 
   it("떠날 때 관찰자·타이머를 걷는다", () => {

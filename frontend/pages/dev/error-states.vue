@@ -6,12 +6,19 @@
      문구도 여기 새로 짓지 않는다 — 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage·researchFailedMessage)에 본보기 오류를 넣어
      만든 글과 상수(ERROR_PAGE_TEXT·CONNECTION_HINTS·AI_SUMMARY_FAILED·charLimitMessage·RESEARCH_STATE_TEXT·PAPER_STATE_TEXT·
      WORK_SOURCES_FAILED·SIDEBAR_NOTICE)를 그대로 보여 문구가 바뀌면 같이 바뀐다. 상태 블록의 제목('검색하지 못했어요' 등)도 실제 화면의
-     상수를 읽는다 — 이 페이지에서 새로 짓는 글은 실제 화면에 아직 없는 빈 연구 안내뿐이다.
-     항목마다 '생기는 곳'은 그 모양이 실제로 나오는 대표 화면이다(공통 컴포넌트를 쓰는 곳 — 2~4곳).
-     ③ 딥리서치 상태는 후배 시안의 네 변형(실패·취소·찾을 수 없음·결과 없음)을 실제 동작(pages/research/[id].vue·api/research.py)에 맞춘 것 —
-     딥리서치 화면과 같은 상수·함수를 읽고, 항목마다 '시안 대비'에 바꾼 점을 적는다.
+     상수를 읽는다 — 이 페이지가 새로 짓는 화면 문구는 없다(연구 질문·절 제목 같은 본보기 내용만 적는다).
+     항목마다 '생기는 곳'은 그 모양이 실제로 나오는 대표 화면이다(공통 컴포넌트를 쓰는 곳 — 2~5곳).
+     ③ 딥리서치 상태는 후배 시안의 변형(실패·취소·찾을 수 없음)을 실제 동작(pages/research/[id].vue·api/research.py)에 맞춘 것 —
+     딥리서치 화면과 같은 상수·함수를 읽고, 항목마다 '시안 대비'에 바꾼 점을 적는다. 시안의 '결과 없음(아직 연구가 없음)'은 실제 앱에
+     없어(사이드바가 [연구 시작하기]만 둔다) 그리지 않는다.
+     ⑦~⑨ 는 공통 구역 밖에서 따로 꾸미는 표시(토스트·상태 배지·흐린 안내 글 등)다 — 실제 부품(SynthProgressCard·ReportSkeleton·
+     ReportView·TopicCard·ReadingNextActions·BookCover)은 본보기 내용을 넣어 그대로 그리고, 부품 없이 화면이 직접 그리는 것은 같은 클래스·
+     같은 상수·함수(phaseLabel·subqStatusLabel·moreLine·NO_LIMITS·outlineProblems·SIDEBAR_EMPTY·BOOK_HISTORY_TEXT 등)로 같은 마크업을
+     그린다. 항목마다 '스타일 위치'에 고칠 파일·클래스를 적는다. 사이드바 빈 기록(.skx-history__empty)의 모양은 AppSidebar.vue 의 scoped
+     스타일이라, 그 컴포넌트의 scope 속성(__scopeId)을 같은 줄에 붙여 실제 규칙을 입힌다(사이드바를 고치면 여기도 바뀐다).
+     ⑩ 은 글이 컴포넌트 안에만 있어 그리지 못한 자리·표시가 없는 상태·디자인 시스템 밖 화면을 적은 목록이다.
      [다시 시도] 는 누르면 잠깐 재시도 중 모양으로 바뀌었다 돌아오고, [다시 연결] 은 다시 연결하는 중 → 붙음(띠가 사라짐) → 다시 끊김으로
-     돈다(요청은 보내지 않는다).
+     돈다(요청은 보내지 않는다). 표지 대체 그림(BookCover)만 없는 자료 번호로 표지를 한 번 불러 실패시킨다.
      이 페이지 자체의 틀(.dev-*)은 아래 scoped 스타일이고 디자인 대상이 아니다 -->
 <template>
   <div class="skx-app">
@@ -25,6 +32,7 @@
             실제 화면 전체에 반영됩니다.
           </p>
           <p class="dev-gallery__lead">각 항목의 ‘생기는 곳’은 그 모양이 실제로 나오는 대표 화면입니다.</p>
+          <p class="dev-gallery__lead">{{ OUTSIDE_LEAD }}</p>
         </div>
         <div class="dev-gallery__theme">
           <p :id="themeLabelId" class="dev-gallery__theme-label">테마</p>
@@ -75,7 +83,7 @@
         </div>
       </section>
 
-      <!-- ② 섹션 상태 블록 — kind 별 / ③ 딥리서치 상태 — 후배 시안 네 변형을 실제 동작에 맞춰. 같은 틀을 섹션 목록으로 돈다 -->
+      <!-- ② 섹션 상태 블록 — kind 별 / ③ 딥리서치 상태 — 후배 시안 변형을 실제 동작에 맞춰. 같은 틀을 섹션 목록으로 돈다 -->
       <section v-for="g in STATE_SECTIONS" :key="g.id" class="dev-gallery__section" :aria-labelledby="g.id">
         <h2 :id="g.id" class="dev-gallery__h2">{{ g.title }}</h2>
         <p class="dev-gallery__note">{{ g.note }}</p>
@@ -268,12 +276,128 @@
           </article>
         </div>
       </section>
+
+      <!-- ⑦ 토스트 · ⑧ 상태 배지·줄 상태 · ⑨ 흐린 안내 글·카드 안 안내 — 공통 구역 밖에서 따로 꾸미는 표시. 같은 틀을 섹션 목록으로 돈다.
+           실제 부품은 본보기 내용을 넣어 그대로 그리고, 화면이 직접 그리는 것은 같은 클래스·같은 상수로 같은 마크업을 그린다 -->
+      <section v-for="g in OUTSIDE_SECTIONS" :key="g.id" class="dev-gallery__section" :aria-labelledby="g.id">
+        <h2 :id="g.id" class="dev-gallery__h2">{{ g.title }}</h2>
+        <p class="dev-gallery__note">{{ g.note }}</p>
+        <div class="dev-gallery__grid dev-gallery__grid--wide">
+          <article v-for="s in g.samples" :key="s.id" class="dev-item">
+            <h3 class="dev-item__name">{{ s.name }}</h3>
+            <div class="dev-item__stage">
+              <!-- 토스트는 position: fixed(화면 아래 가운데) — transform 을 준 칸이 고정 위치의 기준이 되어 칸 아래 가운데에 늘 떠 있다.
+                   마크업은 화면들(pages/*.vue 의 Teleport)과 같고, 2.5초 타이머·나타남 전환만 없다 -->
+              <div v-if="s.id === 'toast'" class="dev-toast-stage">
+                <div class="dev-ghost" aria-hidden="true"><span></span><span></span><span></span></div>
+                <div class="skx-toast" role="status" aria-live="polite">{{ BOOK_HISTORY_TEXT.missing }}</div>
+              </div>
+              <div v-else-if="s.id === 'statusChip'" class="rs-head">
+                <div class="rs-head__meta">
+                  <span v-for="p in STOPPED_PHASES" :key="p" class="rs-status" :class="`rs-status--${p}`">{{ phaseLabel(p) }}</span>
+                </div>
+              </div>
+              <div v-else-if="s.id === 'failedBadge'" class="rs-card">
+                <div class="rs-subq__head">
+                  <span class="rs-subq__no">{{ FAILED_SUBQ.idx + 1 }}</span>
+                  <span class="rs-subq__title">{{ FAILED_SUBQ.title }}</span>
+                  <span class="rs-badge rs-badge--failed">{{ subqStatusLabel(FAILED_SUBQ) }}</span>
+                </div>
+              </div>
+              <SynthProgressCard v-else-if="s.id === 'synthFailed'" :slots="DRAFT_SLOTS" :eta="DRAFT_ETA" />
+              <ReportSkeleton v-else-if="s.id === 'slotStates'" :slots="PLAN_SLOTS" />
+              <div v-else-if="s.id === 'muted'" class="rs-card">
+                <p v-for="t in s.texts" :key="t" class="rs-muted">{{ t }}</p>
+              </div>
+              <div v-else-if="s.id === 'disabledReason'" class="rs-card">
+                <ReadingNextActions
+                  class="wk-screen__next"
+                  where="bottom"
+                  :no-topic="false"
+                  :outline-made="false"
+                  make-disabled
+                  :hint="READING_HINT"
+                  :disabled-why-id="null"
+                />
+              </div>
+              <ReportView
+                v-else-if="s.id === 'reportDraft'"
+                :report="DRAFT_REPORT"
+                job-id="dev-gallery"
+                :generated-at="null"
+                :draft="DRAFT_STOPPED"
+              />
+              <TopicCard
+                v-else-if="s.id === 'topicFailed' || s.id === 'topicChecks'"
+                :item="s.id === 'topicFailed' ? TOPIC_FAILED : TOPIC_CHECKED"
+                :papers="{}"
+                :picked="false"
+                :read-only="false"
+                :busy="false"
+                :concepts="TOPIC_KEYWORDS"
+                :concepts-gen="null"
+              />
+              <div v-else-if="s.id === 'outlineProblems'" class="rs-card">
+                <ul class="wk-outline__problems">
+                  <li v-for="p in OUTLINE_PROBLEMS" :key="p">{{ p }}</li>
+                </ul>
+              </div>
+              <!-- 사이드바 바탕·글자 토큰(.dev-side) 위에 사이드바의 scope 속성을 붙인 같은 줄 — AppSidebar.vue 의 scoped 규칙이 그대로 입는다 -->
+              <div v-else-if="s.id === 'sidebarEmpty'" class="dev-side">
+                <p class="skx-history__empty" role="status" v-bind="SIDEBAR_SCOPE">{{ SIDEBAR_EMPTY }}</p>
+              </div>
+              <!-- 표지는 브라우저에서만 불러야 실패(@error)를 놓치지 않는다 — 서버 렌더 중 실패하면 붙기 전이라 깨진 그림이 남는다 -->
+              <div v-else-if="s.id === 'bookCover'" class="dev-cover">
+                <ClientOnly>
+                  <BookCover :book-id="MISSING_BOOK_ID" size="small" />
+                </ClientOnly>
+              </div>
+            </div>
+            <dl class="dev-item__meta">
+              <dt>생기는 곳</dt>
+              <dd>{{ s.uses.join(" · ") }}</dd>
+              <dt>디자인 훅</dt>
+              <dd><code v-for="h in s.hooks" :key="h">{{ h }}</code></dd>
+              <dt>스타일 위치</dt>
+              <dd>{{ styleLine(s.styleAt) }}</dd>
+              <dt>문구</dt>
+              <dd>
+                <span v-for="t in s.texts" :key="t">‘{{ t }}’</span>
+                <span v-if="!s.texts.length">부품 안의 글이라 상수로 읽지 못해요(실제 모양은 위 본보기).</span>
+              </dd>
+            </dl>
+          </article>
+        </div>
+      </section>
+
+      <!-- ⑩ 이 모음에 그리지 않은 것 — 디자이너가 따로 찾아봐야 하는 자리 -->
+      <section class="dev-gallery__section" aria-labelledby="dev-sec-skip">
+        <h2 id="dev-sec-skip" class="dev-gallery__h2">⑩ 이 모음에 그리지 않은 것</h2>
+        <p class="dev-gallery__note">{{ SKIPPED_NOTE }}</p>
+        <div class="dev-gallery__grid dev-gallery__grid--wide">
+          <article v-for="k in SKIPPED" :key="k.name" class="dev-item">
+            <h3 class="dev-item__name">{{ k.name }}</h3>
+            <ul class="dev-item__list">
+              <li v-for="line in k.lines" :key="line">{{ line }}</li>
+            </ul>
+          </article>
+        </div>
+      </section>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
+import AppSidebar from "~/components/AppSidebar.vue";
+import ReportSkeleton from "~/components/research/ReportSkeleton.vue";
+import ReportView from "~/components/research/ReportView.vue";
+import SynthProgressCard from "~/components/research/SynthProgressCard.vue";
+import ReadingNextActions from "~/components/work/ReadingNextActions.vue";
+import TopicCard from "~/components/work/TopicCard.vue";
+import { REPORT_EXPORT_FAILED } from "~/composables/useReportExport";
 import { useTheme } from "~/composables/useTheme";
+import type { ResearchReport, SubqView } from "~/types/research";
+import type { ReadingItem, ReadingView, TopicItem } from "~/types/work";
 import { AI_SUMMARY_FAILED } from "~/utils/aiStream";
 import {
   CONNECTION_HINTS,
@@ -287,21 +411,31 @@ import {
   type ErrorStateKind,
 } from "~/utils/apiErrors";
 import { SEARCH_QUERY_MAX } from "~/utils/searchInput";
+import { BOOK_HISTORY_TEXT } from "~/utils/bookErrors";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { CHAT_MAX_CHARS } from "~/utils/deepReadSse";
-import { deepResearchStartRoute } from "~/utils/landingStart";
+import { outlineProblems } from "~/utils/outlineEdit";
+import { planSlotLabel, type PlanSlot } from "~/utils/planSlots";
+import { paragraphProblem, reviewLine } from "~/utils/proposalView";
+import { outlineHint } from "~/utils/readingList";
+import type { DraftSlot, SynthEta } from "~/utils/researchDraft";
 import {
   LOST_AFTER_DROPS,
   RESEARCH_STATE_TEXT,
+  pdfCheckProblem,
   researchErrorMessage,
   researchFailedMessage,
   researchRetryLabel,
 } from "~/utils/researchErrors";
+import { phaseLabel, subqStatusLabel, type ResearchPhase } from "~/utils/researchEvents";
+import { INTROLESS, NO_LIMITS, draftBadge, draftIntro, type DraftState } from "~/utils/researchReport";
 import { PAPER_STATE_TEXT } from "~/utils/paperErrors";
 import { QUESTION_MAX } from "~/utils/researchInput";
 import { SIDEBAR_EMPTY, SIDEBAR_NOTICE } from "~/utils/sidebarGroups";
+import { slotStateLabel } from "~/utils/synthCard";
 import { THEMES, THEME_LABELS } from "~/utils/theme";
-import { WORK_SOURCES_FAILED, WORK_STREAM_LOST_MS } from "~/utils/workErrors";
+import { cardNote, cardNumbersLine, keywordWarning, moreLine, regenerateProblem } from "~/utils/topicDeck";
+import { WORK_SLOW_MS, WORK_SOURCES_FAILED, WORK_STREAM_LOST_MS } from "~/utils/workErrors";
 
 useHead({
   title: "오류 화면 모음 — SKOVIX",
@@ -324,11 +458,6 @@ interface SpecInfo {
 
 /** 컴포넌트 기본 버튼 글(SkxErrorState·SkxInlineError 의 retryLabel 기본값) — 설명 줄에만 쓴다 */
 const RETRY_TEXT = "다시 시도";
-/** 사이드바 [연구 시작하기]가 여는 주소 — 첫 화면의 논문 패널 + DeepResearch 모드(utils/landingStart) */
-const START_RESEARCH_HREF = (() => {
-  const route = deepResearchStartRoute();
-  return `${route.path}?${new URLSearchParams(route.query).toString()}`;
-})();
 
 // 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage)에 넣어 볼 본보기 오류 — 문구를 여기 적지 않고 규칙이 만든 글을 보인다.
 // network 는 응답 없이 끝난 요청(ofetch FetchError — 상태 없음), 나머지는 상태 코드만 든 응답
@@ -559,7 +688,7 @@ const STATE_SAMPLES: StateSample[] = [
   }),
 ];
 
-// 후배 시안 'DR/상태 안내'의 네 변형을 실제 동작에 맞춘 것 — 제목·설명·버튼은 실제 화면(pages/research/[id].vue)과 같은 상수·함수
+// 후배 시안 'DR/상태 안내'의 변형을 실제 동작에 맞춘 것 — 제목·설명·버튼은 실제 화면(pages/research/[id].vue)과 같은 상수·함수
 // (RESEARCH_STATE_TEXT·researchFailedMessage·researchRetryLabel). 멈춘·취소한 연구는 실제 화면처럼 카드 안의 compact 블록이다.
 // 실패의 다시 시도 갈래는 api/research.py retry_research(보고서 작성 단계에서 멈춘 연구만 체크포인트로 이어 가고, 계획 단계 실패는 새 연구)
 const RESEARCH_SAMPLES: StateSample[] = [
@@ -613,19 +742,6 @@ const RESEARCH_SAMPLES: StateSample[] = [
       "시안 제목 '연구를 불러오지 못했어요'는 실제 화면의 불러오기 실패(네트워크·서버) 제목이라 헷갈려 실제 404 문구를 쓴다. '접근 권한이 없는 연구일 수 있어요'는 뺐다 — " +
       "연구는 주소만 알면 누구나 연다(권한 검사가 없다). 원인은 주소가 잘못된 경우다(연구를 지우는 기능은 없다 — 사이드바 전체 삭제도 기록만 지운다).",
   }),
-  stateSample({
-    id: "researchEmpty",
-    name: "결과 없음 — 아직 연구가 없음",
-    kind: "empty",
-    title: "아직 진행한 연구가 없어요",
-    message: "연구 시작하기를 누르면 첫 화면에서 DeepResearch로 질문할 수 있어요.",
-    action: { label: "연구 시작하기", href: START_RESEARCH_HREF },
-    uses: ["사이드바 DeepResearch 묶음 — 연구 기록이 하나도 없을 때(지금은 [연구 시작하기] 버튼만 있다)"],
-    hooks: [".skx-state--empty", '[data-tone="neutral"]', 'role="status"'],
-    diff:
-      "제목은 시안 그대로. 실제로는 이 큰 빈 화면이 없다 — 사이드바 묶음이 [연구 시작하기]만 두고, 누르면 첫 화면이 논문 패널 + DeepResearch 모드로 열린다" +
-      "(?start=deep-research). 연구 시작 전용 화면은 두지 않는다.",
-  }),
 ];
 
 const STATE_SECTIONS = [
@@ -636,16 +752,18 @@ const STATE_SECTIONS = [
       "제목은 화면마다 다른 '무엇을 못 했는지', 설명 줄은 오류 규칙(apiErrorMessage)이 붙이는 이유입니다. 색은 아이콘 원에만 씁니다 — 실패 갈래는 경고 삼각형(위험색), " +
       "빈 결과는 문서+돋보기(청록), 찾을 수 없음은 돋보기+X(회색), 취소는 둥근 네모(포인트색). 여기 없는 kind(invalid·conflict·forbidden·unknown)는 " +
       '실패 갈래([data-tone="error"])로 같은 모양이고, .skx-state--{kind} 로 따로 꾸밀 수 있습니다. 버튼 줄의 첫 버튼이 주 버튼(포인트색 채움)입니다. ' +
-      `사이드바의 빈 기록 안내(‘${SIDEBAR_EMPTY}’ — .skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아 공통 디자인 훅 밖입니다(디자인 대상 아님).`,
+      "사이드바의 빈 기록 안내(.skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아요 — ⑨ 에 따로 그렸어요.",
     samples: STATE_SAMPLES,
   },
   {
     id: "dev-sec-research",
-    title: "③ 딥리서치 상태 (후배 시안 네 변형)",
+    title: "③ 딥리서치 상태 (후배 시안 변형)",
     note:
-      "시안의 실패·취소·찾을 수 없음·결과 없음을 실제 동작에 맞춘 문구로 그렸습니다. 딥리서치 화면(pages/research/[id].vue)도 같은 컴포넌트에 " +
+      "시안의 실패·취소·찾을 수 없음을 실제 동작에 맞춘 문구로 그렸습니다. 딥리서치 화면(pages/research/[id].vue)도 같은 컴포넌트에 " +
       "같은 상수·함수(RESEARCH_STATE_TEXT·researchFailedMessage·researchRetryLabel)를 넘깁니다 — 멈춘·취소한 연구는 머리 아래(진행 막대 자리) 카드 안의 " +
-      "compact 블록, 없는 연구는 본문 전체 자리입니다. 결과 없음만 실제 화면에 없습니다. 항목마다 '시안 대비'에 바꾼 점을 적었습니다.",
+      "compact 블록, 없는 연구는 본문 전체 자리입니다. 항목마다 '시안 대비'에 바꾼 점을 적었습니다.\n" +
+      "시안의 넷째 변형(결과 없음 — 아직 연구가 없음)은 실제 앱에 없어 그리지 않았어요.\n" +
+      "연구 기록이 하나도 없으면 사이드바 DeepResearch 묶음이 빈 화면 없이 [연구 시작하기] 버튼만 둬요(누르면 첫 화면이 논문 패널 + DeepResearch 모드로 열려요).",
     samples: RESEARCH_SAMPLES,
   },
 ];
@@ -665,6 +783,8 @@ const INLINE_SAMPLES: Record<"basic" | "retry" | "busy", SpecInfo> = {
       `${DEEP_RESEARCH} 모드의 입력 상자 아래 — 질문 길이·연구 시작 실패(네트워크가 끊겼을 때의 문구)`,
       "연구 계획·주제 카드 고치기 — 입력이 규칙에 맞지 않음(하위질문 개수·글자 수 등)",
       "출처 인용 창 — 복사하지 못함",
+      `연구 작업대 — 쓰기 응답이 ${WORK_SLOW_MS / 1000}초 넘게 늦어짐(끊지 않고 안내만 — WORK_SLOW_MESSAGE)`,
+      '사이드바 — 사이트 데이터 저장이 막힌 브라우저(SIDEBAR_NOTICE.storageBlocked — role="status")',
     ],
     hooks: [".skx-inline-error", ".skx-inline-error__msg", 'role="alert"'],
     // 연구 시작 요청이 서버에 닿지 못했을 때 — SearchPlusMenu 와 같은 규칙·대체 문구
@@ -730,13 +850,15 @@ const COUNT_USES = [
   `${DEEP_RESEARCH} 질문(${QUESTION_MAX}자)`,
   `DeepRead 질문(${CHAT_MAX_CHARS}자)`,
 ];
-/** 검색창·질문 칸의 글자 수는 quiet 다(사용자 결정 2026-10-16) — 평소에는 화면에서만 숨고 한도 가까이부터 보인다 */
+/** 앱의 글자 수 칸은 모두 quiet 다(사용자 결정 2026-10-16) — 평소에는 화면에서만 숨고 한도 가까이부터 보인다. quiet 를 쓰지 않는 칸이 없어
+ *  '평소' 모양(숫자만)은 지금 앱 어디에도 보이지 않는다 */
 const COUNT_QUIET_NOTE =
-  "검색창·질문 칸은 quiet 를 써서 한도 가까이(90%)부터만 보입니다 — 평소에는 화면에서만 숨고, 낭독기 알림 영역과 aria-describedby 는 그대로 남습니다. " +
-  "그래서 ‘평소’ 모양(숫자만)은 quiet 를 쓰지 않는 칸에서만 보입니다.";
+  "검색창·질문 칸(DeepResearch·DeepRead 질문 포함)은 모두 quiet 라 한도 가까이(90%)부터만 글자 수가 보여요.\n" +
+  "평소에는 화면에서만 숨고, 낭독기 알림 영역과 aria-describedby 는 그대로 남아요.\n" +
+  "그래서 ‘평소’ 모양(숫자만)은 지금 앱 어디에도 보이지 않아요 — quiet 를 쓰지 않는 칸이 생길 때를 위한 모양이에요.";
 
 const COUNT_SAMPLES = [
-  { length: 120, name: "평소" },
+  { length: 120, name: "평소 (지금 앱에는 보이는 곳 없음)" },
   { length: 120, name: "평소 — quiet (검색창·질문 칸 — 화면에 보이지 않음)", quiet: true },
   { length: COUNT_NEAR_DEMO, name: "한도 가까이 (90%부터)" },
   { length: CHAR_MAX, name: "한도" },
@@ -751,8 +873,11 @@ const COUNT_SAMPLES = [
           ? [".skx-charcount--quiet", '[data-state="normal"](화면에서만 숨김 — 공통 구역 규칙)']
           : [".skx-charcount", '[data-state="normal"]', ".skx-charcount__num"];
   const texts = [`${length}/${CHAR_MAX}`, ...(state === "limit" ? [charLimitMessage(CHAR_MAX)] : [])];
-  // 숫자만 보이는 평소 모양은 quiet 를 쓰지 않는 칸의 것이다 — 검색창·질문 칸은 평소에 숨는다(위 quiet 본보기)
-  const uses = state === "normal" && !quiet ? ["quiet 를 쓰지 않는 글자 수 칸(검색창·질문 칸은 quiet 라 평소에 숨는다)"] : COUNT_USES;
+  // 숫자만 보이는 평소 모양은 quiet 를 쓰지 않는 칸의 것이다 — 앱의 글자 수 칸은 모두 quiet 라 지금은 나오는 곳이 없다(위 quiet 본보기)
+  const uses =
+    state === "normal" && !quiet
+      ? ["지금 앱에는 없음 — 글자 수 칸이 모두 quiet 라 평소에는 숨어요(quiet 를 쓰지 않는 칸이 생기면 이 모양)"]
+      : COUNT_USES;
   return { length, name, quiet: !!quiet, uses, hooks, texts };
 });
 
@@ -768,6 +893,387 @@ function fillTo(n: number): void {
   while (text.length < n) text += FILLER;
   typed.value = text.slice(0, Math.min(n, CHAR_MAX));
 }
+
+// ── ⑦~⑨ 공통 구역 밖 ──
+
+/** 맨 위 안내 넷째 줄 */
+const OUTSIDE_LEAD = "⑦~⑨ 는 공통 구역 밖에서 따로 꾸미는 자리예요 — 항목마다 ‘스타일 위치’에 고칠 파일과 클래스를 적었어요.";
+
+/** '스타일 위치' 줄 — 고칠 파일·클래스에, 공통 구역을 따르지 않는다는 말을 붙인다 */
+function styleLine(where: string): string {
+  return `${where} — ‘[S] 공통 오류·빈 상태’ 구역을 따르지 않는 따로 꾸미는 자리예요.`;
+}
+
+/** 규칙이 null 을 줄 수 있는 글(해당 없음)을 걸러 문구 목록으로 */
+const present = (texts: (string | null)[]): string[] => texts.filter((t): t is string => !!t);
+
+type OutsideId =
+  | "toast"
+  | "statusChip"
+  | "failedBadge"
+  | "synthFailed"
+  | "slotStates"
+  | "muted"
+  | "disabledReason"
+  | "reportDraft"
+  | "topicFailed"
+  | "topicChecks"
+  | "outlineProblems"
+  | "sidebarEmpty"
+  | "bookCover";
+
+/** 공통 구역 밖 항목 — styleAt 은 고칠 파일·클래스(styleLine 이 공통 구역 밖이라는 말을 붙인다). texts 가 비면 글이 부품 안에만 있다 */
+interface OutsideSample extends SpecInfo {
+  id: OutsideId;
+  styleAt: string;
+}
+
+// 본보기 내용 — 화면 문구가 아니라 실제 부품에 넣는 연구 질문·하위질문·절 제목·씨앗 글이다(안내 문구는 부품·상수가 만든다)
+const SAMPLE_QUESTION = "공공도서관의 비대면 서비스는 이용 행태를 어떻게 바꾸었나?";
+const SAMPLE_SUBQS = [
+  "비대면 서비스가 늘면서 방문 이용은 어떻게 바뀌었나?",
+  "청소년 이용자의 열람실 이용은 어떻게 바뀌었나?",
+  "지역 도서관의 프로그램 운영은 어떻게 바뀌었나?",
+] as const;
+const SAMPLE_HEADINGS = ["비대면 서비스와 방문 이용의 변화", "청소년 이용자의 열람실 이용", "지역 도서관의 프로그램 운영"] as const;
+
+// ⑦ 토스트
+const TOAST_SAMPLE: OutsideSample = {
+  id: "toast",
+  name: "토스트 — 화면 아래 가운데 한 줄",
+  uses: [
+    "첫 화면·논문 검색 — 주소의 검색 기록을 복원하지 못함(없는 기록·서버에 닿지 못해 못 읽음)",
+    "딥리서치 — [원문 보기]가 원문을 찾지 못하거나 불러오지 못함",
+    "딥리서치 — Word·PDF 내려받기 실패",
+    "딥리서치 — 링크 복사·Word 내려받기를 마쳤다는 안내",
+  ],
+  hooks: [".skx-toast", ".skx-toast-enter-active·-leave-active·-enter-from·-leave-to(나타남·사라짐)", 'role="status"', 'aria-live="polite"'],
+  styleAt: "style_skovix.css 의 ‘── 토스트 ──’ 구역 .skx-toast",
+  // 첫 화면의 기록 토스트(논문 검색의 PAPER_STATE_TEXT.missingHistory·historyUnavailable 도 같은 말)와 딥리서치의 원문·내려받기 실패
+  texts: present([
+    BOOK_HISTORY_TEXT.missing,
+    BOOK_HISTORY_TEXT.unavailable,
+    pdfCheckProblem(404),
+    pdfCheckProblem(500),
+    REPORT_EXPORT_FAILED.docx,
+    REPORT_EXPORT_FAILED.pdf,
+  ]),
+};
+
+// ⑧ 상태 배지·줄 상태
+
+/** 멈춘 연구의 머리 상태 칩 — 실패·취소 */
+const STOPPED_PHASES = ["failed", "canceled"] as const satisfies readonly ResearchPhase[];
+
+/** 오류로 끝난 하위질문 — 탐색 경로·계획 카드의 한 줄 */
+const FAILED_SUBQ: SubqView = {
+  idx: 1,
+  title: SAMPLE_SUBQS[1],
+  seq: null,
+  status: "failed",
+  rounds: [],
+  verdict: null,
+  note: "",
+  adopted: null,
+  parseFailed: false,
+  error: null,
+};
+
+/** 보고서 작성 현황·멈춘 초안의 절 자리 — 1절은 썼고, 2절은 서술을 받지 못했고, 3절은 차례를 기다린다 */
+const DRAFT_SLOTS: DraftSlot[] = [
+  { idx: 0, heading: SAMPLE_HEADINGS[0], status: "done", durationMs: 48_000, startedAt: null, sectionIndex: 0 },
+  { idx: 1, heading: SAMPLE_HEADINGS[1], status: "failed", durationMs: 52_000, startedAt: null, sectionIndex: null },
+  { idx: 2, heading: SAMPLE_HEADINGS[2], status: "waiting", durationMs: null, startedAt: null, sectionIndex: null },
+];
+/** 작성 현황 머리 — 끝난 절 둘(완료·실패), 남은 절 하나 */
+const DRAFT_ETA: SynthEta = { done: 2, total: 3, runningIdx: null, runningElapsedMs: null, remainingMs: 50_000 };
+
+/** 보고서 자리(첫 절이 나오기 전) — 근거를 모은 자리·오류로 끝난 자리·근거 없이 끝난 자리 */
+const PLAN_SLOTS: PlanSlot[] = [
+  { subqIdx: 0, title: SAMPLE_SUBQS[0], state: "collected", adopted: 4, round: null, sectionIdx: null },
+  { subqIdx: 1, title: SAMPLE_SUBQS[1], state: "failed", adopted: null, round: null, sectionIdx: null },
+  { subqIdx: 2, title: SAMPLE_SUBQS[2], state: "empty", adopted: 0, round: null, sectionIdx: null },
+];
+
+const BADGE_SAMPLES: OutsideSample[] = [
+  {
+    id: "statusChip",
+    name: "연구 머리 상태 칩 — 실패·취소됨",
+    uses: ["딥리서치 — 연구 머리(질문 아래)의 상태 칩 — 실패·취소로 끝난 연구"],
+    hooks: [".rs-status", ".rs-status--failed", ".rs-status--canceled"],
+    styleAt: "research.css 의 .rs-status--failed·.rs-status--canceled",
+    texts: STOPPED_PHASES.map((phase) => phaseLabel(phase)),
+  },
+  {
+    id: "failedBadge",
+    name: "줄 배지 — 오류·실패",
+    uses: [
+      "딥리서치 — 탐색 경로·계획 카드에서 오류로 끝난 하위질문",
+      "연구 작업대 보고서 — 쓰지 못한 절의 상태 배지",
+      "보고서 자리의 오류 칩은 같은 모양의 다른 규칙(.rs-slot.is-failed — 아래 ‘보고서 자리’)",
+    ],
+    hooks: [".rs-badge", ".rs-badge--failed(본문색 글·테두리)"],
+    styleAt: "research.css 의 .rs-badge--failed(작업대 절 배지도 같은 클래스)",
+    texts: [subqStatusLabel(FAILED_SUBQ)],
+  },
+  {
+    id: "synthFailed",
+    name: "보고서 작성 현황 — 서술을 받지 못한 절",
+    uses: ["딥리서치 — 보고서를 쓰는 동안 작성 현황 카드의 절 줄(그 절은 논문 목록만 싣는다)"],
+    hooks: [".rs-synth__item.is-failed", ".rs-synth__icon(✕ — 본문색 테두리 원)", ".rs-synth__state"],
+    styleAt: "research.css 의 .rs-synth__item.is-failed .rs-synth__icon",
+    texts: [slotStateLabel(DRAFT_SLOTS[1]!, DRAFT_ETA)],
+  },
+  {
+    id: "slotStates",
+    name: "보고서 자리 — 오류·근거 없음",
+    uses: ["딥리서치 — 승인 뒤 첫 절이 나오기 전 본문의 보고서 자리(하위질문마다 한 자리)"],
+    hooks: [".rs-slot.is-failed .rs-slot__state(오류 — 본문색 테두리 칩)", ".rs-slot.is-empty(근거 없음 — 점선 한 줄로 접힘)"],
+    styleAt: "research.css 의 .rs-slot.is-failed·.rs-slot.is-empty",
+    texts: PLAN_SLOTS.filter((slot) => slot.state !== "collected").map((slot) => planSlotLabel(slot)),
+  },
+];
+
+// ⑨ 흐린 안내 글·카드 안 안내
+
+/** 멈춘 초안 — 실패·취소로 1절까지만 쓰고 멈춘 보고서(1절은 도입 글이 비었다 — INTROLESS 자리) */
+const DRAFT_REPORT: ResearchReport = {
+  question: SAMPLE_QUESTION,
+  range: null,
+  sections: [{ heading: SAMPLE_HEADINGS[0], intro: "", papers: [], future: [], evidence_chunks: {}, chunk_scores: {} }],
+  evidence: {},
+  trail: [],
+  limitations: [],
+};
+const DRAFT_STOPPED = { slots: DRAFT_SLOTS, state: "interrupted" as DraftState, excluded: [] };
+
+/** [보고서 만들기]를 막은 까닭 — 주제는 골랐고 담은 논문이 모자라다(세 편) */
+const READING_HINT = outlineHint({
+  topic_id: 1,
+  subquestions: [],
+  funnel: { reviewed: null, adopted: null, candidates: SAMPLE_HEADINGS.length, picked: SAMPLE_HEADINGS.length },
+  items: SAMPLE_HEADINGS.map(
+    (title, i): ReadingItem => ({
+      cnts_id: `dev-reading-${i}`,
+      state: "in",
+      origin: "evidence",
+      note: null,
+      group_label: null,
+      position: i,
+      meta: { title, personal_author: null, pub_date: null, series_title: null },
+      path: { subqs: [], revived: null, user: false },
+    }),
+  ),
+  excluded: [],
+} satisfies ReadingView);
+
+/** 주제 카드를 만들 때 고른 키워드 — 지금 고른 키워드(concepts)와 같게 넘겨 '키워드가 바뀌었습니다'는 붙지 않는다 */
+const TOPIC_KEYWORDS = ["청소년", "디지털 격차"];
+/** 보고서 씨앗 자리의 카드 생성이 실패한 카드 — 점선 테두리·카드 안 안내·[다시] */
+const TOPIC_FAILED: TopicItem = {
+  id: 901,
+  slot: 0,
+  origin: "report_seed",
+  state: "candidate",
+  parent_id: null,
+  seed: {
+    key: "dev-future-0",
+    kind: "future",
+    section_idx: 1,
+    subq_idx: null,
+    heading: SAMPLE_HEADINGS[1],
+    text: "청소년 이용자의 열람실 이용 변화를 따로 살핀 연구가 더 필요하다.",
+    papers: [],
+    adopted: null,
+  },
+  card: null,
+  generation: { id: 31, status: "failed" },
+  created_at: "2026-10-16T09:00:00Z",
+};
+/** 고른 키워드를 제목에 하나도 넣지 못하고 [F#] 밖 숫자를 쓴 카드 — 키워드 경고·'확인 필요' 표시 */
+const CHECKED_CARD: NonNullable<TopicItem["card"]> = {
+  title: "공공도서관 비대면 서비스와 열람실 이용의 변화",
+  question: "비대면 서비스가 늘어난 뒤 열람실 이용은 얼마나 줄었나?",
+  evidence: [],
+  figure_sentence: null,
+  figures: [],
+  latest_year: 2023,
+  edited: false,
+  keywords: TOPIC_KEYWORDS,
+  checks: { numbers: ["37%"], softened: 0, recovered: 0, missing_keywords: TOPIC_KEYWORDS },
+  gen_id: 32,
+};
+const TOPIC_CHECKED: TopicItem = { ...TOPIC_FAILED, id: 902, card: CHECKED_CARD, generation: { id: 32, status: "done" } };
+
+/** [목차 고치기]에서 묶음 이름·논문·연구 질문을 비운 채 승인하려 할 때 */
+const OUTLINE_PROBLEMS = outlineProblems({ groups: [{ key: "g1", name: "", papers: [] }], question: "", method: "" }, true);
+
+/**
+ * AppSidebar.vue 의 scoped 스타일이 붙는 속성(data-v-…) — 빈 기록 줄에 붙여 사이드바의 규칙을 그대로 입힌다(사이드바를 고치면 여기도
+ * 바뀐다). 컴파일러가 컴포넌트에 싣는 __scopeId 를 읽는다 — 없으면 붙이지 않아 모양만 빠진다
+ */
+const SIDEBAR_SCOPE: Record<string, string> = (() => {
+  const scopeId = (AppSidebar as unknown as { __scopeId?: string }).__scopeId;
+  return scopeId ? { [scopeId]: "" } : {};
+})();
+
+/** 없는 자료 번호 — 표지 요청이 실패해(404) BookCover 가 대체 그림을 그린다 */
+const MISSING_BOOK_ID = "dev-gallery-no-cover";
+
+const MUTED_SAMPLES: OutsideSample[] = [
+  {
+    id: "muted",
+    name: "흐린 안내 글 — 빈 칸·경고",
+    uses: [
+      "딥리서치 보고서 — 한계를 찾지 못함·서술을 받지 못한 절·인용 칩에 맞는 대목 없음",
+      "연구 작업대 — 더 쓸 씨앗·뽑힌 키워드가 없음, 아직 적지 않은 칸, 근거가 없어 쓰지 않은 절",
+      "연구 작업대 — 목차를 만든 뒤 주제·참고문헌이 바뀜(다시 맞춤 필요 안내)",
+      "연구 작업대 인용 근거 — 겹치는 대목을 못 찾음·대목 대신 초록을 보임",
+    ],
+    hooks: [".rs-muted", ".rs-cite__quote.rs-muted(인용 칩 팝오버)"],
+    styleAt: "research.css 의 .rs-muted(연구 작업대도 같은 클래스)",
+    texts: [moreLine(0), NO_LIMITS],
+  },
+  {
+    id: "disabledReason",
+    name: "막힌 버튼 + 까닭",
+    uses: [
+      "연구 작업대 참고문헌 — [보고서 만들기]를 못 누름(주제 없음·담은 논문이 모자람)",
+      "연구 작업대 키워드 — [이 키워드로 다시 만들기]를 못 누름(고른 키워드가 모자람)",
+      "연구 작업대 문단 고치기 — [저장]을 못 누름(빈 문단·글자 수 넘음)",
+    ],
+    hooks: [".rs-btn:disabled(흐림)", ".rs-muted(까닭 — 버튼이 aria-describedby 로 가리킨다)", ".wk-screen__next"],
+    styleAt: "research.css 의 .rs-btn:disabled·.rs-muted",
+    texts: present([READING_HINT, regenerateProblem([]), paragraphProblem("")]),
+  },
+  {
+    id: "reportDraft",
+    name: "보고서 안 안내 — 멈춘 초안",
+    uses: [
+      "딥리서치 — 실패·취소로 멈춘 연구의 보고서 칸(쓴 절까지만 초안으로)",
+      "딥리서치 보고서 — 도입 서술·논문 요약을 받지 못한 절",
+      "연구 작업대 — 목차·절의 다시 맞춤 필요 배지(.wk-outline__stale·.wk-psec__stale — 초안 배지와 같은 포인트색 테두리, work.css)",
+    ],
+    hooks: [".rs-badge--draft(초안 배지)", ".rs-report__intro(머리 글 — 왼쪽 포인트색 선)", ".rs-muted(못 쓴 절·도입 없는 절)"],
+    styleAt: "research.css 의 .rs-badge--draft·.rs-report__intro·.rs-muted",
+    texts: [draftBadge("interrupted").label, draftIntro(DRAFT_SLOTS, "interrupted"), INTROLESS],
+  },
+  {
+    id: "topicFailed",
+    name: "주제 카드 — 만들지 못함",
+    uses: ["연구 작업대 제목 고르기 — 카드 생성 실패·근거 부족(씨앗을 받치는 논문이 모자람)·키워드를 만들지 못해 카드가 들어가지 않은 자리"],
+    hooks: [".wk-topic--failed·--insufficient·--blocked(점선 테두리)", ".wk-topic__note(카드 안 안내 — 굵은 보조색, 두 문장이면 줄바꿈)", ".wk-topic__seed"],
+    styleAt: "work.css 의 .wk-topic--failed·.wk-topic--insufficient·.wk-topic--blocked·.wk-topic__note",
+    texts: present([cardNote("failed"), cardNote("insufficient"), cardNote("blocked")]),
+  },
+  {
+    id: "topicChecks",
+    name: "주제 카드 — 키워드 경고·확인 필요",
+    uses: [
+      "연구 작업대 제목 고르기 — 고른 키워드를 제목에 하나도 넣지 못한 카드·[F#] 밖 숫자를 쓴 카드",
+      "연구 작업대 보고서 — 문장 옆 확인 필요 표시·머리의 [검토할 곳] 버튼(.wk-review__jump — 같은 점선)",
+    ],
+    hooks: [".wk-topic__kwwarn", ".wk-psec__check(점선 테두리 표시)", ".wk-review", ".wk-review__jump"],
+    styleAt: "work.css 의 .wk-topic__kwwarn·.wk-psec__check·.wk-review__jump",
+    texts: present([keywordWarning(CHECKED_CARD), cardNumbersLine(CHECKED_CARD), reviewLine({ unmarked: 2, numbers: 1, first: null })]),
+  },
+  {
+    id: "outlineProblems",
+    name: "편집 칸 아래 고칠 곳 목록",
+    uses: ["연구 작업대 — [목차 고치기]에서 묶음 이름·논문·연구 질문·방법이 규칙에 맞지 않음([저장]·[승인] 막힘)"],
+    hooks: [".wk-outline__problems(점 목록 — 본문색 작은 글)"],
+    styleAt: "work.css 의 .wk-outline__problems",
+    texts: OUTLINE_PROBLEMS,
+  },
+  {
+    id: "sidebarEmpty",
+    name: "사이드바 빈 기록",
+    uses: ["사이드바 — DeepResearch·최근 검색 두 묶음이 모두 진짜 비었을 때(못 읽은 묶음은 제자리에서 ④ 줄 안내로 말해요)"],
+    hooks: [".skx-history__empty", 'role="status"', ".skx-lnb 안의 글자 토큰(--skx-gray-1 → --skx-side-gray-1)"],
+    styleAt: "AppSidebar.vue 의 scoped 스타일 .skx-history__empty",
+    texts: [SIDEBAR_EMPTY],
+  },
+  {
+    id: "bookCover",
+    name: "표지 대체 그림",
+    uses: [
+      "소장자료 검색 결과 카드·도서 상세·관련 자료·상황별 추천 — 표지를 불러오지 못함(원본 없음 404·저장소 장애 503)",
+      "논문 표지는 이 모양이 아니라 논문 기본 그림으로 바뀌어요",
+    ],
+    hooks: [".book-cover", ".placeholder", ".placeholder-text", "svg stroke(선색)"],
+    styleAt: "BookCover.vue 의 scoped 스타일·svg stroke 속성(테마 토큰이 아닌 고정 색이라 두 테마에서 같아요)",
+    texts: [],
+  },
+];
+
+const OUTSIDE_SECTIONS: { id: string; title: string; note: string; samples: OutsideSample[] }[] = [
+  {
+    id: "dev-sec-toast",
+    title: "⑦ 토스트 (.skx-toast)",
+    note:
+      "토스트는 한 문장·한 줄이에요(white-space: nowrap — 줄을 바꾸지 않아요).\n" +
+      "두 문장 문구는 줄바꿈이 공백 하나로 붙어 한 줄이 돼요.\n" +
+      "실제 화면에서는 아래 가운데에 2.4~2.5초 떠 있다가 사라져요 — 여기서는 같은 마크업을 칸 안에 늘 보이게 그렸어요.\n" +
+      "공통 컴포넌트가 없어 화면마다(Teleport) 같은 마크업을 직접 그려요.",
+    samples: [TOAST_SAMPLE],
+  },
+  {
+    id: "dev-sec-badge",
+    title: "⑧ 상태 배지·줄 상태 (공통 구역 밖)",
+    note:
+      "딥리서치·연구 작업대의 상태를 말하는 배지와 목록 줄이에요.\n" +
+      "빨강 없이 본문색 테두리·회색 글로 실패를 말해요.\n" +
+      "research.css·work.css 에 따로 있어 ‘[S] 공통 오류·빈 상태’ 구역을 고쳐도 바뀌지 않아요.\n" +
+      "작성 현황·보고서 자리는 실제 부품(SynthProgressCard·ReportSkeleton)에 본보기 절·하위질문을 넣어 그렸어요.",
+    samples: BADGE_SAMPLES,
+  },
+  {
+    id: "dev-sec-muted",
+    title: "⑨ 흐린 안내 글·카드 안 안내 (공통 구역 밖)",
+    note:
+      "공통 컴포넌트를 거치지 않고 본문 안의 흐린 글·카드 안 글로 말하는 빈 칸·경고·막힌 까닭이에요.\n" +
+      "보고서·주제 카드·다음 단계 버튼·표지는 실제 부품(ReportView·TopicCard·ReadingNextActions·BookCover)에 본보기 내용을 넣어 그렸어요.\n" +
+      "부품 안의 버튼은 눌러도 아무 일도 하지 않아요([직접 고치기]는 편집 칸만 열려요).",
+    samples: MUTED_SAMPLES,
+  },
+];
+
+// ── ⑩ 이 모음에 그리지 않은 것 ──
+
+const SKIPPED_NOTE =
+  "이 모음에 그리지 않았지만 디자인할 때 알아 둘 자리예요.\n" +
+  "글이 컴포넌트 안에만 있어 상수로 읽을 수 없는 것, 표시가 아예 없는 상태, SKOVIX 디자인 밖 화면이에요.";
+
+const SKIPPED: { name: string; lines: string[] }[] = [
+  {
+    name: "따로 꾸미는 자리 — 글이 컴포넌트 안에만 있어요",
+    lines: [
+      "딥리서치 탐색 경로의 멈춘 지점 줄 — .rs-subq__stopped(research.css, 굵은 본문색 작은 글)",
+      "첫 화면 AI 결과에서 1위 도서도 질문과 멀 때의 약한 결과 안내 — .skx-aip__notice(style_skovix.css, 큰 회색 글)",
+      "사이드바 연구 줄의 실패·취소·알 수 없음 배지 — .skx-history-badge.is-failed·.is-canceled·.is-unknown(AppSidebar.vue scoped, 옅은 유리 알약에 회색 글)",
+      "참고문헌 단계의 다시 맞춤 필요 — 회색 기본 배지(.rs-badge)를 흐린 안내 글 안에 둬요(ReadingStep)",
+      "관련 자료 카드의 빈 요약·빈 추천 사유 — 평소 글 자리(.dt-rc__why-text — detail.css)에 빈 글을 적어요",
+    ],
+  },
+  {
+    name: "표시가 없는 상태",
+    lines: [
+      "없는 상황 번호(/recommend/99) — 404 없이 01번 상황으로 그려요",
+      "예시 연구 목록을 읽지 못함 — 카드 칸을 그리지 않아요",
+      "사이드바 기록 지우기 실패 — 화면 안내 없이 목록에서 빼요",
+      "작성 중인 보고서의 [초안 저장]이 막힘 — 버튼 툴팁(title)만 있어요",
+    ],
+  },
+  {
+    name: "SKOVIX 디자인 밖",
+    lines: [
+      "관리자 잡 화면(/admin/jobs) — Tailwind 운영자 화면이에요(오류 줄은 왼쪽 호박색 선)",
+      "보존 화면(/search-classic) — 구조를 그대로 두는 첫 화면이라 자체 scoped 스타일(.error-area·.empty·.ch-empty·.cart-empty)을 써요",
+      "딥리서치 [링크 복사] 실패 — 브라우저 대화상자(window.prompt)라 꾸밀 수 없어요",
+      "DeepRead 첫 인사·멈춘 답의 꼬리 글 — 오류 표시가 아니라 평범한 AI 말풍선이에요",
+    ],
+  },
+];
 
 // ── 다시 시도 흉내 ──
 
@@ -886,11 +1392,13 @@ onBeforeUnmount(() => {
   line-height: 1.4;
   color: var(--skx-ink-strong);
 }
+/* 여러 문장 설명은 문장마다 줄을 바꾼다('\n') */
 .dev-gallery__note {
   margin: 0;
   font-size: 0.65rem;
   line-height: 1.6;
   color: var(--skx-gray-1);
+  white-space: pre-line;
 }
 /* 공통 리셋(a:hover 등 — color: inherit)보다 특이도가 높아(scoped 속성) 링크 색이 유지된다 */
 .dev-gallery__link {
@@ -1016,5 +1524,43 @@ onBeforeUnmount(() => {
 }
 .dev-ghost span:nth-child(3) {
   width: 84%;
+}
+/* ⑦ 토스트 자리 — 토스트는 position: fixed(화면 아래 가운데)라, ① 액자처럼 transform 으로 이 칸을 고정 위치의 기준으로 바꿔
+   칸 아래 가운데에 늘 떠 있게 한다. 바탕은 실제 화면처럼 페이지 바탕 */
+.dev-toast-stage {
+  position: relative;
+  height: 7rem;
+  padding: 0.8rem;
+  overflow: hidden;
+  transform: translateZ(0);
+  background: var(--skx-page-bg);
+  border-radius: var(--skx-radius-md);
+}
+/* ⑨ 사이드바 바탕 — 사이드바 틀(style_skovix.css 의 LNB 구역)과 같은 면과 글자 토큰(사이드바 안 글은 토큰을 다시 정의해 한 단계 밝다).
+   빈 기록 줄의 모양은 AppSidebar.vue 의 scoped 규칙이 입힌다 */
+.dev-side {
+  padding: 0.4rem 0.8rem;
+  background: var(--skx-frost-side-bg);
+  border-radius: var(--skx-radius-lg);
+  box-shadow: var(--skx-shadow-lnb);
+  --skx-ink: var(--skx-side-ink);
+  --skx-ink-2: var(--skx-side-ink-2);
+  --skx-gray-1: var(--skx-side-gray-1);
+  --skx-gray-2: var(--skx-side-gray-2);
+}
+/* ⑨ 표지 자리 — 결과 카드의 표지 폭쯤 */
+.dev-cover {
+  width: 6rem;
+}
+/* ⑩ 그리지 않은 것 목록 */
+.dev-item__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.6rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
 }
 </style>
