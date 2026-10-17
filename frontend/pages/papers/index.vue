@@ -2,8 +2,8 @@
   <div :class="['skx-app', chatPaperId && 'is-lnb-collapsed']">
     <AppSidebar
       :collapsed="!!chatPaperId"
-      @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
-      @save="showToast('저장목록 기능은 준비 중입니다.')"
+      @cart="showToast('대출 장바구니 기능은 준비 중이에요.')"
+      @save="showToast('저장목록 기능은 준비 중이에요.')"
     />
 
     <!-- 랜딩 (검색 전) -->

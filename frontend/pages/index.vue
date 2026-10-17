@@ -1,8 +1,8 @@
 <template>
   <div class="skx-app" :style="examplesOverflow ? { marginBottom: `${examplesOverflow}px` } : undefined">
     <AppSidebar
-      @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
-      @save="showToast('저장목록 기능은 준비 중입니다.')"
+      @cart="showToast('대출 장바구니 기능은 준비 중이에요.')"
+      @save="showToast('저장목록 기능은 준비 중이에요.')"
     />
 
     <!-- ===== LANDING VIEW ===== -->
@@ -1183,7 +1183,7 @@ async function fetchRelated(cntsId: string) {
 // ── 대출 신청 / PDF ────────────────────────────────────────
 function requestLoan(item: BookChunkGroup) {
   showToast(
-    `"${item.book_info?.title || item.book_id}" 대출 신청 기능은 준비 중입니다.`,
+    `"${item.book_info?.title || item.book_id}" 대출 신청 기능은 준비 중이에요.`,
   );
 }
 

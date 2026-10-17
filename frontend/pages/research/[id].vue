@@ -3,8 +3,8 @@
   <div :class="['skx-app', workPanelOpen && 'is-lnb-collapsed']">
     <AppSidebar
       :collapsed="workPanelOpen"
-      @cart="showToast('대출 장바구니 기능은 준비 중입니다.')"
-      @save="showToast('저장목록 기능은 준비 중입니다.')"
+      @cart="showToast('대출 장바구니 기능은 준비 중이에요.')"
+      @save="showToast('저장목록 기능은 준비 중이에요.')"
     />
 
     <main class="rs-page" :class="{ 'has-progressbar': !!barView }">
