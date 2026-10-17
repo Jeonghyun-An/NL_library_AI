@@ -347,6 +347,14 @@ describe("상황별 추천 — pages/recommend/[id].vue", () => {
   });
 });
 
+describe("상황 목록 — pages/recommend/index.vue", () => {
+  it("토스트는 낭독기에도 알린다(role=status, aria-live=polite)", () => {
+    expect(read("pages/recommend/index.vue")).toContain(
+      '<div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>',
+    );
+  });
+});
+
 describe("장바구니·보존 화면 — 저장소가 막힌 브라우저", () => {
   it("useCart 의 저장은 try/catch — 던져도 담기(대출 신청)가 멈추지 않는다", () => {
     const src = read("composables/useCart.ts");
@@ -373,6 +381,11 @@ describe("보존 화면 /search-classic — 검색 실패·빈 상태 문구", (
     const offlineText = apiErrorMessage(offline, BOOK_SEARCH_TEXT.failedTitle);
     expect(offlineText).toBe(`검색하지 못했어요 — ${ERROR_HINTS.network}`);
     expect(apiErrorMessage(fetchError(502), BOOK_SEARCH_TEXT.failedTitle)).not.toMatch(/Fetch|Gateway|POST|api/);
+  });
+
+  it("검색 요청은 다른 검색창과 같은 시간 제한(API_SEARCH_TIMEOUT_MS)을 건다 — 서버가 답하지 않아도 '검색 중'에 머물지 않는다", () => {
+    expect(search).toContain('import { API_SEARCH_TIMEOUT_MS } from "~/composables/useApi";');
+    expect(search).toMatch(/\$fetch<SearchResponse>\([\s\S]*?body,[\s\S]*?timeout: API_SEARCH_TIMEOUT_MS,/);
   });
 
   it("실패 글은 빨갛게 칠하지 않고 이 화면의 본문색 — 이유가 두 문장이면 줄로 그린다(구조는 그대로)", () => {

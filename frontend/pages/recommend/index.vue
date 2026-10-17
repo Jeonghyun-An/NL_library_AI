@@ -85,7 +85,7 @@
 
     <Teleport to="body">
       <Transition name="skx-toast">
-        <div v-if="toast" class="skx-toast">{{ toast }}</div>
+        <div v-if="toast" class="skx-toast" role="status" aria-live="polite">{{ toast }}</div>
       </Transition>
     </Teleport>
   </div>

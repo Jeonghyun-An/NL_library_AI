@@ -1,4 +1,5 @@
 import type { SearchRequest, SearchResponse } from "~/types/search";
+import { API_SEARCH_TIMEOUT_MS } from "~/composables/useApi";
 import { apiErrorMessage } from "~/utils/apiErrors";
 import { BOOK_SEARCH_TEXT } from "~/utils/bookErrors";
 import { readOrCreateBrowserId, safeLocalStorage } from "~/utils/browserId";
@@ -53,6 +54,8 @@ export function useSearch() {
           method: "POST",
           headers: sessionId.value ? { "x-session-id": sessionId.value } : {},
           body,
+          // 서버가 답하지 않으면 '검색 중'이 끝나지 않았다 — 다른 검색창과 같은 한도(60초)가 지나면 끊고 시간 초과로 알린다
+          timeout: API_SEARCH_TIMEOUT_MS,
         },
       );
 
