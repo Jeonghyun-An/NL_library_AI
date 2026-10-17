@@ -104,9 +104,7 @@ describe("문구 — 해요체, 두 문장 이상은 문장마다 줄을 바꾼�
 describe("SEARCH_QUERY_MAX — 서버 검색어 한도와 같다", () => {
   it("한 곳(utils/searchInput)에만 둔다 — paperErrors 는 내보내지 않고, 논문 화면은 searchInput 에서 가져다 쓴다", () => {
     expect("SEARCH_QUERY_MAX" in paperErrors).toBe(false);
-    expect(read("utils/searchInput.ts")).toMatch(
-      /\/\/ 검색어 글자 수 한도 — 서버 SearchRequest\.query max_length 와 같다\r?\nexport const SEARCH_QUERY_MAX = 500;/,
-    );
+    expect(read("utils/searchInput.ts").match(/export const SEARCH_QUERY_MAX = 500;/g)).toHaveLength(1);
     for (const file of ["pages/papers/index.vue", "components/detail/SearchBar.vue"]) {
       expect(read(file), file).toMatch(/import \{ hasQuery, SEARCH_QUERY_MAX \} from "~\/utils\/searchInput";/);
     }
