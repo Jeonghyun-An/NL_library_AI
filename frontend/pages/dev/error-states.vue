@@ -13,7 +13,7 @@
      없어(사이드바가 [연구 시작하기]만 둔다) 그리지 않는다.
      ⑦ 확인 칸은 브라우저 확인 창 대신 누른 버튼 곁에 펴는 확인이다 — 실제 화면처럼 보고서 카드(.rs-card) 위에 처음부터 펴 두고(초점을
      옮기지 않는다), 닫은 뒤 [다시 펴기]로 열면 실제처럼 초점이 칸으로 간다. 확인 버튼은 잠깐 일하는 중 모양이 됐다 접힌다.
-     ⑧~⑩ 는 공통 구역 밖에서 따로 꾸미는 표시(토스트·상태 배지·흐린 안내 글 등)다 — 실제 부품(SynthProgressCard·ReportSkeleton·
+     ⑧~⑩ 은 공통 구역 밖에서 따로 꾸미는 표시(토스트·상태 배지·흐린 안내 글 등)다 — 실제 부품(SynthProgressCard·ReportSkeleton·
      ReportView·TopicCard·ReadingNextActions·BookCover)은 본보기 내용을 넣어 그대로 그리고, 부품 없이 화면이 직접 그리는 것은 같은 클래스·
      같은 상수·함수(phaseLabel·subqStatusLabel·moreLine·NO_LIMITS·outlineProblems·SIDEBAR_EMPTY·BOOK_HISTORY_TEXT 등)로 같은 마크업을
      그린다. 항목마다 '스타일 위치'에 고칠 파일·클래스를 적는다. 사이드바 빈 기록(.skx-history__empty)의 모양은 AppSidebar.vue 의 scoped
@@ -1072,7 +1072,7 @@ function simulateConfirm(id: ConfirmSampleId): void {
 // ── ⑧~⑩ 공통 구역 밖 ──
 
 /** 맨 위 안내 넷째 줄 */
-const OUTSIDE_LEAD = "⑧~⑩ 는 공통 구역 밖에서 따로 꾸미는 자리예요 — 항목마다 ‘스타일 위치’에 고칠 파일과 클래스를 적었어요.";
+const OUTSIDE_LEAD = "⑧~⑩ 은 공통 구역 밖에서 따로 꾸미는 자리예요 — 항목마다 ‘스타일 위치’에 고칠 파일과 클래스를 적었어요.";
 
 /** '스타일 위치' 줄 — 고칠 파일·클래스에, 공통 구역을 따르지 않는다는 말을 붙인다 */
 function styleLine(where: string): string {
@@ -1448,7 +1448,7 @@ const SKIPPED: { name: string; lines: string[] }[] = [
     name: "SKOVIX 디자인 밖",
     lines: [
       "관리자 잡 화면(/admin/jobs) — Tailwind 운영자 화면이에요(오류 줄은 왼쪽 호박색 선)",
-      "보존 화면(/search-classic) — 구조를 그대로 두는 첫 화면이라 자체 scoped 스타일(.error-area·.empty·.ch-empty·.cart-empty·.ca-empty·.reason-error)을 써요",
+      "보존 화면(/search-classic) — 구조를 그대로 두는 첫 화면이라 자체 scoped 스타일(.error-area·.empty·.ch-empty·.cart-empty·.ca-empty·.reason-error)을 써요 — 대화 칸은 초안 UI(BookChat.legacy)라 실패도 보통 말풍선(.bubble.assistant)에 글로 나와요",
       "DeepRead 첫 인사·멈춘 답의 꼬리 글 — 오류 표시가 아니라 평범한 AI 말풍선이에요",
     ],
   },
