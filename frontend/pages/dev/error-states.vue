@@ -1013,8 +1013,8 @@ const CONFIRM_SAMPLES: ConfirmSample[] = [
     message: REWRITE_CONFIRM,
     confirmLabel: REWRITE_CONFIRM_OK,
     label: `${SECTION_LABELS.gap} 다시 쓰기 확인`,
-    focus: "confirm",
-    focusNote: `[${REWRITE_CONFIRM_OK}] — 골라 누른 일이라 엔터 한 번 더면 진행돼요(initial-focus="confirm")`,
+    focus: "cancel",
+    focusNote: `[${CANCEL_TEXT}] — 수락·고친·직접 쓴 문단을 되돌릴 수 없어 덜 파괴적인 쪽(컴포넌트 기본값)`,
     texts: [REWRITE_CONFIRM, REWRITE_CONFIRM_OK, CANCEL_TEXT],
   },
   {

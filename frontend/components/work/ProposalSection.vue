@@ -491,14 +491,13 @@ const ask = shallowRef<Ask | null>(null);
 const asked = ref(false);
 const askWriteAt = computed(() => (ask.value?.kind === "write" ? ask.value.at : null));
 const askRemovePid = computed(() => (ask.value?.kind === "remove" ? ask.value.pid : null));
-// 두 자리(머리 아래·실패 줄 아래)의 절 다시 쓰기 칸이 같이 받는 값 — 사용자가 다시 쓰기를 골라 누른 자리라 엔터 한 번 더면 진행되게
-// 확인 버튼에 초점을 둔다(지우기는 기본 [취소])
+// 두 자리(머리 아래·실패 줄 아래)의 절 다시 쓰기 칸이 같이 받는 값 — 수락·고친·직접 쓴 문단까지 새 초안으로 바뀌어 되돌릴 수 없어
+// 문단 지우기처럼 처음 초점은 [취소](컴포넌트 기본)에 둔다 — 엔터를 한 번 더 눌러 쓴 문단을 잃지 않게
 const writeConfirm = computed(() => ({
   message: REWRITE_CONFIRM,
   confirmLabel: REWRITE_CONFIRM_OK,
   label: `${props.label} 다시 쓰기 확인`,
   busy: asked.value,
-  initialFocus: "confirm" as const,
 }));
 
 const askKey = (a: Ask): string => (a.kind === "write" ? `write:${a.at}` : `remove:${a.pid}`);

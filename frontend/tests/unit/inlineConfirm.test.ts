@@ -148,9 +148,9 @@ describe("네 자리가 확인 칸을 쓴다 — 확인하면 예전에 확인 �
       expect(remove.slice(0, remove.indexOf("/>"))).not.toContain("initial-focus");
     });
 
-    it("절 다시 쓰기 칸은 REWRITE_CONFIRM·[다시 쓰기]·확인 버튼에 처음 초점", () => {
+    it("절 다시 쓰기 칸은 REWRITE_CONFIRM·[다시 쓰기] — 쓴 문단을 되돌릴 수 없어 처음 초점은 [취소](컴포넌트 기본)", () => {
       expect(js).toMatch(
-        /const writeConfirm = computed\(\(\) => \(\{\s*message: REWRITE_CONFIRM,\s*confirmLabel: REWRITE_CONFIRM_OK,\s*label: `\$\{props\.label\} 다시 쓰기 확인`,\s*busy: asked\.value,\s*initialFocus: "confirm" as const,\s*\}\)\);/,
+        /const writeConfirm = computed\(\(\) => \(\{\s*message: REWRITE_CONFIRM,\s*confirmLabel: REWRITE_CONFIRM_OK,\s*label: `\$\{props\.label\} 다시 쓰기 확인`,\s*busy: asked\.value,\s*\}\)\);/,
       );
     });
 
