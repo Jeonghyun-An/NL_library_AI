@@ -18,12 +18,15 @@
     </button>
     <template v-else-if="outlineMade">
       <button type="button" class="rs-btn" @click="emit('go', 'proposal')">{{ FINAL_STEP_NAME }} 단계로</button>
+      <!-- 누르면 바로 만들지 않고 ReadingStep 이 이 묶음 아래에 확인 칸을 편다 — 펴진 동안 aria-expanded, 접히면 이 id 로 초점이 돌아온다 -->
       <button
+        :id="remakeId"
         type="button"
         class="rs-btn rs-btn--ghost"
         :disabled="makeDisabled"
         :aria-describedby="makeDescribedBy"
-        @click="emit('make', true)"
+        :aria-expanded="remakeOpen"
+        @click="emit('make', true, where)"
       >
         {{ REMAKE_REPORT }}
       </button>
@@ -34,7 +37,7 @@
       class="rs-btn"
       :disabled="makeDisabled"
       :aria-describedby="makeDescribedBy"
-      @click="emit('make', false)"
+      @click="emit('make', false, where)"
     >
       {{ MAKE_REPORT }}
     </button>
@@ -44,7 +47,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { WorkStep } from "~/types/work";
-import { describedByIds } from "~/utils/readingList";
+import { describedByIds, remakeButtonId } from "~/utils/readingList";
 import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
 
 const props = defineProps<{
@@ -61,12 +64,16 @@ const props = defineProps<{
   // hint 밖에서 [보고서 만들기]·[보고서 다시 만들기] 를 끄는 까닭이 화면에 보이는 줄의 id(읽기 전용 줄) — 없으면 null.
   // 두 묶음이 같은 한 줄을 가리킨다(id 를 새로 만들지 않아 겹치지 않는다)
   disabledWhyId: string | null;
+  // [보고서 다시 만들기] 확인 칸이 이 묶음 아래에 펴져 있다 — 그 버튼의 aria-expanded
+  remakeOpen?: boolean;
 }>();
-const emit = defineEmits<{ go: [step: WorkStep]; make: [again: boolean] }>();
+// make — 누른 버튼(again: [보고서 다시 만들기])과 그 묶음의 자리(where — ReadingStep 이 확인 칸을 그 묶음 아래에 편다)
+const emit = defineEmits<{ go: [step: WorkStep]; make: [again: boolean, where: "top" | "bottom"] }>();
 
 const hintId = computed(() => `wk-reading-next-hint-${props.where}`);
 // [제목 고르기] — 끄지 않는 버튼이라 '주제를 먼저 고르세요'(hint)만 잇는다
 const describedBy = computed(() => describedByIds(props.hint ? hintId.value : null));
 // [보고서 만들기]·[보고서 다시 만들기] — 만들 수 없는 까닭(hint)과 읽기 전용 줄을 함께 잇는다
 const makeDescribedBy = computed(() => describedByIds(props.hint ? hintId.value : null, props.disabledWhyId));
+const remakeId = computed(() => remakeButtonId(props.where));
 </script>

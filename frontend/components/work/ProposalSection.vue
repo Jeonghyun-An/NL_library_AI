@@ -11,11 +11,20 @@
         type="button"
         class="rs-btn rs-btn--small wk-psec__write"
         :disabled="locked"
-        @click="onWrite"
+        data-write-open
+        @click="onWrite('head')"
       >
         {{ section ? "이 절 다시 쓰기" : "이 절 쓰기" }}
       </button>
     </header>
+    <!-- 수락·고친·직접 쓴 문단을 덮기 전의 확인 — 머리의 [이 절 다시 쓰기] 바로 아래(실패 줄의 [다시 시도]로 열면 그 줄 아래) -->
+    <SkxConfirm
+      v-if="askWriteAt === 'head'"
+      v-bind="writeConfirm"
+      :return-focus="() => askReturn('[data-write-open]')"
+      @confirm="confirmAsk"
+      @cancel="closeAsk"
+    />
     <p v-if="note" class="rs-muted">{{ note }}</p>
     <p v-if="stale" class="rs-muted">
       이 절을 쓴 뒤 주제나 목차의 묶음·연구 질문이 바뀌었어요.<br />
@@ -65,6 +74,14 @@
       :message="failedText"
       :busy="locked"
       :on-retry="failedGen && !readOnly ? retryFailed : undefined"
+      data-retry-line
+    />
+    <SkxConfirm
+      v-if="askWriteAt === 'retry'"
+      v-bind="writeConfirm"
+      :return-focus="() => askReturn('[data-retry-line] button')"
+      @confirm="confirmAsk"
+      @cancel="closeAsk"
     />
 
     <ol v-if="section && status !== 'writing'" class="wk-psec__paras">
@@ -161,11 +178,24 @@
               class="rs-btn rs-btn--small rs-btn--ghost"
               :disabled="locked"
               :aria-describedby="bandId(p.id)"
+              :aria-expanded="askRemovePid === p.id"
+              :data-remove-for="p.id"
               @click="remove(p.id)"
             >
               지우기<span class="rs-sr-only"> {{ paraName(pi) }}</span>
             </button>
           </div>
+          <!-- 문단 지우기 확인 — 그 문단의 버튼 줄 바로 아래. 되돌릴 수 없는 지우기라 처음 초점은 [취소](SkxConfirm 기본) -->
+          <SkxConfirm
+            v-if="askRemovePid === p.id"
+            :message="REMOVE_CONFIRM"
+            :confirm-label="REMOVE_CONFIRM_OK"
+            :label="`${paraName(pi)} 지우기 확인`"
+            :busy="asked"
+            :return-focus="() => askReturn(removeSelector(p.id))"
+            @confirm="confirmAsk"
+            @cancel="closeAsk"
+          />
         </template>
       </li>
     </ol>
@@ -212,7 +242,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, ref, shallowRef, watch } from "vue";
 import FigureChip from "~/components/work/FigureChip.vue";
 import type { CitePick, Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
 import { DEEP_RESEARCH } from "~/utils/brand";
@@ -223,6 +253,10 @@ import { figureById, spaceBeforeCites, splitMarkers } from "~/utils/figureMarker
 import {
   GAP_NOTE,
   MAX_PARAGRAPHS_PUT,
+  REMOVE_CONFIRM,
+  REMOVE_CONFIRM_OK,
+  REWRITE_CONFIRM,
+  REWRITE_CONFIRM_OK,
   acceptParagraph,
   addParagraph,
   editParagraph,
@@ -421,9 +455,12 @@ function onCite(e: MouseEvent, pid: string, si: number, eid: string, sentence: s
 }
 
 // ── 쓰기·고치기 ──────────────────────────────────────────
-function onWrite(): void {
+// at — 누른 버튼(머리의 [이 절 다시 쓰기] 또는 실패 줄의 [다시 시도]). 수락·고친·직접 쓴 문단이 있으면 덮기 전에 그 버튼 곁의 확인 칸으로
+// 묻고([다시 쓰기]를 누르면 confirmAsk 가 쓴다), 검토 전 문단뿐이면 바로 쓴다
+function onWrite(at: "head" | "retry"): void {
   const kept = section.value?.paragraphs.some((p) => p.state !== "proposed") ?? false;
-  if (kept && !window.confirm("이 절을 다시 쓰면 지금 문단(수락·고친·직접 쓴 문단 포함)을 새 초안으로 바꿔요.\n다시 쓸까요?")) {
+  if (kept) {
+    toggleAsk({ kind: "write", at });
     return;
   }
   emit("write");
@@ -434,16 +471,98 @@ function onWrite(): void {
 // 놓치고, 결과가 그 뒤 수락·고친 문단을 확인 없이 통째로 덮는다. 쓴 절이 없으면 덮을 문단이 없어 같은 생성을 다시 부른다
 function onRetry(genId: number): void {
   if (section.value) {
-    onWrite();
+    onWrite("retry");
     return;
   }
   emit("retry", genId);
 }
 
+// 문단 [지우기] — 바로 지우지 않고 그 문단 아래에 확인 칸을 편다([지우기]를 누르면 confirmAsk 가 지운다)
 function remove(pid: string): void {
-  if (!section.value || !window.confirm("이 문단을 지울까요?")) return;
-  emit("save", removeParagraph(section.value, pid));
+  if (section.value) toggleAsk({ kind: "remove", pid });
 }
+
+// ── 확인 칸(SkxConfirm) — 덮어쓰기·지우기 ─────────────────
+// 브라우저 확인 창 대신 누른 버튼 곁에 확인 칸을 편다 — 이 절에서 한 번에 하나(절 다시 쓰기 또는 문단 하나 지우기). 같은 버튼을 다시
+// 누르면 접는다. write 의 at 은 칸이 설 자리(머리 아래·실패 줄 아래)다
+type Ask = { kind: "write"; at: "head" | "retry" } | { kind: "remove"; pid: string };
+const ask = shallowRef<Ask | null>(null);
+// 확인 버튼을 눌러 부모에 보냈다 — 그 일이 끝날 때까지(busy) 칸이 일하는 중으로 남았다가 걷힌다
+const asked = ref(false);
+const askWriteAt = computed(() => (ask.value?.kind === "write" ? ask.value.at : null));
+const askRemovePid = computed(() => (ask.value?.kind === "remove" ? ask.value.pid : null));
+// 두 자리(머리 아래·실패 줄 아래)의 절 다시 쓰기 칸이 같이 받는 값 — 사용자가 다시 쓰기를 골라 누른 자리라 엔터 한 번 더면 진행되게
+// 확인 버튼에 초점을 둔다(지우기는 기본 [취소])
+const writeConfirm = computed(() => ({
+  message: REWRITE_CONFIRM,
+  confirmLabel: REWRITE_CONFIRM_OK,
+  label: `${props.label} 다시 쓰기 확인`,
+  busy: asked.value,
+  initialFocus: "confirm" as const,
+}));
+
+const askKey = (a: Ask): string => (a.kind === "write" ? `write:${a.at}` : `remove:${a.pid}`);
+
+function toggleAsk(next: Ask): void {
+  ask.value = ask.value && askKey(ask.value) === askKey(next) ? null : next;
+  asked.value = false;
+}
+
+function closeAsk(): void {
+  ask.value = null;
+  asked.value = false;
+}
+
+// 확인 칸의 [다시 쓰기]·[지우기] — 브라우저 확인 창이 '확인'을 돌려줬을 때 하던 일 그대로
+function confirmAsk(): void {
+  const a = ask.value;
+  if (!a || asked.value) return;
+  if (a.kind === "write") {
+    asked.value = true;
+    emit("write");
+    return;
+  }
+  const sec = section.value;
+  if (!sec) {
+    closeAsk();
+    return;
+  }
+  asked.value = true;
+  emit("save", removeParagraph(sec, a.pid));
+}
+
+// 칸이 접히면 초점을 연 버튼으로 — 그 버튼이 사라졌거나 잠겼으면(절을 쓰기 시작함·문단을 지움) 이 절 제목(tabindex="-1")으로
+function askReturn(selector: string): HTMLElement | null {
+  const btn = rootEl.value?.querySelector<HTMLButtonElement>(selector);
+  return btn && !btn.disabled ? btn : document.getElementById(`wk-sec-title-${props.sectionKey}`);
+}
+
+function removeSelector(pid: string): string {
+  return `[data-remove-for="${CSS.escape(pid)}"]`;
+}
+
+// 묻던 일이 더는 맞지 않으면 칸을 걷는다 — 보내기 전에 다른 일이 이 절을 잠갔거나(다른 저장·문단 다시 쓰기), 절을 쓰기 시작했거나
+// (자동 산출·다른 탭 — 보낸 뒤라면 그 일이 시작된 것이다), 지우려던 문단이 없어졌다
+watch(locked, (now) => {
+  if (now && !asked.value) closeAsk();
+});
+watch(status, (now) => {
+  if (now === "queued" || now === "writing") closeAsk();
+});
+watch(
+  () => section.value?.paragraphs,
+  (paras) => {
+    const pid = askRemovePid.value;
+    if (pid && !paras?.some((p) => p.id === pid)) closeAsk();
+  },
+);
+// 보낸 일이 끝나면(busy 가 풀리면 — 성공·실패 모두) 칸을 걷는다. 실패 안내는 보고서 머리의 한 줄이 맡는다
+watch(
+  () => props.busy,
+  (now) => {
+    if (!now && asked.value) closeAsk();
+  },
+);
 
 const editingId = ref<string | null>(null);
 const editText = ref("");
@@ -458,7 +577,8 @@ let pending: Pending | null = null;
 
 // 절을 새 생성으로 다시 쓰면 서버가 문단 id 를 p1 부터 다시 매기고 근거 지도도 바뀔 수 있다 — 열어 둔 칸을
 // 그대로 두면 옛 글이 같은 id 의 새 문단에 다시 열려 [저장] 하면 새 문단을 덮고 [E#] 가 다른 논문에 붙는다.
-// 다시 쓰기가 실패·취소되면 gen_id 가 그대로라 고치던 글을 지킨다(옛 문단이 그대로 남아 있다)
+// 다시 쓰기가 실패·취소되면 gen_id 가 그대로라 고치던 글을 지킨다(옛 문단이 그대로 남아 있다). 열어 둔 확인 칸도 같은 까닭으로
+// 걷는다 — 문단 지우기 칸이 같은 id 의 새 문단을 지우지 않게
 watch(
   () => section.value?.gen_id,
   () => {
@@ -467,6 +587,7 @@ watch(
     adding.value = false;
     addText.value = "";
     pending = null;
+    closeAsk();
   },
 );
 

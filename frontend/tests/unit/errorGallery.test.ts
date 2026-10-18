@@ -182,7 +182,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(tpl).toMatch(/v-for="name in THEMES"[\s\S]*?:aria-pressed="theme === name"[\s\S]*?@click="setTheme\(name\)"/);
   });
 
-  it("표시는 모두 실제 컴포넌트 — 다섯 묶음이 각각 공통 컴포넌트를 쓴다", () => {
+  it("표시는 모두 실제 컴포넌트 — 여섯 묶음이 각각 공통 컴포넌트를 쓴다", () => {
     expect(tpl).toContain('<SkxErrorPage :status="p.status" preview />');
     expect(js).toMatch(/status: 404,/);
     expect(js).toMatch(/status: 500,/);
@@ -190,13 +190,14 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(tpl.match(/<SkxInlineError/g)).toHaveLength(3);
     expect(tpl).toContain("<SkxConnectionBanner");
     expect(tpl.match(/<SkxCharCount/g)).toHaveLength(2);
+    expect(tpl.match(/<SkxConfirm\b/g)).toHaveLength(1);
     // 직접 쳐 보는 입력창 — maxlength 와 글자 수가 같은 한도
     expect(tpl).toMatch(/<textarea\s+:id="typeId"[\s\S]*?:maxlength="CHAR_MAX"[\s\S]*?:aria-describedby="countId"[\s\S]*?<\/textarea>\s*<SkxCharCount :id="countId" :length="typed\.length" :max="CHAR_MAX" :quiet="typedQuiet" \/>/);
   });
 
   it("복제 마크업 없음 — 공통 구역의 클래스를 페이지가 직접 그리지 않는다(슬롯 링크 .skx-state__action 만)", () => {
     const classes = [...tpl.matchAll(/\sclass="([^"]*)"/g)].flatMap((m) => m[1]!.split(/\s+/));
-    const owned = classes.filter((c) => /^skx-(state|inline-error|conn|charcount|error-page|holo)(?:$|--|__)/.test(c));
+    const owned = classes.filter((c) => /^skx-(state|inline-error|conn|charcount|confirm|error-page|holo)(?:$|--|__)/.test(c));
     expect(owned).toEqual(["skx-state__action"]);
     expect(tpl).toContain('<a class="skx-state__action" :href="s.action.href" @click.prevent>');
     // ② 와 ③ 은 같은 틀(섹션 목록)을 돈다 — 상태 블록 마크업은 한 벌
@@ -245,9 +246,9 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(js.match(/\n {4}title: "[^"]*"/g)).toEqual([
       '\n    title: "② 섹션 상태 블록 (SkxErrorState)"',
       '\n    title: "③ 딥리서치 상태 (후배 시안 변형)"',
-      '\n    title: "⑦ 토스트 (.skx-toast)"',
-      '\n    title: "⑧ 상태 배지·줄 상태 (공통 구역 밖)"',
-      '\n    title: "⑨ 흐린 안내 글·카드 안 안내 (공통 구역 밖)"',
+      '\n    title: "⑧ 토스트 (.skx-toast)"',
+      '\n    title: "⑨ 상태 배지·줄 상태 (공통 구역 밖)"',
+      '\n    title: "⑩ 흐린 안내 글·카드 안 안내 (공통 구역 밖)"',
     ]);
     // 취소 kind·서버 code 문구(CODE_MESSAGES — 서버 detail 은 쓰지 않는다)
     expect(js).toMatch(/id: "canceled",[\s\S]*?kind: "canceled",/);
@@ -352,9 +353,9 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(js).not.toContain('"목록을 불러오지 못했어요"');
   });
 
-  it("사이드바 빈 기록 안내 — ② 설명은 ⑨ 를 가리키고, ⑨ 가 사이드바 상수 글을 사이드바의 scoped 규칙으로 그린다", () => {
+  it("사이드바 빈 기록 안내 — ② 설명은 ⑩ 를 가리키고, ⑩ 가 사이드바 상수 글을 사이드바의 scoped 규칙으로 그린다", () => {
     expect(js).toContain("import { SIDEBAR_EMPTY, SIDEBAR_NOTICE } from \"~/utils/sidebarGroups\";");
-    expect(js).toContain("사이드바의 빈 기록 안내(.skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아요 — ⑨ 에 따로 그렸어요.");
+    expect(js).toContain("사이드바의 빈 기록 안내(.skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아요 — ⑩ 에 따로 그렸어요.");
     expect(js).not.toContain("디자인 대상 아님");
     // 모양은 AppSidebar.vue 의 scoped 규칙 — 그 컴포넌트의 scope 속성(__scopeId)을 같은 줄에 붙여 입힌다
     expect(tpl).toMatch(/<div v-else-if="s\.id === 'sidebarEmpty'" class="dev-side">\s*<p class="skx-history__empty" role="status" v-bind="SIDEBAR_SCOPE">\{\{ SIDEBAR_EMPTY \}\}<\/p>/);
@@ -390,6 +391,42 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(js).toContain("const typedQuiet = ref(false);");
   });
 
+  it("⑦ 확인 칸 — 실제 SkxConfirm 을 보고서 카드 위에, 문구는 화면과 같은 상수, 처음엔 펴 둔 채 초점을 옮기지 않는다", () => {
+    expect(tpl).toContain('<h2 id="dev-sec-confirm" class="dev-gallery__h2">⑦ 확인 칸 (SkxConfirm)</h2>');
+    // ⑥(글자 수) 다음, ⑧(토스트 — 공통 구역 밖) 앞 — 공통 구역 컴포넌트 묶음의 끝
+    expect(tpl.indexOf('id="dev-sec-count"')).toBeLessThan(tpl.indexOf('id="dev-sec-confirm"'));
+    expect(tpl.indexOf('id="dev-sec-confirm"')).toBeLessThan(tpl.indexOf('v-for="g in OUTSIDE_SECTIONS"'));
+    expect(tpl).toMatch(/<div class="rs-card">\s*<SkxConfirm\s+v-if="confirmShown\[c\.id\]"/);
+    expect(tpl).toContain(":initial-focus=\"confirmReopened[c.id] ? c.focus : 'none'\"");
+    expect(tpl).toContain(':busy="c.busy || !!retrying[c.id]"');
+    expect(js).toContain(
+      "const confirmShown = reactive<Record<ConfirmSampleId, boolean>>({ remake: true, rewrite: true, remove: true, busy: true });",
+    );
+    // 문구는 실제 화면과 같은 상수 — 모음이 새로 적지 않는다
+    expect(js).toContain('import { REMAKE_CONFIRM, REMAKE_CONFIRM_OK, REMAKE_REPORT } from "~/utils/workPhase";');
+    for (const ref of [
+      "message: REMAKE_CONFIRM,",
+      "confirmLabel: REMAKE_CONFIRM_OK,",
+      "message: REWRITE_CONFIRM,",
+      "confirmLabel: REWRITE_CONFIRM_OK,",
+      "message: REMOVE_CONFIRM,",
+      "confirmLabel: REMOVE_CONFIRM_OK,",
+    ]) {
+      expect(js, ref).toContain(ref);
+    }
+    for (const text of ["이 문단을 지울까요", "다시 쓸까요", "계속할까요", "새 초안으로 바꿔요"]) {
+      expect(galleryVue, text).not.toContain(text);
+    }
+    // 처음 초점 — 지우기는 [취소](컴포넌트 기본값), 골라 누른 다시 만들기·다시 쓰기는 확인 버튼(실제 화면과 같은 값)
+    expect(js).toMatch(/id: "remake",[\s\S]*?focus: "confirm",/);
+    expect(js).toMatch(/id: "rewrite",[\s\S]*?focus: "confirm",/);
+    expect(js).toMatch(/id: "remove",[\s\S]*?focus: "cancel",/);
+    expect(js).toMatch(/id: "busy",[\s\S]*?busy: true,/);
+    expect(tpl).toContain("<dt>처음 초점</dt>");
+    // 확인 버튼 흉내 — 잠깐 일하는 중이었다가 접힌다(요청은 보내지 않는다)
+    expect(js).toMatch(/function simulateConfirm\(id: ConfirmSampleId\): void \{[\s\S]*?retrying\[id\] = true;[\s\S]*?confirmShown\[id\] = false;/);
+  });
+
   it("도서·논문 404 문구를 모음이 글로 적지 않는다 — 그 문구는 각 화면 상수에만 있다", () => {
     for (const text of ["도서를 찾을 수 없어요", "논문을 찾을 수 없어요", "주소가 맞는지", "등록되지 않은"]) {
       expect(galleryVue, text).not.toContain(text);
@@ -400,7 +437,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(tpl).toContain("액자 속 배경 띠는 실제 창 크기(vmax·vh) 기준이라 줄인 액자에서는 굵게 보입니다");
   });
 
-  it("⑦ 토스트 — 화면들과 같은 마크업을 늘 보이게(타이머·전환 없이), transform 을 준 칸이 position: fixed 를 가둔다", () => {
+  it("⑧ 토스트 — 화면들과 같은 마크업을 늘 보이게(타이머·전환 없이), transform 을 준 칸이 position: fixed 를 가둔다", () => {
     expect(tpl).toMatch(
       /<div v-if="s\.id === 'toast'" class="dev-toast-stage">[\s\S]*?<div class="skx-toast" role="status" aria-live="polite">\{\{ BOOK_HISTORY_TEXT\.missing \}\}<\/div>/,
     );
@@ -419,7 +456,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     }
   });
 
-  it("⑧ 상태 배지·줄 상태 — 실제 클래스·실제 부품, 글은 화면과 같은 함수", () => {
+  it("⑨ 상태 배지·줄 상태 — 실제 클래스·실제 부품, 글은 화면과 같은 함수", () => {
     expect(tpl).toContain(
       '<span v-for="p in STOPPED_PHASES" :key="p" class="rs-status" :class="`rs-status--${p}`">{{ phaseLabel(p) }}</span>',
     );
@@ -443,7 +480,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     }
   });
 
-  it("⑨ 흐린 안내 글·카드 안 안내 — 실제 클래스·실제 부품, 글은 화면과 같은 상수·함수", () => {
+  it("⑩ 흐린 안내 글·카드 안 안내 — 실제 클래스·실제 부품, 글은 화면과 같은 상수·함수", () => {
     expect(tpl).toContain('<p v-for="t in s.texts" :key="t" class="rs-muted">{{ t }}</p>');
     expect(js).toContain("texts: [moreLine(0), NO_LIMITS],");
     expect(tpl).toMatch(/<ReadingNextActions\s+class="wk-screen__next"\s+where="bottom"[\s\S]*?make-disabled\s+:hint="READING_HINT"/);
@@ -467,7 +504,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(read("components/research/ReportView.vue")).toContain('<p class="rs-report__intro">{{ intro }}</p>');
   });
 
-  it("⑦~⑨ 항목마다 스타일 위치 — 고칠 파일·클래스와 '공통 구역을 따르지 않는다'는 말", () => {
+  it("⑧~⑩ 항목마다 스타일 위치 — 고칠 파일·클래스와 '공통 구역을 따르지 않는다'는 말", () => {
     expect(tpl).toContain('<p class="dev-gallery__lead">{{ OUTSIDE_LEAD }}</p>');
     const ids = js.match(/type OutsideId =([\s\S]*?);/)?.[1]?.match(/"\w+"/g) ?? [];
     expect(ids).toHaveLength(13);
@@ -484,7 +521,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     }
   });
 
-  it("⑦~⑨ 문구를 다시 적지 않는다 — 화면 문구는 상수·함수·부품이 만든 글만", () => {
+  it("⑧~⑩ 문구를 다시 적지 않는다 — 화면 문구는 상수·함수·부품이 만든 글만", () => {
     for (const text of [
       "없는 기록이라",
       "연결이 불안정해",
@@ -511,13 +548,13 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     }
   });
 
-  it("⑩ 그리지 않은 것 — 글이 부품 안에만 있는 자리·표시 없는 상태·디자인 밖 화면", () => {
-    expect(tpl).toContain('<h2 id="dev-sec-skip" class="dev-gallery__h2">⑩ 이 모음에 그리지 않은 것</h2>');
+  it("⑪ 그리지 않은 것 — 글이 부품 안에만 있는 자리·표시 없는 상태·디자인 밖 화면", () => {
+    expect(tpl).toContain('<h2 id="dev-sec-skip" class="dev-gallery__h2">⑪ 이 모음에 그리지 않은 것</h2>');
     expect(js).toMatch(/const SKIPPED: \{ name: string; lines: string\[\] \}\[\] = \[/);
     for (const hook of [".rs-subq__stopped", ".skx-aip__notice", ".skx-history-badge", ".dt-rc__why-text", "/admin/jobs", "/search-classic"]) {
       expect(js, hook).toContain(hook);
     }
-    // [링크 복사] 실패는 이제 화면 안 토스트(⑦)다 — 브라우저 대화상자로 적지 않는다
+    // [링크 복사] 실패는 이제 화면 안 토스트(⑧)다 — 브라우저 대화상자로 적지 않는다
     expect(js).not.toContain("window.prompt");
   });
 

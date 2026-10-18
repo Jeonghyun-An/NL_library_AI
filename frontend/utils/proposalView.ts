@@ -28,6 +28,15 @@ export const SECTION_LABELS: Record<string, string> = {
 
 // 서버(services/research_work/shapes.py 의 같은 이름)와 같은 값 — 연구 공백 절은 확인 검색을 거치지 않은 후보로만 쓴다
 export const GAP_NOTE = "소장 코퍼스에서 확인하지 않은 공백 후보";
+
+// 보고서 절의 확인 칸(SkxConfirm) 문구 — 덮어쓰거나 지우기 전에 누른 버튼 곁에서 묻는다. 해요체·문장마다 '\n'(확인 칸이 pre-line 으로
+// 줄을 바꾼다). 확인 버튼은 하는 일의 동사다.
+// [이 절 다시 쓰기]·실패한 절의 [다시 시도] — 수락·고친·직접 쓴 문단이 있을 때만 묻는다(검토 전 문단뿐이면 바로 쓴다)
+export const REWRITE_CONFIRM = "이 절을 다시 쓰면 지금 문단(수락·고친·직접 쓴 문단 포함)을 새 초안으로 바꿔요.\n다시 쓸까요?";
+export const REWRITE_CONFIRM_OK = "다시 쓰기";
+// 문단의 [지우기]
+export const REMOVE_CONFIRM = "이 문단을 지울까요?";
+export const REMOVE_CONFIRM_OK = "지우기";
 // 서버 절 PUT 검증과 같은 상한 — 넘기면 422 로 거절된다
 export const MAX_PARAGRAPH_CHARS = 3000;
 export const MAX_PARAGRAPHS_PUT = 12;

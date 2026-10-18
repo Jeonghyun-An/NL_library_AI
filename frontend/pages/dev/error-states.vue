@@ -1,22 +1,24 @@
 <!-- frontend/pages/dev/error-states.vue -->
 <!-- 오류 화면 모음(개발용, /dev/error-states) — 후배 디자이너가 오류·빈 상태 표시를 실물로 보며 디자인하는 한 페이지.
      메뉴에 잇지 않고 검색엔진에도 싣지 않는다(robots noindex,nofollow).
-     표시는 모두 실제 컴포넌트다(SkxErrorPage·SkxErrorState·SkxInlineError·SkxConnectionBanner·SkxCharCount) — 복제 마크업이 없어
+     표시는 모두 실제 컴포넌트다(SkxErrorPage·SkxErrorState·SkxInlineError·SkxConnectionBanner·SkxCharCount·SkxConfirm) — 복제 마크업이 없어
      style_skovix.css 의 '[S] 공통 오류·빈 상태' 구역을 고치면 이 페이지와 실제 화면이 함께 바뀐다.
      문구도 여기 새로 짓지 않는다 — 실제 규칙(errorKind·apiErrorMessage·researchErrorMessage·researchFailedMessage)에 본보기 오류를 넣어
      만든 글과 상수(ERROR_PAGE_TEXT·CONNECTION_HINTS·AI_SUMMARY_FAILED·charLimitMessage·RESEARCH_STATE_TEXT·PAPER_STATE_TEXT·
-     WORK_SOURCES_FAILED·SIDEBAR_NOTICE)를 그대로 보여 문구가 바뀌면 같이 바뀐다. 상태 블록의 제목('검색하지 못했어요' 등)도 실제 화면의
+     WORK_SOURCES_FAILED·SIDEBAR_NOTICE·REMAKE_CONFIRM·REWRITE_CONFIRM·REMOVE_CONFIRM)를 그대로 보여 문구가 바뀌면 같이 바뀐다. 상태 블록의 제목('검색하지 못했어요' 등)도 실제 화면의
      상수를 읽는다 — 이 페이지가 새로 짓는 화면 문구는 없다(연구 질문·절 제목 같은 본보기 내용만 적는다).
      항목마다 '생기는 곳'은 그 모양이 실제로 나오는 대표 화면이다(공통 컴포넌트를 쓰는 곳 — 2~5곳).
      ③ 딥리서치 상태는 후배 시안의 변형(실패·취소·찾을 수 없음)을 실제 동작(pages/research/[id].vue·api/research.py)에 맞춘 것 —
      딥리서치 화면과 같은 상수·함수를 읽고, 항목마다 '시안 대비'에 바꾼 점을 적는다. 시안의 '결과 없음(아직 연구가 없음)'은 실제 앱에
      없어(사이드바가 [연구 시작하기]만 둔다) 그리지 않는다.
-     ⑦~⑨ 는 공통 구역 밖에서 따로 꾸미는 표시(토스트·상태 배지·흐린 안내 글 등)다 — 실제 부품(SynthProgressCard·ReportSkeleton·
+     ⑦ 확인 칸은 브라우저 확인 창 대신 누른 버튼 곁에 펴는 확인이다 — 실제 화면처럼 보고서 카드(.rs-card) 위에 처음부터 펴 두고(초점을
+     옮기지 않는다), 닫은 뒤 [다시 펴기]로 열면 실제처럼 초점이 칸으로 간다. 확인 버튼은 잠깐 일하는 중 모양이 됐다 접힌다.
+     ⑧~⑩ 는 공통 구역 밖에서 따로 꾸미는 표시(토스트·상태 배지·흐린 안내 글 등)다 — 실제 부품(SynthProgressCard·ReportSkeleton·
      ReportView·TopicCard·ReadingNextActions·BookCover)은 본보기 내용을 넣어 그대로 그리고, 부품 없이 화면이 직접 그리는 것은 같은 클래스·
      같은 상수·함수(phaseLabel·subqStatusLabel·moreLine·NO_LIMITS·outlineProblems·SIDEBAR_EMPTY·BOOK_HISTORY_TEXT 등)로 같은 마크업을
      그린다. 항목마다 '스타일 위치'에 고칠 파일·클래스를 적는다. 사이드바 빈 기록(.skx-history__empty)의 모양은 AppSidebar.vue 의 scoped
      스타일이라, 그 컴포넌트의 scope 속성(__scopeId)을 같은 줄에 붙여 실제 규칙을 입힌다(사이드바를 고치면 여기도 바뀐다).
-     ⑩ 은 글이 컴포넌트 안에만 있어 그리지 못한 자리·표시가 없는 상태·디자인 시스템 밖 화면을 적은 목록이다.
+     ⑪ 은 글이 컴포넌트 안에만 있어 그리지 못한 자리·표시가 없는 상태·디자인 시스템 밖 화면을 적은 목록이다.
      [다시 시도] 는 누르면 잠깐 재시도 중 모양으로 바뀌었다 돌아오고, [다시 연결] 은 다시 연결하는 중 → 붙음(띠가 사라짐) → 다시 끊김으로
      돈다(요청은 보내지 않는다). 표지 대체 그림(BookCover)만 없는 자료 번호로 표지를 한 번 불러 실패시킨다.
      이 페이지 자체의 틀(.dev-*)은 아래 scoped 스타일이고 디자인 대상이 아니다 -->
@@ -277,7 +279,49 @@
         </div>
       </section>
 
-      <!-- ⑦ 토스트 · ⑧ 상태 배지·줄 상태 · ⑨ 흐린 안내 글·카드 안 안내 — 공통 구역 밖에서 따로 꾸미는 표시. 같은 틀을 섹션 목록으로 돈다.
+      <!-- ⑦ 확인 칸 — 브라우저 확인 창 대신 누른 버튼 곁에 펴는 확인. 실제 화면처럼 보고서 카드(.rs-card) 위에 그린다.
+           처음에는 펴 둔 채(초점을 옮기지 않는다) 보이고, 닫은 뒤 [다시 펴기]로 열면 실제처럼 초점이 칸으로 간다 -->
+      <section class="dev-gallery__section" aria-labelledby="dev-sec-confirm">
+        <h2 id="dev-sec-confirm" class="dev-gallery__h2">⑦ 확인 칸 (SkxConfirm)</h2>
+        <p class="dev-gallery__note">{{ CONFIRM_NOTE }}</p>
+        <div class="dev-gallery__grid dev-gallery__grid--wide">
+          <article v-for="c in CONFIRM_SAMPLES" :key="c.id" class="dev-item">
+            <h3 class="dev-item__name">{{ c.name }}</h3>
+            <div class="dev-item__stage">
+              <div class="rs-card">
+                <SkxConfirm
+                  v-if="confirmShown[c.id]"
+                  :message="c.message"
+                  :confirm-label="c.confirmLabel"
+                  :label="c.label"
+                  :busy="c.busy || !!retrying[c.id]"
+                  :initial-focus="confirmReopened[c.id] ? c.focus : 'none'"
+                  :return-focus="() => reopenButton(c.id)"
+                  @confirm="simulateConfirm(c.id)"
+                  @cancel="confirmShown[c.id] = false"
+                />
+                <div v-else class="dev-item__tools">
+                  <button :id="`dev-reopen-${c.id}`" type="button" class="rs-btn rs-btn--small rs-btn--ghost" @click="reopenConfirm(c.id)">
+                    다시 펴기
+                  </button>
+                </div>
+              </div>
+            </div>
+            <dl class="dev-item__meta">
+              <dt>생기는 곳</dt>
+              <dd>{{ c.uses.join(" · ") }}</dd>
+              <dt>디자인 훅</dt>
+              <dd><code v-for="h in c.hooks" :key="h">{{ h }}</code></dd>
+              <dt>처음 초점</dt>
+              <dd>{{ c.focusNote }}</dd>
+              <dt>문구</dt>
+              <dd><span v-for="t in c.texts" :key="t">‘{{ t }}’</span></dd>
+            </dl>
+          </article>
+        </div>
+      </section>
+
+      <!-- ⑧ 토스트 · ⑨ 상태 배지·줄 상태 · ⑩ 흐린 안내 글·카드 안 안내 — 공통 구역 밖에서 따로 꾸미는 표시. 같은 틀을 섹션 목록으로 돈다.
            실제 부품은 본보기 내용을 넣어 그대로 그리고, 화면이 직접 그리는 것은 같은 클래스·같은 상수로 같은 마크업을 그린다 -->
       <section v-for="g in OUTSIDE_SECTIONS" :key="g.id" class="dev-gallery__section" :aria-labelledby="g.id">
         <h2 :id="g.id" class="dev-gallery__h2">{{ g.title }}</h2>
@@ -370,9 +414,9 @@
         </div>
       </section>
 
-      <!-- ⑩ 이 모음에 그리지 않은 것 — 디자이너가 따로 찾아봐야 하는 자리 -->
+      <!-- ⑪ 이 모음에 그리지 않은 것 — 디자이너가 따로 찾아봐야 하는 자리 -->
       <section class="dev-gallery__section" aria-labelledby="dev-sec-skip">
-        <h2 id="dev-sec-skip" class="dev-gallery__h2">⑩ 이 모음에 그리지 않은 것</h2>
+        <h2 id="dev-sec-skip" class="dev-gallery__h2">⑪ 이 모음에 그리지 않은 것</h2>
         <p class="dev-gallery__note">{{ SKIPPED_NOTE }}</p>
         <div class="dev-gallery__grid dev-gallery__grid--wide">
           <article v-for="k in SKIPPED" :key="k.name" class="dev-item">
@@ -416,7 +460,15 @@ import { DEEP_RESEARCH } from "~/utils/brand";
 import { CHAT_MAX_CHARS } from "~/utils/deepReadSse";
 import { outlineProblems } from "~/utils/outlineEdit";
 import { planSlotLabel, type PlanSlot } from "~/utils/planSlots";
-import { paragraphProblem, reviewLine } from "~/utils/proposalView";
+import {
+  REMOVE_CONFIRM,
+  REMOVE_CONFIRM_OK,
+  REWRITE_CONFIRM,
+  REWRITE_CONFIRM_OK,
+  SECTION_LABELS,
+  paragraphProblem,
+  reviewLine,
+} from "~/utils/proposalView";
 import { outlineHint } from "~/utils/readingList";
 import type { DraftSlot, SynthEta } from "~/utils/researchDraft";
 import {
@@ -438,6 +490,7 @@ import { slotStateLabel } from "~/utils/synthCard";
 import { THEMES, THEME_LABELS } from "~/utils/theme";
 import { cardNote, cardNumbersLine, keywordWarning, moreLine, regenerateProblem } from "~/utils/topicDeck";
 import { WORK_SLOW_MS, WORK_SOURCES_FAILED, WORK_STREAM_LOST_MS } from "~/utils/workErrors";
+import { REMAKE_CONFIRM, REMAKE_CONFIRM_OK, REMAKE_REPORT } from "~/utils/workPhase";
 
 useHead({
   title: "오류 화면 모음 — SKOVIX",
@@ -754,7 +807,7 @@ const STATE_SECTIONS = [
       "제목은 화면마다 다른 '무엇을 못 했는지', 설명 줄은 오류 규칙(apiErrorMessage)이 붙이는 이유입니다. 색은 아이콘 원에만 씁니다 — 실패 갈래는 경고 삼각형(위험색), " +
       "빈 결과는 문서+돋보기(청록), 찾을 수 없음은 돋보기+X(회색), 취소는 둥근 네모(포인트색). 여기 없는 kind(invalid·conflict·forbidden·unknown)는 " +
       '실패 갈래([data-tone="error"])로 같은 모양이고, .skx-state--{kind} 로 따로 꾸밀 수 있습니다. 버튼 줄의 첫 버튼이 주 버튼(포인트색 채움)입니다. ' +
-      "사이드바의 빈 기록 안내(.skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아요 — ⑨ 에 따로 그렸어요.",
+      "사이드바의 빈 기록 안내(.skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아요 — ⑩ 에 따로 그렸어요.",
     samples: STATE_SAMPLES,
   },
   {
@@ -896,10 +949,130 @@ function fillTo(n: number): void {
   typed.value = text.slice(0, Math.min(n, CHAR_MAX));
 }
 
-// ── ⑦~⑨ 공통 구역 밖 ──
+// ── ⑦ 확인 칸 ──
+
+/** 컴포넌트 기본 버튼 글(SkxConfirm 의 cancelLabel 기본값) — 설명 줄에만 쓴다 */
+const CANCEL_TEXT = "취소";
+
+const CONFIRM_NOTE =
+  "브라우저 확인 창·모달 대신 누른 버튼 바로 아래(흐름 안)에 펴는 확인이에요.\n" +
+  "한 화면에 하나만 열리고, 묻던 일이 더는 맞지 않으면(절을 쓰기 시작함·단계가 바뀜) 저절로 접혀요.\n" +
+  "Esc·[취소]로 닫으면 초점이 누른 버튼으로 돌아가요 — 그 버튼이 사라졌으면 그 자리의 제목으로 가요.\n" +
+  "확인 버튼을 누르면 그 일이 끝날 때까지 일하는 중 모양(aria-busy)으로 남았다가 접혀요.\n" +
+  "여기서는 처음부터 펴 두었어요(초점을 옮기지 않아요) — 닫은 뒤 [다시 펴기]로 열면 실제처럼 초점이 칸으로 가요.";
+
+const CONFIRM_HOOKS = [
+  ".skx-confirm",
+  'role="alertdialog"',
+  "aria-label(무엇을 확인하는지)",
+  "aria-describedby → .skx-confirm__msg",
+  ".skx-confirm__msg(pre-line — 문장마다 줄)",
+  ".skx-confirm__actions",
+  ".skx-confirm__ok",
+  ".skx-confirm__cancel",
+];
+
+type ConfirmSampleId = "remake" | "rewrite" | "remove" | "busy";
+
+interface ConfirmSample extends SpecInfo {
+  id: ConfirmSampleId;
+  message: string;
+  confirmLabel: string;
+  /** 칸의 이름(aria-label) — 실제 화면과 같은 꼴(본보기 절 이름) */
+  label: string;
+  /** 실제 화면이 넘기는 처음 초점 */
+  focus: "confirm" | "cancel";
+  focusNote: string;
+  busy?: boolean;
+}
+
+const CONFIRM_SAMPLES: ConfirmSample[] = [
+  {
+    id: "remake",
+    name: `${REMAKE_REPORT} — 여러 문장(문장마다 줄)`,
+    uses: [
+      `참고문헌 선택하기 — 목차를 만든 뒤 위·아래 버튼 묶음의 [${REMAKE_REPORT}](누른 묶음 아래)`,
+      `보고서 — 다시 맞춤 필요 줄·대체 목차 줄의 [${REMAKE_REPORT}](그 줄 아래)`,
+    ],
+    hooks: CONFIRM_HOOKS,
+    message: REMAKE_CONFIRM,
+    confirmLabel: REMAKE_CONFIRM_OK,
+    label: `${REMAKE_REPORT} 확인`,
+    focus: "confirm",
+    focusNote: `[${REMAKE_CONFIRM_OK}] — 골라 누른 일이라 엔터 한 번 더면 진행돼요(initial-focus="confirm")`,
+    texts: [REMAKE_CONFIRM, REMAKE_CONFIRM_OK, CANCEL_TEXT],
+  },
+  {
+    id: "rewrite",
+    name: "절 다시 쓰기 — 수락·고친·직접 쓴 문단이 있을 때",
+    uses: [
+      "보고서 절 — 그런 문단이 있는 절의 [이 절 다시 쓰기](머리 아래)",
+      "보고서 절 — 그런 절을 다시 쓰지 못했을 때 줄 안내의 [다시 시도](그 줄 아래)",
+    ],
+    hooks: CONFIRM_HOOKS,
+    message: REWRITE_CONFIRM,
+    confirmLabel: REWRITE_CONFIRM_OK,
+    label: `${SECTION_LABELS.gap} 다시 쓰기 확인`,
+    focus: "confirm",
+    focusNote: `[${REWRITE_CONFIRM_OK}] — 골라 누른 일이라 엔터 한 번 더면 진행돼요(initial-focus="confirm")`,
+    texts: [REWRITE_CONFIRM, REWRITE_CONFIRM_OK, CANCEL_TEXT],
+  },
+  {
+    id: "remove",
+    name: "문단 지우기 — 한 문장",
+    uses: ["보고서 문단 — 문단마다의 [지우기](그 문단의 버튼 줄 아래)"],
+    hooks: CONFIRM_HOOKS,
+    message: REMOVE_CONFIRM,
+    confirmLabel: REMOVE_CONFIRM_OK,
+    label: `${SECTION_LABELS.gap} 1번째 문단 지우기 확인`,
+    focus: "cancel",
+    focusNote: `[${CANCEL_TEXT}] — 되돌릴 수 없는 지우기라 덜 파괴적인 쪽(컴포넌트 기본값)`,
+    texts: [REMOVE_CONFIRM, REMOVE_CONFIRM_OK, CANCEL_TEXT],
+  },
+  {
+    id: "busy",
+    name: "일하는 중 — 확인 버튼을 누른 뒤",
+    uses: ["위 세 자리 모두 — 확인한 일(다시 만들기·다시 쓰기·지우기)이 끝날 때까지. 끝나면 칸이 접혀요"],
+    hooks: ['.skx-confirm__ok[aria-disabled="true"]', '[aria-busy="true"](확인 버튼)', '.skx-confirm__cancel[aria-disabled="true"]'],
+    message: REMOVE_CONFIRM,
+    confirmLabel: REMOVE_CONFIRM_OK,
+    label: `${SECTION_LABELS.gap} 1번째 문단 지우기 확인`,
+    focus: "confirm",
+    focusNote: "옮기지 않아요 — 누른 확인 버튼에 초점이 남아요(disabled 가 아니라 aria-disabled 라서). 누름·Esc 는 무시해요",
+    texts: [REMOVE_CONFIRM, REMOVE_CONFIRM_OK, CANCEL_TEXT],
+    busy: true,
+  },
+];
+
+/** 칸이 펴져 있는가 — 처음에는 모두 펴 둔다 */
+const confirmShown = reactive<Record<ConfirmSampleId, boolean>>({ remake: true, rewrite: true, remove: true, busy: true });
+/** [다시 펴기]로 연 칸만 실제처럼 처음 초점을 옮긴다 — 처음부터 펴 둔 칸이 페이지를 열자마자 초점을 빼앗지 않게 */
+const confirmReopened = reactive<Partial<Record<ConfirmSampleId, boolean>>>({});
+
+function reopenConfirm(id: ConfirmSampleId): void {
+  confirmReopened[id] = true;
+  confirmShown[id] = true;
+}
+
+/** 칸이 접히면 초점은 그 자리에 새로 나타나는 [다시 펴기]로(실제 화면의 '누른 버튼으로'에 해당) */
+function reopenButton(id: ConfirmSampleId): HTMLElement | null {
+  return document.getElementById(`dev-reopen-${id}`);
+}
+
+/** 확인 버튼 — 잠깐 일하는 중 모양이 됐다 접힌다(요청은 보내지 않는다) */
+function simulateConfirm(id: ConfirmSampleId): void {
+  if (retrying[id]) return;
+  retrying[id] = true;
+  later(() => {
+    retrying[id] = false;
+    confirmShown[id] = false;
+  });
+}
+
+// ── ⑧~⑩ 공통 구역 밖 ──
 
 /** 맨 위 안내 넷째 줄 */
-const OUTSIDE_LEAD = "⑦~⑨ 는 공통 구역 밖에서 따로 꾸미는 자리예요 — 항목마다 ‘스타일 위치’에 고칠 파일과 클래스를 적었어요.";
+const OUTSIDE_LEAD = "⑧~⑩ 는 공통 구역 밖에서 따로 꾸미는 자리예요 — 항목마다 ‘스타일 위치’에 고칠 파일과 클래스를 적었어요.";
 
 /** '스타일 위치' 줄 — 고칠 파일·클래스에, 공통 구역을 따르지 않는다는 말을 붙인다 */
 function styleLine(where: string): string {
@@ -941,7 +1114,7 @@ const SAMPLE_SUBQS = [
 ] as const;
 const SAMPLE_HEADINGS = ["비대면 서비스와 방문 이용의 변화", "청소년 이용자의 열람실 이용", "지역 도서관의 프로그램 운영"] as const;
 
-// ⑦ 토스트
+// ⑧ 토스트
 const TOAST_SAMPLE: OutsideSample = {
   id: "toast",
   name: "토스트 — 화면 아래 가운데 한 줄",
@@ -968,7 +1141,7 @@ const TOAST_SAMPLE: OutsideSample = {
   ]),
 };
 
-// ⑧ 상태 배지·줄 상태
+// ⑨ 상태 배지·줄 상태
 
 /** 멈춘 연구의 머리 상태 칩 — 실패·취소 */
 const STOPPED_PHASES = ["failed", "canceled"] as const satisfies readonly ResearchPhase[];
@@ -1042,7 +1215,7 @@ const BADGE_SAMPLES: OutsideSample[] = [
   },
 ];
 
-// ⑨ 흐린 안내 글·카드 안 안내
+// ⑩ 흐린 안내 글·카드 안 안내
 
 /** 멈춘 초안 — 실패·취소로 1절까지만 쓰고 멈춘 보고서(1절은 도입 글이 비었다 — INTROLESS 자리) */
 const DRAFT_REPORT: ResearchReport = {
@@ -1217,7 +1390,7 @@ const MUTED_SAMPLES: OutsideSample[] = [
 const OUTSIDE_SECTIONS: { id: string; title: string; note: string; samples: OutsideSample[] }[] = [
   {
     id: "dev-sec-toast",
-    title: "⑦ 토스트 (.skx-toast)",
+    title: "⑧ 토스트 (.skx-toast)",
     note:
       "토스트는 한 문장·한 줄이에요(white-space: nowrap — 줄을 바꾸지 않아요).\n" +
       "두 가지를 말할 때는 '무엇을 못 했는지 — 할 일'로 이어 한 문장으로 써요.\n" +
@@ -1227,7 +1400,7 @@ const OUTSIDE_SECTIONS: { id: string; title: string; note: string; samples: Outs
   },
   {
     id: "dev-sec-badge",
-    title: "⑧ 상태 배지·줄 상태 (공통 구역 밖)",
+    title: "⑨ 상태 배지·줄 상태 (공통 구역 밖)",
     note:
       "딥리서치·연구 작업대의 상태를 말하는 배지와 목록 줄이에요.\n" +
       "빨강 없이 본문색 테두리·회색 글로 실패를 말해요.\n" +
@@ -1237,7 +1410,7 @@ const OUTSIDE_SECTIONS: { id: string; title: string; note: string; samples: Outs
   },
   {
     id: "dev-sec-muted",
-    title: "⑨ 흐린 안내 글·카드 안 안내 (공통 구역 밖)",
+    title: "⑩ 흐린 안내 글·카드 안 안내 (공통 구역 밖)",
     note:
       "공통 컴포넌트를 거치지 않고 본문 안의 흐린 글·카드 안 글로 말하는 빈 칸·경고·막힌 까닭이에요.\n" +
       "보고서·주제 카드·다음 단계 버튼·표지는 실제 부품(ReportView·TopicCard·ReadingNextActions·BookCover)에 본보기 내용을 넣어 그렸어요.\n" +
@@ -1246,7 +1419,7 @@ const OUTSIDE_SECTIONS: { id: string; title: string; note: string; samples: Outs
   },
 ];
 
-// ── ⑩ 이 모음에 그리지 않은 것 ──
+// ── ⑪ 이 모음에 그리지 않은 것 ──
 
 const SKIPPED_NOTE =
   "이 모음에 그리지 않았지만 디자인할 때 알아 둘 자리예요.\n" +
@@ -1531,7 +1704,7 @@ onBeforeUnmount(() => {
 .dev-ghost span:nth-child(3) {
   width: 84%;
 }
-/* ⑦ 토스트 자리 — 토스트는 position: fixed(화면 아래 가운데)라, ① 액자처럼 transform 으로 이 칸을 고정 위치의 기준으로 바꿔
+/* ⑧ 토스트 자리 — 토스트는 position: fixed(화면 아래 가운데)라, ① 액자처럼 transform 으로 이 칸을 고정 위치의 기준으로 바꿔
    칸 아래 가운데에 늘 떠 있게 한다. 바탕은 실제 화면처럼 페이지 바탕 */
 .dev-toast-stage {
   position: relative;
@@ -1542,7 +1715,7 @@ onBeforeUnmount(() => {
   background: var(--skx-page-bg);
   border-radius: var(--skx-radius-md);
 }
-/* ⑨ 사이드바 바탕 — 사이드바 틀(style_skovix.css 의 LNB 구역)과 같은 면과 글자 토큰(사이드바 안 글은 토큰을 다시 정의해 한 단계 밝다).
+/* ⑩ 사이드바 바탕 — 사이드바 틀(style_skovix.css 의 LNB 구역)과 같은 면과 글자 토큰(사이드바 안 글은 토큰을 다시 정의해 한 단계 밝다).
    빈 기록 줄의 모양은 AppSidebar.vue 의 scoped 규칙이 입힌다 */
 .dev-side {
   padding: 0.4rem 0.8rem;
@@ -1554,11 +1727,11 @@ onBeforeUnmount(() => {
   --skx-gray-1: var(--skx-side-gray-1);
   --skx-gray-2: var(--skx-side-gray-2);
 }
-/* ⑨ 표지 자리 — 결과 카드의 표지 폭쯤 */
+/* ⑩ 표지 자리 — 결과 카드의 표지 폭쯤 */
 .dev-cover {
   width: 6rem;
 }
-/* ⑩ 그리지 않은 것 목록 */
+/* ⑪ 그리지 않은 것 목록 */
 .dev-item__list {
   display: flex;
   flex-direction: column;

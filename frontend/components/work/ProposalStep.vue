@@ -64,17 +64,37 @@
           주제나 참고문헌이 바뀌었어요.<br />
           [{{ REMAKE_REPORT }}]를 누르면 지금 담은 논문으로 묶음을 새로 나눠요 — 지금 목차는 새 목차로 바뀌어요.
         </p>
-        <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="busy" @click="makeOutline">
+        <button
+          id="wk-proposal-remake"
+          type="button"
+          class="rs-btn rs-btn--small rs-btn--ghost"
+          :disabled="busy"
+          :aria-expanded="remakeAsking"
+          @click="makeOutline"
+        >
           {{ REMAKE_REPORT }}
         </button>
       </div>
       <!-- 모델이 목차 초안을 만들지 못해 대체 목차를 썼다 — 실패라 공통 줄 안내로, [보고서 다시 만들기] 는 그 안에 -->
       <SkxInlineError
         v-else-if="canRemake"
+        id="wk-proposal-fallback"
         message="모델이 목차 초안을 만들지 못했어요 — 다시 만들어 볼 수 있어요"
         :retry-label="REMAKE_REPORT"
         :busy="busy"
         @retry="makeOutline"
+      />
+      <!-- [보고서 다시 만들기] 확인 — 위 두 줄(다시 맞춤 줄·대체 목차 줄)은 함께 보이지 않아 늘 누른 버튼 바로 아래에 선다 -->
+      <SkxConfirm
+        v-if="remakeAsking"
+        :message="REMAKE_CONFIRM"
+        :confirm-label="REMAKE_CONFIRM_OK"
+        :label="`${REMAKE_REPORT} 확인`"
+        :busy="remakeSent"
+        initial-focus="confirm"
+        :return-focus="remakeReturn"
+        @confirm="confirmRemake"
+        @cancel="remakeAsking = false"
       />
 
       <template v-if="approved">
@@ -326,7 +346,7 @@ import {
   workFailure,
   type WorkFailure,
 } from "~/utils/workErrors";
-import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_CONFIRM, REMAKE_REPORT } from "~/utils/workPhase";
+import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_CONFIRM, REMAKE_CONFIRM_OK, REMAKE_REPORT } from "~/utils/workPhase";
 
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
 const emit = defineEmits<{
@@ -544,14 +564,60 @@ async function act(run: () => Promise<void>, fallback: string): Promise<void> {
 }
 
 function makeOutline(): void {
-  // 쓰는 중(aria-disabled 단추의 누름)은 무시한다 — 확인 창도 띄우지 않는다
+  // 쓰는 중(aria-disabled 단추의 누름)은 무시한다 — 확인 칸도 펴지 않는다
   if (busy.value) return;
-  if (proposal.value?.outline && !window.confirm(REMAKE_CONFIRM)) return;
-  void act(async () => {
+  // 목차가 이미 있으면 서버가 지금 목차를 통째로 덮는다(계약 보강 4) — 누른 버튼 곁에 확인 칸을 펴고(다시 누르면 접는다)
+  // [다시 만들기]를 누르면 confirmRemake 가 만든다
+  if (proposal.value?.outline) {
+    remakeAsking.value = !remakeAsking.value;
+    return;
+  }
+  void runOutline();
+}
+
+function runOutline(): Promise<void> {
+  return act(async () => {
     await api.createOutline(props.jobId);
     // 대기 순번은 이벤트를 기다리지 않고 바로 그린다. 계획서 행이 없던 연구는 이 요청이 만든다
     await refresh(["work", "proposal"], WORK_SAVED_STALE.started);
   }, "보고서를 만들지 못했어요");
+}
+
+// ── [보고서 다시 만들기] 확인 칸 ──────────────────────────
+// 브라우저 확인 창 대신 누른 버튼 바로 아래에 편다. 만드는 동안은 칸이 일하는 중(remakeSent → busy)으로 남고, 끝나면(성공·실패) 걷힌다
+const remakeAsking = ref(false);
+const remakeSent = ref(false);
+
+async function confirmRemake(): Promise<void> {
+  if (busy.value || remakeSent.value) return;
+  remakeSent.value = true;
+  try {
+    await runOutline();
+  } finally {
+    remakeSent.value = false;
+    remakeAsking.value = false;
+  }
+}
+
+// 묻던 일이 더는 맞지 않으면 칸을 걷는다 — 보내기 전에 다른 쓰기가 시작돼 버튼이 잠겼거나, 목차를 (다른 탭·이 칸에서) 다시 만들기
+// 시작했거나, 다시 맞춤·대체 목차가 풀려 [보고서 다시 만들기]가 사라졌다
+watch(busy, (now) => {
+  if (now && !remakeSent.value) remakeAsking.value = false;
+});
+watch(
+  () => canRemake.value && !outlineGen.value,
+  (ok) => {
+    if (!ok) remakeAsking.value = false;
+  },
+);
+
+// 칸이 접히면 초점을 [보고서 다시 만들기]로(다시 맞춤 줄의 버튼 또는 대체 목차 줄의 버튼) — 둘 다 사라졌으면(목차를 다시 만드는 중)
+// 보고서 제목(tabindex="-1")으로
+function remakeReturn(): HTMLElement | null {
+  const btn =
+    document.querySelector<HTMLButtonElement>("#wk-proposal-remake") ??
+    document.querySelector<HTMLButtonElement>("#wk-proposal-fallback button");
+  return btn && !btn.disabled ? btn : document.getElementById("wk-proposal-title");
 }
 
 function saveOutline(body: OutlinePut): void {
