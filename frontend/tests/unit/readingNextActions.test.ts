@@ -5,7 +5,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { describedByIds } from "~/utils/readingList";
+import { describedByIds, remakeButtonId } from "~/utils/readingList";
 import { NARROW_QUERY } from "~/utils/sidebarDrawer";
 import { cssRules } from "./helpers/cssRules";
 
@@ -29,8 +29,9 @@ describe("ReadingNextActions — 다음 단계 버튼 묶음", () => {
     expect(tpl).toMatch(/<button\s+v-if="noTopic"[^>]*class="rs-btn rs-btn--ghost"[^>]*@click="emit\('go', 'topics'\)"[^>]*>\s*제목 고르기\s*<\/button>/);
     expect(tpl).toMatch(/<template v-else-if="outlineMade">/);
     expect(tpl).toMatch(/@click="emit\('go', 'proposal'\)"[^>]*>\{\{ FINAL_STEP_NAME \}\} 단계로<\/button>/);
-    expect(tpl).toMatch(/class="rs-btn rs-btn--ghost"[^>]*:disabled="makeDisabled"[^>]*@click="emit\('make', true\)"[^>]*>\s*\{\{ REMAKE_REPORT \}\}/);
-    expect(tpl).toMatch(/v-else[^>]*class="rs-btn"[^>]*:disabled="makeDisabled"[^>]*@click="emit\('make', false\)"[^>]*>\s*\{\{ MAKE_REPORT \}\}/);
+    // make 는 누른 묶음의 자리(where)도 올린다 — [보고서 다시 만들기]의 확인 칸을 ReadingStep 이 그 묶음 아래에 편다
+    expect(tpl).toMatch(/class="rs-btn rs-btn--ghost"[^>]*:disabled="makeDisabled"[^>]*@click="emit\('make', true, where\)"[^>]*>\s*\{\{ REMAKE_REPORT \}\}/);
+    expect(tpl).toMatch(/v-else[^>]*class="rs-btn"[^>]*:disabled="makeDisabled"[^>]*@click="emit\('make', false, where\)"[^>]*>\s*\{\{ MAKE_REPORT \}\}/);
     expect(script(src)).toContain('import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";');
   });
 
@@ -49,7 +50,7 @@ describe("ReadingNextActions — 다음 단계 버튼 묶음", () => {
     expect(script(src)).toContain(
       "const makeDescribedBy = computed(() => describedByIds(props.hint ? hintId.value : null, props.disabledWhyId));",
     );
-    expect(script(src)).toMatch(/import \{ describedByIds \} from "~\/utils\/readingList";/);
+    expect(script(src)).toMatch(/import \{ describedByIds, remakeButtonId \} from "~\/utils\/readingList";/);
     // :disabled="makeDisabled" 인 두 버튼이 모두 makeDescribedBy 를 쓴다
     expect(count(tpl, ':disabled="makeDisabled"')).toBe(2);
     expect(count(tpl, ':aria-describedby="makeDescribedBy"')).toBe(2);
@@ -68,9 +69,17 @@ describe("ReadingNextActions — 다음 단계 버튼 묶음", () => {
     );
   });
 
-  it("상태는 받기만 하고 저장·목차 생성은 하지 않는다 — 누르면 go·make 를 올려 보낸다", () => {
-    expect(script(src)).toMatch(/defineEmits<\{ go: \[step: WorkStep\]; make: \[again: boolean\] \}>\(\)/);
-    expect(src).not.toMatch(/useWorkApi|createOutline|busy/);
+  it("상태는 받기만 하고 저장·목차 생성·확인 칸은 하지 않는다 — 누르면 go·make(누른 자리와 함께)를 올려 보낸다", () => {
+    expect(script(src)).toMatch(/defineEmits<\{ go: \[step: WorkStep\]; make: \[again: boolean, where: "top" \| "bottom"\] \}>\(\)/);
+    expect(src).not.toMatch(/useWorkApi|createOutline|busy|SkxConfirm|window\.confirm/);
+  });
+
+  it("[보고서 다시 만들기]는 자리마다 다른 id(확인 칸이 접히면 초점이 돌아올 곳)와, 확인 칸이 이 묶음 아래에 펴진 동안 aria-expanded", () => {
+    expect(script(src)).toContain("const remakeId = computed(() => remakeButtonId(props.where));");
+    expect(script(src)).toMatch(/remakeOpen\?: boolean;/);
+    expect(tpl).toMatch(/<button\s+:id="remakeId"[^>]*:aria-expanded="remakeOpen"[^>]*@click="emit\('make', true, where\)"/);
+    expect(remakeButtonId("top")).toBe("wk-reading-remake-top");
+    expect(remakeButtonId("bottom")).toBe("wk-reading-remake-bottom");
   });
 });
 
@@ -83,10 +92,10 @@ describe("ReadingStep — 위(소개 옆)·아래(표 밑) 두 곳에 같은 묶
     expect(js).toContain('import ReadingNextActions from "~/components/work/ReadingNextActions.vue";');
     expect(count(tpl, "<ReadingNextActions")).toBe(2);
     expect(tpl).toContain(
-      '<ReadingNextActions class="wk-screen__lead-actions" where="top" v-bind="nextActions" @go="emit(\'go\', $event)" @make="makeOutline" />',
+      '<ReadingNextActions class="wk-screen__lead-actions" where="top" v-bind="nextActions" :remake-open="remakeAt === \'top\'" @go="emit(\'go\', $event)" @make="makeOutline" />',
     );
     expect(tpl).toContain(
-      '<ReadingNextActions class="wk-screen__next" where="bottom" v-bind="nextActions" @go="emit(\'go\', $event)" @make="makeOutline" />',
+      '<ReadingNextActions class="wk-screen__next" where="bottom" v-bind="nextActions" :remake-open="remakeAt === \'bottom\'" @go="emit(\'go\', $event)" @make="makeOutline" />',
     );
     // 버튼을 화면에 직접 두 벌 적지 않는다
     expect(tpl).not.toContain("makeOutline(");
@@ -100,7 +109,9 @@ describe("ReadingStep — 위(소개 옆)·아래(표 밑) 두 곳에 같은 묶
       /const nextActions = computed\(\(\) => \(\{\s*noTopic: reading\.value\?\.topic_id === null,\s*outlineMade: outlineMade\.value,\s*makeDisabled: makeDisabled\.value,\s*hint: hint\.value,\s*disabledWhyId: readOnly\.value \? READ_ONLY_ID : null,\s*\}\)\);/,
     );
     // 위·아래 어느 쪽을 눌러도 같은 makeOutline — 들어가자마자 busy 를 보고 돌아선다
-    expect(js).toMatch(/async function makeOutline\(again: boolean\): Promise<void> \{\s*if \(busy\.value \|\| readOnly\.value \|\| !canOutline\.value\) return;/);
+    expect(js).toMatch(
+      /async function makeOutline\(again: boolean, where: NextActionsWhere\): Promise<void> \{\s*if \(busy\.value \|\| readOnly\.value \|\| !canOutline\.value\) return;/,
+    );
   });
 
   it("읽기 전용 줄(머리)에 고정 id 를 주고 두 묶음이 함께 가리킨다 — 한 요소를 둘이 가리키는 것이라 id 가 겹치지 않는다", () => {

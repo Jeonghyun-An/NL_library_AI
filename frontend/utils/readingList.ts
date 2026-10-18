@@ -218,6 +218,14 @@ export function describedByIds(...ids: (string | null)[]): string | undefined {
   return present.length ? present.join(" ") : undefined;
 }
 
+// 다음 단계 버튼 묶음의 자리 — 머리(소개 옆)와 표 아래
+export type NextActionsWhere = "top" | "bottom";
+
+// 묶음 자리마다의 [보고서 다시 만들기] id — 확인 칸이 접히면 ReadingStep 이 이 id 로 누른 버튼을 찾아 초점을 돌린다
+export function remakeButtonId(where: NextActionsWhere): string {
+  return `wk-reading-remake-${where}`;
+}
+
 // 'critic 이 뺀 논문' 서랍 — 하위질문 순으로 묶고 묶음 안은 뺀 회차 순(회차를 모르면 뒤)
 export function candidateGroups(excluded: ExcludedCandidate[]): CandidateGroup[] {
   const groups = new Map<number, CandidateGroup>();

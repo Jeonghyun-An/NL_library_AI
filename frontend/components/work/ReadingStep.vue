@@ -10,8 +10,10 @@
           <!-- 소개와 다음 단계 버튼은 읽기 목록을 불러온 뒤에만 — 소개는 미리 담은 수(preselected)를, 버튼은 주제·담은 수를 알아야
                맞는 말·맞는 상태가 된다. 버튼은 표 아래와 같은 묶음(ReadingNextActions) — 넓으면 소개 옆, 좁으면 소개 아래 -->
           <p v-if="intro" class="rs-muted wk-screen__intro">{{ intro }}</p>
-          <ReadingNextActions class="wk-screen__lead-actions" where="top" v-bind="nextActions" @go="emit('go', $event)" @make="makeOutline" />
+          <ReadingNextActions class="wk-screen__lead-actions" where="top" v-bind="nextActions" :remake-open="remakeAt === 'top'" @go="emit('go', $event)" @make="makeOutline" />
         </div>
+        <!-- [보고서 다시 만들기] 확인 — 누른 묶음 바로 아래(위 묶음이면 소개 줄 아래, 아래 묶음이면 표 밑 묶음 아래). 한 번에 하나 -->
+        <SkxConfirm v-if="reading && remakeAt === 'top'" v-bind="remakeConfirm" :return-focus="() => remakeReturn('top')" @confirm="confirmRemake" @cancel="remakeAt = null" />
         <p v-if="topicTitle" class="wk-screen__picked">고른 주제 <strong>{{ topicTitle }}</strong></p>
         <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었어요 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]를 눌러 맞춰 주세요.</p>
         <!-- 읽기 전용으로 꺼진 [보고서 만들기]·[보고서 다시 만들기](위·아래 두 묶음)가 이 줄을 까닭으로 가리킨다(aria-describedby) -->
@@ -58,7 +60,8 @@
           :busy="busy"
           @revive="(cnts) => update(cnts, { state: 'candidate' })"
         />
-        <ReadingNextActions class="wk-screen__next" where="bottom" v-bind="nextActions" @go="emit('go', $event)" @make="makeOutline" />
+        <ReadingNextActions class="wk-screen__next" where="bottom" v-bind="nextActions" :remake-open="remakeAt === 'bottom'" @go="emit('go', $event)" @make="makeOutline" />
+        <SkxConfirm v-if="remakeAt === 'bottom'" v-bind="remakeConfirm" :return-focus="() => remakeReturn('bottom')" @confirm="confirmRemake" @cancel="remakeAt = null" />
       </template>
     </section>
 
@@ -116,12 +119,20 @@ import { type PanelPaper, panelTabs } from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
 import { detailUrl, readingAnchor } from "~/utils/detailSource";
 import { passageText } from "~/utils/passageText";
-import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget, readingIntro } from "~/utils/readingList";
+import {
+  type NextActionsWhere,
+  canMakeOutline,
+  firstPathChunk,
+  outlineHint,
+  pathPdfTarget,
+  readingIntro,
+  remakeButtonId,
+} from "~/utils/readingList";
 import { httpStatus } from "~/utils/apiErrors";
 import { workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick } from "~/utils/restorePosition";
 import { WORK_SAVED_STALE, WORK_SLOW_MESSAGE } from "~/utils/workErrors";
-import { REMAKE_CONFIRM, REMAKE_REPORT } from "~/utils/workPhase";
+import { REMAKE_CONFIRM, REMAKE_CONFIRM_OK, REMAKE_REPORT } from "~/utils/workPhase";
 
 // 읽기 목록 단계 화면(?s=reading, spec §4 S4). 표·서랍의 의도를 받아 PUT .../reading/{cnts_id} 로 저장하고 다시 읽는다.
 // 담은 논문이 MIN_READING_FOR_OUTLINE 편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로
@@ -277,9 +288,18 @@ watch(
 );
 onBeforeUnmount(() => emit("panel", false));
 
-async function makeOutline(again: boolean): Promise<void> {
+// where — 누른 묶음(머리·표 아래). [보고서 다시 만들기](again)는 목차가 이미 있어 지금 목차를 덮으므로 바로 만들지 않고 그 묶음 아래에
+// 확인 칸을 편다(다시 누르면 접는다) — [다시 만들기]를 누르면 confirmRemake 가 만든다
+async function makeOutline(again: boolean, where: NextActionsWhere): Promise<void> {
   if (busy.value || readOnly.value || !canOutline.value) return;
-  if (again && !window.confirm(REMAKE_CONFIRM)) return;
+  if (again) {
+    remakeAt.value = remakeAt.value === where ? null : where;
+    return;
+  }
+  await runOutline();
+}
+
+async function runOutline(): Promise<void> {
   busy.value = true;
   error.value = null;
   try {
@@ -295,5 +315,39 @@ async function makeOutline(again: boolean): Promise<void> {
   } finally {
     busy.value = false;
   }
+}
+
+// ── [보고서 다시 만들기] 확인 칸 ──────────────────────────
+// 브라우저 확인 창 대신 누른 묶음 아래에 편다 — 위·아래 묶음 중 한 곳에만(remakeAt). 만드는 동안 칸은 일하는 중(busy — 이 화면의 busy 는
+// 목차 만들기만 쥔다)으로 남고, 끝나면 걷힌다(성공이면 마지막 단계로 넘어가 이 화면째 내려간다)
+const remakeAt = ref<NextActionsWhere | null>(null);
+// 두 자리의 칸이 같이 받는 값 — 사용자가 다시 만들기를 골라 누른 자리라 엔터 한 번 더면 진행되게 확인 버튼에 초점을 둔다
+const remakeConfirm = computed(() => ({
+  message: REMAKE_CONFIRM,
+  confirmLabel: REMAKE_CONFIRM_OK,
+  label: `${REMAKE_REPORT} 확인`,
+  busy: busy.value,
+  initialFocus: "confirm" as const,
+}));
+
+async function confirmRemake(): Promise<void> {
+  if (busy.value || readOnly.value || !canOutline.value) return;
+  await runOutline();
+  remakeAt.value = null;
+}
+
+// 묻던 일을 더는 할 수 없으면 칸을 걷는다 — [보고서 다시 만들기]가 사라졌거나(주제가 없어짐·목차를 만든 단계가 아님) 꺼졌다(담은 논문이
+// 모자라짐 — 표의 저장 사슬이 다시 읽은 값). 만드는 중(busy)에는 그대로 둔다
+const remakeAllowed = computed(
+  () => outlineMade.value && reading.value?.topic_id !== null && !readOnly.value && canOutline.value,
+);
+watch(remakeAllowed, (ok) => {
+  if (!ok && !busy.value) remakeAt.value = null;
+});
+
+// 칸이 접히면 초점을 그 묶음의 [보고서 다시 만들기]로 — 꺼졌거나 사라졌으면 이 단계 제목(tabindex="-1")으로
+function remakeReturn(where: NextActionsWhere): HTMLElement | null {
+  const btn = document.getElementById(remakeButtonId(where)) as HTMLButtonElement | null;
+  return btn && !btn.disabled ? btn : document.getElementById("wk-reading-title");
 }
 </script>

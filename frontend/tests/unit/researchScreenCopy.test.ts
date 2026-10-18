@@ -1,7 +1,7 @@
 // frontend/tests/unit/researchScreenCopy.test.ts
 // 딥리서치·연구 어시스턴트 화면 문구의 말투·줄바꿈 규칙(사용자 요청 2026-10-16) — 오류·빈 상태·경고·안내 문구는 해요체이고
 // 두 문장 이상이면 문장마다 줄을 바꾼다. 토스트는 한 줄(nowrap)이라 한 문장('무엇을 못 했는지 — 할 일')이다. 오류는 화면 안에서
-// 알린다(브라우저 prompt·alert 금지). 보고서 문서 자체의 글(화면 본문과 내려받은 Word·PDF 가 같은 상수를 쓴다)은 문서 말투(합쇼체)로 둔다.
+// 알린다(브라우저 prompt·alert·confirm 금지 — 확인은 누른 버튼 곁의 확인 칸 SkxConfirm). 보고서 문서 자체의 글(화면 본문과 내려받은 Word·PDF 가 같은 상수를 쓴다)은 문서 말투(합쇼체)로 둔다.
 // 순수 함수·상수는 실제로 돌리고, 화면(.vue)은 Nuxt 를 띄우지 않고 소스 글을 검사한다(기존 관례)
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -10,7 +10,7 @@ import { REPORT_EXPORT_FAILED, REPORT_EXPORT_FAILED_TOAST } from "~/composables/
 import { FOOTPRINT_EMPTY } from "~/utils/proposalView";
 import { RESEARCH_TOAST_TEXT, pdfCheckProblem, toastLine } from "~/utils/researchErrors";
 import { EXCLUDED_WHY, INTROLESS, NO_LIMITS, NO_SUMMARY } from "~/utils/researchReport";
-import { REMAKE_CONFIRM, REMAKE_REPORT } from "~/utils/workPhase";
+import { REMAKE_CONFIRM, REMAKE_CONFIRM_OK, REMAKE_REPORT } from "~/utils/workPhase";
 import { findBlock } from "./helpers/themeCss";
 
 const root = resolve(__dirname, "../..");
@@ -127,17 +127,22 @@ describe("여러 문장 안내 — 문장마다 줄을 바꾼다", () => {
     expect(template(read("components/work/ContinueResearchCard.vue"))).toContain('<p class="rs-muted rs-lines">{{ view.body }}</p>');
   });
 
-  it("[보고서 다시 만들기] 확인은 두 화면이 한 상수를 쓴다 — 해요체·문장마다 줄", () => {
+  it("[보고서 다시 만들기] 확인은 두 화면이 한 상수를 화면 안 확인 칸(SkxConfirm)에 쓴다 — 해요체·문장마다 줄", () => {
     expect(REMAKE_CONFIRM.split("\n")).toEqual([
       "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀌어요.",
       "연구 배경은 그대로 둬요.",
       "이미 쓴 절은 지우지 않고 아직 쓰지 않은 절만 자동으로 써요 — 주제·묶음·연구 질문이 바뀐 절에는 '다시 맞춤 필요'가 붙어요.",
       "계속할까요?",
     ]);
+    expect(REMAKE_CONFIRM_OK).toBe("다시 만들기");
     for (const file of ["components/work/ProposalStep.vue", "components/work/ReadingStep.vue"]) {
       const src = read(file);
-      expect(src).toMatch(/import \{[^}]*\bREMAKE_CONFIRM\b[^}]*\} from "~\/utils\/workPhase";/);
+      expect(src).toMatch(/import \{[^}]*\bREMAKE_CONFIRM\b[^}]*\bREMAKE_CONFIRM_OK\b[^}]*\} from "~\/utils\/workPhase";/);
       expect(src).not.toMatch(/const REMAKE_CONFIRM\b/);
+      // 브라우저 확인 창이 아니라 화면 안 확인 칸으로 묻는다
+      expect(src).not.toMatch(/window\.confirm|(?<![\w$.])confirm\(/);
+      expect(src).toMatch(/message: REMAKE_CONFIRM,|:message="REMAKE_CONFIRM"/);
+      expect(template(src)).toContain("<SkxConfirm");
     }
   });
 
