@@ -10,7 +10,8 @@ import { describe, expect, it } from "vitest";
 const root = resolve(__dirname, "../..");
 const read = (rel: string) => readFileSync(resolve(root, rel), "utf-8");
 
-// 사용자가 보존하라고 한 첫 화면과 쓰이지 않는 옛 대화 칸 — 손대지 않는다
+// 사용자가 보존하라고 한 첫 화면과 그 화면이 쓰는 초안 대화 칸 — 모양·구조를 그대로 두어 이 규칙에서 뺀다.
+// 초안 대화 칸의 {error} 처리는 landingBookErrors.test 의 '보존 화면 — 초안 대화 칸'이 본다
 const UNTOUCHED = new Set(["pages/search-classic.vue", "components/BookChat.legacy.vue"]);
 
 function sourceFiles(dir: string): string[] {

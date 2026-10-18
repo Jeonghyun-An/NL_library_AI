@@ -609,3 +609,28 @@ describe("보존 화면 /search-classic — 추천 이유 스트림 실패", () 
     expect(top).toMatch(/\.reason-error \{[^}]*--skx-ink: var\(--ink-2\);[^}]*--skx-primary: var\(--violet-deep\);[^}]*\}/);
   });
 });
+
+// 사용자 결정(2026-10-18): 보존 화면은 처음 만든 초안 대화 칸(BookChat.legacy)을 다시 쓴다. 모양·구조는 그대로 두고,
+// 지금 서버의 실패({error, code}·오류 응답·빈 답)를 DeepRead 와 같은 문구 규칙으로 말풍선에 보인다
+describe("보존 화면 — 초안 대화 칸(BookChat.legacy)", () => {
+  const legacy = read("components/BookChat.legacy.vue");
+  const top = read("components/TopResult.vue");
+
+  it("보존 화면의 TopResult 가 초안 대화 칸을 쓴다", () => {
+    expect(top).toMatch(/<BookChatLegacy\s+v-show="chatOpen"\s+:cnts-id="book\.book_id"\s+@close="chatOpen = false"\s*\/>/);
+    expect(top).not.toMatch(/<BookChat\b(?!Legacy)/);
+  });
+
+  it("실패는 deepReadSse 규칙으로 — {error, code}·오류 응답·네트워크 오류·글 없이 끝난 답", () => {
+    expect(legacy).toContain('import { chatResponseError, finishedAnswerCode, requestFailure, streamFailure } from "~/utils/deepReadSse";');
+    expect(legacy).toContain("if (!resp.ok || !resp.body) throw await chatResponseError(resp);");
+    expect(legacy).toMatch(/if \(evt\.error\) \{\s*failure = streamFailure\(typeof evt\.code === "string" \? evt\.code : null\)\.message;/);
+    expect(legacy).toContain("failure = requestFailure(err).message;");
+    expect(legacy).toMatch(/const code = finishedAnswerCode\(streamingText\.value\);/);
+    expect(legacy).not.toMatch(/오류가 발생했습니다|응답 오류|입력하세요/);
+  });
+
+  it("실패 문구는 문장마다 줄을 바꾼다 — 마크다운 말풍선이라 줄 끝 공백 두 칸", () => {
+    expect(legacy).toContain('const failureText = failure ? failure.replace(/\\n/g, "  \\n") : null;');
+  });
+});

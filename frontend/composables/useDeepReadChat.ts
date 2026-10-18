@@ -9,6 +9,7 @@ import {
   type ChatFailureCopy,
   type DeepReadMessage,
   type DeepReadSource,
+  chatResponseError,
   finishedAnswerCode,
   parseSse,
   requestFailure,
@@ -47,12 +48,6 @@ export interface DeepReadChat {
 interface Run {
   ctrl: AbortController;
   list: DeepReadMessage[];
-}
-
-// 오류 응답(4xx·5xx)을 $fetch 의 FetchError 처럼 status·data(JSON 본문 — 아니면 undefined)를 단 오류로 — apiErrorMessage 가 읽는다
-async function responseError(resp: Response): Promise<Error> {
-  const data: unknown = await resp.json().catch(() => undefined);
-  return Object.assign(new Error(`DeepRead 응답 ${resp.status}`), { status: resp.status, data });
 }
 
 // 딥리드 대화의 흐름(BookChat 에서 뺐다 — spec §12-4). 논문(cntsId)이 바뀌면 받던 답을 끊고 그 논문의 대화로 바꾸며,
@@ -128,7 +123,7 @@ export function useDeepReadChat(opts: DeepReadChatOptions): DeepReadChat {
         body: JSON.stringify({ message: text, history }),
         signal: run.ctrl.signal,
       });
-      if (!resp.ok || !resp.body) throw await responseError(resp);
+      if (!resp.ok || !resp.body) throw await chatResponseError(resp);
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";

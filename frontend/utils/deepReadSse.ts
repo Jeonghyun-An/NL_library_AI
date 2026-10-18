@@ -65,6 +65,13 @@ export function requestFailure(err: unknown): ChatFailureCopy {
   return { message: apiErrorMessage(err, CHAT_ERROR_TEXT), retryable: errorKind(err) !== "invalid" };
 }
 
+// 오류 응답(4xx·5xx)을 $fetch 의 FetchError 처럼 status·data(JSON 본문 — 아니면 undefined)를 단 오류로 — apiErrorMessage 가 읽는다.
+// 딥리드 대화(useDeepReadChat)와 보존 화면의 초안 대화 칸(BookChat.legacy)이 함께 쓴다
+export async function chatResponseError(resp: Response): Promise<Error> {
+  const data: unknown = await resp.json().catch(() => undefined);
+  return Object.assign(new Error(`DeepRead 응답 ${resp.status}`), { status: resp.status, data });
+}
+
 // 아무 데이터 없이 CHAT_IDLE_TIMEOUT_MS 가 지나 화면이 끊은 답
 export const CHAT_TIMEOUT_FAILURE: Readonly<ChatFailureCopy> = { message: ERROR_HINTS.timeout, retryable: true };
 

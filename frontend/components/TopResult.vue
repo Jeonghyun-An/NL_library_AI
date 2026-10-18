@@ -202,8 +202,8 @@
       </div>
     </div>
 
-    <!-- 도서 심층 대화 (v-show로 마운트 유지 → 기록 보존) -->
-    <BookChat
+    <!-- 도서 심층 대화 (v-show로 마운트 유지 → 기록 보존) — 보존 화면이라 처음 만든 초안 대화 칸(BookChat.legacy)을 쓴다 -->
+    <BookChatLegacy
       v-show="chatOpen"
       :cnts-id="book.book_id"
       @close="chatOpen = false"
