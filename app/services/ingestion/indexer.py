@@ -308,7 +308,9 @@ def search_chunks(
     Milvus 호출(개수 읽기·hybrid_search)에는 정수 시간 한도(search_timeout — 기본 20초)를 넘긴다. Milvus 가 죽으면 그 안에
     MilvusException(재시도 끝 — grpc UNAVAILABLE)이나 grpc DEADLINE_EXCEEDED 로 끝나, 라우트는 503 search_unavailable,
     DeepRead 는 retrieval_failed 로 알린다. 이 함수를 쓰는 곳(검색·관련 자료·상황별 추천·DeepRead·딥리서치 탐색)이 모두 같은
-    한도다. 컬렉션 핸들은 기동 때(main.py) 이미 캐시돼 있다 — 캐시가 빈 첫 호출의 연결은 pymilvus 기본 10초 한도다.
+    한도다. 컬렉션 핸들은 기동 때(main.py) 이미 캐시돼 있다. 캐시가 비면(관리자 전체 삭제가 컬렉션을 지운 뒤 다시 만들지
+    못함) ensure_collection() 의 has_collection·describe·load 에는 시간 한도가 없다 — 그래서 관리자 전체 삭제는 지우기에
+    성공했을 때만 캐시를 버린다(api/admin.py).
     대량 적재(index_chunks)의 쓰기 호출에는 걸지 않는다.
     """
     timeout = search_timeout()

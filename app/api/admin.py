@@ -471,10 +471,11 @@ async def delete_all_embeddings(confirm: str):
         # 예외 글(영문)은 화면에 내지 않는다 — 로그에만
         log.error("Milvus 컬렉션 삭제 실패: %s: %s", type(e).__name__, e, exc_info=True)
         raise HTTPException(500, "Milvus 컬렉션을 지우지 못했습니다. 서버 로그를 확인하세요")
-    finally:
-        # 지운(또는 지우다 만) 컬렉션의 핸들을 버린다 — 남기면 ensure_collection() 이 그것을 그대로 돌려줘 이 프로세스의
-        # 검색·적재가 없는 컬렉션을 물고 계속 실패한다
-        indexer.forget_collection()
+    # 지웠거나(또는 원래 없었거나) Milvus 에 닿은 뒤에만 이 프로세스가 쥔 핸들을 버린다 — 남기면 ensure_collection() 이 그것을
+    # 그대로 돌려줘 검색·적재가 없는 컬렉션을 물고 계속 실패한다. 지우지 못했으면(Milvus 장애 등 — 위에서 500) 캐시한 핸들이
+    # 그대로 유효하니 둔다 — 장애 중에 캐시를 비우면 그 뒤 검색마다 ensure_collection() 의 시간 한도 없는
+    # has_collection·describe·load 가 Milvus 가 돌아올 때까지 이벤트 루프를 약 3.5분씩 붙든다(2026-10-20 머지 전 리뷰)
+    indexer.forget_collection()
 
     # 같은 이름의 빈 컬렉션(스키마·인덱스·load)을 곧바로 다시 만든다. 적재 워커(Celery)처럼 다른 프로세스가 쥔 핸들 캐시는
     # 이 요청으로 버릴 수 없지만, 그쪽 호출도 컬렉션을 이름으로 물으므로 다시 만든 컬렉션에 닿는다. 실패해도 Milvus 는 이미
