@@ -6,8 +6,8 @@
 // 대화는 서버에 저장하지 않는다 — 요청마다 앞 대화를 history 로 싣는다(spec §12-4 D24)
 import { CODE_MESSAGES, ERROR_HINTS, apiErrorMessage, codeMessage, errorKind } from "~/utils/apiErrors";
 
-// 출처 대목의 쪽은 저장된 값 그대로다(0부터 센다 — 서버가 LLM 문맥에도 같은 값 [p.X–Y] 를 싣는다, book_chat.py _chat_events 의
-// 컨텍스트 블록)
+// 출처 대목의 쪽은 저장된 값 그대로다(0부터 센다). 사람이 보는 쪽은 +1 이다 — 서버는 LLM 문맥 [p.X–Y] 를 +1 쪽으로 싣고
+// (book_chat.py _context_label), 화면은 칩 글자(deepRead.sourceLabel)·원문 쪽(sourcePdfTarget)에서 +1 한다
 export interface DeepReadSource {
   page_start: number;
   page_end: number;

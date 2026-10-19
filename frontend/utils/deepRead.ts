@@ -4,7 +4,7 @@
 import type { OpenPdfPayload } from "~/types/research";
 import type { PaperMeta } from "~/types/work";
 import { DEEP_READ } from "~/utils/brand";
-import { pubYear, splitAuthors } from "~/utils/citations";
+import { pageLabel, pubYear, splitAuthors } from "~/utils/citations";
 import type { DeepReadSource } from "~/utils/deepReadSse";
 import { citedPdfTarget } from "~/utils/pdfViewer";
 
@@ -41,10 +41,11 @@ export function chatCopy(kind: DocKind): ChatCopy {
   return COPY[kind];
 }
 
-// 출처 칩 글자 — 저장값 그대로(0부터 센 쪽). 서버가 같은 값으로 LLM 문맥 [p.X–Y] 를 만들어 답 글에도 그 숫자가 나온다
-// (book_chat.py _chat_events 의 컨텍스트 블록). citations.pageLabel(+1)로 바꾸면 칩이 답 글과 한 쪽씩 어긋난다(06e 정함 22)
+// 출처 칩 글자 — 보고서 인용 칩과 같은 citations.pageLabel(0부터 센 저장값 +1, 0 이면 '쪽 정보 없음'). 서버도 LLM 문맥
+// [p.X–Y] 를 같은 +1 쪽으로 만들어(book_chat.py _context_label) 답 글의 쪽과 칩이 같고 PDF 쪽과도 같다. 전에는 칩·문맥 모두
+// 저장값 그대로라 둘은 맞았지만 PDF 쪽보다 하나 작았다(06e 정함 22 를 바꿈). sources 의 page_start·page_end 는 저장값 그대로 온다
 export function sourceLabel(src: DeepReadSource): string {
-  return `p.${src.page_start}${src.page_end !== src.page_start ? `–${src.page_end}` : ""}`;
+  return pageLabel(src);
 }
 
 // 출처 대목으로 원문을 연다 — 0부터 센 저장값을 뷰어 쪽(+1)으로(pdfViewer.citedPdfTarget). 쪽 정보가 0 이면 쪽 없이 연다

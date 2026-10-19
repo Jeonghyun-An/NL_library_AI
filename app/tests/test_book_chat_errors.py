@@ -142,7 +142,7 @@ class TestEmptyAnswer:
 
     def test_a_real_answer_is_not_flagged(self, book_chat, monkeypatch, hit):
         _fake_search(monkeypatch, book_chat, [hit])
-        fake_llm(monkeypatch, book_chat, [delta("p.3–4 에 나옵니다."), "data: [DONE]"])
+        fake_llm(monkeypatch, book_chat, [delta("p.4–5 에 나옵니다."), "data: [DONE]"])
 
         chunks = _stream(book_chat)
 
