@@ -1,7 +1,11 @@
 // frontend/utils/historySnapshot.ts
 import type { BookSnapshot, PaperSnapshot, SnapshotBookInfo, SnapshotItem } from "~/types/history";
+import { SUMMARY_PAPER_LIMIT, pickSummaryExcerpt } from "./summaryExcerpt";
 
 export const SNAPSHOT_MAX_REFERENCES = 30;
+// 논문 AI 요약이 읽는 앞쪽 논문의 발췌를 담는 길이 — 서버가 자르는 500자(paper_summary._MAX_EXCERPT_CHARS)보다 넉넉히 두어,
+// 서버가 앞머리 표지를 걷고 잘라도 새 검색 때와 같은 글이 남는다
+export const SNAPSHOT_EXCERPT_MAX_CHARS = 600;
 // 논문·소장자료 모두 건수로 자르지 않고 바이트로 맞춘다 — 검색이 top_k 의 몇 배(논문은 지금 최대 60편, 소장자료는 20 이면 수십 권)를
 // 돌려주고 화면은 그 전부를 쪽으로 나눠 보이므로, 복원할 때 둘째 쪽 이후의 카드도 목록에 있어야 한다(상세에서 돌아와 카드 자리를 찾을 때도).
 // 서버 상한(app/api/history.py 의 200KB)은 파이썬 구분자(", "·": ")까지 세어 여유를 둔다
@@ -140,6 +144,15 @@ export function slimPaperResult(result: unknown): PaperSnapshot | null {
   const books = slimItems(result, PAPER_INFO_FIELDS, true);
   if (!books) return null;
   const r = result as Loose;
+  // AI 요약이 읽는 앞 SUMMARY_PAPER_LIMIT 편에만 발췌(초록, 없으면 색인 요약 본문)를 고른 필드 이름 그대로 잘라 싣는다 — 요약을 끝내기 전에
+  // 떠났거나 실패한 기록을 다시 열어(applyPaperEntry·[다시 시도]) 요약을 다시 만들 때도 새 검색 때와 같은 글을 읽게. 카드는 그리지 않는
+  // 필드라 나머지 논문에는 싣지 않는다(편마다 수백~수천 자다). slimItems 와 같은 거르기로 순서를 맞춘다
+  const served = (r.books as unknown[]).filter(isObject).filter((b) => typeof b.book_id === "string");
+  books.slice(0, SUMMARY_PAPER_LIMIT).forEach((item, i) => {
+    const info = served[i]?.book_info;
+    const pick = pickSummaryExcerpt(isObject(info) ? info : null);
+    if (pick) item.book_info = { ...item.book_info, [pick.field]: pick.text.slice(0, SNAPSHOT_EXCERPT_MAX_CHARS) };
+  });
   const snap: PaperSnapshot = { query: typeof r.query === "string" ? r.query : "", books };
   shedReferences(snap);
   return snap;

@@ -25,6 +25,9 @@ export interface SnapshotBookInfo {
   references?: string[];
   // 1위 도서만 담는다(slimBookResult) — 복원 때 '이 책에서 얻을 수 있는 것'을 다시 받지 않고 그린다
   read_effect?: string;
+  // 논문 AI 요약이 읽는 앞 5편만, 둘 중 고른 하나를 잘라 담는다(slimPaperResult·utils/summaryExcerpt) — 복원한 기록으로 요약을 다시 만들 때 읽는다
+  abstract?: string;
+  summary?: string;
 }
 
 export interface SnapshotItem {

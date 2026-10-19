@@ -5,12 +5,14 @@ import {
   BOOK_SNAPSHOT_MAX_BYTES,
   PAPER_INFO_FIELDS,
   PAPER_SNAPSHOT_MAX_BYTES,
+  SNAPSHOT_EXCERPT_MAX_CHARS,
   SNAPSHOT_MAX_REFERENCES,
   slimBookResult,
   slimPaperResult,
 } from "~/utils/historySnapshot";
 import { kdcChip } from "~/utils/kdc";
 import { cardKeywords, cardMeta } from "~/utils/resultCard";
+import { SUMMARY_PAPER_LIMIT, summaryExcerpt, type ExcerptInfo } from "~/utils/summaryExcerpt";
 
 function utf8Bytes(v: unknown): number {
   return new TextEncoder().encode(JSON.stringify(v)).length;
@@ -198,8 +200,45 @@ describe("slimPaperResult", () => {
       kci_citations: 12,
       corporate_author: "학회",
     });
-    expect(item.book_info).not.toHaveProperty("abstract");
+    // 초록은 AI 요약이 읽는 앞쪽 논문에만 잘라 싣는다(아래 '요약 발췌') — 색인 요약·소개는 싣지 않는다
+    expect(item.book_info!.abstract).toHaveLength(SNAPSHOT_EXCERPT_MAX_CHARS);
+    expect(item.book_info).not.toHaveProperty("summary");
+    expect(item.book_info).not.toHaveProperty("introduction");
     expect(item.book_info!.references).toHaveLength(SNAPSHOT_MAX_REFERENCES);
+  });
+
+  // 요약을 끝내기 전에 떠났거나 요약이 실패한 기록은 다시 열 때(applyPaperEntry)·[다시 시도] 때 스냅샷으로 요약을 다시 만든다 —
+  // 새 검색 때와 같은 발췌(초록, 없으면 색인 요약 본문)를 읽어야 한다
+  describe("요약 발췌 — AI 요약이 읽는 앞 5편", () => {
+    const withInfo = (i: number, info: ExcerptInfo) => ({ book_id: `P${i}`, best_score: 1 - i / 100, chunks: [], book_info: { title: `논문 ${i}`, ...info } });
+
+    it("앞 5편만 고른 발췌를 같은 필드 이름으로 싣고, 6번째부터는 싣지 않는다", () => {
+      const books = Array.from({ length: 8 }, (_, i) => withInfo(i, { abstract: `초록 ${i}`, summary: `요약 ${i}` }));
+      const snap = slimPaperResult({ query: "q", books })!;
+      expect(snap.books.slice(0, SUMMARY_PAPER_LIMIT).map((b) => b.book_info!.abstract)).toEqual(["초록 0", "초록 1", "초록 2", "초록 3", "초록 4"]);
+      expect(snap.books.every((b) => !("summary" in b.book_info!))).toBe(true);
+      expect(snap.books.slice(SUMMARY_PAPER_LIMIT).every((b) => !("abstract" in b.book_info!))).toBe(true);
+    });
+
+    it("초록이 없는 논문은 색인 요약의 본문을 summary 로 싣는다 — 복원한 기록도 새 검색과 같은 발췌를 고른다", () => {
+      const legacy = "## SUMMARY: 다문화가정 아동의 어휘 발달.\n**관련 연구자가 검색할 학술 키워드:** 다문화, 어휘";
+      const books = [withInfo(0, { abstract: "", summary: legacy }), withInfo(1, { abstract: "Original abstract." }), withInfo(2, {})];
+      const snap = slimPaperResult({ query: "q", books })!;
+      expect(snap.books[0]!.book_info).toMatchObject({ summary: "다문화가정 아동의 어휘 발달." });
+      expect(snap.books[0]!.book_info).not.toHaveProperty("abstract");
+      expect(snap.books[2]!.book_info).not.toHaveProperty("abstract");
+      expect(snap.books[2]!.book_info).not.toHaveProperty("summary");
+      expect(snap.books.map(summaryExcerpt)).toEqual(books.map(summaryExcerpt));
+    });
+
+    it("긴 초록은 서버가 자르는 500자보다 넉넉히 잘라 담는다 — 복원 뒤 요약도 같은 앞부분을 읽는다", () => {
+      const abstract = "가나다라마바 ".repeat(300);
+      const snap = slimPaperResult({ query: "q", books: [withInfo(0, { abstract })] })!;
+      expect(snap.books[0]!.book_info!.abstract).toHaveLength(SNAPSHOT_EXCERPT_MAX_CHARS);
+      const kept = summaryExcerpt(snap.books[0]!);
+      expect(SNAPSHOT_EXCERPT_MAX_CHARS).toBeGreaterThan(500);
+      expect(kept.slice(0, 500)).toBe(summaryExcerpt({ book_info: { abstract } }).slice(0, 500));
+    });
   });
 
   it("모양이 틀리면 null", () => {

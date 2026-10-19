@@ -314,6 +314,7 @@ import { readV1Map } from "~/utils/historyStore";
 import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { readResearchDraft } from "~/utils/paperResearch";
 import { citeYear, type SummaryRef } from "~/utils/summaryCite";
+import { SUMMARY_PAPER_LIMIT, summaryExcerpt } from "~/utils/summaryExcerpt";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
@@ -785,7 +786,7 @@ function returnPage(): number | null {
 // ── AI 요약 SSE ───────────────────────────────────────────────
 type SummarySource = {
   book_id: string;
-  book_info?: { title?: string; personal_author?: string; corporate_author?: string };
+  book_info?: { title?: string; personal_author?: string; corporate_author?: string; abstract?: string; summary?: string };
 };
 
 async function streamAiSummary(
@@ -796,12 +797,14 @@ async function streamAiSummary(
 ) {
   aiLoading.value = true;
   aiError.value = "";
-  const papers = books.slice(0, 5).map((b) => ({
+  const papers = books.slice(0, SUMMARY_PAPER_LIMIT).map((b) => ({
     book_id: b.book_id,
     title: b.book_info?.title || "",
     authors:
       b.book_info?.personal_author || b.book_info?.corporate_author || "",
-    best_chunk_text: "",
+    // 원문 초록, 없으면 색인 요약 본문 — chunks 는 참고문헌 조각일 때가 있어 쓰지 않는다(utils/summaryExcerpt).
+    // 복원한 기록(applyPaperEntry)은 스냅샷이 앞 5편의 발췌를 담아 둔다(slimPaperResult)
+    best_chunk_text: summaryExcerpt(b),
   }));
   let text = "";
   let refs: typeof aiRefs.value = [];
