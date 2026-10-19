@@ -633,4 +633,13 @@ describe("보존 화면 — 초안 대화 칸(BookChat.legacy)", () => {
   it("실패 문구는 문장마다 줄을 바꾼다 — 마크다운 말풍선이라 줄 끝 공백 두 칸", () => {
     expect(legacy).toContain('const failureText = failure ? failure.replace(/\\n/g, "  \\n") : null;');
   });
+
+  // 쪽 규칙 — 저장값(0부터)을 그대로 그려 칩이 PDF 쪽보다 하나 작았다. DeepRead 칩과 같은 sourceLabel(+1)로 그린다
+  // (저장 3 → p.4 는 deepRead.test 가 본다). 칩 모양(span.source-chip·누르면 미리보기)은 그대로다
+  it("출처 칩 글자는 DeepRead 와 같은 sourceLabel(저장값 +1) — 저장값을 그대로 그리지 않는다", () => {
+    expect(legacy).toContain('import { sourceLabel } from "~/utils/deepRead";');
+    expect(legacy).toMatch(/class="source-chip"[\s\S]*?>\s*\{\{ sourceLabel\(src\) \}\}\s*<\/span>/);
+    expect(legacy).not.toMatch(/p\.\{\{\s*src\.page_start/);
+    expect(legacy).not.toMatch(/\{\{[^}]*src\.page_(start|end)[^}]*\}\}/);
+  });
 });

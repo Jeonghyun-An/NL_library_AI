@@ -105,17 +105,40 @@ def _book_references(book: BookOut) -> list[str]:
     return list(getattr(book, "references", None) or [])
 
 
+def _shown_pages(hit: SearchHit) -> tuple[int, int] | None:
+    """사람이 보는 쪽(1부터) — 저장된 쪽은 0부터 센다(ingestion/extractor 가 PyMuPDF page.number 를 싣는다). 보고서 쪽
+    (frontend/utils/citations.pageLabel)과 같은 규칙으로 +1 한다. page_start 가 0 이하이면 None — 0 은 '첫 쪽'과 '쪽 정보
+    없음'(indexer 의 `or 0`)이 겹쳐 쪽을 대지 않는다. 끝 쪽이 시작보다 앞이면 시작 쪽으로 맞춘다.
+    LLM 문맥의 쪽 표기(_context_label)와 인용 대목 고르기(_find_cited_hits)가 함께 써 둘이 같은 숫자를 본다.
+    sources 이벤트는 저장값(0부터) 그대로 보낸다 — 화면(utils/deepRead sourceLabel·sourcePdfTarget)이 +1 한다"""
+    if hit.page_start <= 0:
+        return None
+    start = hit.page_start + 1
+    return start, max(hit.page_end + 1, start)
+
+
+def _context_label(hit: SearchHit) -> str:
+    """컨텍스트 블록 머리 — [p.4–5]·[p.4](한 쪽), 쪽 정보가 없으면 [쪽 정보 없음]. 모델이 이 표기를 답 글에 그대로 옮겨
+    사람이 읽으므로 1부터 센 쪽이다. 전에는 저장값(0부터)을 그대로 실어 답 글의 쪽이 PDF 쪽보다 하나 작았다"""
+    pages = _shown_pages(hit)
+    if pages is None:
+        return "[쪽 정보 없음]"
+    start, end = pages
+    return f"[p.{start}–{end}]" if end > start else f"[p.{start}]"
+
+
 def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHit]:
     """LLM 응답에서 실제 인용된 청크만 필터링.
 
-    컨텍스트 블록 형식 [p.X–Y] 을 기준으로 인용 여부를 판단.
+    컨텍스트 블록 형식 [p.X–Y] 의 쪽(1부터 — _shown_pages)을 기준으로 인용 여부를 판단.
     page_start 가 0 이하인 청크(페이지 정보 없음)는 제외.
     """
     cited: list[SearchHit] = []
     for hit in hits:
-        ps, pe = hit.page_start, hit.page_end
-        if ps <= 0:
+        pages = _shown_pages(hit)
+        if pages is None:
             continue
+        ps, pe = pages
         patterns = [
             rf'p\.{ps}[–\-~]{pe}\b',   # p.23–45 / p.23-45
             rf'p\.{ps}\b',              # p.23
@@ -263,7 +286,7 @@ async def _chat_events(
         user_content = f"[이 논문의 참고문헌 목록]\n{ref_context_block}\n\n[질문]\n{message}"
     elif hits:
         context_block = "\n\n".join(
-            f"[p.{h.page_start}–{h.page_end}]\n{h.text}" for h in hits
+            f"{_context_label(h)}\n{h.text}" for h in hits
         )
         user_content = f"[참고 내용]\n{context_block}\n\n[질문]\n{message}"
     else:
@@ -307,8 +330,9 @@ async def _chat_events(
         return
 
     # ── 5. 실제 인용된 출처만 전달 ───────────────────────────
-    # LLM 응답에서 p.X 또는 p.X–Y 형태로 언급된 청크만 타일로 표시.
+    # LLM 응답에서 p.X 또는 p.X–Y 형태로 언급된 청크만 타일로 표시(쪽은 문맥과 같은 1부터 — _shown_pages).
     # 인용이 없으면 sources 이벤트를 보내지 않는다 (빈 타일 방지).
+    # page_start·page_end 는 저장값(0부터) 그대로 보낸다 — 화면이 칩 글자·원문 쪽으로 +1 한다
     if hits:
         cited = _find_cited_hits(full_response, hits)
         if cited:

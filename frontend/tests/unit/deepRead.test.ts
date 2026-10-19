@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import type { PaperMeta } from "~/types/work";
 import { DEEP_READ } from "~/utils/brand";
+import { pageLabel } from "~/utils/citations";
 import {
   PANEL_FULL_MAX_PX,
   PANEL_SIDE_MIN_PX,
@@ -41,9 +42,21 @@ describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
     expect(paper.sendLabel).toBe("질문 보내기");
   });
 
-  it("출처 칩 글자는 저장값 그대로 — 서버가 답 글에 쓴 쪽 표기와 같다(BookChat 의 지금 표기)", () => {
-    expect(sourceLabel({ page_start: 5, page_end: 5, text: "" })).toBe("p.5");
-    expect(sourceLabel({ page_start: 5, page_end: 7, text: "" })).toBe("p.5–7");
+  // 쪽 규칙 — 저장값은 0부터 세고 사람이 보는 쪽은 +1 이다. 서버도 LLM 문맥을 +1 쪽으로 싣는다(book_chat._context_label —
+  // 저장 3–4 → '[p.4–5]', app/tests/test_book_chat_prompt.py). 그래서 칩 글자·답 글의 쪽·원문 쪽이 모두 같다
+  it("출처 칩 글자는 저장값 +1 — 저장 3 은 p.4, 보고서 인용 칩(pageLabel)과 같은 표기", () => {
+    expect(sourceLabel({ page_start: 3, page_end: 3, text: "" })).toBe("p.4");
+    expect(sourceLabel({ page_start: 3, page_end: 4, text: "" })).toBe("p.4–5");
+    expect(sourceLabel({ page_start: 5, page_end: 7, text: "" })).toBe(pageLabel({ page_start: 5, page_end: 7 }));
+    // 서버는 쪽 정보 없는(0) 대목을 출처로 보내지 않지만, 와도 보고서와 같이 쪽을 대지 않는다
+    expect(sourceLabel({ page_start: 0, page_end: 0, text: "" })).toBe("쪽 정보 없음");
+  });
+
+  it("칩 글자와 [원문 보기]가 여는 쪽이 같다 — p.4 칩은 원문 4쪽", () => {
+    const src = { page_start: 3, page_end: 4, text: "대목" };
+    const target = sourcePdfTarget("KCI_1", "제목", src);
+    expect(target.page).toBe(4);
+    expect(target.passages?.[0]?.label).toBe(sourceLabel(src));
   });
 
   it("p.5 칩은 원문 6쪽을 연다 — 저장값은 0부터 세어 뷰어 쪽은 하나 크다", () => {

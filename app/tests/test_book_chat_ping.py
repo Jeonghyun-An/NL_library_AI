@@ -26,7 +26,7 @@ INTERVAL = 0.02   # 테스트용 ping 간격(초) — 느린 걸음(SLOW)은 이
 SLOW = 0.2
 HISTORY = [{"role": "user", "content": "이 논문은 무엇을 다뤄?"}, {"role": "assistant", "content": "노인 우울을 다룹니다."}]
 ANSWER_EVENTS = [
-    {"text": "p.3–4 에 나옵니다."},
+    {"text": "p.4–5 에 나옵니다."},
     {"sources": [{"page_start": 3, "page_end": 4, "text": "표본은 노인 300명이다."}]},
 ]
 
@@ -75,7 +75,7 @@ def test_the_ping_is_an_sse_comment_every_15_seconds(book_chat):
 def test_a_fast_stream_has_no_pings(book_chat, monkeypatch, hit):
     # 기본 간격(15초)에서 바로 끝나는 스트림에는 ping 이 끼지 않는다 — 기존 이벤트 그대로다
     _fake_search(monkeypatch, book_chat, [hit])
-    fake_llm(monkeypatch, book_chat, [delta("p.3–4 에 나옵니다."), "data: [DONE]"])
+    fake_llm(monkeypatch, book_chat, [delta("p.4–5 에 나옵니다."), "data: [DONE]"])
 
     chunks = _stream(book_chat)
 
@@ -86,7 +86,7 @@ def test_a_fast_stream_has_no_pings(book_chat, monkeypatch, hit):
 def test_a_slow_query_rewrite_sends_pings_before_the_first_event(chat, monkeypatch, hit):
     _slow_rewrite(monkeypatch, chat)
     _fake_search(monkeypatch, chat, [hit])
-    fake_llm(monkeypatch, chat, [delta("p.3–4 에 나옵니다."), "data: [DONE]"])
+    fake_llm(monkeypatch, chat, [delta("p.4–5 에 나옵니다."), "data: [DONE]"])
 
     chunks = _stream(chat, "그 표본은?", HISTORY)
 
@@ -109,7 +109,7 @@ def test_the_chunk_search_stays_on_the_event_loop(chat, monkeypatch, hit):
 
     _fake_search(monkeypatch, chat, [hit])
     monkeypatch.setattr(chat, "embed_texts", embed_texts)
-    fake_llm(monkeypatch, chat, [delta("p.3–4 에 나옵니다."), "data: [DONE]"])
+    fake_llm(monkeypatch, chat, [delta("p.4–5 에 나옵니다."), "data: [DONE]"])
 
     chunks = _stream(chat)
 
@@ -135,7 +135,7 @@ def test_a_failing_search_keeps_its_error_event_last(chat, monkeypatch):
 
 def test_a_slow_llm_sends_pings_between_text_chunks(chat, monkeypatch, hit):
     async def sse_deltas(resp):
-        yield "p.3–4 에 "
+        yield "p.4–5 에 "
         await asyncio.sleep(SLOW)
         yield "나옵니다."
 
@@ -145,11 +145,11 @@ def test_a_slow_llm_sends_pings_between_text_chunks(chat, monkeypatch, hit):
 
     chunks = _stream(chat)
 
-    first, second = chunks.index('data: {"text": "p.3–4 에 "}\n\n'), chunks.index('data: {"text": "나옵니다."}\n\n')
+    first, second = chunks.index('data: {"text": "p.4–5 에 "}\n\n'), chunks.index('data: {"text": "나옵니다."}\n\n')
     assert PING in chunks[first + 1:second]
     assert chunks[-1] == DONE and chunks.count(DONE) == 1
     assert events(_without_pings(chunks)) == [
-        {"text": "p.3–4 에 "}, {"text": "나옵니다."},
+        {"text": "p.4–5 에 "}, {"text": "나옵니다."},
         {"sources": [{"page_start": 3, "page_end": 4, "text": "표본은 노인 300명이다."}]},
     ]
 
@@ -217,7 +217,7 @@ def test_closing_the_stream_mid_answer_closes_the_llm_stream(chat, monkeypatch, 
 
     async def sse_deltas(resp):
         try:
-            yield "p.3–4 에 "
+            yield "p.4–5 에 "
             await asyncio.sleep(3600)
             yield "나옵니다."
         finally:
@@ -235,5 +235,5 @@ def test_closing_the_stream_mid_answer_closes_the_llm_stream(chat, monkeypatch, 
 
     got, others = asyncio.run(main())
 
-    assert got == ['data: {"text": "p.3–4 에 "}\n\n', PING]
+    assert got == ['data: {"text": "p.4–5 에 "}\n\n', PING]
     assert closed == {"deltas": True} and others == []
