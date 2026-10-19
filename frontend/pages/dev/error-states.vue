@@ -7,7 +7,10 @@
      만든 글과 상수(ERROR_PAGE_TEXT·CONNECTION_HINTS·AI_SUMMARY_FAILED·charLimitMessage·RESEARCH_STATE_TEXT·PAPER_STATE_TEXT·
      WORK_SOURCES_FAILED·SIDEBAR_NOTICE·REMAKE_CONFIRM·REWRITE_CONFIRM·REMOVE_CONFIRM)를 그대로 보여 문구가 바뀌면 같이 바뀐다. 상태 블록의 제목('검색하지 못했어요' 등)도 실제 화면의
      상수를 읽는다 — 이 페이지가 새로 짓는 화면 문구는 없다(연구 질문·절 제목 같은 본보기 내용만 적는다).
-     항목마다 '생기는 곳'은 그 모양이 실제로 나오는 대표 화면이다(공통 컴포넌트를 쓰는 곳 — 2~5곳).
+     ② 와 ④ 는 머리의 '문구 보기'(논문 · 소장자료 — 둘이 같은 값)로 같은 상태의 소장자료 화면(소장자료 검색·도서 상세·상황별 추천) 문구를
+     볼 수 있다 — 소장자료 화면과 같은 상수(utils/bookErrors 의 BOOK_SEARCH_TEXT·BOOK_DETAIL_TEXT·SCENARIO_TEXT·BOOK_REASON_TEXT)를 읽고,
+     소장자료 화면에 없는 상태는 본보기를 그대로 두고 그렇다고 적는다. 상황별 추천에만 있는 상태는 소장자료로 볼 때만 그린다.
+     항목마다 '생기는 곳'은 그 모양이 실제로 나오는 대표 화면이다(공통 컴포넌트를 쓰는 곳 — 2~5곳, 논문·소장자료 화면을 함께 적는다).
      ③ 딥리서치 상태는 후배 시안의 변형(실패·취소·찾을 수 없음)을 실제 동작(pages/research/[id].vue·api/research.py)에 맞춘 것 —
      딥리서치 화면과 같은 상수·함수를 읽고, 항목마다 '시안 대비'에 바꾼 점을 적는다. 시안의 '결과 없음(아직 연구가 없음)'은 실제 앱에
      없어(사이드바가 [연구 시작하기]만 둔다) 그리지 않는다.
@@ -85,13 +88,32 @@
         </div>
       </section>
 
-      <!-- ② 섹션 상태 블록 — kind 별 / ③ 딥리서치 상태 — 후배 시안 변형을 실제 동작에 맞춰. 같은 틀을 섹션 목록으로 돈다 -->
+      <!-- ② 섹션 상태 블록 — kind 별 / ③ 딥리서치 상태 — 후배 시안 변형을 실제 동작에 맞춰. 같은 틀을 섹션 목록으로 돈다.
+           ② 는 머리에 '문구 보기'(논문 · 소장자료)를 두어 같은 상태의 소장자료 화면 문구로 바꿔 본다(shownStates) -->
       <section v-for="g in STATE_SECTIONS" :key="g.id" class="dev-gallery__section" :aria-labelledby="g.id">
-        <h2 :id="g.id" class="dev-gallery__h2">{{ g.title }}</h2>
+        <div class="dev-gallery__section-head">
+          <h2 :id="g.id" class="dev-gallery__h2">{{ g.title }}</h2>
+          <div v-if="g.areaSwitch" class="dev-gallery__area">
+            <p :id="`${g.id}-area`" class="dev-gallery__area-label">문구 보기</p>
+            <div class="skx-set__seg dev-gallery__seg" role="group" :aria-labelledby="`${g.id}-area`">
+              <button
+                v-for="name in AREAS"
+                :key="name"
+                type="button"
+                :class="['skx-set__opt', area === name && 'is-active']"
+                :aria-pressed="area === name"
+                @click="area = name"
+              >
+                {{ AREA_LABELS[name] }}
+              </button>
+            </div>
+          </div>
+        </div>
         <p class="dev-gallery__note">{{ g.note }}</p>
         <div class="dev-gallery__grid">
-          <article v-for="s in g.samples" :key="s.id" class="dev-item">
+          <article v-for="s in shownStates(g)" :key="s.id" class="dev-item">
             <h3 class="dev-item__name">{{ s.name }}</h3>
+            <p v-if="s.absent" class="dev-item__absent">{{ s.absent }}</p>
             <div class="dev-item__stage">
               <SkxErrorState
                 :kind="s.kind"
@@ -123,12 +145,31 @@
         </div>
       </section>
 
-      <!-- ④ 줄 단위 안내 — 쓰이는 자리째로 -->
+      <!-- ④ 줄 단위 안내 — 쓰이는 자리째로. '문구 보기'는 ② 와 같은 값(area)이라 어느 쪽에서 바꿔도 둘이 함께 바뀐다 -->
       <section class="dev-gallery__section" aria-labelledby="dev-sec-inline">
-        <h2 id="dev-sec-inline" class="dev-gallery__h2">④ 줄 단위 안내 (SkxInlineError)</h2>
+        <div class="dev-gallery__section-head">
+          <h2 id="dev-sec-inline" class="dev-gallery__h2">④ 줄 단위 안내 (SkxInlineError)</h2>
+          <div class="dev-gallery__area">
+            <p id="dev-sec-inline-area" class="dev-gallery__area-label">문구 보기</p>
+            <div class="skx-set__seg dev-gallery__seg" role="group" aria-labelledby="dev-sec-inline-area">
+              <button
+                v-for="name in AREAS"
+                :key="name"
+                type="button"
+                :class="['skx-set__opt', area === name && 'is-active']"
+                :aria-pressed="area === name"
+                @click="area = name"
+              >
+                {{ AREA_LABELS[name] }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="dev-gallery__note">{{ INLINE_NOTE }}</p>
         <div class="dev-gallery__grid dev-gallery__grid--wide">
           <article class="dev-item">
-            <h3 class="dev-item__name">{{ INLINE_SAMPLES.basic.name }}</h3>
+            <h3 class="dev-item__name">{{ inlineShown.basic.name }}</h3>
+            <p v-if="inlineShown.basic.absent" class="dev-item__absent">{{ inlineShown.basic.absent }}</p>
             <div class="dev-item__stage">
               <div class="skx-search">
                 <div class="skx-search__box">
@@ -143,53 +184,54 @@
                     </button>
                   </div>
                 </div>
-                <SkxInlineError :message="INLINE_SAMPLES.basic.texts[0]!" />
+                <SkxInlineError :message="inlineShown.basic.texts[0]!" />
               </div>
             </div>
             <dl class="dev-item__meta">
               <dt>생기는 곳</dt>
-              <dd>{{ INLINE_SAMPLES.basic.uses.join(" · ") }}</dd>
+              <dd>{{ inlineShown.basic.uses.join(" · ") }}</dd>
               <dt>디자인 훅</dt>
-              <dd><code v-for="h in INLINE_SAMPLES.basic.hooks" :key="h">{{ h }}</code></dd>
+              <dd><code v-for="h in inlineShown.basic.hooks" :key="h">{{ h }}</code></dd>
               <dt>문구</dt>
-              <dd><span v-for="t in INLINE_SAMPLES.basic.texts" :key="t">‘{{ t }}’</span></dd>
+              <dd><span v-for="t in inlineShown.basic.texts" :key="t">‘{{ t }}’</span></dd>
             </dl>
           </article>
 
           <article class="dev-item">
-            <h3 class="dev-item__name">{{ INLINE_SAMPLES.retry.name }}</h3>
+            <h3 class="dev-item__name">{{ inlineShown.retry.name }}</h3>
             <div class="dev-item__stage">
+              <!-- 받다 끊긴 글 — 본보기 내용(논문은 AI 요약, 소장자료는 추천 이유). 칸 모양은 둘 다 논문 요약 칸 그대로 -->
               <div class="skx-pai-section">
-                <p class="skx-pai-section__text">{{ AI_PARTIAL_TEXT }}</p>
+                <p class="skx-pai-section__text">{{ inlineShown.retry.partial }}</p>
               </div>
               <SkxInlineError
-                :message="INLINE_SAMPLES.retry.texts[0]!"
+                :message="inlineShown.retry.texts[0]!"
                 :busy="!!retrying.inlineRetry"
                 @retry="simulateRetry('inlineRetry')"
               />
             </div>
             <dl class="dev-item__meta">
               <dt>생기는 곳</dt>
-              <dd>{{ INLINE_SAMPLES.retry.uses.join(" · ") }}</dd>
+              <dd>{{ inlineShown.retry.uses.join(" · ") }}</dd>
               <dt>디자인 훅</dt>
-              <dd><code v-for="h in INLINE_SAMPLES.retry.hooks" :key="h">{{ h }}</code></dd>
+              <dd><code v-for="h in inlineShown.retry.hooks" :key="h">{{ h }}</code></dd>
               <dt>문구</dt>
-              <dd><span v-for="t in INLINE_SAMPLES.retry.texts" :key="t">‘{{ t }}’</span></dd>
+              <dd><span v-for="t in inlineShown.retry.texts" :key="t">‘{{ t }}’</span></dd>
             </dl>
           </article>
 
           <article class="dev-item">
-            <h3 class="dev-item__name">{{ INLINE_SAMPLES.busy.name }}</h3>
+            <h3 class="dev-item__name">{{ inlineShown.busy.name }}</h3>
             <div class="dev-item__stage">
-              <SkxInlineError :message="INLINE_SAMPLES.busy.texts[0]!" busy :on-retry="ignoreRetry" />
+              <SkxInlineError :message="inlineShown.busy.texts[0]!" busy :on-retry="ignoreRetry" />
             </div>
             <dl class="dev-item__meta">
               <dt>생기는 곳</dt>
-              <dd>{{ INLINE_SAMPLES.busy.uses.join(" · ") }}</dd>
+              <dd>{{ inlineShown.busy.uses.join(" · ") }}</dd>
               <dt>디자인 훅</dt>
-              <dd><code v-for="h in INLINE_SAMPLES.busy.hooks" :key="h">{{ h }}</code></dd>
+              <dd><code v-for="h in inlineShown.busy.hooks" :key="h">{{ h }}</code></dd>
               <dt>문구</dt>
-              <dd><span v-for="t in INLINE_SAMPLES.busy.texts" :key="t">‘{{ t }}’</span></dd>
+              <dd><span v-for="t in inlineShown.busy.texts" :key="t">‘{{ t }}’</span></dd>
             </dl>
           </article>
         </div>
@@ -455,7 +497,7 @@ import {
   type ErrorStateKind,
 } from "~/utils/apiErrors";
 import { SEARCH_QUERY_MAX } from "~/utils/searchInput";
-import { BOOK_HISTORY_TEXT } from "~/utils/bookErrors";
+import { BOOK_DETAIL_TEXT, BOOK_HISTORY_TEXT, BOOK_REASON_TEXT, BOOK_SEARCH_TEXT, SCENARIO_TEXT } from "~/utils/bookErrors";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { CHAT_MAX_CHARS } from "~/utils/deepReadSse";
 import { outlineProblems } from "~/utils/outlineEdit";
@@ -575,10 +617,27 @@ onMounted(() => {
   frameObserver.observe(first);
 });
 
+// ── 문구 보기(논문 · 소장자료) — ②·④ ──
+
+/** 문구 보기 — 본보기를 논문 화면의 문구로 볼지, 같은 상태의 소장자료 화면(소장자료 검색·도서 상세·상황별 추천) 문구로 볼지 */
+const AREAS = ["paper", "book"] as const;
+type Area = (typeof AREAS)[number];
+const AREA_LABELS: Record<Area, string> = { paper: "논문", book: "소장자료" };
+/** ② 와 ④ 의 전환이 함께 쓰는 값 — 처음은 논문(이 모음이 처음 그리던 문구) */
+const area = ref<Area>("paper");
+
+/** 소장자료 화면에 없는 상태 — 소장자료로 볼 때 본보기는 그대로 두고 이 안내에 까닭(none)을 붙인다 */
+interface NoBook {
+  none: string;
+}
+const BOOK_NONE_NOTE = "소장자료 화면에는 없는 상태예요.";
+/** 본보기 위 안내 — 고정 한 줄 + 까닭(문장마다 줄, pre-line) */
+const absentNote = (why: string): string => `${BOOK_NONE_NOTE}\n${why}`;
+
 // ── ② 섹션 상태 블록 · ③ 딥리서치 상태 ──
 
-interface StateSample extends SpecInfo {
-  id: string;
+/** 상태 블록 한 벌 — SkxErrorState 에 넘기는 값 */
+interface StateBlock {
   kind: ErrorStateKind;
   title: string;
   message?: string;
@@ -591,16 +650,73 @@ interface StateSample extends SpecInfo {
   compact?: boolean;
   /** 기본 슬롯에 넣는 버튼 자리 링크(.skx-state__action — 첫 버튼이면 주 버튼 모양) */
   action?: { label: string; href: string };
+}
+
+interface StateSample extends SpecInfo, StateBlock {
+  id: string;
   /** 후배 시안 대비 바꾼 점(③) */
   diff?: string;
+  /**
+   * 소장자료로 볼 때(②) — 같은 상태에서 소장자료 화면이 보이는 블록(제목·설명·버튼 모두 — 비운 칸은 그리지 않는다), 소장자료 화면에
+   * 없는 상태면 까닭. ③(딥리서치)은 두지 않는다
+   */
+  book?: (StateBlock & { texts: string[] }) | NoBook;
+  /** 한쪽 화면에만 있는 상태 — 그쪽 문구로 볼 때만 그린다(상황별 추천의 빈 결과·없는 상황) */
+  only?: Area;
 }
 
-function stateSample(s: Omit<StateSample, "texts">): StateSample {
-  const retryText = s.retry ? (s.retryLabel ?? RETRY_TEXT) : undefined;
-  const texts = [s.title, s.message, retryText, s.action?.label].filter((t): t is string => !!t);
-  return { ...s, texts };
+/** 지금 그리는 본보기 — absent 는 소장자료 화면에 없는 상태의 안내(없으면 null) */
+interface ShownState extends StateSample {
+  absent: string | null;
 }
 
+/** 블록의 문구 원문 — 제목·설명·[다시 시도]·슬롯 버튼 순 */
+function blockTexts(b: StateBlock): string[] {
+  const retryText = b.retry ? (b.retryLabel ?? RETRY_TEXT) : undefined;
+  return [b.title, b.message, retryText, b.action?.label].filter((t): t is string => !!t);
+}
+
+function stateSample(s: Omit<StateSample, "texts" | "book"> & { book?: StateBlock | NoBook }): StateSample {
+  const book = s.book && !("none" in s.book) ? { ...s.book, texts: blockTexts(s.book) } : s.book;
+  return { ...s, book, texts: blockTexts(s) };
+}
+
+/**
+ * 섹션의 본보기를 지금 고른 문구로 — 소장자료면 book 블록으로 통째로 바꾸고(논문 쪽 설명·버튼이 남지 않게 칸마다 옮긴다), 소장자료 화면에
+ * 없는 상태는 그대로 두고 안내를 붙인다. 한쪽에만 있는 상태(only)는 그쪽으로 볼 때만. 문구 보기가 없는 섹션(③)은 늘 논문 쪽
+ */
+function shownStates(g: StateSection): ShownState[] {
+  const view: Area = g.areaSwitch ? area.value : "paper";
+  return g.samples
+    .filter((s) => !s.only || s.only === view)
+    .map((s): ShownState => {
+      if (view === "paper" || !s.book) return { ...s, absent: null };
+      if ("none" in s.book) return { ...s, absent: absentNote(s.book.none) };
+      const b = s.book;
+      return {
+        ...s,
+        kind: b.kind,
+        title: b.title,
+        message: b.message,
+        retry: b.retry,
+        retryLabel: b.retryLabel,
+        busy: b.busy,
+        compact: b.compact,
+        action: b.action,
+        texts: b.texts,
+        absent: null,
+      };
+    });
+}
+
+/** 도서 상세의 첫 화면 버튼(BOOK_DETAIL_TEXT.home) — 불러오기 실패·찾을 수 없음 블록에 늘 붙는다(pages/books/[cnts_id].vue) */
+const BOOK_HOME_ACTION = { label: BOOK_DETAIL_TEXT.home, href: "/" };
+/** 상황별 추천의 상황 다시 고르기 버튼(SCENARIO_TEXT.pickAnother) — 빈 결과·없는 상황 블록에 붙는다(pages/recommend/[id].vue — 상황 목록으로) */
+const PICK_ANOTHER_ACTION = { label: SCENARIO_TEXT.pickAnother, href: "/recommend" };
+
+// 소장자료 쪽(book)은 같은 상태에서 소장자료 화면이 실제로 보이는 블록이다 — 제목은 화면이 failureView 에 넘기는 상수, 설명 줄은 같은 규칙
+// (failureView → shownError — 이유만, 이유가 없으면 빈 글)이라 논문 쪽과 같은 reasonOf, 버튼은 그 화면이 붙이는 것.
+// 소장자료 검색(pages/index.vue)·상황별 추천(pages/recommend/[id].vue)은 [다시 시도]를 누르면 블록 대신 불러오는 중 표시로 바뀐다
 const STATE_SAMPLES: StateSample[] = [
   stateSample({
     id: "error",
@@ -612,8 +728,16 @@ const STATE_SAMPLES: StateSample[] = [
       "딥리서치 — 멈춘 연구 카드(③ 실패 — kind 를 주지 않아 기본값)",
       "전역 오류 화면 — 화면을 그리지 못함(① 치명 오류)",
       "kind 를 errorKind 로 넘기는 화면(검색·상세·작업대)은 이 갈래가 아니라 아래 network·timeout·busy·server 로 나온다",
+      "소장자료·논문 검색·논문·도서 상세·상황별 추천 — 그 밖의 실패(409·403 등 — kind 는 conflict·forbidden·unknown 이지만 같은 모양, 알아볼 이유가 없으면 설명 줄 없이 제목과 버튼만)",
     ],
     hooks: [".skx-state", ".skx-state--error", '[data-tone="error"]', ".skx-state__title", ".skx-state__retry"],
+    // 도서 상세 — 이유가 없는 실패라 설명 줄 없이 제목·[다시 시도]·첫 화면 버튼
+    book: {
+      kind: "error",
+      title: BOOK_DETAIL_TEXT.failedTitle,
+      retry: true,
+      action: BOOK_HOME_ACTION,
+    },
   }),
   stateSample({
     id: "network",
@@ -625,10 +749,18 @@ const STATE_SAMPLES: StateSample[] = [
     uses: [
       "소장자료·논문 검색 결과",
       "논문·도서 상세 — 정보·관련 자료 읽기",
+      "상황별 추천 — 추천 도서 읽기",
       "딥리서치 — 연구 불러오기",
       "연구 작업대 — 주제 카드·참고문헌 후보·보고서 불러오기",
     ],
     hooks: [".skx-state--network", ".skx-state__msg", ".skx-state__icon(아이콘 원 — 실패 갈래는 경고 삼각형)"],
+    // 소장자료 검색 결과 자리
+    book: {
+      kind: errorKind(SAMPLE.network),
+      title: BOOK_SEARCH_TEXT.failedTitle,
+      message: reasonOf(SAMPLE.network),
+      retry: true,
+    },
   }),
   stateSample({
     id: "timeout",
@@ -639,10 +771,17 @@ const STATE_SAMPLES: StateSample[] = [
     retry: true,
     uses: [
       "논문·도서 상세·딥리서치 — 정보 읽기(GET 30초 제한 — useApi)",
-      "소장자료·논문 검색 결과·상세의 관련 자료(60초 제한 — API_SEARCH_TIMEOUT_MS)",
+      "소장자료·논문 검색 결과·상세의 관련 자료·상황별 추천(60초 제한 — API_SEARCH_TIMEOUT_MS)",
       "게이트웨이 504",
     ],
     hooks: [".skx-state--timeout", '[data-kind="timeout"]'],
+    // 도서 상세의 관련 자료 추천
+    book: {
+      kind: errorKind(SAMPLE.timeout),
+      title: BOOK_DETAIL_TEXT.relatedFailedTitle,
+      message: reasonOf(SAMPLE.timeout),
+      retry: true,
+    },
   }),
   stateSample({
     id: "busy",
@@ -651,8 +790,19 @@ const STATE_SAMPLES: StateSample[] = [
     title: PAPER_STATE_TEXT.searchFailed,
     message: reasonOf(SAMPLE.busy),
     retry: true,
-    uses: ["소장자료·논문 검색 결과 — 요청 몰림(429·503)", "논문·도서 상세·관련 자료 — 503", "딥리서치·연구 작업대 불러오기 — 503"],
+    uses: [
+      "소장자료·논문 검색 결과·상황별 추천 — 요청 몰림(429·503)",
+      "논문·도서 상세·관련 자료 — 503",
+      "딥리서치·연구 작업대 불러오기 — 503",
+    ],
     hooks: [".skx-state--busy", '[data-kind="busy"]'],
+    // 소장자료 검색 결과 자리
+    book: {
+      kind: errorKind(SAMPLE.busy),
+      title: BOOK_SEARCH_TEXT.failedTitle,
+      message: reasonOf(SAMPLE.busy),
+      retry: true,
+    },
   }),
   stateSample({
     id: "server",
@@ -661,8 +811,20 @@ const STATE_SAMPLES: StateSample[] = [
     title: PAPER_STATE_TEXT.detailFailed,
     message: reasonOf(SAMPLE.server),
     retry: true,
-    uses: ["논문·도서 상세 — 정보 읽기(5xx)", "소장자료·논문 검색 결과", "연구 작업대 — 주제 카드·참고문헌 후보·보고서 불러오기"],
+    uses: [
+      "논문·도서 상세 — 정보 읽기(5xx — 상세는 돌아갈 버튼을 함께 둔다: 도서는 첫 화면으로, 논문은 들어온 곳으로)",
+      "소장자료·논문 검색 결과·상황별 추천",
+      "연구 작업대 — 주제 카드·참고문헌 후보·보고서 불러오기",
+    ],
     hooks: [".skx-state--server", '[data-kind="server"]'],
+    // 도서 상세 — [다시 시도] 옆에 첫 화면 버튼(보조 버튼 모양)
+    book: {
+      kind: errorKind(SAMPLE.server),
+      title: BOOK_DETAIL_TEXT.failedTitle,
+      message: reasonOf(SAMPLE.server),
+      retry: true,
+      action: BOOK_HOME_ACTION,
+    },
   }),
   stateSample({
     id: "searchDown",
@@ -677,6 +839,13 @@ const STATE_SAMPLES: StateSample[] = [
       "어느 화면이든 잡지 않은 서버 예외(500 internal_error — kind 는 server, 설명 줄은 같은 규칙)",
     ],
     hooks: [".skx-state--busy", "설명 줄은 apiErrors 의 CODE_MESSAGES(서버 detail 은 쓰지 않는다)"],
+    // 상황별 추천 — 같은 장애의 소장자료 검색 제목은 네트워크 끊김·요청 몰림과 같다
+    book: {
+      kind: errorKind(SAMPLE.searchDown),
+      title: SCENARIO_TEXT.failedTitle,
+      message: reasonOf(SAMPLE.searchDown),
+      retry: true,
+    },
   }),
   stateSample({
     id: "notFound",
@@ -685,22 +854,62 @@ const STATE_SAMPLES: StateSample[] = [
     title: researchErrorMessage(SAMPLE.notFound, ""),
     message: RESEARCH_STATE_TEXT.notFoundMessage,
     action: { label: RESEARCH_STATE_TEXT.backToSearch, href: "/papers" },
-    uses: ["딥리서치 — 없는 연구 주소", "논문·도서 상세 — 없는 주소", "연구 작업대 — 인용의 근거 기록을 찾지 못함(compact)"],
+    uses: [
+      "딥리서치 — 없는 연구 주소",
+      "논문·도서 상세 — 목록에 없는 자료(404·410 — 다시 시도 없이 돌아갈 버튼만)",
+      "상황별 추천 — 목록에 없는 상황 번호(소장자료 문구로 보면 따로 그린 본보기)",
+      "연구 작업대 — 인용의 근거 기록을 찾지 못함(compact)",
+    ],
     hooks: [".skx-state--notFound", '[data-tone="neutral"]', ".skx-state__action(슬롯 링크 — 버튼 줄의 첫 버튼이라 주 버튼 모양)"],
+    // 도서 상세 — 404 는 찾을 수 없음(failureView 의 notFound), 다시 시도 없이 첫 화면 버튼이 주 버튼
+    book: {
+      kind: errorKind(SAMPLE.notFound),
+      title: BOOK_DETAIL_TEXT.notFoundTitle,
+      message: BOOK_DETAIL_TEXT.notFoundMessage,
+      action: BOOK_HOME_ACTION,
+    },
+  }),
+  stateSample({
+    id: "scenarioUnknown",
+    name: "없는 상황 + 상황 목록으로",
+    only: "book",
+    kind: "notFound",
+    title: SCENARIO_TEXT.unknownTitle,
+    message: SCENARIO_TEXT.unknownMessage,
+    action: PICK_ANOTHER_ACTION,
+    uses: ["상황별 추천 — 목록에 없는 상황 번호(/recommend/99 등 — 추천을 묻지 않고 바로 이 블록)"],
+    hooks: [".skx-state--notFound", '[data-tone="neutral"]', ".skx-state__action(NuxtLink — 다시 시도가 없어 첫 버튼이라 주 버튼 모양)"],
   }),
   stateSample({
     id: "empty",
     name: "결과 없음",
     kind: "empty",
-    // 논문 검색 결과 0건의 실제 문구(소장자료 검색은 같은 모양에 설명 줄만 다르다 — BOOK_SEARCH_TEXT)
+    // 논문 검색 결과 0건의 실제 문구 — 소장자료로 보면 소장자료 검색 결과 0건(같은 제목에 설명 줄만 다르다)
     title: PAPER_STATE_TEXT.searchEmpty,
     message: PAPER_STATE_TEXT.searchEmptyHint,
     uses: [
       "논문·소장자료 검색 결과 0건",
       "논문·도서 상세 — 관련 자료·AI 큐레이션 없음(compact)",
+      "상황별 추천 — 추천할 도서 없음(소장자료 문구로 보면 따로 그린 본보기)",
       "연구 작업대 — 후보 논문·주제 카드·목차 없음",
     ],
     hooks: [".skx-state--empty", '[data-tone="neutral"]', 'role="status"'],
+    book: {
+      kind: "empty",
+      title: BOOK_SEARCH_TEXT.emptyTitle,
+      message: BOOK_SEARCH_TEXT.emptyMessage,
+    },
+  }),
+  stateSample({
+    id: "scenarioEmpty",
+    name: "추천할 도서 없음 + 상황 목록으로",
+    only: "book",
+    kind: "empty",
+    title: SCENARIO_TEXT.emptyTitle,
+    message: SCENARIO_TEXT.emptyMessage,
+    action: PICK_ANOTHER_ACTION,
+    uses: ["상황별 추천 — 이 고민으로 찾은 도서가 없음(서버 404·빈 목록 — 고장이 아니라 빈 결과라 다시 시도 없음)"],
+    hooks: [".skx-state--empty", '[data-tone="neutral"]', 'role="status"', ".skx-state__action(NuxtLink — 첫 버튼이라 주 버튼 모양)"],
   }),
   stateSample({
     id: "canceled",
@@ -709,6 +918,7 @@ const STATE_SAMPLES: StateSample[] = [
     title: RESEARCH_STATE_TEXT.canceledTitle,
     uses: ["딥리서치 — 사용자가 취소한 연구(버튼까지 갖춘 모양은 ③)"],
     hooks: [".skx-state--canceled", '[data-tone="neutral"]', 'role="status"'],
+    book: { none: "사용자가 멈추는 작업은 딥리서치 연구뿐이에요." },
   }),
   stateSample({
     id: "retrying",
@@ -724,6 +934,7 @@ const STATE_SAMPLES: StateSample[] = [
       "딥리서치 — 연구 불러오기 실패·멈춘 연구 카드",
     ],
     hooks: ['.skx-state__retry[aria-disabled="true"]', '[aria-busy="true"]'],
+    book: { none: "소장자료 검색·도서 상세·상황별 추천은 [다시 시도]를 누르면 블록 대신 불러오는 중 표시로 바뀌어요." },
   }),
   stateSample({
     id: "compact",
@@ -735,11 +946,19 @@ const STATE_SAMPLES: StateSample[] = [
     retry: true,
     uses: [
       "연구 작업대 — 인용의 원문 대목",
-      "논문·도서 상세 — 관련 자료",
+      "논문·도서 상세 — 관련 자료 읽기 실패·관련 자료·AI 큐레이션 없음",
       "출처 인용 창 — 인용 정보",
       "딥리서치 — 멈춘·취소한 연구 카드(③)",
     ],
     hooks: [".skx-state--compact"],
+    // 도서 상세의 관련 자료 추천 — 절 안의 좁은 칸이라 compact
+    book: {
+      kind: errorKind(SAMPLE.network),
+      title: BOOK_DETAIL_TEXT.relatedFailedTitle,
+      message: reasonOf(SAMPLE.network),
+      retry: true,
+      compact: true,
+    },
   }),
 ];
 
@@ -799,7 +1018,16 @@ const RESEARCH_SAMPLES: StateSample[] = [
   }),
 ];
 
-const STATE_SECTIONS = [
+/** ②·③ 섹션 — areaSwitch 면 머리에 문구 보기(논문 · 소장자료)를 둔다(②) */
+interface StateSection {
+  id: string;
+  title: string;
+  note: string;
+  samples: StateSample[];
+  areaSwitch?: boolean;
+}
+
+const STATE_SECTIONS: StateSection[] = [
   {
     id: "dev-sec-state",
     title: "② 섹션 상태 블록 (SkxErrorState)",
@@ -807,8 +1035,13 @@ const STATE_SECTIONS = [
       "제목은 화면마다 다른 '무엇을 못 했는지', 설명 줄은 오류 규칙(apiErrorMessage)이 붙이는 이유입니다. 색은 아이콘 원에만 씁니다 — 실패 갈래는 경고 삼각형(위험색), " +
       "빈 결과는 문서+돋보기(청록), 찾을 수 없음은 돋보기+X(회색), 취소는 둥근 네모(포인트색). 여기 없는 kind(invalid·conflict·forbidden·unknown)는 " +
       '실패 갈래([data-tone="error"])로 같은 모양이고, .skx-state--{kind} 로 따로 꾸밀 수 있습니다. 버튼 줄의 첫 버튼이 주 버튼(포인트색 채움)입니다. ' +
-      "사이드바의 빈 기록 안내(.skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아요 — ⑩ 에 따로 그렸어요.",
+      "사이드바의 빈 기록 안내(.skx-history__empty)는 사이드바 모양을 지키려 이 블록을 쓰지 않아요 — ⑩ 에 따로 그렸어요.\n" +
+      "‘문구 보기’를 소장자료로 바꾸면 같은 상태에서 소장자료 화면(소장자료 검색·도서 상세·상황별 추천)이 보이는 제목·설명·버튼으로 바뀌어요.\n" +
+      "논문 쪽에는 논문 검색·상세 말고도 딥리서치(찾을 수 없음·취소)와 연구 작업대(좁은 칸)의 문구가 섞여 있어요.\n" +
+      "소장자료 화면에 없는 상태는 본보기를 그대로 두고 위에 그렇다고 적었어요.\n" +
+      "상황별 추천에만 있는 두 상태(없는 상황·추천할 도서 없음)는 소장자료로 볼 때만 보여요.",
     samples: STATE_SAMPLES,
+    areaSwitch: true,
   },
   {
     id: "dev-sec-research",
@@ -828,28 +1061,66 @@ const STATE_SECTIONS = [
 /** 받다가 끊긴 AI 요약 — 문장 중간에서 끊긴 본보기 글 */
 const AI_PARTIAL_TEXT =
   "검색된 논문들은 공공도서관 이용의 변화를 대출 기록과 이용자 설문으로 살핍니다. 대부분은 비대면 서비스가 늘면서 방문 이용이 줄었다고 보고하고, 일부 연구는 청소년 이용자의 열람실 이용이";
+/** 받다가 끊긴 추천 이유(소장자료 — SKOVIX 추천 1권의 '왜 이 책인가') — 문장 중간에서 끊긴 본보기 글 */
+const AI_PARTIAL_BOOK_TEXT =
+  "이 책은 공공도서관이 비대면 서비스를 늘리며 겪은 변화를 여러 지역의 사례로 정리합니다. 대출 기록과 이용자 설문을 함께 살펴 방문 이용이 줄어든 까닭을 설명하고, 청소년 이용자를 위한";
 
 const sampleQuery = ref("공공도서관 서비스 품질을 평가한 연구를 찾고 있어요. 이용자 만족도와 시설, 장서, 프로그램을 함께 본 연구면 좋겠어요.");
 
-const INLINE_SAMPLES: Record<"basic" | "retry" | "busy", SpecInfo> = {
+const INLINE_NOTE =
+  "‘문구 보기’는 ② 와 같은 값이라 어느 쪽에서 바꿔도 함께 바뀌어요.\n" +
+  "소장자료 화면의 글이 따로 있는 건 ‘다시 시도 있음’(추천 이유)뿐이에요.\n" +
+  "재시도 중(사이드바·연구 작업대·딥리서치)은 두 문구 보기에서 같아요.";
+
+type InlineId = "basic" | "retry" | "busy";
+
+interface InlineSample extends SpecInfo {
+  /** 받다 끊긴 본보기 글(다시 시도 있음) */
+  partial?: string;
+  /**
+   * 소장자료로 볼 때 — 같은 모양의 소장자료 화면 문구(texts 첫 줄을 그린다)와 받다 끊긴 본보기 글, 소장자료 화면에 없는 상태면 까닭.
+   * 비우면 두 문구 보기에서 같다(사이드바처럼 두 화면이 함께 쓰는 자리)
+   */
+  book?: { texts: string[]; partial?: string } | NoBook;
+}
+
+const INLINE_SAMPLES: Record<InlineId, InlineSample> = {
   basic: {
     name: "기본 — 검색 입력 상자 바로 아래",
     uses: [
       `${DEEP_RESEARCH} 모드의 입력 상자 아래 — 질문 길이·연구 시작 실패(네트워크가 끊겼을 때의 문구)`,
       "연구 계획·주제 카드 고치기 — 입력이 규칙에 맞지 않음(하위질문 개수·글자 수 등)",
       "출처 인용 창 — 복사하지 못함",
+      "소장자료·논문 결과 카드·상세 — 원문 보기 실패(파일 없음·불러오지 못함 — pdfCheckProblem, 두 화면이 같은 글)",
       `연구 작업대 — 쓰기 응답이 ${WORK_SLOW_MS / 1000}초 넘게 늦어짐(끊지 않고 안내만 — WORK_SLOW_MESSAGE)`,
       '사이드바 — 사이트 데이터 저장이 막힌 브라우저(SIDEBAR_NOTICE.storageBlocked — role="status")',
     ],
     hooks: [".skx-inline-error", ".skx-inline-error__msg", 'role="alert"'],
     // 연구 시작 요청이 서버에 닿지 못했을 때 — SearchPlusMenu 와 같은 규칙·대체 문구
     texts: [researchErrorMessage(SAMPLE.network, `${DEEP_RESEARCH}를 시작하지 못했어요`)],
+    book: {
+      none:
+        `${DEEP_RESEARCH}는 논문 검색 패널에서만 켜는 모드예요.\n` +
+        "소장자료 화면에서는 같은 모양이 결과 카드·도서 상세의 원문 보기 실패로 나와요(논문 화면과 같은 글).",
+    },
   },
   retry: {
     name: "다시 시도 있음 — AI 글 뒤에서 끊김",
-    uses: ["논문 검색·논문 상세 AI 요약", "도서 추천 이유", "사이드바 — 기록을 불러오지 못함", "DeepRead 대화 — 답을 받지 못한 말풍선"],
+    uses: [
+      "논문 검색·논문 상세 AI 요약",
+      "소장자료 검색의 SKOVIX 추천 1권·도서 상세의 추천 이유 탭 — 추천 이유를 받지 못함(받은 글 없이)·끝까지 받지 못함(받은 글 아래)",
+      "상황별 추천 — 소개·추천 사유를 만들지 못함(ai_failed — 받은 글 없이)",
+      "사이드바 — 기록을 불러오지 못함",
+      "DeepRead 대화 — 답을 받지 못한 말풍선",
+    ],
     hooks: [".skx-inline-error__retry", ".skx-chat-msg--ai .skx-inline-error(DeepRead AI 말풍선 안 — 말풍선 글자색)"],
+    partial: AI_PARTIAL_TEXT,
     texts: [AI_SUMMARY_FAILED, RETRY_TEXT],
+    // 받다 끊긴 추천 이유(BOOK_REASON_TEXT.partial — 그린 것), 글 없이 실패한 추천 이유·상황별 추천의 사유 생성 실패도 같은 모양이라 함께 적는다
+    book: {
+      partial: AI_PARTIAL_BOOK_TEXT,
+      texts: [BOOK_REASON_TEXT.partial, BOOK_REASON_TEXT.failed, SCENARIO_TEXT.aiFailed, RETRY_TEXT],
+    },
   },
   busy: {
     name: "재시도 중",
@@ -863,6 +1134,19 @@ const INLINE_SAMPLES: Record<"basic" | "retry" | "busy", SpecInfo> = {
     texts: [SIDEBAR_NOTICE.loadFailed, RETRY_TEXT],
   },
 };
+
+/** 지금 고른 문구로 본 ④ — 소장자료면 book 의 글로 바꾸고, 소장자료 화면에 없는 상태는 그대로 두고 안내(absent)를 붙인다 */
+function shownInline(s: InlineSample): InlineSample & { absent: string | null } {
+  if (area.value === "paper" || !s.book) return { ...s, absent: null };
+  if ("none" in s.book) return { ...s, absent: absentNote(s.book.none) };
+  return { ...s, texts: s.book.texts, partial: s.book.partial ?? s.partial, absent: null };
+}
+
+const inlineShown = computed(() => ({
+  basic: shownInline(INLINE_SAMPLES.basic),
+  retry: shownInline(INLINE_SAMPLES.retry),
+  busy: shownInline(INLINE_SAMPLES.busy),
+}));
 
 /** '재시도 중' 본보기는 버튼만 그리면 된다 — 눌러도(컴포넌트가 무시한다) 아무 일도 하지 않는다 */
 function ignoreRetry(): void {}
@@ -1571,6 +1855,22 @@ onBeforeUnmount(() => {
   line-height: 1.4;
   color: var(--skx-ink-strong);
 }
+/* ②·④ 문구 보기(논문 · 소장자료) — 섹션 머리 오른쪽. 버튼 모양은 테마 전환과 같은 설정 칸(공통 클래스 — 여기서는 폭만) */
+.dev-gallery__area {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dev-gallery__area-label {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--skx-gray-1);
+  white-space: nowrap;
+}
+.dev-gallery__seg {
+  width: 10rem;
+}
 /* 여러 문장 설명은 문장마다 줄을 바꾼다('\n') */
 .dev-gallery__note {
   margin: 0;
@@ -1617,6 +1917,17 @@ onBeforeUnmount(() => {
   font-weight: 700;
   line-height: 1.4;
   color: var(--skx-ink-strong);
+}
+/* 소장자료로 볼 때 소장자료 화면에 없는 상태 — 본보기 위 안내(고정 한 줄 + 까닭, 문장마다 줄) */
+.dev-item__absent {
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.65rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
+  white-space: pre-line;
+  background: var(--skx-frost-bg-soft);
+  border-radius: var(--skx-radius-md);
 }
 /* 본보기 자리 — 점선 테두리로 '여기부터 실제 컴포넌트'를 표시한다 */
 .dev-item__stage {

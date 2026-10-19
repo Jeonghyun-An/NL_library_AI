@@ -12,7 +12,9 @@ import {
   apiErrorMessage,
   charCountState,
   charLimitMessage,
+  errorKind,
 } from "~/utils/apiErrors";
+import { BOOK_DETAIL_TEXT, BOOK_REASON_TEXT, BOOK_SEARCH_TEXT, SCENARIO_TEXT, failureView } from "~/utils/bookErrors";
 import { CHAT_MAX_CHARS } from "~/utils/deepReadSse";
 import { rawCss } from "./helpers/themeCss";
 
@@ -303,6 +305,180 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(researchVue.match(/\{\{ RESEARCH_STATE_TEXT\.restart \}\}/g)).toHaveLength(2);
     expect(researchVue).toContain("researchRetryLabel(view.value?.stage)");
     expect(researchVue).not.toMatch(/연구가 도중에 멈췄습니다|취소된 연구입니다|찾을 수 없는 연구입니다/);
+  });
+
+  // ── 문구 보기(논문 · 소장자료) — 디자이너가 소장자료 화면(소장자료 검색·도서 상세·상황별 추천)의 문구도 보게 ──
+
+  /** STATE_SAMPLES 의 소스, 그 한 항목(stateSample({ … }) 한 덩이)과 그 소장자료 쪽(book: 뒤) */
+  const stateSamplesSrc = js.match(/const STATE_SAMPLES: StateSample\[\] = \[([\s\S]*?)\n\];/)?.[1] ?? "";
+  const sampleSrc = (id: string) => stateSamplesSrc.split("stateSample({").find((b) => b.includes(`id: "${id}",`)) ?? "";
+  const bookSrc = (id: string) => sampleSrc(id).split("book: ")[1] ?? "";
+
+  it("문구 보기 — ②·④ 머리에 테마 전환과 같은 설정 칸(보이는 이름표를 가리키는 묶음·aria-pressed 버튼), 처음은 논문, 둘이 같은 값", () => {
+    expect(js).toContain('const AREAS = ["paper", "book"] as const;');
+    expect(js).toContain('const AREA_LABELS: Record<Area, string> = { paper: "논문", book: "소장자료" };');
+    expect(js).toContain('const area = ref<Area>("paper");');
+    // 이름표(문구 보기)를 aria-labelledby 로 가리키는 묶음 안에 진짜 버튼 — 탭으로 오고 엔터·스페이스로 바꾸며, 고른 쪽은 aria-pressed
+    const switches = [
+      ...tpl.matchAll(
+        /<p :?id="([^"]+)" class="dev-gallery__area-label">문구 보기<\/p>\s*<div class="skx-set__seg dev-gallery__seg" role="group" :?aria-labelledby="\1">\s*<button\s+v-for="name in AREAS"\s+:key="name"\s+type="button"\s+:class="\['skx-set__opt', area === name && 'is-active'\]"\s+:aria-pressed="area === name"\s+@click="area = name"\s*>\s*\{\{ AREA_LABELS\[name\] \}\}\s*<\/button>/g,
+      ),
+    ];
+    expect(switches.map((m) => m[1])).toEqual(["`${g.id}-area`", "dev-sec-inline-area"]);
+    expect(tpl).not.toMatch(/v-for="name in AREAS"[^>]*tabindex/);
+    // ② 에만 — ③(딥리서치)에는 소장자료 쪽이 없다. ④ 는 머리에 직접 둔다
+    expect(js.match(/areaSwitch: true,/g)).toHaveLength(1);
+    expect(js).toMatch(/id: "dev-sec-state",[\s\S]*?samples: STATE_SAMPLES,\s*areaSwitch: true,/);
+    expect(tpl).toContain('<div v-if="g.areaSwitch" class="dev-gallery__area">');
+    expect(tpl.indexOf('id="dev-sec-inline"')).toBeLessThan(tpl.indexOf('id="dev-sec-inline-area"'));
+    // 본보기는 고른 쪽으로 — 문구 보기가 없는 섹션은 늘 논문 쪽
+    expect(tpl).toContain('<article v-for="s in shownStates(g)" :key="s.id" class="dev-item">');
+    expect(js).toContain('const view: Area = g.areaSwitch ? area.value : "paper";');
+    // 설정 칸의 모양은 공통 클래스(.skx-set__seg·.skx-set__opt) — 이 페이지는 폭만 준다
+    expect(css).toMatch(/\.dev-gallery__seg \{\s*width: 10rem;\s*\}/);
+  });
+
+  it("② 소장자료 쪽 — 항목마다 그 상태에서 소장자료 화면이 보이는 제목·설명·버튼을 bookErrors 상수로", () => {
+    expect(js).toContain(
+      'import { BOOK_DETAIL_TEXT, BOOK_HISTORY_TEXT, BOOK_REASON_TEXT, BOOK_SEARCH_TEXT, SCENARIO_TEXT } from "~/utils/bookErrors";',
+    );
+    expect(js).toContain('const BOOK_HOME_ACTION = { label: BOOK_DETAIL_TEXT.home, href: "/" };');
+    expect(js).toContain('const PICK_ANOTHER_ACTION = { label: SCENARIO_TEXT.pickAnother, href: "/recommend" };');
+    // 일반 실패·서버 오류·찾을 수 없음 → 도서 상세(첫 화면 버튼), 네트워크·몰림 → 소장자료 검색, 시간 초과·좁은 칸 → 도서 상세의 관련 자료,
+    // 서버가 알린 장애 → 상황별 추천, 결과 없음 → 소장자료 검색 0건
+    const expected: Record<string, string[]> = {
+      error: ['kind: "error",', "title: BOOK_DETAIL_TEXT.failedTitle,", "retry: true,", "action: BOOK_HOME_ACTION,"],
+      network: ["kind: errorKind(SAMPLE.network),", "title: BOOK_SEARCH_TEXT.failedTitle,", "message: reasonOf(SAMPLE.network),", "retry: true,"],
+      timeout: ["kind: errorKind(SAMPLE.timeout),", "title: BOOK_DETAIL_TEXT.relatedFailedTitle,", "message: reasonOf(SAMPLE.timeout),", "retry: true,"],
+      busy: ["kind: errorKind(SAMPLE.busy),", "title: BOOK_SEARCH_TEXT.failedTitle,", "message: reasonOf(SAMPLE.busy),", "retry: true,"],
+      server: [
+        "kind: errorKind(SAMPLE.server),",
+        "title: BOOK_DETAIL_TEXT.failedTitle,",
+        "message: reasonOf(SAMPLE.server),",
+        "retry: true,",
+        "action: BOOK_HOME_ACTION,",
+      ],
+      searchDown: ["kind: errorKind(SAMPLE.searchDown),", "title: SCENARIO_TEXT.failedTitle,", "message: reasonOf(SAMPLE.searchDown),", "retry: true,"],
+      notFound: [
+        "kind: errorKind(SAMPLE.notFound),",
+        "title: BOOK_DETAIL_TEXT.notFoundTitle,",
+        "message: BOOK_DETAIL_TEXT.notFoundMessage,",
+        "action: BOOK_HOME_ACTION,",
+      ],
+      empty: ['kind: "empty",', "title: BOOK_SEARCH_TEXT.emptyTitle,", "message: BOOK_SEARCH_TEXT.emptyMessage,"],
+      compact: [
+        "kind: errorKind(SAMPLE.network),",
+        "title: BOOK_DETAIL_TEXT.relatedFailedTitle,",
+        "message: reasonOf(SAMPLE.network),",
+        "retry: true,",
+        "compact: true,",
+      ],
+    };
+    for (const [id, parts] of Object.entries(expected)) {
+      const book = bookSrc(id);
+      expect(book, id).toMatch(/^\{\n/);
+      for (const part of parts) expect(book, `${id} — ${part}`).toContain(part);
+    }
+    // 이유가 없는 실패의 소장자료 쪽은 설명 줄 없이 제목과 버튼만(failureView), 찾을 수 없음·빈 결과는 다시 시도가 없다
+    expect(bookSrc("error")).not.toContain("message:");
+    expect(bookSrc("notFound")).not.toContain("retry");
+    expect(bookSrc("empty")).not.toContain("retry");
+    // 소장자료 화면에 없는 상태 — 취소(딥리서치뿐)·재시도 중(소장자료 화면은 다시 받는 동안 블록 대신 불러오는 중 표시)
+    expect(bookSrc("canceled")).toMatch(/^\{ none: "[^"]*딥리서치[^"]*" \}/);
+    expect(bookSrc("retrying")).toMatch(/^\{ none: "[^"]*불러오는 중[^"]*" \}/);
+    // ② 의 모든 항목이 소장자료 쪽을 정했다 — 블록·없는 상태(none)·소장자료에만 있는 상태(only)
+    const chunks = stateSamplesSrc.split("stateSample({").slice(1);
+    expect(chunks).toHaveLength(13);
+    for (const chunk of chunks) expect(chunk).toMatch(/\n {4}(book: \{|only: "book",)/);
+    // 소장자료 쪽은 블록을 통째로 바꾼다 — 논문 쪽의 설명·버튼이 남지 않게 칸마다 옮긴다
+    expect(js).toMatch(
+      /kind: b\.kind,\s*title: b\.title,\s*message: b\.message,\s*retry: b\.retry,\s*retryLabel: b\.retryLabel,\s*busy: b\.busy,\s*compact: b\.compact,\s*action: b\.action,\s*texts: b\.texts,/,
+    );
+  });
+
+  it("② 상황별 추천에만 있는 상태(없는 상황·추천할 도서 없음)는 소장자료로 볼 때만 — 문구·버튼은 상황별 추천 화면과 같은 상수", () => {
+    expect(sampleSrc("scenarioUnknown")).toMatch(
+      /only: "book",\s*kind: "notFound",\s*title: SCENARIO_TEXT\.unknownTitle,\s*message: SCENARIO_TEXT\.unknownMessage,\s*action: PICK_ANOTHER_ACTION,/,
+    );
+    expect(sampleSrc("scenarioEmpty")).toMatch(
+      /only: "book",\s*kind: "empty",\s*title: SCENARIO_TEXT\.emptyTitle,\s*message: SCENARIO_TEXT\.emptyMessage,\s*action: PICK_ANOTHER_ACTION,/,
+    );
+    expect(js).toContain(".filter((s) => !s.only || s.only === view)");
+    // 상황별 추천 화면도 같은 상수로 같은 두 상태를 그리고, 버튼은 상황 목록(/recommend)으로 간다
+    const reco = read("pages/recommend/[id].vue");
+    expect(reco).toContain('return { kind: "empty", title: SCENARIO_TEXT.emptyTitle, message: SCENARIO_TEXT.emptyMessage, retry: false };');
+    expect(reco).toContain('return { kind: "notFound", title: SCENARIO_TEXT.unknownTitle, message: SCENARIO_TEXT.unknownMessage, retry: false };');
+    expect(reco).toMatch(/to="\/recommend"\s+class="skx-state__action"\s*>\s*\{\{ SCENARIO_TEXT\.pickAnother \}\}/);
+  });
+
+  it("② 소장자료 쪽의 설명·버튼은 소장자료 화면의 규칙(failureView)이 실제로 만드는 것과 같다", () => {
+    // 모음의 본보기 오류(SAMPLE)와 같은 값 — 설명 줄은 reasonOf(apiErrorMessage(err, "")), kind 는 errorKind
+    const searchDown = { status: 503, data: { detail: "x", code: "search_unavailable" } };
+    for (const err of [{ name: "FetchError" }, { status: 504 }, { status: 503 }, { status: 500 }, searchDown]) {
+      expect(failureView(err, BOOK_SEARCH_TEXT.failedTitle)).toEqual({
+        kind: errorKind(err),
+        title: BOOK_SEARCH_TEXT.failedTitle,
+        message: apiErrorMessage(err, ""),
+        retry: true,
+      });
+    }
+    // 이유가 없는 실패(409·403·그 밖)는 설명 줄 없이 — ② 일반 실패의 소장자료 쪽에 message 가 없는 까닭
+    for (const status of [409, 403, 418]) {
+      expect(failureView({ status }, BOOK_DETAIL_TEXT.failedTitle)).toMatchObject({ title: BOOK_DETAIL_TEXT.failedTitle, message: "", retry: true });
+    }
+    // 404 는 도서 상세가 넘기는 찾을 수 없음 — 다시 시도 없음
+    const notFound = { kind: "notFound" as const, title: BOOK_DETAIL_TEXT.notFoundTitle, message: BOOK_DETAIL_TEXT.notFoundMessage };
+    expect(failureView({ status: 404 }, BOOK_DETAIL_TEXT.failedTitle, notFound)).toEqual({ ...notFound, retry: false });
+    // 화면마다 그 제목을 failureView 에 넘기고, 도서 상세는 불러오기 실패 블록에 늘 첫 화면 버튼(BOOK_DETAIL_TEXT.home → '/')
+    expect(read("pages/index.vue")).toContain("searchFailure.value = failureView(e, BOOK_SEARCH_TEXT.failedTitle);");
+    const detail = read("pages/books/[cnts_id].vue");
+    expect(detail).toContain("pageFailure.value = failureView(e, BOOK_DETAIL_TEXT.failedTitle, {");
+    expect(detail).toContain("relatedFailure.value = failureView(e, BOOK_DETAIL_TEXT.relatedFailedTitle)");
+    expect(detail).toMatch(
+      /<SkxErrorState\s+v-else-if="pageFailure"[\s\S]*?<button type="button" class="skx-state__action" @click="navigateTo\('\/'\)">\{\{ BOOK_DETAIL_TEXT\.home \}\}<\/button>\s*<\/SkxErrorState>/,
+    );
+    // 관련 자료 실패는 절 안의 좁은 칸 — ② 좁은 칸의 소장자료 쪽
+    expect(detail).toMatch(/<SkxErrorState\s+v-else-if="relatedFailure"[^/]*?\scompact\s/);
+    expect(read("pages/recommend/[id].vue")).toContain("loadFailure.value = failureView(e, SCENARIO_TEXT.failedTitle, scenarioEmpty());");
+  });
+
+  it("② 재시도 중은 소장자료 화면에 없다 — 소장자료 검색·도서 상세·상황별 추천은 다시 받는 동안 블록 대신 불러오는 중 표시를 그린다", () => {
+    expect(read("pages/index.vue")).toMatch(/v-if="loading"[\s\S]*?<div v-else-if="searchFailure" class="skx-rframe">/);
+    const detail = read("pages/books/[cnts_id].vue");
+    expect(detail).toMatch(/<div v-if="pageLoading" class="dt-loading">[\s\S]*?<SkxErrorState\s+v-else-if="pageFailure"/);
+    expect(detail).toMatch(/<p v-if="relatedLoading" class="dt-empty">[\s\S]*?<SkxErrorState\s+v-else-if="relatedFailure"/);
+    expect(read("pages/recommend/[id].vue")).toMatch(/<SkxErrorState\s+v-if="loadFailure && !loading"/);
+    for (const rel of ["pages/index.vue", "pages/books/[cnts_id].vue", "pages/recommend/[id].vue"]) {
+      expect(read(rel), rel).not.toMatch(/<SkxErrorState[^>]*:busy=/);
+    }
+  });
+
+  it("④ 소장자료 쪽 — 다시 시도 있음은 추천 이유(BOOK_REASON_TEXT·SCENARIO_TEXT.aiFailed), 기본은 소장자료 화면에 없는 상태, 재시도 중(사이드바)은 같다", () => {
+    expect(js).toMatch(
+      /retry: \{[\s\S]*?partial: AI_PARTIAL_TEXT,\s*texts: \[AI_SUMMARY_FAILED, RETRY_TEXT\],[\s\S]*?book: \{\s*partial: AI_PARTIAL_BOOK_TEXT,\s*texts: \[BOOK_REASON_TEXT\.partial, BOOK_REASON_TEXT\.failed, SCENARIO_TEXT\.aiFailed, RETRY_TEXT\],\s*\},/,
+    );
+    expect(js).toMatch(/basic: \{[\s\S]*?book: \{\s*none:/);
+    expect(js.match(/busy: \{[\s\S]*?\n {2}\},/)?.[0]).not.toContain("book:");
+    expect(tpl).toContain('<p class="skx-pai-section__text">{{ inlineShown.retry.partial }}</p>');
+    expect(tpl).toContain(':message="inlineShown.retry.texts[0]!"');
+    expect(tpl).toContain('<p v-if="inlineShown.basic.absent" class="dev-item__absent">{{ inlineShown.basic.absent }}</p>');
+    expect(tpl).not.toContain("INLINE_SAMPLES.");
+    expect(tpl).toContain('<p class="dev-gallery__note">{{ INLINE_NOTE }}</p>');
+    // 실제 화면 — 받다 끊긴 추천 이유(SKOVIX 추천 1권)와 상황별 추천의 사유 생성 실패가 같은 줄 안내에 [다시 시도]
+    expect(read("pages/index.vue")).toMatch(/<SkxInlineError\s+v-if="reasonStatus === 'interrupted'"\s+:message="BOOK_REASON_TEXT\.partial"\s+@retry=/);
+    expect(read("pages/recommend/[id].vue")).toMatch(/<SkxInlineError\s+v-if="aiFailed && !loading"\s+:message="SCENARIO_TEXT\.aiFailed"\s+@retry=/);
+  });
+
+  it("소장자료 문구를 다시 적지 않는다 — bookErrors 의 글은 상수로만, 소장자료 화면에 없는 상태는 고정 안내 + 까닭", () => {
+    const code = `${tpl}\n${js}`;
+    for (const table of [BOOK_SEARCH_TEXT, BOOK_DETAIL_TEXT, SCENARIO_TEXT, BOOK_REASON_TEXT]) {
+      // 두 문장 글은 문장마다 본다
+      for (const line of Object.values(table).flatMap((text: string) => text.split("\n"))) expect(code, line).not.toContain(line);
+    }
+    expect(js).toContain('const BOOK_NONE_NOTE = "소장자료 화면에는 없는 상태예요.";');
+    expect(js).toContain("const absentNote = (why: string): string => `${BOOK_NONE_NOTE}\\n${why}`;");
+    expect(tpl).toContain('<p v-if="s.absent" class="dev-item__absent">{{ s.absent }}</p>');
+    expect(css).toMatch(/\.dev-item__absent \{[^}]*white-space: pre-line;/);
   });
 
   it("⑤ [다시 연결] 흉내는 다시 연결하는 중 → 붙음(connected) → 다시 끊김으로 돈다", () => {
