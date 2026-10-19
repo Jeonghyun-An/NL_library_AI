@@ -29,6 +29,10 @@
         </header>
 
         <div class="answer-text" v-html="formattedAnswer" />
+        <!-- 받다가 끊김 — 받은 글은 두고 그 아래에 한 줄 -->
+        <div v-if="reasonError && !isStreaming" class="reason-error">
+          <SkxInlineError :message="reasonError" @retry="emit('retryReason')" />
+        </div>
 
         <!-- 키워드 칩 -->
         <div v-if="keywords?.length" class="keyword-row">
@@ -37,6 +41,10 @@
           >
         </div>
       </div>
+    </div>
+    <!-- 글 없이 실패(HTTP 오류·서버의 {error}) — 답변 칸이 없으니 그 자리에 한 줄 -->
+    <div v-else-if="reasonError" class="reason-error">
+      <SkxInlineError :message="reasonError" @retry="emit('retryReason')" />
     </div>
 
     <!-- 도서 커버 + 메타 -->
@@ -194,8 +202,8 @@
       </div>
     </div>
 
-    <!-- 도서 심층 대화 (v-show로 마운트 유지 → 기록 보존) -->
-    <BookChat
+    <!-- 도서 심층 대화 (v-show로 마운트 유지 → 기록 보존) — 보존 화면이라 처음 만든 초안 대화 칸(BookChat.legacy)을 쓴다 -->
+    <BookChatLegacy
       v-show="chatOpen"
       :cnts-id="book.book_id"
       @close="chatOpen = false"
@@ -231,7 +239,12 @@ const props = defineProps<{
   answer?: string;
   keywords?: string[];
   isStreaming?: boolean;
+  /** 추천 이유를 끝까지 받지 못했을 때의 한 줄 — 비면 안내가 없다 */
+  reasonError?: string;
 }>();
+
+// [다시 시도] — 부모가 같은 책으로 추천 이유를 다시 받는다
+const emit = defineEmits<{ retryReason: [] }>();
 
 const summaryExpanded = ref(false);
 const chatOpen = ref(false);
@@ -365,6 +378,12 @@ const formattedIntroduction = computed(
 
 .answer-text :deep(p) {
   margin: 0 0 8px 0;
+}
+/* 추천 이유 실패 안내(SkxInlineError) — 이 보존 화면은 늘 밝은 바탕이라 테마 토큰(다크 기본은 밝은 글자) 대신 이 화면의 글자색을 쓴다 */
+.reason-error {
+  margin-top: 8px;
+  --skx-ink: var(--ink-2);
+  --skx-primary: var(--violet-deep);
 }
 /* 키워드 칩 */
 .keyword-row {

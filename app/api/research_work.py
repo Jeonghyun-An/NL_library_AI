@@ -36,10 +36,10 @@ from models.research_work import (
     GEN_OPEN_STATUSES, PRIORITY_USER, ResearchGeneration, ResearchReading, ResearchTopic, ResearchWork,
 )
 from repositories.book import BookRepository
-from services.research.relay import publish_work, subscribe_work
+from services.research.relay import SSE_PING, publish_work, subscribe_work
 from services.research_work.concepts import MAX_CONCEPTS, clean_concepts, concepts_input
 from services.research_work.dispatch import queue_info
-from services.research_work.enqueue import lock_key, queued_event
+from services.research_work.enqueue import OPEN_SAME, lock_key, queued_event
 from services.research_work.executors import EXECUTORS
 from services.research_work.keywords import paper_keyword_counts
 from services.research_work.progress import refresh_progress
@@ -53,15 +53,15 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(tags=["research-work"])
 
-EXAMPLE_READ_ONLY = "예시 연구는 읽기 전용입니다"
-CONCEPTS_BUSY = "키워드를 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
-RUNNING_NOT_CANCELABLE = "진행 중인 생성은 끝날 때까지 기다립니다"
-NEWER_GENERATION = "더 새 생성이 있습니다 — 최신 생성에서 다시 불러 주세요"
+EXAMPLE_READ_ONLY = "예시 연구는 읽기 전용이에요"
+CONCEPTS_BUSY = "키워드를 만드는 중이에요 — 끝난 뒤 고쳐 주세요"
+RUNNING_NOT_CANCELABLE = "진행 중인 작업은 끝날 때까지 기다려야 해요"
+NEWER_GENERATION = "더 새로운 작업이 있어요 — 최신 작업에서 다시 불러 주세요"
 MAX_MEMO = 2000
 RECENT_FINISHED = 10           # 연구 응답에 싣는 끝난 생성 수(열린 생성은 전부 싣는다)
 MAX_WORK_LIST = 50             # 이어간 연구 목록 상한 — [담기] 메뉴가 고르는 목록이다
 RETRYABLE_STATUSES = ("failed", "canceled")
-PHASE_BACKWARD = "단계를 되돌릴 수 없습니다"
+PHASE_BACKWARD = "단계를 되돌릴 수 없어요"
 
 
 class WorkPatch(BaseModel):
@@ -91,7 +91,7 @@ async def _get_job(db: AsyncSession, jid: uuid.UUID) -> ResearchJob:
 async def _get_work(db: AsyncSession, jid: uuid.UUID) -> ResearchWork:
     work = await db.get(ResearchWork, jid)
     if work is None:
-        raise HTTPException(status_code=404, detail="이어간 연구가 없습니다")
+        raise HTTPException(status_code=404, detail="이어간 연구를 찾을 수 없어요")
     return work
 
 
@@ -103,7 +103,7 @@ def _writable(work: ResearchWork) -> None:
 async def _get_generation(db: AsyncSession, jid: uuid.UUID, gen_id: int) -> ResearchGeneration:
     gen = await db.get(ResearchGeneration, gen_id)
     if gen is None or gen.work_id != jid:
-        raise HTTPException(status_code=404, detail="생성이 없습니다")
+        raise HTTPException(status_code=404, detail="작업을 찾을 수 없어요")
     return gen
 
 
@@ -203,7 +203,7 @@ async def continue_research(
     jid = _job_uuid(job_id)
     job = await _get_job(db, jid)
     if job.status != "completed":
-        raise HTTPException(status_code=409, detail="완료된 DeepResearch만 이어갈 수 있습니다")
+        raise HTTPException(status_code=409, detail="완료된 DeepResearch만 이어갈 수 있어요")
     corpus = corpus_of(job)
     created = await db.scalar(
         insert(ResearchWork)
@@ -364,7 +364,7 @@ async def cancel_generation(job_id: str, gen_id: int, db: AsyncSession = Depends
     )
     if res.rowcount != 1:
         await db.rollback()
-        raise HTTPException(status_code=409, detail="취소할 수 없는 상태입니다")
+        raise HTTPException(status_code=409, detail="취소할 수 없는 상태예요")
     cards = await enqueue_seed_cards(db, jid, []) if gen.kind == "concepts" else []
     await db.commit()
     await publish_work(jid, "generation", event)
@@ -394,7 +394,7 @@ async def retry_generation(job_id: str, gen_id: int, db: AsyncSession = Depends(
                            G.status.in_(GEN_OPEN_STATUSES)).limit(1)
     ) is not None:
         await db.rollback()
-        raise HTTPException(status_code=409, detail="같은 생성이 이미 대기 중이거나 진행 중입니다")
+        raise HTTPException(status_code=409, detail=OPEN_SAME)
     # 같은 대상의 최신 행만 다시 부른다 — 옛 행(응답의 '최근 끝난 생성'에 남은 실패분)을 다시 부르면 그 뒤
     # 성공한 생성과 사용자가 고친 칩을 새 결과가 덮고 개념 소속을 비운다(PATCH 409 규칙이 막으려던 손실)
     if await db.scalar(
@@ -416,7 +416,8 @@ async def retry_generation(job_id: str, gen_id: int, db: AsyncSession = Depends(
 
 @router.get("/api/research/{job_id}/work/stream")
 async def stream_work(job_id: str, db: AsyncSession = Depends(get_db)):
-    """연구 SSE — 접속 직후 snapshot 한 번, 그 뒤 연구 채널 이벤트를 그대로, 조용하면 ': ping'.
+    """연구 SSE — 접속 직후 snapshot 한 번, 그 뒤 연구 채널 이벤트를 그대로, 조용하면 하트비트(relay.SSE_PING —
+    이름 붙은 ping 이벤트라 화면의 onmessage 에 닿지 않는다).
     이벤트를 받은 화면이 해당 GET 을 다시 읽는다(spec §6-4).
 
     하트비트마다 열린 생성(queued·running)의 (id, status) 집합을 짧은 세션으로 다시 읽어, 마지막으로 보낸
@@ -432,7 +433,7 @@ async def stream_work(job_id: str, db: AsyncSession = Depends(get_db)):
         last_open = _open_set(snapshot["work"])
         async for event in subscribe_work(str(jid)):
             if event is None:
-                yield ": ping\n\n"
+                yield SSE_PING
                 if await _open_generations(jid) == last_open:
                     continue
                 fresh = await _fresh_work_view(jid)

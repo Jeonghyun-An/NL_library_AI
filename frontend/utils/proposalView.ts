@@ -28,6 +28,15 @@ export const SECTION_LABELS: Record<string, string> = {
 
 // 서버(services/research_work/shapes.py 의 같은 이름)와 같은 값 — 연구 공백 절은 확인 검색을 거치지 않은 후보로만 쓴다
 export const GAP_NOTE = "소장 코퍼스에서 확인하지 않은 공백 후보";
+
+// 보고서 절의 확인 칸(SkxConfirm) 문구 — 덮어쓰거나 지우기 전에 누른 버튼 곁에서 묻는다. 해요체·문장마다 '\n'(확인 칸이 pre-line 으로
+// 줄을 바꾼다). 확인 버튼은 하는 일의 동사다.
+// [이 절 다시 쓰기]·실패한 절의 [다시 시도] — 수락·고친·직접 쓴 문단이 있을 때만 묻는다(검토 전 문단뿐이면 바로 쓴다)
+export const REWRITE_CONFIRM = "이 절을 다시 쓰면 지금 문단(수락·고친·직접 쓴 문단 포함)을 새 초안으로 바꿔요.\n다시 쓸까요?";
+export const REWRITE_CONFIRM_OK = "다시 쓰기";
+// 문단의 [지우기]
+export const REMOVE_CONFIRM = "이 문단을 지울까요?";
+export const REMOVE_CONFIRM_OK = "지우기";
 // 서버 절 PUT 검증과 같은 상한 — 넘기면 422 로 거절된다
 export const MAX_PARAGRAPH_CHARS = 3000;
 export const MAX_PARAGRAPHS_PUT = 12;
@@ -139,13 +148,20 @@ export function footprint(p: ProposalView): Footprint {
   return f;
 }
 
-export function footprintLine(f: Footprint): string {
+// 쓴 문단이 하나도 없을 때의 말 — 화면(AI 기여 막대 AiFootprintMeter)은 해요체, 내려받은 보고서의 AI 사용 공개 부록
+// (proposalDocument.disclosureLines)은 문서 말투(합쇼체)로 둔다
+export const FOOTPRINT_EMPTY = {
+  screen: "아직 쓴 문단이 없어요",
+  doc: "아직 쓴 문단이 없습니다",
+} as const;
+
+export function footprintLine(f: Footprint, empty: string = FOOTPRINT_EMPTY.screen): string {
   const ai = f.proposed + f.accepted + f.edited;
   const head = ai
     ? `AI 작성 ${ai}문단 중 수락 ${f.accepted}·수정 ${f.edited}${f.proposed ? `·검토 전 ${f.proposed}` : ""}`
     : "";
   const own = f.authored ? `직접 쓴 문단 ${f.authored}` : "";
-  return [head, own].filter(Boolean).join(" · ") || "아직 쓴 문단이 없습니다";
+  return [head, own].filter(Boolean).join(" · ") || empty;
 }
 
 // 서버가 문단을 검사하며 남긴 것 — 버린 인용·수치 표기, 고친 단정 표현, 근거 표시 없는 문장, [F#] 밖 숫자
@@ -162,8 +178,8 @@ export function checkLine(checks: ParagraphChecks): string | null {
 
 export function paragraphProblem(text: string): string | null {
   const n = Array.from(text.trim()).length;
-  if (!n) return "빈 문단은 저장할 수 없습니다 — 지우려면 [지우기]를 누르세요";
-  if (n > MAX_PARAGRAPH_CHARS) return `문단은 ${MAX_PARAGRAPH_CHARS}자까지입니다`;
+  if (!n) return "빈 문단은 저장할 수 없어요 — 지우려면 [지우기]를 눌러 주세요";
+  if (n > MAX_PARAGRAPH_CHARS) return `문단은 ${MAX_PARAGRAPH_CHARS}자까지 쓸 수 있어요`;
   return null;
 }
 

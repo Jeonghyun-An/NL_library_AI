@@ -31,13 +31,20 @@
       </div>
       <div class="dt-rc__why">
         <p class="dt-rc__why-label"><DetailSparkIcon />{{ reasonLabel }}</p>
-        <p class="dt-rc__why-text">
+        <!-- 사유를 만들지 못했다 — 두 줄 상자에는 받다 만 글 대신 줄 안내만(받은 글은 팝업에). 카드 네 장이 한꺼번에 실패할 수
+             있어 화면낭독기에는 alert(끼어들어 읽음) 대신 status(차례가 오면 읽음)로 알린다(공통 줄 안내의 role 을 덮어쓴다).
+             부모가 @retry-reason 을 달면 [다시 시도]가 그 카드의 사유만 다시 받는다 -->
+        <SkxInlineError
+          v-if="reasonError && !reasonLoading"
+          class="dt-rc__failed"
+          role="status"
+          :message="reasonError"
+          :on-retry="onRetryReason ? retryReason : undefined"
+        />
+        <p v-else class="dt-rc__why-text">
           <template v-if="reasonLoading && !reason">
             AI가 유사성을 분석 중입니다<span class="skx-stream-cursor" />
           </template>
-          <!-- 사유를 만들지 못했다 — 두 줄 상자에는 받다 만 글 대신 안내만(받은 글은 팝업에). 카드 네 장이 한꺼번에 실패할 수
-               있어 화면낭독기에는 alert(끼어들어 읽음) 대신 status(차례가 오면 읽음)로 알린다. 팝업 쪽 안내는 열 때 읽힌다 -->
-          <span v-else-if="reasonError && !reasonLoading" class="dt-rc__failed" role="status">{{ reasonError }}</span>
           <template v-else>{{ reason || emptyText }}</template>
         </p>
         <button
@@ -102,19 +109,22 @@
           >#{{ kw }}</span
         >
       </div>
-      <p class="dt-rc__pop-text" tabindex="0">
+      <!-- 받은 사유 글 — 실패했으면 받다 만 글이 있을 때만 남기고, 실패 안내는 그 아래 줄 안내로 따로(글이 길어 스크롤해도 늘 보인다) -->
+      <p v-if="!reasonError || reasonLoading || reason" class="dt-rc__pop-text" tabindex="0">
         <template v-if="reasonLoading && !reason">
           AI가 유사성을 분석 중입니다<span class="skx-stream-cursor" />
         </template>
         <template v-else>
-          {{ reason || (reasonError ? "" : emptyText)
-          }}<span v-if="reasonLoading" class="skx-stream-cursor" /><span
-            v-if="reasonError && !reasonLoading"
-            class="dt-rc__failed dt-rc__failed--block"
-            >{{ reasonError }}</span
-          >
+          {{ reason || (reasonError ? "" : emptyText) }}<span v-if="reasonLoading" class="skx-stream-cursor" />
         </template>
       </p>
+      <SkxInlineError
+        v-if="reasonError && !reasonLoading"
+        class="dt-rc__failed dt-rc__failed--pop"
+        role="status"
+        :message="reasonError"
+        :on-retry="onRetryReason ? retryReason : undefined"
+      />
       <div class="dt-rc__pop-actions">
         <slot name="actions" />
       </div>
@@ -143,11 +153,13 @@ const props = withDefaults(
     popTitle: string;
     reason?: string;
     reasonLoading?: boolean;
-    /** 사유를 만들지 못했을 때 보일 문구(서버의 {error}·끊김) — 받은 사유 글에 잇지 않고 따로 보인다 */
+    /** 사유를 만들지 못했을 때 보일 문구(서버의 {error}·끊김 — 화면의 해요체 상수) — 받은 사유 글에 잇지 않고 따로 보인다 */
     reasonError?: string;
     emptyText?: string;
     /** 팝업이 열렸는지 — 한 번에 한 카드만 열리도록 부모가 쥔다 */
     expanded: boolean;
+    /** 부모의 @retry-reason 이 이 prop 으로 들어온다 — 있을 때만 실패 안내에 [다시 시도]를 단다 */
+    onRetryReason?: () => void;
   }>(),
   {
     author: "",
@@ -157,7 +169,7 @@ const props = withDefaults(
     reason: "",
     reasonLoading: false,
     reasonError: "",
-    emptyText: "정보가 없습니다.",
+    emptyText: "정보가 없어요.",
   },
 );
 const emit = defineEmits<{ "update:expanded": [open: boolean] }>();
@@ -175,6 +187,13 @@ function closeAndReturn() {
   setOpen(false);
   // 팝업이 사라진 뒤 [자세히 보기]로 — 팝업이 덮던 자리라 지금 바로 옮기면 사라지는 요소 위에 머문다
   void nextTick(() => moreRef.value?.focus());
+}
+
+// 실패 안내의 [다시 시도] — 다시 받는 동안 안내(와 버튼)가 빠지므로 초점을 먼저 같은 칸의 남는 버튼으로 옮긴다
+// (팝업이 열려 있으면 [접기], 아니면 상자의 [자세히 보기])
+function retryReason() {
+  (props.expanded ? closeRef.value : moreRef.value)?.focus();
+  props.onRetryReason?.();
 }
 
 function onOutsidePointerDown(e: PointerEvent) {

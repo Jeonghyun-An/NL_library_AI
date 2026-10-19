@@ -204,6 +204,8 @@ class CurationItem(BaseModel):
 class CurationResponse(BaseModel):
     intro: str
     items: list[CurationItem]
+    # LLM 사유 생성이 실패해 intro·reason 을 빈 값으로 채웠다(services/search/curator.py) — 성공이면 False
+    ai_failed: bool = False
 
 
 # ── 시나리오 추천 ─────────────────────────────────────────
@@ -224,6 +226,8 @@ class ScenarioResponse(BaseModel):
     concern: str
     intro:   str = ""   # 고민 공감 + 추천 전체 소개 (AI 요약 영역에 표시)
     books:   list[ScenarioBook]
+    # LLM 사유 생성이 실패해 intro·reason·quote 를 빈 값으로 채웠다(services/search/scenario.py) — 성공이면 False
+    ai_failed: bool = False
 
 
 # ── 책 심층 대화 ─────────────────────────────────────────────

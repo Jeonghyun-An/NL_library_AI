@@ -23,21 +23,38 @@ export function generateUuidV4(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-export function readOrCreateBrowserId(storage: Storage | null, gen: () => string): string {
+export interface BrowserIdResult {
+  id: string;
+  /**
+   * 저장소에 남았는가 — 다음 페이지 로드도 같은 ID 를 읽는가. false 면(사이트 데이터 차단 등) 새로 고칠 때마다 새 ID 가 생기고,
+   * 서버 기록의 주인은 이 ID(x-session-id)로 가르므로 이전 검색·연구 기록이 사이드바에서 사라진다
+   */
+  persisted: boolean;
+}
+
+/** 저장된 브라우저 ID 를 읽고, 없거나 깨졌으면 새로 만들어 저장한다 — 저장했는지(persisted)도 함께 */
+export function resolveBrowserId(storage: Storage | null, gen: () => string): BrowserIdResult {
   let stored: string | null = null;
   try {
     stored = storage ? storage.getItem(BROWSER_ID_KEY) : null;
   } catch {
     stored = null;
   }
-  if (isUuidV4(stored)) return stored;
+  if (isUuidV4(stored)) return { id: stored, persisted: true };
   const fresh = gen().toLowerCase();
+  if (!storage) return { id: fresh, persisted: false };
   try {
-    storage?.setItem(BROWSER_ID_KEY, fresh);
+    storage.setItem(BROWSER_ID_KEY, fresh);
+    // 쓰기가 예외 없이 지나가도 남지 않는 저장소가 있다 — 다시 읽어 확인한다
+    return { id: fresh, persisted: storage.getItem(BROWSER_ID_KEY) === fresh };
   } catch {
     // 막힌 저장소 — 이 페이지 수명 동안만 메모리 값으로 쓴다
+    return { id: fresh, persisted: false };
   }
-  return fresh;
+}
+
+export function readOrCreateBrowserId(storage: Storage | null, gen: () => string): string {
+  return resolveBrowserId(storage, gen).id;
 }
 
 export function safeLocalStorage(): Storage | null {

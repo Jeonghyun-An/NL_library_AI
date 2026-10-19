@@ -1,8 +1,17 @@
 // frontend/tests/unit/useDeepReadChat.test.ts
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { effectScope, nextTick, ref } from "vue";
 import { useDeepReadChat } from "~/composables/useDeepReadChat";
-import { CHAT_ERROR_TEXT, CHAT_STOPPED_EMPTY, CHAT_STOPPED_TEXT, type DeepReadMessage } from "~/utils/deepReadSse";
+import { CODE_MESSAGES, ERROR_HINTS } from "~/utils/apiErrors";
+import {
+  CHAT_ANSWER_FAILED,
+  CHAT_ERROR_TEXT,
+  CHAT_IDLE_TIMEOUT_MS,
+  CHAT_STOPPED_EMPTY,
+  CHAT_STOPPED_TEXT,
+  type DeepReadMessage,
+  LEGACY_NOT_FOUND_TEXT,
+} from "~/utils/deepReadSse";
 
 // useApi 는 Nuxt 런타임 설정을 읽는다 — 여기서는 주소 조립만 흉내 낸다(usePdfOpener.test 와 같다)
 vi.mock("~/composables/useApi", () => ({
@@ -101,24 +110,52 @@ describe("useDeepReadChat", () => {
     expect(chat.isStreaming.value).toBe(false);
   });
 
-  it("응답 오류(5xx)·네트워크 오류면 질문을 대화에서 빼고 실패(CHAT_ERROR_TEXT)로 알린다 — 오류 문구를 답으로 남기지 않는다", async () => {
-    const failing = vi.fn().mockResolvedValue(new Response("x", { status: 500 }));
+  it("응답 오류(5xx)·네트워크 오류면 질문을 대화에서 빼고 '답을 받지 못했어요 — 이유'로 알린다 — 오류 문구를 답으로 남기지 않는다", async () => {
+    const failing = vi.fn().mockResolvedValue(new Response("<html>502 Bad Gateway</html>", { status: 502 }));
     const { chat } = setup({ fetchFn: failing as unknown as typeof fetch });
     await chat.send("질문");
     expect(chat.messages.value).toEqual([]);
-    expect(chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT, partial: "" });
+    expect(chat.failure.value).toEqual({
+      question: "질문",
+      message: `${CHAT_ERROR_TEXT} — ${ERROR_HINTS.server}`,
+      retryable: true,
+      partial: "",
+    });
     expect(chat.isStreaming.value).toBe(false);
 
     const offline = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
     const other = setup({ fetchFn: offline as unknown as typeof fetch });
     await other.chat.send("질문");
     expect(other.chat.messages.value).toEqual([]);
-    expect(other.chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT, partial: "" });
+    expect(other.chat.failure.value).toEqual({
+      question: "질문",
+      message: `${CHAT_ERROR_TEXT} — ${ERROR_HINTS.network}`,
+      retryable: true,
+      partial: "",
+    });
   });
 
-  // 서버(app/services/chat/book_chat.py)는 LLM 호출이 실패하면 [DONE] 바로 앞에 {error: 문구} 를 보낸다.
+  // 서버 BookChatRequest.message 는 max_length=2000 — 넘으면 FastAPI 가 422(string_too_long) 를 돌려준다
+  it("422(질문이 너무 김)는 한도를 이유로 알리고, 같은 질문을 다시 보내도 같은 실패라 retry 가 다시 보내지 않는다", async () => {
+    const detail = [{ type: "string_too_long", loc: ["body", "message"], msg: "String should have at most 2000 characters", ctx: { max_length: 2000 } }];
+    const invalid = vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail }), { status: 422 }));
+    const { chat } = setup({ fetchFn: invalid as unknown as typeof fetch });
+    await chat.send("아주 긴 질문");
+    expect(chat.messages.value).toEqual([]);
+    expect(chat.failure.value).toEqual({
+      question: "아주 긴 질문",
+      message: "2000자까지 입력할 수 있어요",
+      retryable: false,
+      partial: "",
+    });
+    await chat.retry();
+    expect(invalid).toHaveBeenCalledTimes(1);
+    expect(chat.failure.value).not.toBeNull();
+  });
+
+  // 서버(app/services/chat/book_chat.py)는 LLM 호출이 실패하면 [DONE] 바로 앞에 {error} 를 보낸다(code 없음).
   // 받던 글은 실패 안내(failure.partial)에만 둔다 — 다른 AI 글 화면처럼 읽던 글이 실패 순간 사라지지 않되 대화에는 남지 않는다
-  it("{error} 가 오면 받던 글도 질문도 대화에 남기지 않고(받던 글은 failure.partial) 서버 문구로 실패를 알린다 — 다음 질문의 history 에 실리지 않는다", async () => {
+  it("{error} 가 오면 받던 글도 질문도 대화에 남기지 않고(받던 글은 failure.partial) 화면 문구로 실패를 알린다 — 다음 질문의 history 에 실리지 않는다", async () => {
     const store = new Map<string, DeepReadMessage[]>();
     const { chat, calls, push } = setup({ store });
     const first = chat.send("대상은?");
@@ -138,7 +175,8 @@ describe("useDeepReadChat", () => {
       { role: "assistant", content: "노인 300명입니다." },
     ];
     expect(store.get("KCI_1")).toEqual(answered);
-    expect(chat.failure.value).toEqual({ question: "방법은?", message: "답을 만들지 못했습니다", partial: "받다 만 " });
+    // 서버 문구('…습니다')가 아니라 화면의 해요체 문구
+    expect(chat.failure.value).toEqual({ question: "방법은?", message: CHAT_ANSWER_FAILED, retryable: true, partial: "받다 만 " });
     expect(chat.streamingText.value).toBe("");
     expect(chat.isStreaming.value).toBe(false);
 
@@ -151,13 +189,13 @@ describe("useDeepReadChat", () => {
     await third;
   });
 
-  it("{error} 의 문구가 없으면 CHAT_ERROR_TEXT 로, [DONE] 없이 끊겨도 실패로 알린다 — 받던 글을 답으로 남기지 않는다(failure.partial 에만)", async () => {
+  it("{error} 의 문구가 비어도 화면 문구로, [DONE] 없이 끊겨도 실패로 알린다 — 받던 글을 답으로 남기지 않는다(failure.partial 에만)", async () => {
     const { chat, push } = setup();
     const sent = chat.send("질문");
     await flush();
     push('data: {"error": ""}\n\ndata: [DONE]\n\n');
     await sent;
-    expect(chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT, partial: "" });
+    expect(chat.failure.value).toEqual({ question: "질문", message: CHAT_ANSWER_FAILED, retryable: true, partial: "" });
 
     const cut = setup();
     const again = cut.chat.send("질문");
@@ -167,7 +205,51 @@ describe("useDeepReadChat", () => {
     cut.end();
     await again;
     expect(cut.chat.messages.value).toEqual([]);
-    expect(cut.chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT, partial: "반쯤" });
+    expect(cut.chat.failure.value).toEqual({ question: "질문", message: CHAT_ERROR_TEXT, retryable: true, partial: "반쯤" });
+  });
+
+  // 새 서버(eh/backend)는 실패의 갈래를 {error, code} 의 code 로 붙인다
+  it("{error, code} 는 code 별 문구로 — 자료가 없으면(not_found) retryable 이 아니고 retry 가 다시 보내지 않는다", async () => {
+    const { chat, calls, push } = setup();
+    const sent = chat.send("질문");
+    await flush();
+    push('data: {"error": "자료 내용을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요", "code": "retrieval_failed"}\n\ndata: [DONE]\n\n');
+    await sent;
+    expect(chat.failure.value).toEqual({ question: "질문", message: CODE_MESSAGES.retrieval_failed, retryable: true, partial: "" });
+
+    const again = chat.retry();
+    await flush();
+    expect(calls).toHaveLength(2);
+    push('data: {"error": "자료를 찾을 수 없어요", "code": "not_found"}\n\ndata: [DONE]\n\n');
+    await again;
+    expect(chat.failure.value).toEqual({ question: "질문", message: CODE_MESSAGES.not_found, retryable: false, partial: "" });
+    await chat.retry();
+    expect(calls).toHaveLength(2);
+    expect(chat.messages.value).toEqual([]);
+  });
+
+  // 옛 서버(오류 code 배포 전)는 빈 답을 정상 [DONE] 으로 끝내고, 자료를 못 찾으면 '도서를 찾을 수 없습니다.' 를 보통 글로 보냈다
+  it("옛 서버의 빈 답·'도서를 찾을 수 없습니다.' 는 [DONE] 으로 끝나도 실패다 — 대화·다음 질문의 history 에 남지 않는다", async () => {
+    const { chat, calls, push } = setup();
+    const empty = chat.send("질문");
+    await flush();
+    push('data: {"text": "  "}\n\ndata: [DONE]\n\n');
+    await empty;
+    expect(chat.messages.value).toEqual([]);
+    expect(chat.failure.value).toEqual({ question: "질문", message: CODE_MESSAGES.empty_answer, retryable: true, partial: "" });
+
+    const gone = chat.send("다시");
+    await flush();
+    push(`data: ${JSON.stringify({ text: LEGACY_NOT_FOUND_TEXT })}\n\ndata: [DONE]\n\n`);
+    await gone;
+    expect(chat.messages.value).toEqual([]);
+    expect(chat.failure.value).toEqual({ question: "다시", message: CODE_MESSAGES.not_found, retryable: false, partial: "" });
+
+    const next = chat.send("셋째");
+    await flush();
+    expect(JSON.parse(String(calls[2]!.init.body))).toEqual({ message: "셋째", history: [] });
+    chat.stop();
+    await next;
   });
 
   it("retry 는 실패한 질문을 그대로 다시 보낸다 — 실패가 없으면 아무것도 하지 않는다", async () => {
@@ -176,6 +258,7 @@ describe("useDeepReadChat", () => {
     await flush();
     push('data: {"error": "답을 만들지 못했습니다"}\n\ndata: [DONE]\n\n');
     await sent;
+    expect(chat.failure.value?.retryable).toBe(true);
 
     const again = chat.retry();
     await flush();
@@ -242,7 +325,7 @@ describe("useDeepReadChat", () => {
     const { chat, id, push, end } = setup();
     const sent = chat.send("질문");
     await flush();
-    push("data: [DONE]\n\n");
+    push('data: {"text": "답"}\n\ndata: [DONE]\n\n');
     end();
     await sent;
     expect(chat.messages.value).toHaveLength(2);
@@ -252,7 +335,7 @@ describe("useDeepReadChat", () => {
     expect(chat.messages.value).toEqual([]);
   });
 
-  it("stop 은 fetch 의 signal 을 abort 하고 받은 글을 '멈췄습니다'와 남긴다 — 받은 글이 없으면 그 문구만", async () => {
+  it("stop 은 fetch 의 signal 을 abort 하고 받은 글을 '멈췄어요'와 남긴다 — 받은 글이 없으면(공백뿐 포함) 그 문구만", async () => {
     const { chat, calls, push } = setup();
     const first = chat.send("첫 질문");
     await flush();
@@ -272,6 +355,38 @@ describe("useDeepReadChat", () => {
     // 멈춘 뒤에 부른 stop 은 아무것도 하지 않는다
     chat.stop();
     expect(chat.messages.value).toHaveLength(4);
+
+    // 공백 조각만 받고 멈추면 받은 글이 없는 것과 같다 — 빈 줄 + 꼬리가 되지 않는다
+    const third = chat.send("셋째 질문");
+    await flush();
+    push('data: {"text": "  "}\n\n');
+    await flush();
+    chat.stop();
+    await third;
+    expect(chat.messages.value.at(-1)).toEqual({ role: "assistant", content: CHAT_STOPPED_EMPTY });
+  });
+
+  // 새 서버는 공백뿐인 빈 답을 {error, code: empty_answer} 로 끝낸다 — 그 앞에 흘린 공백 조각은 받은 글(partial)이 아니다
+  it("공백 조각만 받고 실패하면 failure.partial 은 빈 글이다 — 화면이 빈 흐린 칸을 그리지 않는다", async () => {
+    const { chat, push } = setup();
+    const sent = chat.send("질문");
+    await flush();
+    push('data: {"text": " \\n "}\n\n');
+    await flush();
+    expect(chat.streamingText.value).toBe(" \n ");
+    push('data: {"error": "답을 만들지 못했어요", "code": "empty_answer"}\n\ndata: [DONE]\n\n');
+    await sent;
+    expect(chat.failure.value).toEqual({ question: "질문", message: CODE_MESSAGES.empty_answer, retryable: true, partial: "" });
+
+    // 글이 있으면 그대로(앞뒤 공백 포함) 남긴다
+    const again = setup();
+    const next = again.chat.send("질문");
+    await flush();
+    again.push('data: {"text": "받다 만 "}\n\n');
+    await flush();
+    again.end();
+    await next;
+    expect(again.chat.failure.value?.partial).toBe("받다 만 ");
   });
 
   it("scope 가 끝나면(패널을 닫아 BookChat 이 내려가면) 스트림을 끊는다", async () => {
@@ -289,5 +404,80 @@ describe("useDeepReadChat", () => {
       { role: "user", content: "질문" },
       { role: "assistant", content: `받던 글\n\n${CHAT_STOPPED_TEXT}` },
     ]);
+  });
+});
+
+// 시계만 가짜로 — 스트림 읽기는 마이크로태스크라 그대로 돈다. advanceTimersByTimeAsync 는 진짜 매크로태스크로 한 번씩 비켜 주어
+// 읽기 사슬이 끝까지 흐른다(그래서 여기서는 setTimeout 을 쓰는 flush 대신 advance(0))
+describe("useDeepReadChat — 오래 무응답이면 스스로 끊는다", () => {
+  afterEach(() => vi.useRealTimers());
+  const advance = (ms: number) => vi.advanceTimersByTimeAsync(ms);
+
+  it(`응답 머리도 글도 ${CHAT_IDLE_TIMEOUT_MS / 1000}초 동안 오지 않으면 끊고 '응답이 늦어 멈췄어요' 실패 — [다시 시도]할 수 있다`, async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    // 응답 머리가 오지 않는 서버 — abort 되면 진짜 fetch 처럼 AbortError 로 끝난다
+    const signals: AbortSignal[] = [];
+    const hanging = vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          signals.push(init.signal!);
+          init.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+        }),
+    );
+    const { chat } = setup({ fetchFn: hanging as unknown as typeof fetch });
+    const sent = chat.send("질문");
+    await advance(CHAT_IDLE_TIMEOUT_MS - 1);
+    expect(chat.isStreaming.value).toBe(true);
+    expect(signals[0]!.aborted).toBe(false);
+
+    await advance(1);
+    await sent;
+    expect(signals[0]!.aborted).toBe(true);
+    expect(chat.messages.value).toEqual([]);
+    expect(chat.failure.value).toEqual({ question: "질문", message: ERROR_HINTS.timeout, retryable: true, partial: "" });
+    expect(chat.isStreaming.value).toBe(false);
+  });
+
+  it("글 조각이 올 때마다 다시 센다 — 조각 사이가 한도를 넘으면 받던 글을 failure.partial 에 남기고 끊는다", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { chat, calls, push } = setup();
+    const first = chat.send("질문");
+    await advance(0);
+    await advance(CHAT_IDLE_TIMEOUT_MS - 10_000);
+    push('data: {"text": "천천히 "}\n\n');
+    await advance(CHAT_IDLE_TIMEOUT_MS - 10_000);
+    push('data: {"text": "오는 답"}\n\ndata: [DONE]\n\n');
+    await first;
+    expect(chat.failure.value).toBeNull();
+    expect(chat.messages.value.at(-1)).toEqual({ role: "assistant", content: "천천히 오는 답" });
+
+    const second = chat.send("둘째");
+    await advance(0);
+    push('data: {"text": "받다가 멈춘 "}\n\n');
+    await advance(CHAT_IDLE_TIMEOUT_MS);
+    await second;
+    expect(calls[1]!.init.signal!.aborted).toBe(true);
+    expect(chat.failure.value).toEqual({ question: "둘째", message: ERROR_HINTS.timeout, retryable: true, partial: "받다가 멈춘 " });
+    expect(chat.messages.value).toHaveLength(2);
+  });
+
+  it("끝난 답·[멈춤]으로 끊은 답은 시계가 남지 않는다 — 나중에 실패로 바뀌지 않는다", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { chat, push } = setup();
+    const sent = chat.send("질문");
+    await advance(0);
+    chat.stop();
+    await sent;
+    await advance(CHAT_IDLE_TIMEOUT_MS * 2);
+    expect(chat.failure.value).toBeNull();
+    expect(chat.messages.value.at(-1)).toEqual({ role: "assistant", content: CHAT_STOPPED_EMPTY });
+
+    const next = chat.send("둘째");
+    await advance(0);
+    push('data: {"text": "답"}\n\ndata: [DONE]\n\n');
+    await next;
+    await advance(CHAT_IDLE_TIMEOUT_MS * 2);
+    expect(chat.failure.value).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

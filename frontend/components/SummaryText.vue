@@ -6,7 +6,7 @@
       v-if="anchor && active"
       :key="seq"
       :anchor="anchor"
-      :item="{ num: active.num, title: active.title, authors: active.authors, year: active.year, grade: active.grade }"
+      :item="{ num: active.num, id: active.book_id, title: active.title, authors: active.authors, year: active.year, grade: active.grade }"
       @close="onClose"
       @detail="act('detail')"
       @pdf="act('pdf')"
@@ -32,6 +32,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   detail: [bookId: string];
+  /** 팝오버가 원문 파일을 이미 확인했다(CitePopover — usePdfOpener) — 부모는 바로 뷰어를 연다 */
   pdf: [bookId: string];
   chat: [bookId: string];
   /** 접혀 잘린 칸 안의 번호에 초점이 갔다 — 부모가 칸을 펼친다 */

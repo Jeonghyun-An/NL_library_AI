@@ -57,25 +57,25 @@ def test_an_error_status_sends_an_error_event_before_done(book_chat, monkeypatch
 
 
 def test_a_read_error_after_some_text_sends_the_error_and_no_sources(book_chat, monkeypatch, hit):
-    # 받은 글이 쪽(p.3–4)을 인용했어도 실패한 답에는 출처 칩을 붙이지 않는다 — 화면은 이 답을 남기지 않는다
+    # 받은 글이 쪽(p.4–5)을 인용했어도 실패한 답에는 출처 칩을 붙이지 않는다 — 화면은 이 답을 남기지 않는다
     _fake_search(monkeypatch, book_chat, [hit])
-    fake_llm(monkeypatch, book_chat, [delta("p.3–4 에 따르면 ")], read_error=httpx.ReadTimeout("읽기 시간 초과"))
+    fake_llm(monkeypatch, book_chat, [delta("p.4–5 에 따르면 ")], read_error=httpx.ReadTimeout("읽기 시간 초과"))
 
     chunks = _stream(book_chat)
 
     assert chunks[-1] == DONE and chunks.count(DONE) == 1
-    assert events(chunks) == [{"text": "p.3–4 에 따르면 "}, {"error": book_chat.CHAT_STREAM_ERROR}]
+    assert events(chunks) == [{"text": "p.4–5 에 따르면 "}, {"error": book_chat.CHAT_STREAM_ERROR}]
 
 
 def test_a_finished_stream_has_no_error_event_and_keeps_its_sources(book_chat, monkeypatch, hit):
     _fake_search(monkeypatch, book_chat, [hit])
-    fake_llm(monkeypatch, book_chat, [delta("p.3–4 에 나옵니다."), "data: [DONE]"])
+    fake_llm(monkeypatch, book_chat, [delta("p.4–5 에 나옵니다."), "data: [DONE]"])
 
     chunks = _stream(book_chat)
 
     assert chunks[-1] == DONE and chunks.count(DONE) == 1
     assert events(chunks) == [
-        {"text": "p.3–4 에 나옵니다."},
+        {"text": "p.4–5 에 나옵니다."},
         {"sources": [{"page_start": 3, "page_end": 4, "text": "표본은 노인 300명이다."}]},
     ]
 
@@ -87,22 +87,22 @@ def test_a_finished_stream_has_no_error_event_and_keeps_its_sources(book_chat, m
 def test_an_error_inside_the_stream_sends_the_error_and_no_sources(book_chat, monkeypatch, hit, engine_error):
     # vLLM 이 생성 도중 실패하면 HTTP 200 스트림 안에 오류 줄을 보내고 이어 [DONE] 을 보낸다 — 이것도 실패다
     _fake_search(monkeypatch, book_chat, [hit])
-    fake_llm(monkeypatch, book_chat, [delta("p.3–4 에 따르면 "), engine_error, "data: [DONE]"])
+    fake_llm(monkeypatch, book_chat, [delta("p.4–5 에 따르면 "), engine_error, "data: [DONE]"])
 
     chunks = _stream(book_chat)
 
     assert chunks[-1] == DONE and chunks.count(DONE) == 1
-    assert events(chunks) == [{"text": "p.3–4 에 따르면 "}, {"error": book_chat.CHAT_STREAM_ERROR}]
+    assert events(chunks) == [{"text": "p.4–5 에 따르면 "}, {"error": book_chat.CHAT_STREAM_ERROR}]
 
 
 def test_a_stream_closed_without_done_is_a_failure(book_chat, monkeypatch, hit):
     _fake_search(monkeypatch, book_chat, [hit])
-    fake_llm(monkeypatch, book_chat, [delta("p.3–4 에 따르면 ")])
+    fake_llm(monkeypatch, book_chat, [delta("p.4–5 에 따르면 ")])
 
     chunks = _stream(book_chat)
 
     assert chunks[-1] == DONE and chunks.count(DONE) == 1
-    assert events(chunks) == [{"text": "p.3–4 에 따르면 "}, {"error": book_chat.CHAT_STREAM_ERROR}]
+    assert events(chunks) == [{"text": "p.4–5 에 따르면 "}, {"error": book_chat.CHAT_STREAM_ERROR}]
 
 
 def test_the_failure_log_names_the_exception_type_and_the_text_already_sent(book_chat, monkeypatch, hit, caplog):

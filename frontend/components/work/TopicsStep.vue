@@ -5,12 +5,16 @@
       <!-- tabindex="-1" — 단계를 옮기면 연구 화면이 이 제목으로 초점을 옮긴다 -->
       <h2 id="wk-topics-title" class="wk-screen__title" tabindex="-1">제목 고르기</h2>
       <p class="rs-muted">
-        「{{ question }}」 {{ DEEP_RESEARCH }} 보고서에서 이어 갈 주제를 하나 고릅니다. 고른 주제로 참고문헌을 고르고 보고서를 만듭니다.
+        「{{ question }}」 {{ DEEP_RESEARCH }} 보고서에서 이어 갈 주제를 하나 골라 주세요.<br />
+        고른 주제로 참고문헌을 고르고 보고서를 만들어요.
       </p>
-      <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
+      <p v-if="readOnly" class="rs-muted">예시 연구는 읽기 전용이에요 — 미리 돌린 실제 기록을 그대로 보여 드려요.</p>
     </header>
 
-    <p v-if="error" class="rs-alert" role="alert">{{ error }}</p>
+    <!-- 쓰기 실패 · 다시 읽기 실패(이미 읽어 둔 카드가 옛 값일 수 있다 — [다시 시도]) · 쓰기가 오래 걸림 -->
+    <SkxInlineError v-if="error" :message="error" />
+    <SkxInlineError v-if="staleLine" :message="staleLine" :busy="staleRetrying" @retry="retryStale" />
+    <SkxInlineError v-if="slow" :message="WORK_SLOW_MESSAGE" />
 
     <ConceptChips
       v-if="view"
@@ -26,13 +30,17 @@
     />
     <CorpusScopeNote :corpus="corpus" />
 
-    <div v-if="!topics && loadError" class="rs-card rs-state">
-      <p>{{ loadError }}</p>
-      <button type="button" class="rs-btn" @click="reloadAll(['topics'])">다시 불러오기</button>
-    </div>
+    <SkxErrorState
+      v-if="!topics && loadFailure"
+      :kind="loadFailure.kind"
+      title="주제 카드를 불러오지 못했어요"
+      :message="loadFailure.reason"
+      :busy="work.reloading('topics')"
+      @retry="reloadAll(['topics'])"
+    />
     <div v-else-if="!topics" class="rs-card rs-card--wait">
       <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
-      <p>주제 카드를 불러오는 중입니다</p>
+      <p>주제 카드를 불러오는 중이에요</p>
     </div>
     <template v-else>
       <p v-if="queueNote" class="rs-muted" aria-live="polite">{{ queueNote }}</p>
@@ -42,6 +50,7 @@
         :concepts-gen="conceptGen"
         :read-only="readOnly"
         :busy="busy"
+        :saved="saved"
         @pick="pick"
         @edit="edit"
         @retry="retryCard"
@@ -72,13 +81,14 @@ import { computed, onMounted, ref, shallowRef } from "vue";
 import ConceptChips from "~/components/work/ConceptChips.vue";
 import CorpusScopeNote from "~/components/work/CorpusScopeNote.vue";
 import TopicDeck from "~/components/work/TopicDeck.vue";
-import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
+import { type ResearchWorkHandle, useSlowWrite, useWorkApi, useWorkStale } from "~/composables/useResearchWork";
 import type { TopicCreate, TopicPatch, WorkResource, WorkStep } from "~/types/work";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { httpStatus } from "~/utils/apiErrors";
 import { workErrorMessage } from "~/utils/researchErrors";
-import { aiCardsStale, deckQueueLine, liveTopics } from "~/utils/topicDeck";
+import { type DeckSaved, aiCardsStale, deckQueueLine, liveTopics } from "~/utils/topicDeck";
 import { latestGeneration } from "~/utils/workEvents";
+import { WORK_SAVED_STALE, WORK_SLOW_MESSAGE } from "~/utils/workErrors";
 
 // 주제 단계 화면(?s=topics, spec §4 S3). 잎 부품(ConceptChips·TopicDeck·TopicCard)의 의도를 받아 useWorkApi 로 부르고,
 // 성공하면 바뀐 조회를 다시 읽은 뒤 사이드바를 맞춘다(afterAction). 화면은 실제 응답·이벤트로만 바뀐다
@@ -95,7 +105,19 @@ const state = computed(() => props.work.state.value);
 const view = computed(() => state.value.work);
 const readOnly = computed(() => view.value?.is_example ?? true);
 // 주제 조회가 낸 오류만 — 다른 조회의 오류는 이 화면의 '불러오는 중'을 가리지 않는다
-const loadError = computed(() => props.work.errorOf("topics"));
+const loadFailure = computed(() => props.work.failureOf("topics"));
+// 카드를 읽어 둔 뒤의 다시 읽기 실패(주제·연구 요약)는 위 한 줄로 — 옛 카드가 아무 안내 없이 남지 않게
+const {
+  line: staleLine,
+  retrying: staleRetrying,
+  retry: retryStale,
+  markSaved,
+} = useWorkStale(props.work, ["topics", "work"], "topics");
+// 쓰기가 오래 걸리면(응답 없음) 안내만 — 잠금은 그대로
+const slow = useSlowWrite(busy);
+// [직접 고치기]·[카드 더하기] 쓰기가 끝났다는 알림(덱·카드가 칸을 닫는다 — 다시 읽기가 실패해도)
+const saved = shallowRef<DeckSaved | null>(null);
+let savedSeq = 0;
 // 카드 생성의 대기 → 쓰는 중은 연구 SSE 가 work.generations 로 알린다 — 주제 목록을 다시 읽지 않아도 슬롯에 보인다
 const topics = computed(() => {
   const t = state.value.topics;
@@ -135,19 +157,35 @@ function showArrived(): void {
   first.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
 }
 
-async function reloadAll(kinds: WorkResource[]): Promise<void> {
-  await Promise.allSettled(kinds.map((kind) => props.work.reload(kind)));
+// 모두 다시 읽었으면 true — 하나라도 실패하면 false(그 실패는 위 한 줄이 알린다)
+async function reloadAll(kinds: WorkResource[]): Promise<boolean> {
+  const results = await Promise.all(kinds.map((kind) => props.work.reload(kind)));
+  return results.every(Boolean);
 }
 
-// 쓰기 하나 — 성공하면 kinds 를 다시 읽고 사이드바를 맞춘다. 409 는 그 사이 상태가 바뀐 것이라(카드를 만드는 중·
-// 더 쓸 씨앗 없음·예시 연구) 주제와 연구 요약을 다시 읽은 뒤 서버 문구를 보인다
-async function act(run: () => Promise<unknown>, kinds: WorkResource[], fallback: string): Promise<void> {
+interface ActOptions {
+  // 쓰기 뒤 다시 읽기가 실패했을 때 위 한 줄의 머리(기본: 저장은 됐지만 화면을 새로 고치지 못했어요)
+  stale?: string;
+  // 쓰기 응답을 받은 직후 — 다시 읽기 결과와 상관없이 열어 둔 칸을 닫는다
+  done?: () => void;
+}
+
+// 쓰기 하나 — 성공하면 kinds 를 다시 읽고 사이드바를 맞춘다. 다시 읽기가 실패하면 쓰기는 된 것이라 그 사실을 위 한 줄로
+// 알린다(화면은 쓰기 전 값이다). 409 는 그 사이 상태가 바뀐 것이라(카드를 만드는 중·더 쓸 씨앗 없음·예시 연구) 주제와 연구
+// 요약을 다시 읽은 뒤 서버 문구를 보인다
+async function act(
+  run: () => Promise<unknown>,
+  kinds: WorkResource[],
+  fallback: string,
+  opts: ActOptions = {},
+): Promise<void> {
   if (busy.value || readOnly.value) return;
   busy.value = true;
   error.value = null;
   try {
     await run();
-    await reloadAll(kinds);
+    opts.done?.();
+    if (!(await reloadAll(kinds))) markSaved(opts.stale ?? WORK_SAVED_STALE.saved);
     props.work.afterAction();
   } catch (err) {
     error.value = workErrorMessage(err, fallback);
@@ -166,7 +204,9 @@ function saveConcepts(concepts: string[]): void {
 }
 
 function retryConcepts(genId: number): void {
-  void act(() => api.retryGeneration(props.jobId, genId), ["work"], "키워드를 다시 부르지 못했어요");
+  void act(() => api.retryGeneration(props.jobId, genId), ["work"], "키워드를 다시 부르지 못했어요", {
+    stale: WORK_SAVED_STALE.started,
+  });
 }
 
 // [이 키워드로 다시 만들기] — 고른 칩이 저장된 것과 다르면 먼저 저장(PATCH work)하고 그 키워드로 AI 카드를 다시 만든다
@@ -182,11 +222,14 @@ function regenerate(concepts: string[]): void {
     },
     ["topics", "work"],
     "카드를 다시 만들지 못했어요",
+    { stale: WORK_SAVED_STALE.started },
   );
 }
 
 function retryCard(genId: number): void {
-  void act(() => api.retryGeneration(props.jobId, genId), ["topics", "work"], "카드를 다시 부르지 못했어요");
+  void act(() => api.retryGeneration(props.jobId, genId), ["topics", "work"], "카드를 다시 부르지 못했어요", {
+    stale: WORK_SAVED_STALE.started,
+  });
 }
 
 function pick(tid: number): void {
@@ -194,14 +237,20 @@ function pick(tid: number): void {
 }
 
 function edit(tid: number, body: TopicPatch): void {
-  void act(() => api.editTopic(props.jobId, tid, body), ["topics", "work"], "주제 카드를 고치지 못했어요");
+  void act(() => api.editTopic(props.jobId, tid, body), ["topics", "work"], "주제 카드를 고치지 못했어요", {
+    done: () => (saved.value = { kind: "edit", tid, seq: ++savedSeq }),
+  });
 }
 
 function more(): void {
-  void act(() => api.generateTopics(props.jobId), ["topics", "work"], "다른 방향 카드를 받지 못했어요");
+  void act(() => api.generateTopics(props.jobId), ["topics", "work"], "다른 방향 카드를 받지 못했어요", {
+    stale: WORK_SAVED_STALE.started,
+  });
 }
 
 function write(body: TopicCreate): void {
-  void act(() => api.createTopic(props.jobId, body), ["topics", "work"], "주제 카드를 더하지 못했어요");
+  void act(() => api.createTopic(props.jobId, body), ["topics", "work"], "주제 카드를 더하지 못했어요", {
+    done: () => (saved.value = { kind: "write", tid: null, seq: ++savedSeq }),
+  });
 }
 </script>

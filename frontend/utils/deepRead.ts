@@ -4,18 +4,20 @@
 import type { OpenPdfPayload } from "~/types/research";
 import type { PaperMeta } from "~/types/work";
 import { DEEP_READ } from "~/utils/brand";
-import { pubYear, splitAuthors } from "~/utils/citations";
+import { pageLabel, pubYear, splitAuthors } from "~/utils/citations";
 import type { DeepReadSource } from "~/utils/deepReadSse";
 import { citedPdfTarget } from "~/utils/pdfViewer";
 
 // 책(도서 상세·TopResult)인지 논문(논문 상세·논문 검색·연구 화면 패널)인지 — 기본은 책(지금 문구)
 export type DocKind = "book" | "paper";
 
+// stopLabel 은 답을 받는 동안 보내기 단추가 바뀌는 [멈춤] 단추의 이름(화면낭독기·마우스 툴팁)
 export interface ChatCopy {
   greeting(title?: string): string;
   placeholder: string;
   inputLabel: string;
   sendLabel: string;
+  stopLabel: string;
 }
 
 const COPY: Record<DocKind, ChatCopy> = {
@@ -24,12 +26,14 @@ const COPY: Record<DocKind, ChatCopy> = {
     placeholder: "책에 대해서 자유롭게 질문해보세요!",
     inputLabel: "책에 대한 질문 입력",
     sendLabel: "질문 보내기",
+    stopLabel: "답 받기 멈추기",
   },
   paper: {
     greeting: (title) => `안녕하세요! ${title ? `《${title}》 논문에 대해` : "이 논문에 대해"} 궁금한 것을 자유롭게 물어보세요!`,
     placeholder: "논문에 대해서 자유롭게 질문해보세요!",
     inputLabel: "논문에 대한 질문 입력",
     sendLabel: "질문 보내기",
+    stopLabel: "답 받기 멈추기",
   },
 };
 
@@ -37,10 +41,11 @@ export function chatCopy(kind: DocKind): ChatCopy {
   return COPY[kind];
 }
 
-// 출처 칩 글자 — 저장값 그대로(0부터 센 쪽). 서버가 같은 값으로 LLM 문맥 [p.X–Y] 를 만들어 답 글에도 그 숫자가 나온다
-// (book_chat.py:155). citations.pageLabel(+1)로 바꾸면 칩이 답 글과 한 쪽씩 어긋난다(06e 정함 22)
+// 출처 칩 글자 — 보고서 인용 칩과 같은 citations.pageLabel(0부터 센 저장값 +1, 0 이면 '쪽 정보 없음'). 서버도 LLM 문맥
+// [p.X–Y] 를 같은 +1 쪽으로 만들어(book_chat.py _context_label) 답 글의 쪽과 칩이 같고 PDF 쪽과도 같다. 전에는 칩·문맥 모두
+// 저장값 그대로라 둘은 맞았지만 PDF 쪽보다 하나 작았다(06e 정함 22 를 바꿈). sources 의 page_start·page_end 는 저장값 그대로 온다
 export function sourceLabel(src: DeepReadSource): string {
-  return `p.${src.page_start}${src.page_end !== src.page_start ? `–${src.page_end}` : ""}`;
+  return pageLabel(src);
 }
 
 // 출처 대목으로 원문을 연다 — 0부터 센 저장값을 뷰어 쪽(+1)으로(pdfViewer.citedPdfTarget). 쪽 정보가 0 이면 쪽 없이 연다
@@ -106,7 +111,7 @@ export function keyboardScroller(box: ScrollBox): boolean {
 }
 
 // 패널 안 초점이 갈 곳 없이 사라졌는가 — related 는 focusout 의 relatedTarget(초점이 옮겨 가는 요소), active 는 그 뒤의
-// document.activeElement, body 는 문서의 body. 서랍·전체 폭에서 답을 받는 동안 입력 칸·보내기 단추가 disabled 가 되면 초점이
+// document.activeElement, body 는 문서의 body. 서랍·전체 폭에서 답을 받는 동안 입력 칸이 disabled 가 되면 초점이
 // body 로 떨어져 aside 의 keydown(Esc)이 듣지 못하고 Tab 은 보초를 거치지 않고 배경으로 나간다. 그때만 제목으로 되돌린다.
 // relatedTarget 이 있으면 초점이 다른 요소로 옮겨 가는 중이라 잃은 것이 아니다 — 사용자의 클릭·Tab 은 focusout 이 끝난 뒤에야 새
 // 요소가 초점을 받아, 그 사이(마이크로태스크)에 읽은 activeElement 는 아직 body 다. active 만 보면 패널 안 이동까지 잃은 것으로 보고

@@ -210,7 +210,7 @@
     ```
 
     적용 전에 확인할 것: 게이트웨이 이미지는 버전 고정이 없는 `nginx:alpine`(`docker-compose.yml`)이라 서버의 실제 버전을 `docker exec nl-lib-gateway nginx -v` 로 본다. 설정은 서버의 `/data/nl-lib/nginx/conf.d` 를 마운트하므로 저장소 파일을 고친 뒤 서버 파일에도 옮겨야 한다. 그 전까지는 reload 를 절차로 지킨다.
-- **참고 — 같은 배포에서 SSE 는 게이트웨이 설정을 바꾸지 않고 통과했다.** round04a 는 스트림을 컨테이너 안에서만 확인했었다(`round04a-완료노트.md` §2). 딥리서치 스트림 응답이 `X-Accel-Buffering: no` 헤더(`app/api/research.py`)로 nginx 응답 버퍼링을 끄고, 15초 하트비트(`relay.subscribe` 의 `idle_timeout=15.0` → `: ping`)가 `location /api/` 의 `proxy_read_timeout 120s` 안에서 연결을 이어 준다. 하트비트 간격을 120초보다 길게 늘리면 게이트웨이가 스트림을 끊는다.
+- **참고 — 같은 배포에서 SSE 는 게이트웨이 설정을 바꾸지 않고 통과했다.** round04a 는 스트림을 컨테이너 안에서만 확인했었다(`round04a-완료노트.md` §2). 딥리서치 스트림 응답이 `X-Accel-Buffering: no` 헤더(`app/api/research.py`)로 nginx 응답 버퍼링을 끄고, 15초 하트비트(`relay.subscribe` 의 `idle_timeout=15.0` → `relay.SSE_PING` — 이름 붙은 `ping` 이벤트. 2026-10-16 전에는 주석 줄 `: ping` 이라 EventSource 가 알리지 않아 화면의 45초 조용함 감시가 이벤트 없는 동안 끊고 다시 붙었다)가 `location /api/` 의 `proxy_read_timeout 120s` 안에서 연결을 이어 준다. 하트비트 간격을 120초보다 길게 늘리면 게이트웨이가 스트림을 끊는다.
 
 ## 21. 텍스트 층에 스탬프 한 줄만 남은 스캔본이 VLM 을 건너뛴다 — ODL 본문은 비었는데 fitz 는 그 글자를 센다
 

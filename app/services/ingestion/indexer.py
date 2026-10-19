@@ -84,6 +84,13 @@ def _build_schema() -> CollectionSchema:
 _collection_cache: Collection | None = None
 
 
+def forget_collection() -> None:
+    """캐시한 컬렉션 핸들을 버린다 — 컬렉션을 지운(drop) 뒤 부른다. 남겨 두면 ensure_collection() 이 지운 컬렉션의 핸들을
+    그대로 돌려줘, 그 프로세스의 검색·적재가 없는 컬렉션을 물고 계속 실패한다(api/admin.py 전체 임베딩 삭제)."""
+    global _collection_cache
+    _collection_cache = None
+
+
 def ensure_collection() -> Collection:
     """
     컬렉션 없으면 생성, 있으면 반환 (모듈 레벨 캐시).
@@ -265,6 +272,25 @@ class SearchHit:
     pub_date:         str = ""   # 날짜 기준 정렬에 사용
 
 
+def search_timeout() -> int:
+    """검색 경로 Milvus 호출의 시간 한도(초, 정수) — cfg.MILVUS_SEARCH_TIMEOUT.
+
+    pymilvus 2.4.6 의 retry_on_rpc_failure 는 kwargs 의 timeout 이 int 일 때만 그것을 재시도 전체 시간 한도로 쓴다(float·None 이면
+    75회 재시도 — Milvus 가 꺼지면 time.sleep 을 섞어 약 3.5분 동안 이벤트 루프를 붙든다). 설정이 실수로 들어와도 int 로 넘긴다."""
+    return max(1, int(cfg.MILVUS_SEARCH_TIMEOUT))
+
+
+def _entity_count(col: Collection, timeout: int) -> int:
+    """col.num_entities 와 같은 값(봉인된 세그먼트 기준 — 실시간 아님)을 시간 한도와 함께 읽는다. num_entities 는 속성이라
+    timeout 을 넘길 수 없어, 그 속성이 부르는 연결의 get_collection_stats 를 같은 꼴로 timeout 과 함께 부른다(pymilvus 2.4.6).
+    _get_connection 은 비공개 메서드다 — pymilvus 를 올려 없어지면 검색이 통째로 깨지지 않게 한도 없는 num_entities 로 돌아간다."""
+    get_connection = getattr(col, "_get_connection", None)
+    if get_connection is None:
+        return col.num_entities
+    stats = get_connection().get_collection_stats(collection_name=col.name, timeout=timeout)
+    return int({stat.key: stat.value for stat in stats}["row_count"])
+
+
 def search_chunks(
     query_dense: list[float],
     query_sparse: dict[int, float],
@@ -278,9 +304,16 @@ def search_chunks(
 
     meta_expr: Milvus boolean expression (MARC/MODS 스칼라 필드 기반 pre-filter)
                예) 'pub_date >= "2023" && pub_date < "2025"'
+
+    Milvus 호출(개수 읽기·hybrid_search)에는 정수 시간 한도(search_timeout — 기본 20초)를 넘긴다. Milvus 가 죽으면 그 안에
+    MilvusException(재시도 끝 — grpc UNAVAILABLE)이나 grpc DEADLINE_EXCEEDED 로 끝나, 라우트는 503 search_unavailable,
+    DeepRead 는 retrieval_failed 로 알린다. 이 함수를 쓰는 곳(검색·관련 자료·상황별 추천·DeepRead·딥리서치 탐색)이 모두 같은
+    한도다. 컬렉션 핸들은 기동 때(main.py) 이미 캐시돼 있다 — 캐시가 빈 첫 호출의 연결은 pymilvus 기본 10초 한도다.
+    대량 적재(index_chunks)의 쓰기 호출에는 걸지 않는다.
     """
+    timeout = search_timeout()
     col = ensure_collection()
-    if col.num_entities == 0:
+    if _entity_count(col, timeout) == 0:
         return []
 
     if meta_expr:
@@ -315,6 +348,7 @@ def search_chunks(
         rerank=RRFRanker(k=cfg.RRF_RANKER_K),
         limit=top_k,
         output_fields=output_fields,
+        timeout=timeout,
     )
 
     hits: list[SearchHit] = []

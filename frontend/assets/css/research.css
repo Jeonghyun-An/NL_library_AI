@@ -131,16 +131,16 @@ html:has(.rs-page.has-progressbar) {
 .rs-state {
   align-items: flex-start;
 }
-.rs-state__title {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
 .rs-muted {
   margin: 0;
   font-size: 0.65rem;
   color: var(--skx-gray-1);
   line-height: 1.5;
+}
+/* 두 문장 이상인 안내 문구(글 속 '\n')는 문장마다 줄을 바꾼다 — 공통 오류 블록·줄 안내와 같은 규칙(사용자 요청 2026-10-16).
+   템플릿에 바로 쓴 글은 <br /> 로 나누고, 상수·함수가 만든 글은 이 클래스로 '\n' 을 줄로 그린다 */
+.rs-lines {
+  white-space: pre-line;
 }
 .rs-alert {
   margin: 0;
@@ -151,12 +151,16 @@ html:has(.rs-page.has-progressbar) {
   border: 1px solid var(--skx-border-c2);
   border-radius: var(--skx-radius-md);
 }
-/* 알림 글 뒤의 버튼([진행 중인 연구 보기]) — 글과 사이를 두고 세로 가운데. 좁으면 다음 줄로 */
-.rs-alert--action {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 0.8rem;
+/* 멈춘·취소한 연구의 상태 카드(머리 아래 — 진행 막대가 서던 자리). 안의 상태 블록(SkxErrorState compact)이 제 여백을 가져 카드 여백을 줄인다 */
+.rs-stopped {
+  padding: 0.4rem 1.2rem;
+}
+/* 실시간 연결 끊김 띠(SkxConnectionBanner) — 끊긴 동안 큰 진행 막대 바로 아래에 붙어 스크롤해도 보인다(막대가 없으면 화면 맨 위).
+   붙어 있을 때(--connected)는 공통 규칙대로 보이지 않는 알림 영역이라 건드리지 않는다 */
+.rs-page > .skx-conn:not(.skx-conn--connected) {
+  position: sticky;
+  top: calc(var(--rs-bar-h) + 0.4rem);
+  z-index: 4;
 }
 .rs-spinner {
   width: 1.2rem;
@@ -181,6 +185,12 @@ html:has(.rs-page.has-progressbar) {
 .rs-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+/* 연구 머리의 [다시 시도]·[같은 질문으로 다시 시작]이 일하는 중(aria-disabled — 초점을 잃지 않게 disabled 대신 단다): 흐리게, 기다림 커서.
+   머리 안으로 좁힌다 — 내려받기 메뉴 단추(.rs-dl__btn)는 만드는 중에 흐리지 않는다 */
+.rs-head__actions .rs-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: progress;
 }
 .rs-btn--ghost {
   color: var(--skx-primary);
@@ -353,11 +363,6 @@ html:has(.rs-page.has-progressbar) {
 .rs-plan__add {
   align-self: flex-start;
 }
-.rs-plan__problem {
-  margin: 0;
-  font-size: 0.6rem;
-  color: var(--skx-ink);
-}
 
 /* ── 진행 패널 ───────────────────────────────────────────── */
 .rs-counters {
@@ -463,6 +468,10 @@ html:has(.rs-page.has-progressbar) {
   font-weight: 700;
   color: var(--skx-ink);
 }
+/* 오류로 끝난 하위질문의 이유(SkxInlineError) — 하위질문 줄 아래 */
+.rs-subq__error {
+  margin-top: 0.3rem;
+}
 .rs-rounds {
   display: flex;
   flex-direction: column;
@@ -544,6 +553,8 @@ html:has(.rs-page.has-progressbar) {
   font-size: 0.7rem;
   background: var(--skx-white);
   border-left: 3px solid var(--skx-primary);
+  /* 초안의 안내(draftIntro — 해요체 여러 문장)는 문장마다 줄을 바꾼다. 최종본 서론(reportIntro)은 한 문장이라 그대로다 */
+  white-space: pre-line;
 }
 .rs-section {
   display: flex;
@@ -2455,11 +2466,6 @@ button.rs-synth__item:focus-visible,
 }
 .rs-live__paper.is-more {
   color: var(--skx-ink-2);
-}
-.rs-live__error {
-  margin: 0;
-  font-size: 0.6rem;
-  color: var(--skx-danger);
 }
 @media (prefers-reduced-motion: reduce) {
   .rs-live__dot,

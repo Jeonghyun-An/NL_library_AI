@@ -35,6 +35,13 @@ export interface ListOptions {
 export interface ListResult {
   items: HistoryEntry[];
   nextCursor: string | null;
+  /**
+   * 하이브리드 저장소가 서버에 닿지 못해(네트워크·시간 초과·5xx·보내지 못한 편지) 이 브라우저의 사본으로 답했다.
+   * cacheEmpty 는 그때 사본이 종류를 가리지 않고 통째로 비었는가 — 새 브라우저·메모리 전용 모드처럼 서버 목록을 한 번도
+   * 받아 두지 못한 사본이라, 빈 목록이 '기록 없음'인지 '못 읽음'인지 알 수 없다(historyState 가 실패로 본다)
+   */
+  fromCache?: boolean;
+  cacheEmpty?: boolean;
 }
 
 export interface HistoryStore {
@@ -65,6 +72,7 @@ export interface LocalHistoryStore extends HistoryStore {
   dropOutbox(opId: string): void;
 }
 
+/** get 은 서버가 그 기록이 없다고 답하면(404) null, 서버에 닿지 못했고 사본에도 없으면 HistoryUnavailableError 를 던진다 */
 export interface HybridHistoryStore extends HistoryStore {
   flush(): Promise<void>;
 }
@@ -89,6 +97,20 @@ export function errorStatus(e: unknown): number | null {
 export function isRetryable(e: unknown): boolean {
   const status = errorStatus(e);
   return status === null || status === 408 || status === 429 || status >= 500;
+}
+
+/**
+ * 하이브리드 저장소의 get 이 서버에 닿지 못했고(네트워크·시간 초과·5xx·보내지 못한 편지) 이 브라우저의 사본에도 그 기록이 없을 때 던진다.
+ * 기록이 있는지 없는지 알 수 없다 — 서버가 없다고 답한 것(null)과 갈라, 복원하는 화면이 '없는 기록' 대신 연결 문제를 알린다
+ */
+export class HistoryUnavailableError extends Error {
+  readonly id: string;
+
+  constructor(id: string) {
+    super(`서버에 닿지 못했고 사본에도 없어 기록(${id})을 읽지 못했다`);
+    this.name = "HistoryUnavailableError";
+    this.id = id;
+  }
 }
 
 export function isQuotaError(e: unknown): boolean {
@@ -228,6 +250,57 @@ function newOpId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+/**
+ * 뒤따른 지우기 때문에 서버 결과를 바꾸지 않는 편지(순번 집합) — 버려도 잃는 것이 없다.
+ *  - 마지막 put 뒤에 remove 가 있는 기록의 put·patch: 서버에서 결국 지워진다(그 remove 뒤의 patch 는 404 라 아무 일도 하지 않는다)
+ *  - 뒤따른 clear 가 지우는 종류의 put: 그 clear 뒤에 같은 기록을 다시 put 하지 않을 때만. 다시 put 하면 서버 upsert 가 지운 행을
+ *    되살리며 비어 있는 snapshot·ai 칸을 옛 값으로 채우므로(app/repositories/history.py upsert 의 coalesce) 앞의 put 도 결과에 남는다
+ * 지우기 편지(remove·clear)는 여기서 버리지 않는다
+ */
+function mootOps(ops: readonly OutboxOp[]): Set<number> {
+  const lastPut = new Map<string, number>();
+  const lastRemove = new Map<string, number>();
+  const lastClear = new Map<HistoryKind, number>();
+  ops.forEach((o, i) => {
+    if (o.op === "put") lastPut.set(o.entry.id, i);
+    else if (o.op === "remove") lastRemove.set(o.id, i);
+    else if (o.op === "clear") lastClear.set(o.kind, i);
+  });
+  const moot = new Set<number>();
+  ops.forEach((o, i) => {
+    if (o.op !== "put" && o.op !== "patch") return;
+    const id = o.op === "put" ? o.entry.id : o.id;
+    const putAt = lastPut.get(id) ?? -1;
+    if ((lastRemove.get(id) ?? -1) > putAt) {
+      moot.add(i);
+      return;
+    }
+    const clearAt = o.op === "put" ? (lastClear.get(o.entry.kind) ?? -1) : -1;
+    if (clearAt > i && putAt < clearAt) moot.add(i);
+  });
+  return moot;
+}
+
+// 버리는 순서 — 결과를 바꾸지 않는 편지 → 수정(AI 요약 등) → 저장(기록 하나) → 지우기. 지운 기록이 되살아나는 것(지우기를 버림)이
+// 기록 하나를 잃는 것보다 해롭다
+const OP_KEEP_RANK = { patch: 1, put: 2, remove: 3, clear: 3 } as const;
+
+/**
+ * 편지함이 상한을 넘으면 덜 해로운 편지부터 버린다(같은 순위면 오래된 것부터). 남는 편지는 들어온 순서를 지킨다.
+ * 오래 오프라인으로 있으며 변경이 쌓인 경우다 — 옛날처럼 무조건 오래된 것부터 버리면 지운 기록이 다시 연결된 뒤 되살아난다
+ */
+export function trimOutbox(ops: readonly OutboxOp[], limit: number): { kept: OutboxOp[]; dropped: OutboxOp[] } {
+  if (ops.length <= limit) return { kept: [...ops], dropped: [] };
+  const moot = mootOps(ops);
+  const rank = (i: number) => (moot.has(i) ? 0 : OP_KEEP_RANK[ops[i]!.op]);
+  const order = ops.map((_, i) => i).sort((a, b) => rank(a) - rank(b) || a - b);
+  const drop = new Set(order.slice(0, ops.length - Math.max(0, limit)));
+  return {
+    kept: ops.filter((_, i) => !drop.has(i)),
+    dropped: ops.filter((_, i) => drop.has(i)),
+  };
+}
+
 export function createLocalStore(storage: Storage | null): LocalHistoryStore {
   // 저장소가 막히면(사생활 모드·쿼터 한계) 이 수명 동안은 메모리만 쓴다
   let memoryOnly = storage === null;
@@ -308,14 +381,16 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
     }
   }
 
-  // 메모리 모드에서 보낸 편지는 메모리에서만 빠진다. 저장소 사본에 남으면 다음 새로고침에 한 번 더 나가,
-  // 그 사이 지운 기록을 upsert 가 되살리고 고친 값을 옛 값으로 덮는다 — 저장소에서도 그 편지만 뺀다.
+  // 메모리 모드에서 보냈거나(dropOutbox) 상한으로 버린(writeOutbox) 편지는 메모리에서만 빠진다. 저장소 사본에 남으면 다음
+  // 새로고침에 한 번 더 나가, 그 사이 지운 기록을 upsert 가 되살리고 고친 값을 옛 값으로 덮는다 — 저장소에서도 그 편지만 뺀다.
   // 줄어드는 쓰기라 쿼터에는 걸리지 않고, 그래도 막히면 저장소 자체가 막힌 것이라 할 수 있는 일이 없다
-  function forgetStored(opId: string): void {
+  function forgetStored(opIds: readonly string[]): void {
+    if (!opIds.length) return;
+    const gone = new Set(opIds);
     const stored = load<OutboxOp>(HISTORY_OUTBOX_KEY);
-    if (!storage || !stored?.some((o) => o.opId === opId)) return;
+    if (!storage || !stored?.some((o) => gone.has(o.opId))) return;
     try {
-      storage.setItem(HISTORY_OUTBOX_KEY, JSON.stringify(stored.filter((o) => o.opId !== opId)));
+      storage.setItem(HISTORY_OUTBOX_KEY, JSON.stringify(stored.filter((o) => !gone.has(o.opId))));
     } catch {
       // 위 이유로 무시한다
     }
@@ -366,7 +441,20 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
   };
   const readOutboxList = () => read(HISTORY_OUTBOX_KEY, outboxInMemory);
   const writeOutbox = (ops: OutboxOp[]) => {
-    outboxMem = write(HISTORY_OUTBOX_KEY, ops.slice(-OUTBOX_LIMIT), shedForOutbox);
+    const { kept, dropped } = trimOutbox(ops, OUTBOX_LIMIT);
+    if (dropped.length) {
+      // 다시 연결된 뒤 서버 목록이 캐시를 덮으면 버린 저장은 목록에서 빠진다 — 조용히 사라지지 않게 남긴다
+      console.warn(
+        `[history] 보내지 못한 변경이 ${OUTBOX_LIMIT}건을 넘어 ${dropped.length}건을 버렸다`,
+        dropped.map((o) => o.op),
+      );
+    }
+    outboxMem = write(HISTORY_OUTBOX_KEY, kept, shedForOutbox);
+    // 메모리 모드에서 버린 편지 중 넘어갈 때 가져온 것(adopted)은 저장소에도 남아 있다 — 두면 새로고침 뒤 다시 나가 그 뒤의
+    // 변경(메모리에서 보낸 지우기 등)을 거스른다. 이번 쓰기에서 메모리로 넘어간 경우도 같아 쓰고 난 뒤에 본다
+    if (memoryOnly && dropped.length) {
+      forgetStored(dropped.filter((o) => adopted.delete(o.opId)).map((o) => o.opId));
+    }
   };
 
   return {
@@ -430,7 +518,7 @@ export function createLocalStore(storage: Storage | null): LocalHistoryStore {
     dropOutbox(opId) {
       writeOutbox(readOutboxList().filter((o) => o.opId !== opId));
       // 메모리 모드에서 저장소에 남아 있을 수 있는 편지는 넘어갈 때 가져온 것뿐이다
-      if (memoryOnly && adopted.delete(opId)) forgetStored(opId);
+      if (memoryOnly && adopted.delete(opId)) forgetStored([opId]);
     },
   };
 }
@@ -596,7 +684,8 @@ export function createHybridStore(
         await apply(op);
       } catch (e) {
         if (isRetryable(e)) return;
-        // 4xx 는 다시 보내도 같은 거절이다 — 이 편지는 버리고 다음으로 넘어간다
+        // 4xx 는 다시 보내도 같은 거절이다 — 이 편지는 버리고 다음으로 넘어간다(바로 보낸 요청의 거절처럼 로그는 남긴다)
+        console.warn(`[history] 서버가 거절한 변경(${op.op})을 버렸다`, e);
       }
       local.dropOutbox(op.opId);
     }
@@ -631,14 +720,25 @@ export function createHybridStore(
     list: (kind, opts) =>
       shared(async () => {
         const res = await direct(() => server.list(kind, opts));
-        if (!res.ok) return local.list(kind, opts);
+        if (!res.ok) {
+          const cached = await local.list(kind, opts);
+          const cacheEmpty = !cached.items.length && !(await local.list(undefined, { limit: 1 })).items.length;
+          return { ...cached, fromCache: true, cacheEmpty };
+        }
         if (!opts?.before) local.replaceKind(kind, res.value.items);
         return res.value;
       }),
     get: (id) =>
       shared(async () => {
         const res = await direct(() => server.get(id));
-        if (!res.ok) return local.get(id);
+        if (!res.ok) {
+          const cached = await local.get(id);
+          if (cached) return cached;
+          // 이 브라우저에서 지우고 아직 보내지 못한 기록은 사용자에게 이미 없는 기록이다
+          if (local.readOutbox().some((o) => o.op === "remove" && o.id === id)) return null;
+          // 사본에 없다고 없는 기록은 아니다(새 브라우저·종류별 상한으로 밀려난 옛 기록) — null 과 갈라 던진다
+          throw new HistoryUnavailableError(id);
+        }
         if (res.value) {
           await local.put(res.value);
           return res.value;

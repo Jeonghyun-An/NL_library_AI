@@ -141,7 +141,24 @@
                   전체 삭제
                 </button>
               </div>
-              <button v-if="!researchRows.length" type="button" class="skx-history__start" @click="startDeepResearch">
+              <!-- 목록을 못 읽었으면(서버 거절·서버에 닿지 못했는데 이 브라우저의 사본도 빔) [연구 시작하기] 대신 줄 안내 + [다시 시도] —
+                   기록이 없는 것처럼 보이지 않게. 앞서 읽은 줄이 있으면 그 줄은 그대로 두고 안내만 얹는다.
+                   사이드바는 페이지마다 새로 그려져 같은 실패가 화면을 옮길 때마다 다시 나온다 — alert 면 낭독기가 하던 말을 끊고
+                   거듭 읽으므로 status(차분한 알림)로 둔다(아래 최근 검색·저장 차단 줄도 같다) -->
+              <SkxInlineError
+                v-if="researchLoadError"
+                class="skx-history__notice"
+                role="status"
+                :message="researchLoadError"
+                :busy="retrying"
+                @retry="retryLoad"
+              />
+              <button
+                v-else-if="!researchRows.length"
+                type="button"
+                class="skx-history__start"
+                @click="startDeepResearch"
+              >
                 연구 시작하기
                 <svg class="skx-history__start-chev" viewBox="0 0 5 8" aria-hidden="true" focusable="false">
                   <path
@@ -262,15 +279,26 @@
               </button>
             </section>
 
-            <p v-if="!researchRows.length && !recentRows.length" class="skx-history__empty" role="status">
-              {{ listFailed ? "기록을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요." : "아직 검색 기록이 없어요." }}
+            <!-- 진짜 빈 목록일 때만 — 못 읽은 묶음은 제자리에서 실패를 말한다. 사이드바 모양(작은 회색 한 줄)을 지키려 공통 빈 상태
+                 블록(SkxErrorState empty)을 쓰지 않는다 — 공통 디자인 훅 밖이다(오류 화면 모음에도 그렇게 적었다) -->
+            <p
+              v-if="!researchRows.length && !recentRows.length && !researchLoadError && !recentLoadError"
+              class="skx-history__empty"
+              role="status"
+            >
+              {{ SIDEBAR_EMPTY }}
             </p>
 
-            <!-- 최근 검색: 소장자료·논문 -->
-            <section v-if="recentRows.length" class="skx-history__group" aria-labelledby="skx-history-recent">
+            <!-- 최근 검색: 소장자료·논문. 목록을 못 읽었으면 줄이 없어도 묶음을 그려 그 자리에 실패를 말한다(통째로 숨으면 기록이 없는 것처럼 보인다) -->
+            <section
+              v-if="recentRows.length || recentLoadError"
+              class="skx-history__group"
+              aria-labelledby="skx-history-recent"
+            >
               <div class="skx-history__head">
                 <h2 id="skx-history-recent" class="skx-history__title" tabindex="-1">최근 검색</h2>
                 <button
+                  v-if="recentRows.length"
                   ref="recentClearBtn"
                   type="button"
                   class="skx-history__clear"
@@ -279,6 +307,14 @@
                   전체 삭제
                 </button>
               </div>
+              <SkxInlineError
+                v-if="recentLoadError"
+                class="skx-history__notice"
+                role="status"
+                :message="recentLoadError"
+                :busy="retrying"
+                @retry="retryLoad"
+              />
 
               <div
                 v-if="confirming === 'recent'"
@@ -304,7 +340,7 @@
                 </div>
               </div>
 
-              <ul class="skx-history__list">
+              <ul v-if="recentRows.length" class="skx-history__list">
                 <li
                   v-for="r in recentRows"
                   :key="r.entry.id"
@@ -358,6 +394,15 @@
                 </li>
               </ul>
             </section>
+
+            <!-- 브라우저 ID 를 저장하지 못하는 브라우저(사이트 데이터 차단) — 새로 고칠 때마다 새 ID 라 이전 기록이 사이드바에서 사라진다.
+                 목록 아래에 한 번만 알린다. 그 브라우저에서는 어느 화면에나 계속 남는 안내라 status(낭독기가 화면마다 끊고 읽지 않게) -->
+            <SkxInlineError
+              v-if="storageBlocked"
+              class="skx-history__notice"
+              role="status"
+              :message="SIDEBAR_NOTICE.storageBlocked"
+            />
           </template>
         </ClientOnly>
       </div>
@@ -379,6 +424,7 @@
 
 <script setup lang="ts">
 import type { HistoryEntry } from "~/types/history";
+import { useBrowserIdPersisted } from "~/composables/useBrowserId";
 import { useHistory } from "~/composables/useHistory";
 import { safeLocalStorage } from "~/utils/browserId";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
@@ -388,12 +434,16 @@ import { deepResearchStartRoute } from "~/utils/landingStart";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { NARROW_QUERY, trapTabTarget } from "~/utils/sidebarDrawer";
 import {
+  SIDEBAR_EMPTY,
+  SIDEBAR_NOTICE,
   countLiveResearch,
   entryTime,
   formatHistoryTime,
+  groupLoadError,
   groupSidebarHistory,
   hasActiveResearch,
   isLiveResearch,
+  type SidebarGroupKey,
 } from "~/utils/sidebarGroups";
 import { olderToggle, stageProgress, statusStageLine, type StageRange } from "~/utils/sidebarResearch";
 
@@ -402,15 +452,15 @@ const emit = defineEmits<{ cart: []; save: [] }>();
 
 // DeepResearch 묶음이 처음 보이는 행 수 — 넘치는 만큼은 구분선 아래 '이전 연구 [n]' 한 줄로 이 자리에서 펼친다
 const RESEARCH_ROW_LIMIT = 5;
-type ClearGroup = "research" | "recent";
-// 묶음별 전체 삭제 확인 문구 — 최근 검색은 도서·논문만, 딥리서치는 따로 지운다
+type ClearGroup = SidebarGroupKey;
+// 묶음별 전체 삭제 확인 문구 — 최근 검색은 도서·논문만, 딥리서치는 따로 지운다. 해요체, 문장마다 줄을 바꾼다(.skx-history__confirm-text pre-line)
 const CLEAR_TEXT: Record<ClearGroup, string> = {
-  research: `${DEEP_RESEARCH} 기록을 모두 지울까요? 보고서 자체는 지워지지 않습니다.`,
-  recent: `최근 검색 기록(소장자료·논문)을 모두 지울까요? ${DEEP_RESEARCH} 기록은 지워지지 않습니다.`,
+  research: `${DEEP_RESEARCH} 기록을 모두 지울까요?\n보고서 자체는 지워지지 않아요.`,
+  recent: `최근 검색 기록(소장자료·논문)을 모두 지울까요?\n${DEEP_RESEARCH} 기록은 지워지지 않아요.`,
 };
 // 한 줄 삭제 확인 문구 — 묶음 전체 삭제와 같은 말투
 const ROW_CLEAR_TEXT: Record<ClearGroup, string> = {
-  research: "이 연구 기록을 지울까요? 보고서 자체는 지워지지 않습니다.",
+  research: "이 연구 기록을 지울까요?\n보고서 자체는 지워지지 않아요.",
   recent: "이 검색 기록을 지울까요?",
 };
 // 진행 중인 연구가 있을 때만 도는 다시 읽기 간격 — 30초는 본문과 세 번 어긋났다(2026-10-14 운영 확인). 연구 화면이 열려 있으면
@@ -498,7 +548,11 @@ watch(
 );
 const v1Map = ref<Record<string, string>>({});
 // 첫 목록을 읽기 전·읽지 못한 때에 '기록 없음'을 띄우지 않으려고 쓴다(최상위 ref 라 템플릿에서 풀린다)
-const { loaded, listFailed } = history;
+const { loaded, failedKinds } = history;
+// 브라우저 ID 를 저장하지 못하는 브라우저 — 마운트 뒤에 정한다(서버 렌더에는 알 수 없어 수화가 어긋나지 않게)
+const storageBlocked = ref(false);
+// 목록 실패 안내의 [다시 시도] 진행 중 — 연타해도 한 번만 다시 읽는다
+const retrying = ref(false);
 
 const researchExpanded = ref(false);
 const confirming = ref<ClearGroup | null>(null);
@@ -525,6 +579,20 @@ const hasLiveResearch = computed(() => liveCount.value > 0);
 // 접힌 띠의 현미경 점 — 진행 중이거나 승인을 기다리는 연구가 있다는 신호(펼친 묶음의 '진행 중 N' 자리)
 const researchActive = computed(() => hasActiveResearch(history.entries.value));
 const activeId = computed(() => activeIdFor(route.path, route.query, v1Map.value));
+// 묶음별 목록 실패 안내(없으면 null) — 줄 수는 자르기 전 전체로 센다
+const researchLoadError = computed(() => groupLoadError("research", failedKinds.value, groups.value.researchTotal));
+const recentLoadError = computed(() => groupLoadError("recent", failedKinds.value, recentRows.value.length));
+
+// 실패 안내의 [다시 시도] — 세 종류를 모두 다시 읽는다(서버에 닿지 못한 실패는 보통 두 묶음이 함께다). refresh 는 실패해도 던지지 않는다
+async function retryLoad() {
+  if (retrying.value) return;
+  retrying.value = true;
+  try {
+    await history.refresh();
+  } finally {
+    retrying.value = false;
+  }
+}
 
 // 기록이 하나씩 지워져 묶음이 비면 열려 있던 확인창을 닫고, 5줄 이하로 줄면 펼침도 푼다 —
 // 안 풀면 다음에 기록이 늘 때 처음부터 펼쳐진 채 나타난다
@@ -741,6 +809,7 @@ onMounted(() => {
   narrow.value = narrowMql.matches;
   narrowMql.addEventListener("change", onNarrowChange);
   v1Map.value = readV1Map(safeLocalStorage());
+  storageBlocked.value = !useBrowserIdPersisted();
   void history.load();
   // 업그레이드 뒤 첫 로드에서는 이전이 서버 응답을 받아야 대응표가 생긴다 — 옛 ?restore= 주소의 강조를 그때 맞춘다
   void history.migrated().then(() => {
@@ -939,6 +1008,11 @@ onBeforeUnmount(() => {
   line-height: 1.6;
   color: var(--skx-gray-1);
 }
+/* 사이드바 안의 줄 안내(SkxInlineError — 목록 실패·저장 차단) — 모양은 공통 구역('[S] 공통 오류·빈 상태')이 정하고,
+   여기서는 묶음 제목·줄 글과 같은 왼쪽 선(0.4rem)에 맞추기만 한다 */
+.skx-history__notice {
+  padding: 0.2rem 0.4rem;
+}
 /* 연구 기록이 없을 때 DeepResearch 패널 머리 아래의 [연구 시작하기 >] — 피그마 sidebar 알약 모양(흰 10% 면·오른쪽 화살표)을
    한 단계 크게(글 13px·안쪽 여백 넓게) — 빈 패널의 유일한 할 일이라(사용자 요청 2026-10-16) */
 .skx-history__start {
@@ -1078,6 +1152,7 @@ onBeforeUnmount(() => {
   font-size: 0.6rem;
   line-height: 1.5;
   color: var(--skx-ink);
+  white-space: pre-line;
 }
 .skx-history__confirm-actions {
   display: flex;

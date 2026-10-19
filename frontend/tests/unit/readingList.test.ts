@@ -248,9 +248,9 @@ describe("pathLines", () => {
     const quiet = row({ path: { subqs: [], revived: { subq_idx: 0, subquestion: "관계", round: null, note: " " }, user: false } });
     expect(pathLines(quiet)[0]!.detail).toBe("하위질문 1 「관계」에서 자기점검이 뺀 논문");
     expect(pathLines(row({ origin: "user", path: { subqs: [], revived: null, user: true } }))).toEqual([
-      { label: "직접 담음", detail: "빠른검색 결과에서 담은 논문입니다" },
+      { label: "직접 담음", detail: "빠른검색 결과에서 담은 논문이에요" },
     ]);
-    expect(pathLines(row())).toEqual([{ label: "들어온 경로", detail: "저장된 경로가 없습니다" }]);
+    expect(pathLines(row())).toEqual([{ label: "들어온 경로", detail: "저장된 경로가 없어요" }]);
   });
 });
 
@@ -314,10 +314,10 @@ describe("canMakeOutline·outlineHint", () => {
     const four = [...five.slice(0, 4), row({ cnts_id: "KCI_9", state: "candidate" })];
     expect(canMakeOutline(view(four))).toBe(false);
     // 미리 담은 여덟 편에서 빼다 보면 나오는 말이라 '5편 이상 담으면'(0 에서 담아 올라가는 말) 대신 '5편 이상이면'
-    expect(outlineHint(view(four))).toBe("담은 논문이 4편입니다 — 5편 이상이면 보고서를 만들 수 있습니다");
-    expect(outlineHint(view([]))).toBe("담은 논문이 0편입니다 — 5편 이상이면 보고서를 만들 수 있습니다");
+    expect(outlineHint(view(four))).toBe("담은 논문이 4편이에요 — 5편 이상이면 보고서를 만들 수 있어요");
+    expect(outlineHint(view([]))).toBe("담은 논문이 0편이에요 — 5편 이상이면 보고서를 만들 수 있어요");
     expect(canMakeOutline(view(five, { topic_id: null }))).toBe(false);
-    expect(outlineHint(view(five, { topic_id: null }))).toBe("주제를 먼저 고르세요 — 고른 주제로 보고서를 만듭니다");
+    expect(outlineHint(view(five, { topic_id: null }))).toBe("주제를 먼저 골라 주세요 — 고른 주제로 보고서를 만들어요");
   });
 });
 
@@ -343,7 +343,8 @@ describe("최소 편수 문구 — 미리 담은 채로 시작하니 '담은 논
   it("온보딩·보고서 단계 빈 목차 안내는 같은 꼴에 MIN_READING_FOR_OUTLINE 을 쓴다", () => {
     expect(read("utils/workPhase.ts")).toContain("담은 논문이 ${MIN_READING_FOR_OUTLINE}편 이상이면 [${MAKE_REPORT}]를 누를 수 있습니다.");
     const proposal = read("components/work/ProposalStep.vue");
-    expect(proposal).toContain("참고문헌에 담은 논문이 {{ MIN_READING_FOR_OUTLINE }}편 이상이면 보고서를 만들 수 있습니다.");
+    // 빈 목차는 공통 빈 상태(SkxErrorState)의 설명이라 해요체다(오류·빈 상태 문구 규칙 2026-10-16)
+    expect(proposal).toContain("참고문헌에 담은 논문이 ${MIN_READING_FOR_OUTLINE}편 이상이면 보고서를 만들 수 있어요.");
     expect(proposal).toMatch(/import \{[^}]*\bMIN_READING_FOR_OUTLINE\b[^}]*\} from "~\/utils\/readingList";/);
   });
 });

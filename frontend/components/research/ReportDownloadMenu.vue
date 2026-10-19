@@ -12,7 +12,7 @@
       :aria-controls="open ? menuId : undefined"
       :aria-disabled="inactive"
       :aria-busy="busy"
-      :title="disabled ? '아직 내려받을 내용이 없습니다' : undefined"
+      :title="disabled ? '아직 내려받을 내용이 없어요' : undefined"
       @click="toggle"
       @keydown="onTriggerKeydown"
     >
@@ -43,8 +43,8 @@ const props = withDefaults(defineProps<{ label: string; disabled?: boolean; busy
 const emit = defineEmits<{ select: [format: ReportExportFormat] }>();
 
 const FORMATS: readonly { id: ReportExportFormat; label: string; description: string }[] = [
-  { id: "docx", label: "Word 문서(.docx)", description: "고쳐 쓰기 좋고 한글에서도 열립니다" },
-  { id: "pdf", label: "PDF로 저장", description: "인쇄 창에서 대상을 ‘PDF로 저장’으로 고릅니다" },
+  { id: "docx", label: "Word 문서(.docx)", description: "고쳐 쓰기 좋고 한글에서도 열려요" },
+  { id: "pdf", label: "PDF로 저장", description: "인쇄 창에서 대상을 ‘PDF로 저장’으로 골라 주세요" },
 ];
 
 const root = ref<HTMLElement | null>(null);

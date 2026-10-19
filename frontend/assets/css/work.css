@@ -10,6 +10,13 @@
   gap: 1.2rem;
   min-width: 0;
 }
+/* 연구 스트림 끊김 띠(SkxConnectionBanner) — 끊긴 동안은 단계 화면을 내려 읽어도 위에 붙어 보인다(보고서 단계의 큰 진행 막대
+   .wk-rbar 보다 위). 붙어 있을 때(connected)는 공통 CSS 가 숨긴 알림 영역이라 자리를 건드리지 않는다 */
+.wk-body > .wk-conn:not(.skx-conn--connected) {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 3;
+}
 
 /* ── 범위 띠(CorpusScopeNote) ───────────────────────────── */
 .wk-scope {
@@ -491,12 +498,6 @@ button.wk-stepper__step {
   color: var(--skx-gray-1);
   cursor: not-allowed;
 }
-.wk-edit__problem {
-  margin: 0;
-  font-size: 0.6rem;
-  color: var(--skx-ink);
-}
-
 /* ── 핵심 개념 칩(Task 28) ── */
 .wk-concepts {
   display: flex;
@@ -645,6 +646,8 @@ button.wk-stepper__step {
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--skx-ink-2);
+  /* 두 문장 안내(키워드를 만들지 못한 자리 — cardNote)는 문장마다 줄을 바꾼다 */
+  white-space: pre-line;
 }
 /* 카드는 기다리던 슬롯에 실제로 도착했을 때만 한 번 뒤집힌다(cardArrived). 움직임 줄이기를 켠 브라우저에는 효과가 없다 */
 @media (prefers-reduced-motion: no-preference) {
@@ -1154,13 +1157,6 @@ button.wk-stepper__step {
   border: 1px solid var(--skx-line);
   border-radius: var(--skx-radius-sm);
 }
-.wk-psec__failed {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-}
-
 /* ── AI 기여 막대(AiFootprintMeter) ───────────────────────── */
 .wk-meter {
   display: flex;
@@ -1386,17 +1382,6 @@ button.wk-stepper__step {
   .rs-page .wk-rbar {
     display: none !important;
   }
-}
-/* 연쇄가 멈춘 줄 — 까닭과 [이어서 쓰기] */
-.wk-doc__resume {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-.wk-doc__resume p {
-  margin: 0;
 }
 /* 머리 목차 — 문서 순서의 여섯 자리. 항목을 누르면 그 자리로 옮긴다 */
 .wk-doc__toc {

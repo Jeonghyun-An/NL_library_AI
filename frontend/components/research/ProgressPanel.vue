@@ -3,11 +3,14 @@
   <section class="rs-card rs-progress">
     <h2 class="rs-card__title">{{ title }}</h2>
 
-    <p v-if="phase === 'planning'" class="rs-muted">계획이 확정되면 탐색 과정이 여기에 나타납니다.</p>
+    <p v-if="phase === 'planning'" class="rs-muted">계획이 확정되면 탐색 과정이 여기에 나타나요.</p>
     <p v-else-if="phase === 'awaiting'" class="rs-muted">
-      계획을 승인하면 하위질문마다 논문을 찾고, 근거가 부족하다고 판단하면 검색어를 바꿔 다시 찾습니다.
+      계획을 승인하면 하위질문마다 논문을 찾고, 근거가 부족하다고 판단하면 검색어를 바꿔 다시 찾아요.
     </p>
-    <p v-else-if="phase === 'queued'" class="rs-muted">순서 대기 중입니다. 앞선 연구가 끝나면 시작합니다.<span v-if="queueNote">{{ " " + queueNote }}</span></p>
+    <!-- 순번(queueNote — '앞에 N건 · 약 M분'·'바로 다음 차례예요')은 문장 뒤에 잇지 않고 줄을 바꿔 단다 -->
+    <p v-else-if="phase === 'queued'" class="rs-muted">
+      순서 대기 중이에요.<br />앞선 연구가 끝나면 시작해요.<template v-if="queueNote"><br />{{ queueNote }}</template>
+    </p>
 
     <template v-else>
       <dl class="rs-counters">
@@ -38,7 +41,7 @@
 
       <p v-if="phase === 'synthesizing'" class="rs-progress__synth">{{ synthLine }}</p>
       <p v-if="view.source === 'trail' || view.source === 'queries'" class="rs-muted rs-progress__note">
-        회차별 판정을 기록하기 전에 만든 연구라, 검색어 이력과 마지막 판정만 보여 줍니다.
+        회차별 판정을 기록하기 전에 만든 연구라, 검색어 이력과 마지막 판정만 보여 드려요.
       </p>
 
       <ol class="rs-timeline">
@@ -54,8 +57,12 @@
             <span class="rs-badge" :class="`rs-badge--${sq.status}`">{{ subqStatusLabel(sq) }}</span>
           </div>
           <p v-if="stoppedSubq && stoppedSubq.idx === sq.idx" class="rs-subq__stopped">
-            {{ stoppedSubq.started ? "여기서 멈췄습니다" : "이 하위질문을 시작하기 전에 멈췄습니다" }}<span v-if="stoppedSubq.error"> — {{ stoppedSubq.error }}</span>
+            {{ stoppedSubq.started ? "여기서 멈췄어요" : "이 하위질문을 시작하기 전에 멈췄어요" }}
           </p>
+          <!-- 부분 실패의 이유 — 탐색 중에는 본문 과정(ResearchLive)이 보이고, 탐색이 끝난 뒤(작성 중·완료·다시 열기)·멈춘 연구에는
+               여기서 보인다. 단계 result.error 는 예외 원문이라 알아보는 사유만 해요체로 붙인다(subqFailureText). 지난 실패를 화면을
+               열 때마다 다시 그리는 자리라 status — alert 면 낭독기가 하던 말을 끊고 하위질문마다 거듭 읽는다 -->
+          <SkxInlineError v-if="sq.status === 'failed'" class="rs-subq__error" role="status" :message="subqFailureText(sq.error)" />
           <ol v-if="sq.rounds.length" class="rs-rounds">
             <li v-for="r in sq.rounds" :key="r.round" class="rs-round" :class="{ 'is-recheck': !!r.nextQuery }">
               <p class="rs-round__line">
@@ -118,8 +125,8 @@
           </ol>
         </li>
       </ol>
-      <p v-if="stop?.kind === 'synth'" class="rs-subq__stopped">보고서 작성 단계에서 멈췄습니다</p>
-      <p v-else-if="stop?.kind === 'before'" class="rs-subq__stopped">탐색을 시작하기 전에 멈췄습니다</p>
+      <p v-if="stop?.kind === 'synth'" class="rs-subq__stopped">보고서 작성 단계에서 멈췄어요</p>
+      <p v-else-if="stop?.kind === 'before'" class="rs-subq__stopped">탐색을 시작하기 전에 멈췄어요</p>
     </template>
   </section>
 </template>
@@ -140,6 +147,7 @@ import {
   verdictLabel,
   type ResearchPhase,
 } from "~/utils/researchEvents";
+import { subqFailureText } from "~/utils/researchErrors";
 import { EXCLUDED_WHY, excludedPaperLine } from "~/utils/researchReport";
 
 // revealExcluded: 새 창으로 연 제외 논문에서 돌아와 맞출 논문 — 그 논문을 뺀 회차를 펼쳐 둬야 자리가 생긴다

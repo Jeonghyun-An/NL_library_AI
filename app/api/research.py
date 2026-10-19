@@ -35,6 +35,7 @@ from sqlalchemy.orm import load_only
 
 from core.config import get_settings
 from core.deps import get_browser_id_optional, get_db
+from core.errors import queue_unavailable
 from db.postgres import AsyncSessionLocal
 from models.research import (
     RUNNABLE_STATUSES, STATUS_APPROVED, STATUS_CANCELED, STATUS_QUEUED, TERMINAL_STATUSES,
@@ -42,7 +43,7 @@ from models.research import (
 )
 from services.research.planner import query_key
 from services.research.relay import (
-    TERMINAL_KIND, publish, publish_terminal, subscribe, terminal_event,
+    SSE_PING, TERMINAL_KIND, publish, publish_terminal, subscribe, terminal_event,
 )
 from services.research.run_queue import (
     eta_seconds, mark_waiting, median_seconds, members_ahead, unmark, waiting_ahead,
@@ -207,7 +208,8 @@ async def _announce(jid: uuid.UUID, status: str, stage: str) -> None:
 
 
 def _broker_unavailable() -> HTTPException:
-    return HTTPException(status_code=503, detail="작업 큐에 연결하지 못했습니다 — 잠시 후 다시 시도하세요")
+    """작업 큐에 넣지 못했다 — 503 문구·꼴은 core/errors 한 곳(QUEUE_UNAVAILABLE_DETAIL — 적재·관리 API 의 큐 장애와 같은 말)."""
+    return queue_unavailable()
 
 
 def _validated_plan(plan: list[str], *, limit: int) -> list[str]:
@@ -217,12 +219,12 @@ def _validated_plan(plan: list[str], *, limit: int) -> list[str]:
     max_subquestions 상한(요청 하나로 워커를 묶는 자해 경로 차단)이 승인에서 뚫린다.
     """
     if len(plan) > limit:
-        raise HTTPException(status_code=422, detail=f"하위질문은 {limit}개까지다")
+        raise HTTPException(status_code=422, detail=f"하위질문은 {limit}개까지 넣을 수 있어요")
     seen: set[str] = set()
     for text in plan:
         key = query_key(text)        # planner 의 중복 제거와 같은 규칙
         if key in seen:
-            raise HTTPException(status_code=422, detail=f"중복된 하위질문이다: {text}")
+            raise HTTPException(status_code=422, detail=f"같은 하위질문이 두 번 있어요: {text}")
         seen.add(key)
     return plan
 
@@ -561,7 +563,7 @@ async def stream_research(job_id: str, db: AsyncSession = Depends(get_db)):
                 # 그 틈에 빠지기 쉽다. 상태만 되살리면 화면은 승인 대기로 가도 승인할
                 # 계획이 없어 막힌다 — 어긋나면 스냅샷을 통째로 다시 보낸다. 다시 읽는
                 # 조회는 어긋났을 때만 한다.
-                yield ": ping\n\n"
+                yield SSE_PING
                 current = await _job_status(jid)
                 if current is None:
                     continue

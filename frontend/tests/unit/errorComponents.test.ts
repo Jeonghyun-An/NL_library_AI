@@ -96,7 +96,7 @@ describe("SkxInlineError — 줄 단위 안내", () => {
 
   it("<div role=alert> 안에 경고 아이콘(aria-hidden)과 글 묶음(글·[다시 시도]·슬롯) — 슬롯에 블록 요소를 넣어도 HTML·수화가 깨지지 않게 <p> 를 쓰지 않는다", () => {
     expect(tpl).toMatch(
-      /<div class="skx-inline-error" role="alert">\s*<span class="skx-inline-error__icon" aria-hidden="true">\s*<svg[\s\S]*?stroke="currentColor"[\s\S]*?<\/svg>\s*<\/span>\s*<div class="skx-inline-error__body">\s*<span class="skx-inline-error__msg">\{\{ message \}\}<\/span>\s*<button[\s\S]*?class="skx-inline-error__retry"[\s\S]*?<\/button>\s*<slot \/>\s*<\/div>\s*<\/div>/,
+      /<div class="skx-inline-error" :role="role \?\? 'alert'">\s*<span class="skx-inline-error__icon" aria-hidden="true">\s*<svg[\s\S]*?stroke="currentColor"[\s\S]*?<\/svg>\s*<\/span>\s*<div class="skx-inline-error__body">\s*<span class="skx-inline-error__msg">\{\{ message \}\}<\/span>\s*<button[\s\S]*?class="skx-inline-error__retry"[\s\S]*?<\/button>\s*<slot \/>\s*<\/div>\s*<\/div>/,
     );
     expect(tpl).not.toMatch(/<p[\s>]/);
   });
@@ -476,8 +476,9 @@ describe("CSS — '[S] 공통 오류·빈 상태' 구역", () => {
     expect(code).toMatch(/\.skx-state__action \{\s*color: var\(--skx-ink\);\s*background: var\(--skx-frost-bg-soft\);\s*border: 1px solid var\(--skx-chip-line\);/);
   });
 
-  it("전역 오류 화면만 상태 블록 뒤에 결과 큰 틀과 같은 유리 면(--skx-frame-bg — 홀로그램 위 글자 대비)", () => {
-    expect(code).toMatch(/\.skx-error-page \.skx-state \{\s*background: var\(--skx-frame-bg\);\s*border: 1px solid var\(--skx-frame-line\);/);
+  it("전역 오류 화면도 상태 블록에 면·테두리를 깔지 않는다 — 설명 글만 본문색으로 진하게(후배 의견 2026-10-16, 대비는 themeHolo.test.ts)", () => {
+    expect(code).not.toMatch(/\.skx-error-page \.skx-state \{[^}]*(background|border):/);
+    expect(code).toMatch(/\.skx-error-page \.skx-state__msg \{\s*color: var\(--skx-ink\);/);
     expect(code).toMatch(/\.skx-error-page__main \{[^}]*max-width: 32rem;/);
   });
 
@@ -488,7 +489,8 @@ describe("CSS — '[S] 공통 오류·빈 상태' 구역", () => {
   });
 
   it("재시도 중 모양은 aria-disabled 로 — 버튼을 disabled 로 막지 않는다", () => {
-    expect(code).toMatch(/\.skx-state__retry\[aria-disabled="true"\] \{/);
+    // 슬롯 버튼(.skx-state__action)이 일하는 중인 모양도 같은 규칙에
+    expect(code).toMatch(/\.skx-state__retry\[aria-disabled="true"\],\s*\.skx-state__action\[aria-disabled="true"\] \{/);
     expect(code).toMatch(/\.skx-inline-error__retry\[aria-disabled="true"\] \{/);
     expect(code).not.toMatch(/__retry:disabled/);
   });

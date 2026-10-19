@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from core.config import get_settings
+from core.errors import install_error_handlers
 from api.book import router as book_router
 from api.health import router as health_router
 from api.admin import router as admin_router
@@ -85,6 +86,8 @@ app = FastAPI(
     title=cfg.APP_NAME,
     lifespan=lifespan,
 )
+# 잡지 않은 예외 → 500 {detail, code: internal_error}, ApiError(검색·원문 저장소 장애 503 등) → {detail, code}
+install_error_handlers(app)
 
 app.include_router(health_router)
 app.include_router(book_router)

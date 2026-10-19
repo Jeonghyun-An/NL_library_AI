@@ -11,19 +11,28 @@
         type="button"
         class="rs-btn rs-btn--small wk-psec__write"
         :disabled="locked"
-        @click="onWrite"
+        data-write-open
+        @click="onWrite('head')"
       >
         {{ section ? "이 절 다시 쓰기" : "이 절 쓰기" }}
       </button>
     </header>
+    <!-- 수락·고친·직접 쓴 문단을 덮기 전의 확인 — 머리의 [이 절 다시 쓰기] 바로 아래(실패 줄의 [다시 시도]로 열면 그 줄 아래) -->
+    <SkxConfirm
+      v-if="askWriteAt === 'head'"
+      v-bind="writeConfirm"
+      :return-focus="() => askReturn('[data-write-open]')"
+      @confirm="confirmAsk"
+      @cancel="closeAsk"
+    />
     <p v-if="note" class="rs-muted">{{ note }}</p>
     <p v-if="stale" class="rs-muted">
-      이 절을 쓴 뒤 주제나 목차의 묶음·연구 질문이 바뀌었습니다. 쓴 문단은 그대로 두었습니다 — 바뀐 목차로 맞추려면 이
-      절을 다시 쓰세요.
+      이 절을 쓴 뒤 주제나 목차의 묶음·연구 질문이 바뀌었어요.<br />
+      쓴 문단은 그대로 두었어요 — 바뀐 목차로 맞추려면 [이 절 다시 쓰기]를 눌러 주세요.
     </p>
 
     <p v-if="status === 'queued'" class="rs-muted" role="status">
-      쓸 차례를 기다리는 중입니다{{ queueText ? ` · ${queueText}` : "" }}
+      쓸 차례를 기다리는 중이에요{{ queueText ? ` · ${queueText}` : "" }}
     </p>
     <div v-else-if="status === 'writing'" class="wk-psec__live">
       <template v-if="!finishing && live && !live.broken && live.text">
@@ -36,7 +45,7 @@
               :class="{ 'is-pending': !liveEvidence }"
               :title="paperTitle(liveEvidence?.[part.eid])"
             >{{ citeText(liveEvidence?.[part.eid], part.eid) }}</span>
-            <s v-else-if="part.type === 'badcite'" class="wk-psec__badcite" title="이 절의 근거 번호가 아닙니다 — 저장할 때 버립니다">[{{ part.eid }}]</s>
+            <s v-else-if="part.type === 'badcite'" class="wk-psec__badcite" title="이 절의 근거 번호가 아니에요 — 저장할 때 버려요">[{{ part.eid }}]</s>
             <FigureChip v-else-if="figureOf(liveFigures, part.fid)" :figure="figureOf(liveFigures, part.fid)!" />
             <span v-else class="wk-psec__cite is-pending">[{{ part.fid }}]</span>
           </template>
@@ -46,10 +55,10 @@
         <p class="rs-muted" role="status">
           {{
             finishing
-              ? "다 썼습니다 — 문단을 불러오는 중입니다"
+              ? "다 썼어요 — 문단을 불러오는 중이에요"
               : live?.broken
-                ? "글을 받는 중입니다 — 다 쓰면 한 번에 보입니다"
-                : "쓰기 시작하는 중입니다"
+                ? "글을 받는 중이에요 — 다 쓰면 한 번에 보여요"
+                : "쓰기 시작하는 중이에요"
           }}
         </p>
         <div class="rs-skeleton" aria-hidden="true">
@@ -59,18 +68,21 @@
         </div>
       </template>
     </div>
-    <div v-else-if="status === 'failed'" class="wk-psec__failed" role="alert">
-      <p class="rs-muted">{{ failedText }}</p>
-      <button
-        v-if="failedGen && !readOnly"
-        type="button"
-        class="rs-btn rs-btn--small rs-btn--ghost"
-        :disabled="locked"
-        @click="onRetry(failedGen.id)"
-      >
-        다시 시도
-      </button>
-    </div>
+    <!-- 실패한 절 — 공통 줄 안내와 [다시 시도](예시 연구·생성 기록이 없으면 글만). 잠긴 동안은 누름을 무시한다 -->
+    <SkxInlineError
+      v-else-if="status === 'failed'"
+      :message="failedText"
+      :busy="locked"
+      :on-retry="failedGen && !readOnly ? retryFailed : undefined"
+      data-retry-line
+    />
+    <SkxConfirm
+      v-if="askWriteAt === 'retry'"
+      v-bind="writeConfirm"
+      :return-focus="() => askReturn('[data-retry-line] button')"
+      @confirm="confirmAsk"
+      @cancel="closeAsk"
+    />
 
     <ol v-if="section && status !== 'writing'" class="wk-psec__paras">
       <li
@@ -87,7 +99,7 @@
             <span class="rs-sr-only">{{ paraName(pi) }} 고치기</span>
             <textarea v-model="editText" data-edit-box rows="6" :disabled="busy" />
           </label>
-          <p class="rs-muted">인용 표시([E1])와 수치 표시([F1])는 그대로 두세요 — 지우면 인용·수치가 빠집니다.</p>
+          <p class="rs-muted">인용 표시([E1])와 수치 표시([F1])는 그대로 둬 주세요 — 지우면 인용·수치가 빠져요.</p>
           <p v-if="editProblem" class="rs-muted" role="status">{{ editProblem }}</p>
           <div class="rs-card__actions">
             <button type="button" class="rs-btn rs-btn--small" :disabled="locked || !!editProblem" @click="saveEdit(p.id)">저장</button>
@@ -120,17 +132,15 @@
                 </template>
                 <span v-if="s.unmarked" class="rs-sr-only">(근거 표시 없음)</span>
               </span>
-              <span v-if="s.numbers.length" class="wk-psec__check" :title="`[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인하세요`">
+              <span v-if="s.numbers.length" class="wk-psec__check" title="[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인해 주세요">
                 확인 필요 {{ s.numbers.join(", ") }}
               </span>
             </template>
           </p>
           <p v-if="check" class="rs-muted">{{ check }}</p>
-          <p v-if="failedParas.has(p.id)" class="rs-muted" role="status">
-            이 문단을 다시 쓰지 못했습니다 — 앞의 글을 그대로 두었습니다.
-          </p>
+          <SkxInlineError v-if="failedParas.has(p.id)" message="이 문단을 다시 쓰지 못했어요 — 앞의 글을 그대로 두었어요." />
           <p v-if="paragraphGens.has(p.id)" class="rs-muted" role="status">
-            이 문단을 다시 쓰는 중입니다{{ paragraphQueue(p.id) ? ` · ${paragraphQueue(p.id)}` : "" }}
+            이 문단을 다시 쓰는 중이에요{{ paragraphQueue(p.id) ? ` · ${paragraphQueue(p.id)}` : "" }}
           </p>
           <div v-else-if="!readOnly" class="wk-psec__para-actions">
             <button
@@ -168,11 +178,24 @@
               class="rs-btn rs-btn--small rs-btn--ghost"
               :disabled="locked"
               :aria-describedby="bandId(p.id)"
+              :aria-expanded="askRemovePid === p.id"
+              :data-remove-for="p.id"
               @click="remove(p.id)"
             >
               지우기<span class="rs-sr-only"> {{ paraName(pi) }}</span>
             </button>
           </div>
+          <!-- 문단 지우기 확인 — 그 문단의 버튼 줄 바로 아래. 되돌릴 수 없는 지우기라 처음 초점은 [취소](SkxConfirm 기본) -->
+          <SkxConfirm
+            v-if="askRemovePid === p.id"
+            :message="REMOVE_CONFIRM"
+            :confirm-label="REMOVE_CONFIRM_OK"
+            :label="`${paraName(pi)} 지우기 확인`"
+            :busy="asked"
+            :return-focus="() => askReturn(removeSelector(p.id))"
+            @confirm="confirmAsk"
+            @cancel="closeAsk"
+          />
         </template>
       </li>
     </ol>
@@ -181,7 +204,7 @@
       <template v-if="adding">
         <label>
           <span class="rs-sr-only">더할 문단</span>
-          <textarea v-model="addText" data-add-box rows="4" :disabled="busy" placeholder="직접 쓸 문단 — 인용하려면 이 절의 [E1] 표기를 그대로 쓰세요" />
+          <textarea v-model="addText" data-add-box rows="4" :disabled="busy" placeholder="직접 쓸 문단 — 인용하려면 이 절의 [E1] 표기를 그대로 써 주세요" />
         </label>
         <p v-if="addText && addProblem" class="rs-muted" role="status">{{ addProblem }}</p>
         <div class="rs-card__actions">
@@ -202,22 +225,24 @@
     </div>
     <!-- 근거 없음 409 는 사실상 연구 공백 절에서만 난다 — 그 논문은 담은 논문·묶음이 아니라 고른 주제의 씨앗에서 온다 -->
     <p v-if="skippedNow" class="rs-muted" role="status">
-      근거가 없어 쓰지 않았습니다 — 이 절은 고른 주제의 씨앗({{ DEEP_RESEARCH }} 보고서의 향후 과제·근거가 부족했던
-      하위질문)에 이은 논문으로 쓰는데, 이은 논문이 없습니다. 다른 주제를 고른 뒤 [{{ REMAKE_REPORT }}]로 맞추세요.
+      근거가 없어 쓰지 않았어요 — 이 절은 고른 주제의 씨앗({{ DEEP_RESEARCH }} 보고서의 향후 과제·근거가 부족했던
+      하위질문)에 이은 논문으로 쓰는데, 이은 논문이 없어요.<br />
+      다른 주제를 고른 뒤 [{{ REMAKE_REPORT }}]로 맞춰 주세요.
     </p>
-    <!-- '자동으로 씁니다'는 연쇄가 이 절을 곧 넣을 때만 — 06b 때 승인한 목차·취소로 끝난 절·연쇄가 멈춘 동안은 손으로 쓴다 -->
+    <!-- '자동으로 써요'는 연쇄가 이 절을 곧 넣을 때만 — 06b 때 승인한 목차·취소로 끝난 절·연쇄가 멈춘 동안은 손으로 쓴다 -->
     <p v-else-if="!section && status === 'empty' && autoNext" class="rs-muted">
-      아직 쓰지 않은 절입니다 — 차례가 오면 자동으로 씁니다. 지금 쓰려면 [이 절 쓰기]를 누르세요.
+      아직 쓰지 않은 절이에요 — 차례가 오면 자동으로 써요.<br />
+      지금 쓰려면 [이 절 쓰기]를 눌러 주세요.
     </p>
     <p v-else-if="!section && status === 'empty'" class="rs-muted">
-      아직 쓰지 않은 절입니다. [이 절 쓰기]를 누르면 문장이 흘러나오고, 끝나면 문단마다 [수락]·[다시]·[고치기]로 다듬을 수
-      있습니다.
+      아직 쓰지 않은 절이에요.<br />
+      [이 절 쓰기]를 누르면 문장이 흘러나오고, 끝나면 문단마다 [수락]·[다시]·[고치기]로 다듬을 수 있어요.
     </p>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, ref, shallowRef, watch } from "vue";
 import FigureChip from "~/components/work/FigureChip.vue";
 import type { CitePick, Figure, ParaState, ProposalView, SectionPut, WorkState } from "~/types/work";
 import { DEEP_RESEARCH } from "~/utils/brand";
@@ -228,6 +253,10 @@ import { figureById, spaceBeforeCites, splitMarkers } from "~/utils/figureMarker
 import {
   GAP_NOTE,
   MAX_PARAGRAPHS_PUT,
+  REMOVE_CONFIRM,
+  REMOVE_CONFIRM_OK,
+  REWRITE_CONFIRM,
+  REWRITE_CONFIRM_OK,
   acceptParagraph,
   addParagraph,
   editParagraph,
@@ -258,8 +287,11 @@ const props = defineProps<{
   panelId?: string;
   // 보고서 자동 산출이 근거가 없어(409 no_section_papers) 건너뛴 절 — 이 방문만(06e)
   skipped?: boolean;
-  // 보고서 자동 산출이 이 절을 곧 넣을 참이다(연쇄가 돌고 멈추지 않았고 남은 절에 든다) — 쓰기 전 안내가 '자동으로 씁니다'
+  // 보고서 자동 산출이 이 절을 곧 넣을 참이다(연쇄가 돌고 멈추지 않았고 남은 절에 든다) — 쓰기 전 안내가 '자동으로 써요'
   autoNext?: boolean;
+  // 이 절의 저장(PUT) 응답을 받을 때마다 오르는 수(ProposalStep) — 뒤의 다시 읽기가 실패해 절이 그대로여도 저장은 된 것이라
+  // 열어 둔 고치기·직접 쓰기 칸을 닫는다(열린 채 다시 누르면 옛 version 이라 409 가 난다)
+  savedSeq?: number;
 }>();
 const emit = defineEmits<{
   write: [];
@@ -298,7 +330,7 @@ const status = computed(() => sectionStatus(props.sectionKey, props.state));
 const stale = computed(() => !!section.value && props.proposal.stale.sections[props.sectionKey] === true);
 // 자동 산출이 근거가 없어 건너뛴 쓰기 전 절 — 손으로 다시 쓰기 시작하면(대기·쓰는 중) 그 상태를 보인다
 const skippedNow = computed(() => !!props.skipped && !section.value && status.value === "empty");
-const note = computed(() => section.value?.note ?? (props.sectionKey === "gap" ? `${GAP_NOTE}로만 씁니다` : null));
+const note = computed(() => section.value?.note ?? (props.sectionKey === "gap" ? `${GAP_NOTE}로만 써요` : null));
 const openSection = computed(() => openGeneration(props.state, "section", props.sectionKey));
 const queueText = computed(() => (openSection.value ? genQueueLine(openSection.value) : null));
 // 끝났지만 계획서를 다시 읽기 전이라 아직 절에 오지 않은 결과(sectionStatus 의 쓰는 중) — 흐르던 글은 이미 지워졌다
@@ -310,14 +342,18 @@ const failedGen = computed(() =>
 const failedText = computed(() => {
   const head =
     failedGen.value?.status === "done"
-      ? "근거 표시가 있는 문단을 얻지 못했습니다"
+      ? "근거 표시가 있는 문단을 얻지 못했어요"
       : section.value
-        ? "이 절을 다시 쓰지 못했습니다"
-        : "이 절을 쓰지 못했습니다";
-  return section.value?.paragraphs.length
-    ? `${head} — 앞서 쓴 문단은 그대로 두었습니다.`
-    : `${head}. 다시 시도하거나 잠시 뒤 다시 쓰세요.`;
+        ? "이 절을 다시 쓰지 못했어요"
+        : "이 절을 쓰지 못했어요";
+  if (section.value?.paragraphs.length) return `${head} — 앞서 쓴 문단은 그대로 두었어요.`;
+  // 예시 연구는 읽기 전용이라 [다시 시도]도 쓰기 버튼도 없다 — 할 수 없는 일을 권하지 않는다
+  return props.readOnly ? `${head}.` : `${head}.\n다시 시도하거나 잠시 뒤 다시 써 주세요.`;
 });
+
+function retryFailed(): void {
+  if (failedGen.value) onRetry(failedGen.value.id);
+}
 
 // 절 글이 흐르는 동안 조각(section_delta)마다 state 는 새 객체가 되어 모든 절이 다시 그려진다. 그때 문단을 다시
 // 나누거나 생성 목록을 다시 훑지 않게, 무거운 계산은 그것이 기대는 값에만 묶는다 — 문단 조각은 절(계획서를 다시 읽을
@@ -419,9 +455,12 @@ function onCite(e: MouseEvent, pid: string, si: number, eid: string, sentence: s
 }
 
 // ── 쓰기·고치기 ──────────────────────────────────────────
-function onWrite(): void {
+// at — 누른 버튼(머리의 [이 절 다시 쓰기] 또는 실패 줄의 [다시 시도]). 수락·고친·직접 쓴 문단이 있으면 덮기 전에 그 버튼 곁의 확인 칸으로
+// 묻고([다시 쓰기]를 누르면 confirmAsk 가 쓴다), 검토 전 문단뿐이면 바로 쓴다
+function onWrite(at: "head" | "retry"): void {
   const kept = section.value?.paragraphs.some((p) => p.state !== "proposed") ?? false;
-  if (kept && !window.confirm("이 절을 다시 쓰면 지금 문단(수락·고친·직접 쓴 문단 포함)을 새 초안으로 바꿉니다. 다시 쓸까요?")) {
+  if (kept) {
+    toggleAsk({ kind: "write", at });
     return;
   }
   emit("write");
@@ -432,16 +471,97 @@ function onWrite(): void {
 // 놓치고, 결과가 그 뒤 수락·고친 문단을 확인 없이 통째로 덮는다. 쓴 절이 없으면 덮을 문단이 없어 같은 생성을 다시 부른다
 function onRetry(genId: number): void {
   if (section.value) {
-    onWrite();
+    onWrite("retry");
     return;
   }
   emit("retry", genId);
 }
 
+// 문단 [지우기] — 바로 지우지 않고 그 문단 아래에 확인 칸을 편다([지우기]를 누르면 confirmAsk 가 지운다)
 function remove(pid: string): void {
-  if (!section.value || !window.confirm("이 문단을 지울까요?")) return;
-  emit("save", removeParagraph(section.value, pid));
+  if (section.value) toggleAsk({ kind: "remove", pid });
 }
+
+// ── 확인 칸(SkxConfirm) — 덮어쓰기·지우기 ─────────────────
+// 브라우저 확인 창 대신 누른 버튼 곁에 확인 칸을 편다 — 이 절에서 한 번에 하나(절 다시 쓰기 또는 문단 하나 지우기). 같은 버튼을 다시
+// 누르면 접는다. write 의 at 은 칸이 설 자리(머리 아래·실패 줄 아래)다
+type Ask = { kind: "write"; at: "head" | "retry" } | { kind: "remove"; pid: string };
+const ask = shallowRef<Ask | null>(null);
+// 확인 버튼을 눌러 부모에 보냈다 — 그 일이 끝날 때까지(busy) 칸이 일하는 중으로 남았다가 걷힌다
+const asked = ref(false);
+const askWriteAt = computed(() => (ask.value?.kind === "write" ? ask.value.at : null));
+const askRemovePid = computed(() => (ask.value?.kind === "remove" ? ask.value.pid : null));
+// 두 자리(머리 아래·실패 줄 아래)의 절 다시 쓰기 칸이 같이 받는 값 — 수락·고친·직접 쓴 문단까지 새 초안으로 바뀌어 되돌릴 수 없어
+// 문단 지우기처럼 처음 초점은 [취소](컴포넌트 기본)에 둔다 — 엔터를 한 번 더 눌러 쓴 문단을 잃지 않게
+const writeConfirm = computed(() => ({
+  message: REWRITE_CONFIRM,
+  confirmLabel: REWRITE_CONFIRM_OK,
+  label: `${props.label} 다시 쓰기 확인`,
+  busy: asked.value,
+}));
+
+const askKey = (a: Ask): string => (a.kind === "write" ? `write:${a.at}` : `remove:${a.pid}`);
+
+function toggleAsk(next: Ask): void {
+  ask.value = ask.value && askKey(ask.value) === askKey(next) ? null : next;
+  asked.value = false;
+}
+
+function closeAsk(): void {
+  ask.value = null;
+  asked.value = false;
+}
+
+// 확인 칸의 [다시 쓰기]·[지우기] — 브라우저 확인 창이 '확인'을 돌려줬을 때 하던 일 그대로
+function confirmAsk(): void {
+  const a = ask.value;
+  if (!a || asked.value) return;
+  if (a.kind === "write") {
+    asked.value = true;
+    emit("write");
+    return;
+  }
+  const sec = section.value;
+  if (!sec) {
+    closeAsk();
+    return;
+  }
+  asked.value = true;
+  emit("save", removeParagraph(sec, a.pid));
+}
+
+// 칸이 접히면 초점을 연 버튼으로 — 그 버튼이 사라졌거나 잠겼으면(절을 쓰기 시작함·문단을 지움) 이 절 제목(tabindex="-1")으로
+function askReturn(selector: string): HTMLElement | null {
+  const btn = rootEl.value?.querySelector<HTMLButtonElement>(selector);
+  return btn && !btn.disabled ? btn : document.getElementById(`wk-sec-title-${props.sectionKey}`);
+}
+
+function removeSelector(pid: string): string {
+  return `[data-remove-for="${CSS.escape(pid)}"]`;
+}
+
+// 묻던 일이 더는 맞지 않으면 칸을 걷는다 — 보내기 전에 다른 일이 이 절을 잠갔거나(다른 저장·문단 다시 쓰기), 절을 쓰기 시작했거나
+// (자동 산출·다른 탭 — 보낸 뒤라면 그 일이 시작된 것이다), 지우려던 문단이 없어졌다
+watch(locked, (now) => {
+  if (now && !asked.value) closeAsk();
+});
+watch(status, (now) => {
+  if (now === "queued" || now === "writing") closeAsk();
+});
+watch(
+  () => section.value?.paragraphs,
+  (paras) => {
+    const pid = askRemovePid.value;
+    if (pid && !paras?.some((p) => p.id === pid)) closeAsk();
+  },
+);
+// 보낸 일이 끝나면(busy 가 풀리면 — 성공·실패 모두) 칸을 걷는다. 실패 안내는 보고서 머리의 한 줄이 맡는다
+watch(
+  () => props.busy,
+  (now) => {
+    if (!now && asked.value) closeAsk();
+  },
+);
 
 const editingId = ref<string | null>(null);
 const editText = ref("");
@@ -450,12 +570,14 @@ const adding = ref(false);
 const addText = ref("");
 const addProblem = computed(() => paragraphProblem(addText.value));
 // 저장을 보낸 뒤 결과가 화면에 올 때까지 고치던 글을 쥐고 있다 — 실패(버전 충돌 등)하면 그대로 남아 다시 보낼 수 있다
-type Pending = { kind: "edit"; id: string; before: string } | { kind: "add"; count: number };
+// seq — 보낼 때의 savedSeq. 결과가 왔을 때 이보다 올랐으면 저장 응답을 받은 것이다(다시 읽기가 실패했어도)
+type Pending = { kind: "edit"; id: string; before: string; seq: number } | { kind: "add"; count: number; seq: number };
 let pending: Pending | null = null;
 
 // 절을 새 생성으로 다시 쓰면 서버가 문단 id 를 p1 부터 다시 매기고 근거 지도도 바뀔 수 있다 — 열어 둔 칸을
 // 그대로 두면 옛 글이 같은 id 의 새 문단에 다시 열려 [저장] 하면 새 문단을 덮고 [E#] 가 다른 논문에 붙는다.
-// 다시 쓰기가 실패·취소되면 gen_id 가 그대로라 고치던 글을 지킨다(옛 문단이 그대로 남아 있다)
+// 다시 쓰기가 실패·취소되면 gen_id 가 그대로라 고치던 글을 지킨다(옛 문단이 그대로 남아 있다). 열어 둔 확인 칸도 같은 까닭으로
+// 걷는다 — 문단 지우기 칸이 같은 id 의 새 문단을 지우지 않게
 watch(
   () => section.value?.gen_id,
   () => {
@@ -464,6 +586,7 @@ watch(
     adding.value = false;
     addText.value = "";
     pending = null;
+    closeAsk();
   },
 );
 
@@ -495,14 +618,14 @@ function saveEdit(pid: string): void {
     editingId.value = null;
     return;
   }
-  pending = { kind: "edit", id: pid, before };
+  pending = { kind: "edit", id: pid, before, seq: props.savedSeq ?? 0 };
   emit("save", editParagraph(sec, pid, text));
 }
 
 function saveAdd(): void {
   const sec = section.value;
   if (!sec) return;
-  pending = { kind: "add", count: sec.paragraphs.length };
+  pending = { kind: "add", count: sec.paragraphs.length, seq: props.savedSeq ?? 0 };
   emit("save", addParagraph(sec, addText.value.trim()));
 }
 
@@ -513,9 +636,10 @@ watch(
     if (!was || now || !p) return;
     pending = null;
     const paragraphs = section.value?.paragraphs ?? [];
+    const wrote = (props.savedSeq ?? 0) !== p.seq;
     if (p.kind === "edit") {
-      if (paragraphs.find((x) => x.id === p.id)?.text !== p.before) editingId.value = null;
-    } else if (paragraphs.length > p.count) {
+      if (wrote || paragraphs.find((x) => x.id === p.id)?.text !== p.before) editingId.value = null;
+    } else if (wrote || paragraphs.length > p.count) {
       adding.value = false;
       addText.value = "";
     }

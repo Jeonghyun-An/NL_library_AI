@@ -225,7 +225,8 @@ describe("continueCard", () => {
     const card = continueCard(false, null);
     expect(card).toMatchObject({
       title: "이 연구 이어가기",
-      body: "탐색이 끝났습니다. 제목 고르기 → 참고문헌 선택하기 → 보고서 3단계를 거쳐 보고서 초안까지 이어 갈 수 있습니다.",
+      // 해요체·문장마다 줄바꿈 — 카드는 rs-lines 로 '\n' 을 줄로 그린다
+      body: "탐색이 끝났어요.\n제목 고르기 → 참고문헌 선택하기 → 보고서 3단계를 거쳐 보고서 초안까지 이어 갈 수 있어요.",
       label: "이 연구 이어가기",
       action: "continue",
       note: null,
@@ -256,7 +257,7 @@ describe("continueCard", () => {
 
   it("예시 연구는 읽기 전용이라고 알린다", () => {
     expect(continueCard(true, work({ is_example: true })).note).toBe(
-      "예시 연구는 읽기 전용입니다 — 둘러볼 수 있고 바꿀 수는 없습니다.",
+      "예시 연구는 읽기 전용이에요 — 둘러볼 수 있고 바꿀 수는 없어요.",
     );
   });
 

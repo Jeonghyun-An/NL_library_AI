@@ -7,7 +7,7 @@
      알리고 클릭만 무시한다(disabled 면 버튼이 초점을 잃는다). 기본 슬롯은 글 뒤에 덧붙일 링크·버튼 자리 — 뿌리와 글 묶음을 <div> 로 두어
      슬롯에 블록 요소(<p>·<div>)를 넣어도 HTML 이 깨지거나 SSR 수화가 어긋나지 않는다 -->
 <template>
-  <div class="skx-inline-error" role="alert">
+  <div class="skx-inline-error" :role="role ?? 'alert'">
     <span class="skx-inline-error__icon" aria-hidden="true">
       <svg
         viewBox="0 0 32 32"
@@ -51,6 +51,9 @@ const props = withDefaults(
     busy?: boolean;
     /** 부모의 @retry 가 이 prop 으로 들어온다 — 있을 때만 [다시 시도] 를 그린다 */
     onRetry?: () => void;
+    /** 알림 세기 — 기본 alert(바로 끊고 읽는다). 화면을 열 때마다 다시 그려지는 지난 실패·계속 남는 안내(저장 차단 등)는
+     *  status 로 넘겨 낭독기가 하던 말을 끊고 거듭 읽지 않게 한다 */
+    role?: "alert" | "status";
   }>(),
   { retryLabel: "다시 시도", busy: false },
 );

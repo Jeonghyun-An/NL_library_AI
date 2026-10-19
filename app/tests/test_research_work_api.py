@@ -260,9 +260,19 @@ def _set_reading(engine, jid: uuid.UUID, cnts_id: str, **values) -> None:
         conn.execute(sa.update(table).where(table.c.work_id == jid, table.c.cnts_id == cnts_id).values(**values))
 
 
+PING_FRAME = "event: ping\ndata: {}\n\n"
+
+
 def _frames(body: str) -> list[dict]:
-    return [json.loads(line[len("data: "):]) for line in body.splitlines()
-            if line.startswith("data: ")]
+    """화면의 onmessage 에 닿는 이름 없는 data 이벤트만. 하트비트(relay.SSE_PING — 이름 붙은 ping 이벤트)는
+    EventSource 가 addEventListener('ping') 으로만 넘겨 화면 상태에 닿지 않으므로 뺀다."""
+    frames = []
+    for block in body.split("\n\n"):
+        lines = block.splitlines()
+        if "event: ping" in lines:
+            continue
+        frames += [json.loads(line[len("data: "):]) for line in lines if line.startswith("data: ")]
+    return frames
 
 
 # ── 이어가기 ─────────────────────────────────────────────────────────
@@ -400,7 +410,7 @@ class TestContinue:
 
         assert res.status_code == 409
         # 화면이 detail 을 그대로 보인다(researchErrorMessage 의 409) — 화면 표기 DeepResearch(round08 사용자 결정)
-        assert res.json()["detail"] == "완료된 DeepResearch만 이어갈 수 있습니다"
+        assert res.json()["detail"] == "완료된 DeepResearch만 이어갈 수 있어요"
         assert _rows(api.engine, ResearchWork) == []
         assert api.dispatch.calls == 0
 
@@ -425,7 +435,7 @@ class TestContinue:
 
         res = api.client.post(f"/api/research/{jid}/work/continue", headers=A)
 
-        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용입니다"
+        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용이에요"
         assert _rows(api.engine, ResearchGeneration) == []
 
 
@@ -601,7 +611,7 @@ class TestPatchWork:
         res = api.client.patch(f"/api/research/{jid}/work", json={"concepts": ["청소년"]})
 
         assert res.status_code == 409
-        assert res.json()["detail"] == "키워드를 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
+        assert res.json()["detail"] == "키워드를 만드는 중이에요 — 끝난 뒤 고쳐 주세요"
         assert _rows(api.engine, ResearchWork)[0]["concepts"] == ["독서 격차"]
 
     def test_memo_and_same_concepts_pass_while_concepts_are_being_made(self, api):
@@ -648,7 +658,7 @@ class TestPatchWork:
     def test_example_work_is_read_only(self, api):
         jid = _work_job(api.engine, is_example=True)
         res = api.client.patch(f"/api/research/{jid}/work", json={"memo": "메모"})
-        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용입니다"
+        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용이에요"
 
     def test_404_until_continued(self, api):
         jid = _job(api.engine)
@@ -678,7 +688,7 @@ class TestPatchPhase:
 
         res = api.client.patch(f"/api/research/{jid}/work", json={"phase": asked, "memo": "메모"})
 
-        assert res.status_code == 409 and res.json()["detail"] == "단계를 되돌릴 수 없습니다"
+        assert res.status_code == 409 and res.json()["detail"] == "단계를 되돌릴 수 없어요"
         (work,) = _rows(api.engine, ResearchWork)
         assert (work["phase"], work["memo"]) == (now, None)
         assert api.events == []
@@ -816,7 +826,7 @@ class TestCancelGeneration:
         res = api.client.post(f"/api/research/{jid}/generations/{gid}/cancel")
 
         assert res.status_code == 409
-        assert res.json()["detail"] == "진행 중인 생성은 끝날 때까지 기다립니다"
+        assert res.json()["detail"] == "진행 중인 작업은 끝날 때까지 기다려야 해요"
         assert _rows(api.engine, ResearchGeneration)[0]["status"] == "running"
         assert api.events == [] and api.dispatch.calls == 0
 
@@ -1136,7 +1146,9 @@ class TestWorkStream:
         assert frames[0]["kind"] == "snapshot"
         assert frames[0]["work"] == api.client.get(f"/api/research/{jid}/work").json()
         assert frames[1:] == [event, {"kind": "work", "phase": "topics", "progress": {}}]
-        assert ": ping" in res.text
+        # 하트비트는 딥리서치 스트림과 같은 이름 붙은 ping 이벤트(relay.SSE_PING) — onmessage 에 닿지 않아 위 프레임에 끼지 않는다
+        assert res.text.count(PING_FRAME) == 1
+        assert not any(line.startswith(":") for line in res.text.splitlines())
         # 워커는 표준형 id 채널에 쓴다 — 대문자 경로로 붙어도 같은 채널을 구독해야 한다
         assert seen["work_id"] == str(jid)
 

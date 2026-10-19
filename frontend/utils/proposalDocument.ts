@@ -2,6 +2,7 @@
 import type { PaperMeta, ParaState, ProposalSection, ProposalView, WorkView } from "~/types/work";
 import { figureById, splitMarkers } from "~/utils/figureMarkers";
 import {
+  FOOTPRINT_EMPTY,
   GAP_NOTE,
   SECTION_LABELS,
   footprint,
@@ -152,7 +153,8 @@ export function buildProposalDocument(input: ProposalDocInput, now: Date): Repor
 // 덧붙인다)·실은 문단·검토할 곳(실은 문단에서 센다)·작성 일시·결과·논의 미포함. 모델 이름·생성별 시도 기록은 싣지 않는다('AI 작성·
 // 검토' 수준 — 저장(research_generations.model·attempts)은 그대로)
 export function disclosureLines(p: ProposalView, acceptedOnly: boolean, now: Date): string[] {
-  const out = [`문단 상태: ${footprintLine(footprint(p))}`];
+  // 쓴 문단이 없을 때의 말은 문서 말투로(화면 막대는 해요체 — FOOTPRINT_EMPTY)
+  const out = [`문단 상태: ${footprintLine(footprint(p), FOOTPRINT_EMPTY.doc)}`];
   if (p.topic_source) out.push(topicSourceLine(p.topic_source));
   const preselected = p.preselected ?? 0;
   if (preselected > 0) out.push(preselectedLine(preselected));

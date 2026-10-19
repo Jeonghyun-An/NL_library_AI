@@ -1,11 +1,16 @@
 // frontend/utils/aiStream.ts
-// AI 글 스트림(SSE) 읽기 — 논문 검색 AI 요약(/papers/summary/stream)·논문 상세 AI 요약(/papers/reason/stream)·관련 논문
-// 추천 사유(/papers/related-reason/stream)·소장자료 상세 추천 이유(/books/reason/stream)가 함께 쓴다.
-// 서버는 `data: {…}` 이벤트를 흘리고 끝에 `data: [DONE]` 을 보낸다. LLM 호출이 실패하면 [DONE] 바로 앞에
+// AI 글 스트림(SSE) 읽기 — 논문 검색 AI 요약(/papers/summary/stream — pages/papers/index.vue)·논문 상세 AI 요약(/papers/reason/stream)·
+// 관련 논문 추천 사유(/papers/related-reason/stream — 둘 다 pages/papers/[id].vue)·소장자료 상세 추천 이유(/books/reason/stream —
+// pages/books/[cnts_id].vue)가 readAiStream 을 함께 쓴다.
+// 서버는 `data: {…}` 이벤트를 흘리고 끝에 `data: [DONE]` 을 보낸다. LLM 호출이 실패하거나 빈 답으로 끝나면 [DONE] 바로 앞에
 // `data: {"error": 문구}` 를 보낸다(app/services/search/paper_summary.py·pipeline.py) — 받은 글이 있어도 실패다.
-// 부르는 쪽은 끝까지 받았을 때({ok: true})만 캐시·검색 기록에 저장하고, 실패면 받은 글에 오류 문구를 잇지 않고
-// 오류로 보인다(failureText). 저장하지 않으므로 다시 열면 다시 만든다.
-// DeepRead 대화는 조각 단위로 읽는 utils/deepReadSse.ts, 소장자료 추천 1권은 효과(effect)에서 끊는 utils/bookAiPick.ts 가 읽는다
+// 실패면 받은 글에 오류 문구를 잇지 않고 줄 안내(SkxInlineError)로 따로 보인다. 서버의 {error} 문구(합쇼체)는 쓰지 않는다:
+//  - 논문 화면은 failureText 에 아래 해요체 상수(AI_SUMMARY_FAILED·RELATED_REASON_FAILED)를 넘기고, 끝까지 받았을 때({ok: true})만
+//    캐시·검색 기록에 저장한다(실패는 저장하지 않아 다시 열면 다시 만든다)
+//  - 소장자료 상세는 받은 글이 있는지로 문구를 가르는 utils/bookErrors 의 reasonFailureText(BOOK_REASON_TEXT)를 쓰고, 추천 이유를
+//    저장하지 않는다(열 때마다 다시 만든다). 그래서 소장자료 문구 상수는 이 파일에 두지 않는다
+// DeepRead 대화는 조각 단위로 읽는 utils/deepReadSse.ts, 결과의 SKOVIX 추천 1권·보존 화면(/search-classic)의 추천 이유는 효과(effect)에서
+// 끊는 utils/bookAiPick.ts 의 readReasonStream 이 읽는다
 
 // 끝까지 받았는지 — 실패의 error 는 서버가 보낸 문구, [DONE] 없이 끊겼거나 응답이 4xx·5xx 면 null
 export type AiStreamEnd = { ok: true } | { ok: false; error: string | null };
@@ -56,13 +61,13 @@ export async function readAiStream(
   }
 }
 
-// 화면에 보일 실패 문구 — 끝까지 받았으면 빈 글, 서버 문구가 있으면 그것, 없으면(끊김·4xx·5xx·네트워크) fallback
+// 화면에 보일 실패 문구 — 끝까지 받았으면 빈 글, 실패면 늘 fallback(화면의 해요체 상수).
+// 서버의 {error} 문구(paper_summary.py·pipeline.py — 합쇼체 '…만들지 못했습니다')는 쓰지 않는다: 서버가 문구를 바꿔도 화면 말투가 섞이지 않게
+// 문구는 프런트가 가진다(utils/apiErrors 의 CODE_MESSAGES 와 같은 원칙). 실패를 알아보는 데만 쓴다
 export function failureText(end: AiStreamEnd, fallback: string): string {
-  if (end.ok) return "";
-  return end.error ?? fallback;
+  return end.ok ? "" : fallback;
 }
 
-// 서버 문구가 없을 때 화면이 보이는 실패 문구 — 서버 문구(paper_summary.py·pipeline.py)와 같은 말
+// 논문 화면의 실패 문구(해요체 — 사용자 결정 2026-10-16). 서버 문구와 뜻은 같고 말투만 화면에 맞춘다
 export const AI_SUMMARY_FAILED = "AI 요약을 만들지 못했어요";
-export const RELATED_REASON_FAILED = "추천 사유를 만들지 못했습니다";
-export const BOOK_REASON_FAILED = "추천 이유를 만들지 못했습니다";
+export const RELATED_REASON_FAILED = "추천 사유를 만들지 못했어요";

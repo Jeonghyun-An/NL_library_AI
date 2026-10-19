@@ -177,10 +177,10 @@ describe("progressBarView", () => {
       running: false,
       valueText: "연구 계획을 세우는 중",
     });
-    expect(progressBarView(input({ phase: "awaiting" }))?.line).toBe("승인 대기 중 · 승인하면 근거 수집을 시작합니다");
+    expect(progressBarView(input({ phase: "awaiting" }))?.line).toBe("승인 대기 중 · 승인하면 근거 수집을 시작해요");
     expect(progressBarView(input({ phase: "queued", queueNote: "앞에 2건 · 약 25분" }))?.line).toBe("대기열 · 앞에 2건 · 약 25분");
     const queued = progressBarView(input({ phase: "queued" }));
-    expect(queued?.line).toBe("대기열 · 앞선 연구가 끝나면 시작합니다");
+    expect(queued?.line).toBe("대기열 · 앞선 연구가 끝나면 시작해요");
     expect(queued?.percent).toBeNull();
   });
 

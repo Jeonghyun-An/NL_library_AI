@@ -173,7 +173,8 @@ export function activeTabKey(current: string | null, tabs: readonly Pick<Curatio
 
 /** AI 글 탭(논문 상세 AI 요약·소장자료 상세 추천 이유)을 둘지 — 아직 정하지 않았거나(곧 채워진다) 받는 중이거나, 받은 글이나
  *  실패 안내가 있으면 둔다. 받는 중을 따로 보는 까닭: [다시 시도]는 실패로 done 이 된 뒤 글·안내를 비우고 다시 받는다 — 보지
- *  않으면 첫 글자가 올 때까지 탭이 빠져 첫 탭(초록·줄거리)으로 넘어가고, 누른 버튼도 사라진다 */
+ *  않으면 첫 글자가 올 때까지 탭이 빠져 첫 탭(초록·줄거리)으로 넘어가고, 누른 버튼도 사라진다.
+ *  끝까지 받았는데 글이 없으면 탭이 빠진다 — 소장자료 상세는 그 경우를 실패(error)로 돌려 탭과 [다시 시도]가 남는다 */
 export function aiTabAvailable(s: { loading: boolean; done: boolean; text: string; error: string }): boolean {
   return s.loading || !s.done || !!s.text || !!s.error;
 }
@@ -183,6 +184,13 @@ export function aiTabAvailable(s: { loading: boolean; done: boolean; text: strin
 export function focusOwningPanel(target: EventTarget | null): void {
   const el = target as { closest?: (selector: string) => { focus?: () => void } | null } | null;
   el?.closest?.('[role="tabpanel"]')?.focus?.();
+}
+
+/** focusOwningPanel 의 탭 밖 짝 — [다시 시도]를 누르면 상태 블록·줄 안내가 버튼째 빠지므로(다시 받는 동안 로딩 표시가 그 자리를 잇는다),
+ *  누르자마자 다시 받는 동안에도 남는 감싸는 영역(tabindex="-1")으로 초점을 옮긴다. 스크롤은 하지 않는다 — 누른 자리가 이미 보이고,
+ *  큰 영역이면 초점을 주며 화면이 영역 머리로 뛴다. 테두리는 키보드로 눌렀을 때만 그려진다(브라우저 기본 :focus-visible) */
+export function focusRegion(region: { focus?: (options?: FocusOptions) => void } | null | undefined): void {
+  region?.focus?.({ preventScroll: true });
 }
 
 /** 탭 목록에서 방향키로 옮겨 갈 자리 — 좌우는 끝에서 반대쪽으로 돌고, Home·End 는 처음·끝. 그 밖의 키는 null */

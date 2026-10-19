@@ -217,10 +217,10 @@ describe("validationMessage — FastAPI 422 배열", () => {
 
 describe("serverMessage — 서버의 깨끗한 한글 사유만", () => {
   it("한글만 있는 문장(숫자·문장 부호·줄표는 괜찮다)은 앞뒤 공백만 걷어 그대로", () => {
-    expect(serverMessage(" 목차를 만드는 중입니다 ")).toBe("목차를 만드는 중입니다");
-    expect(serverMessage("검사 뒤 글이 3000자를 넘습니다 — 조금 줄여 주세요")).toBe("검사 뒤 글이 3000자를 넘습니다 — 조금 줄여 주세요");
-    expect(serverMessage("중복된 하위질문이다: 가")).toBe("중복된 하위질문이다: 가");
-    expect(serverMessage({ code: "version_conflict", version: 3, message: "다른 곳에서 계획서가 바뀌었습니다" })).toBe("다른 곳에서 계획서가 바뀌었습니다");
+    expect(serverMessage(" 목차를 만드는 중이에요 ")).toBe("목차를 만드는 중이에요");
+    expect(serverMessage("검사 뒤 문단이 3000자를 넘어요 — 단정 표현을 고치면서 늘었을 수 있으니 조금 줄여 주세요")).toBe("검사 뒤 문단이 3000자를 넘어요 — 단정 표현을 고치면서 늘었을 수 있으니 조금 줄여 주세요");
+    expect(serverMessage("같은 하위질문이 두 번 있어요: 가")).toBe("같은 하위질문이 두 번 있어요: 가");
+    expect(serverMessage({ code: "version_conflict", version: 3, message: "다른 곳에서 보고서가 바뀌었어요 — 다시 불러온 뒤 고쳐 주세요" })).toBe("다른 곳에서 보고서가 바뀌었어요 — 다시 불러온 뒤 고쳐 주세요");
   });
 
   // 서버(app/api/*.py)에 실제로 있는 개발자용 문구의 모양 — 예외 원문·변수·필드·헤더 이름이 섞여 사용자에게 보이면 안 된다
@@ -253,16 +253,16 @@ describe("serverMessage — 서버의 깨끗한 한글 사유만", () => {
 
 describe("apiErrorMessage — (a) 서버의 한글 사유", () => {
   it("4xx 의 깨끗한 한글 문자열 detail 은 그대로(앞뒤 공백만 걷는다)", () => {
-    expect(apiErrorMessage(fetchError(404, "주제가 없습니다"), "실패")).toBe("주제가 없습니다");
-    expect(apiErrorMessage(fetchError(409, " 목차를 만드는 중입니다 "), "실패")).toBe("목차를 만드는 중입니다");
-    expect(apiErrorMessage(fetchError(422, "검사 뒤 글이 3000자를 넘습니다"), "실패")).toBe("검사 뒤 글이 3000자를 넘습니다");
+    expect(apiErrorMessage(fetchError(404, "주제를 찾을 수 없어요"), "실패")).toBe("주제를 찾을 수 없어요");
+    expect(apiErrorMessage(fetchError(409, " 목차를 만드는 중이에요 "), "실패")).toBe("목차를 만드는 중이에요");
+    expect(apiErrorMessage(fetchError(422, "검사 뒤 문단이 3000자를 넘어요"), "실패")).toBe("검사 뒤 문단이 3000자를 넘어요");
   });
 
   it("구조화 detail {code, message} 도 message 가 깨끗한 한글이면 그대로", () => {
     expect(apiErrorMessage(fetchError(429, { code: "browser_active", message: "다른 탭의 연구가 돌고 있습니다", job_id: "j" }), "실패"))
       .toBe("다른 탭의 연구가 돌고 있습니다");
-    expect(apiErrorMessage(fetchError(409, { code: "version_conflict", version: 3, message: "다른 곳에서 계획서가 바뀌었습니다" }), "실패"))
-      .toBe("다른 곳에서 계획서가 바뀌었습니다");
+    expect(apiErrorMessage(fetchError(409, { code: "version_conflict", version: 3, message: "다른 곳에서 보고서가 바뀌었어요 — 다시 불러온 뒤 고쳐 주세요" }), "실패"))
+      .toBe("다른 곳에서 보고서가 바뀌었어요 — 다시 불러온 뒤 고쳐 주세요");
   });
 
   it("한·영 섞인 개발자용 detail 은 쓰지 않고 kind 규칙으로 간다(문자열·구조화 둘 다)", () => {
@@ -276,7 +276,7 @@ describe("apiErrorMessage — (a) 서버의 한글 사유", () => {
 
   it("사용자용 고유명사(AI·DeepResearch·DeepRead·SKOVIX·PDF·KCI)가 든 서버 문장은 그대로 — 고유명사를 지운 뒤 라틴 문자를 본다", () => {
     // app/api/research_topics.py NOTHING_TO_REGENERATE(409) — 사용자에게 보이라고 지은 문장
-    expect(apiErrorMessage(fetchError(409, "다시 만들 AI 카드가 없습니다"), "카드를 다시 만들지 못했어요")).toBe("다시 만들 AI 카드가 없습니다");
+    expect(apiErrorMessage(fetchError(409, "다시 만들 AI 카드가 없어요"), "카드를 다시 만들지 못했어요")).toBe("다시 만들 AI 카드가 없어요");
     const active = { code: "browser_active", message: "진행 중인 DeepResearch가 있습니다 — 끝나거나 취소한 뒤 다시 시작하세요", job_id: "j" };
     expect(apiErrorMessage(fetchError(429, active), "실패")).toBe(active.message);
     for (const text of ["DeepRead 대화를 열 수 없습니다", "SKOVIX 계정이 필요합니다", "PDF 원문이 없는 자료입니다", "KCI 논문만 고를 수 있습니다", "AI가 답을 만들지 못했습니다(AI·PDF)"]) {
@@ -329,6 +329,7 @@ describe("apiErrorMessage — (0) 백엔드 오류 code 의 문구(CODE_MESSAGES
       internal_error: "서버에 문제가 생겼어요.\n잠시 뒤 다시 시도해 주세요.",
       search_unavailable: "검색 서버가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
       storage_unavailable: "원문 저장소가 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
+      queue_unavailable: "작업 대기열이 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.",
       not_found: "자료를 찾을 수 없어요",
       empty_answer: "답을 만들지 못했어요",
       retrieval_failed: "자료 내용을 읽지 못했어요.\n잠시 뒤 다시 시도해 주세요.",
@@ -342,6 +343,8 @@ describe("apiErrorMessage — (0) 백엔드 오류 code 의 문구(CODE_MESSAGES
     expect(apiErrorMessage(codedError(500, "internal_error"), "실패")).toBe(`실패 — ${CODE_MESSAGES.internal_error}`);
     expect(apiErrorMessage(codedError(503, "storage_unavailable", "원문 저장소가 잠시 응답하지 않아요."), "원문을 불러오지 못했어요"))
       .toBe(`원문을 불러오지 못했어요 — ${CODE_MESSAGES.storage_unavailable}`);
+    expect(apiErrorMessage(codedError(503, "queue_unavailable", "작업 대기열이 잠시 응답하지 않아요. 잠시 뒤 다시 시도해 주세요"), "적재를 시작하지 못했어요"))
+      .toBe("적재를 시작하지 못했어요 — 작업 대기열이 잠시 응답하지 않아요.\n잠시 뒤 다시 시도해 주세요.");
     // 서버의 detail 이 무엇이든(영문·개발자용 포함) code 문구만 보인다
     expect(apiErrorMessage(codedError(500, "internal_error", "Internal Server Error"), "")).toBe(CODE_MESSAGES.internal_error);
   });
@@ -350,7 +353,7 @@ describe("apiErrorMessage — (0) 백엔드 오류 code 의 문구(CODE_MESSAGES
     expect(apiErrorMessage(codedError(500, "ai_failed"), "실패")).toBe(`실패 — ${ERROR_HINTS.server}`);
     expect(apiErrorMessage(codedError(503, 3, "작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요"), "실패"))
       .toBe("작업 큐에 연결하지 못했어요 — 잠시 뒤 다시 시도해 주세요");
-    expect(apiErrorMessage(codedError(409, "toString", "목차를 만드는 중입니다"), "실패")).toBe("목차를 만드는 중입니다");
+    expect(apiErrorMessage(codedError(409, "toString", "목차를 만드는 중이에요"), "실패")).toBe("목차를 만드는 중이에요");
   });
 
   it("codeMessage — 자기 키만(상속 이름에 속지 않는다)", () => {
@@ -429,7 +432,7 @@ describe("toUserError — 화면이 쓰기 편한 한 번에", () => {
   it("그 밖에는 kind 와 apiErrorMessage 의 문구", () => {
     expect(toUserError(noResponse(domError("TimeoutError")), "결과를 불러오지 못했습니다"))
       .toEqual({ kind: "timeout", message: `결과를 불러오지 못했습니다 — ${ERROR_HINTS.timeout}` });
-    expect(toUserError(fetchError(404, "논문이 없습니다"), "실패")).toEqual({ kind: "notFound", message: "논문이 없습니다" });
+    expect(toUserError(fetchError(404, "논문을 찾을 수 없어요"), "실패")).toEqual({ kind: "notFound", message: "논문을 찾을 수 없어요" });
     expect(toUserError(fetchError(422, [{ type: "string_too_long", ctx: { max_length: 500 } }]), "실패"))
       .toEqual({ kind: "invalid", message: "500자까지 입력할 수 있어요" });
     expect(toUserError(new TypeError("Cannot read properties of null (reading 'books')"), "결과를 보이지 못했습니다"))
@@ -530,9 +533,9 @@ describe("실제 ofetch 오류 모양", () => {
     const respond = (status: number, body: unknown) =>
       (async () =>
         new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } })) as unknown as typeof fetch;
-    const notFound = await caught(createFetch({ fetch: respond(404, { detail: "논문이 없습니다" }) })("/api/x"));
+    const notFound = await caught(createFetch({ fetch: respond(404, { detail: "논문을 찾을 수 없어요" }) })("/api/x"));
     expect(errorKind(notFound)).toBe("notFound");
-    expect(apiErrorMessage(notFound, "실패")).toBe("논문이 없습니다");
+    expect(apiErrorMessage(notFound, "실패")).toBe("논문을 찾을 수 없어요");
     const server = await caught(createFetch({ fetch: respond(500, { detail: "Internal Server Error" }) })("/api/x", { retry: 0 }));
     expect(errorKind(server)).toBe("server");
     expect(apiErrorMessage(server, "실패")).toBe(`실패 — ${ERROR_HINTS.server}`);

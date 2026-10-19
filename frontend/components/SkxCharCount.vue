@@ -1,17 +1,19 @@
 <!-- frontend/components/SkxCharCount.vue -->
 <!-- 글자 수 표시 — 입력창의 maxlength 와 함께 쓴다(한도는 maxlength 가 막고, 이것은 얼마나 썼는지 보인다).
      '{length}/{max}' 를 늘 보이고, 한도 가까이(near — 기본 max 의 90%)면 --near, 한도에 닿으면(length >= max) --limit 와 함께
-     '{max}자까지 입력할 수 있습니다'(charLimitMessage — 서버 422 안내와 같은 말)를 보이며 화면 낭독기에도 알린다(aria-live="polite").
+     '{max}자까지 입력할 수 있어요'(charLimitMessage — 서버 422 안내와 같은 말)를 보이며 화면 낭독기에도 알린다(aria-live="polite").
      상태 셈은 utils/apiErrors.ts 의 charCountState(순수 함수 — 테스트가 직접 돌린다).
      알림 칸(__msg)은 비어 있어도 늘 그려 둔다 — 이미 있던 live 영역에 글이 들어가야 낭독기가 읽는다(한도에 닿는 순간 새로 생긴 요소는 놓친다).
      글자 수(__num)는 live 로 두지 않는다 — 한 글자마다 읽히면 입력을 방해한다. 입력창이 aria-describedby 로 이 요소의 id 를 가리키면
      초점을 줄 때 지금 글자 수가 읽힌다(id 는 뿌리 요소로 내려간다).
+     quiet 면 평소(normal)에는 화면에서만 숨기고(낭독기·aria-describedby 에는 그대로) 한도 가까이부터 보인다 — v-if 로 붙였다 떼면
+     한도에 닿는 순간 새로 생긴 live 영역을 낭독기가 놓친다. 검색창·질문 칸처럼 숫자가 늘 보이면 어수선한 자리에 쓴다(사용자 결정 2026-10-16).
      디자인은 이 클래스(style_skovix.css 의 '[S] 공통 오류·빈 상태')에만 입히면 실제 화면 전체에 반영된다:
        .skx-charcount · .skx-charcount--near · .skx-charcount--limit · [data-state="normal|near|limit"] · .skx-charcount__num · .skx-charcount__msg -->
 <template>
   <span
     class="skx-charcount"
-    :class="{ 'skx-charcount--near': state === 'near', 'skx-charcount--limit': state === 'limit' }"
+    :class="{ 'skx-charcount--near': state === 'near', 'skx-charcount--limit': state === 'limit', 'skx-charcount--quiet': quiet }"
     :data-state="state"
   >
     <span class="skx-charcount__msg" aria-live="polite">{{ state === "limit" ? limitMessage : "" }}</span>
@@ -29,6 +31,8 @@ const props = defineProps<{
   max: number;
   /** 이 글자 수부터 '가까움' 모양. 없으면 max 의 90%(소수점 아래 버림) */
   near?: number;
+  /** 평소(normal)에는 화면에서 숨기고 한도 가까이부터 보인다 — 낭독기 알림 영역은 늘 남는다 */
+  quiet?: boolean;
 }>();
 
 const state = computed(() => charCountState(props.length, props.max, props.near));

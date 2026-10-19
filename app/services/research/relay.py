@@ -43,6 +43,15 @@ def terminal_event(status: str, error: str | None = None) -> dict:
     return event
 
 
+# 하트비트 프레임 — 스트림 엔드포인트(api/research.py·research_work.py)가 subscribe 의 유휴 None 마다 흘린다.
+# 주석 줄(': ping')이 아니라 이름 붙은 이벤트다. 주석 줄은 EventSource 가 알리지 않아, 이벤트가 없는 동안(승인 대기·대기열)
+# 화면의 조용함 감시(useResearch — 45초)가 살아 있는 연결을 죽은 것으로 보고 끊었다 다시 붙기를 되풀이했다. 이름 붙은
+# 이벤트는 addEventListener('ping') 으로만 받고 onmessage 에는 가지 않아, 리스너가 없는 옛 화면은 그냥 버린다.
+# data 가 없으면 EventSource 가 이벤트를 내지 않아 빈 객체를 싣는다. 간격은 subscribe 의 idle_timeout(15초) —
+# 게이트웨이 proxy_read_timeout(120초) 안에서 연결을 이어 준다
+SSE_PING = "event: ping\ndata: {}\n\n"
+
+
 def _with_timeouts(url: str) -> str:
     """REDIS_URL 에 소켓 타임아웃을 얹는다. URL 에 이미 있는 값은 운영자 설정이라 그대로 둔다."""
     parts = urlsplit(url)
@@ -83,7 +92,7 @@ async def subscribe(
 ) -> AsyncIterator[dict | None]:
     """이벤트 dict 를 yield 한다. 유휴 구간에서는 None 을 yield 한다.
 
-    None 은 "아직 살아있다" 신호다. 엔드포인트가 이때 SSE 주석 프레임을 흘려
+    None 은 "아직 살아있다" 신호다. 엔드포인트가 이때 하트비트 프레임(SSE_PING)을 흘려
     끊긴 소켓을 감지하고, 잡이 이미 끝났는지도 확인한다. listen() 만 쓰면
     트래픽이 없는 동안 영원히 블록하므로 클라이언트가 조용히 끊겨도 알 방법이
     없다 — 아무것도 쓰지 않으니 broken pipe 조차 나지 않는다.
