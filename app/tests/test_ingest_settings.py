@@ -13,7 +13,7 @@ COMPOSE = Path(__file__).resolve().parents[2] / "docker-compose.yml"
 
 # 공통 계약의 설정 키 — 이름·타입·기본값
 ROUND07_DEFAULTS = {
-    "VLM_PAGE_CONCURRENCY": 2,
+    "VLM_PAGE_CONCURRENCY": 3,
     "INGEST_EXTRACT_DEADLINE": 2700,
     "INGEST_STAGE_TIMEOUT_EXTRACT": 3600,
     "INGEST_RETRY_BACKOFF_SECONDS": "120,600",
