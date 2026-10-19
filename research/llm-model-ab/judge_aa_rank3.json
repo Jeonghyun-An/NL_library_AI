@@ -1,0 +1,1853 @@
+{
+  "summary": "Blind-judge model-comparison outputs: deep-research synthesis reports and research-gap sections — sentence audit, adversarial verify, pairwise ranking",
+  "agentCount": 45,
+  "logs": [],
+  "result": {
+    "tally": {
+      "synth:B": {
+        "sentences": 0,
+        "S": 0,
+        "W": 0,
+        "M": 0,
+        "U_ok": 0,
+        "U_claim": 0,
+        "F": 0,
+        "refuted": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "wins": 5,
+        "losses": 1,
+        "ties": 0
+      },
+      "synth:A": {
+        "sentences": 0,
+        "S": 0,
+        "W": 0,
+        "M": 0,
+        "U_ok": 0,
+        "U_claim": 0,
+        "F": 0,
+        "refuted": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "wins": 1,
+        "losses": 5,
+        "ties": 0
+      },
+      "gap:A": {
+        "sentences": 0,
+        "S": 0,
+        "W": 0,
+        "M": 0,
+        "U_ok": 0,
+        "U_claim": 0,
+        "F": 0,
+        "refuted": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "wins": 7,
+        "losses": 10,
+        "ties": 1
+      },
+      "gap:B": {
+        "sentences": 0,
+        "S": 0,
+        "W": 0,
+        "M": 0,
+        "U_ok": 0,
+        "U_claim": 0,
+        "F": 0,
+        "refuted": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "wins": 10,
+        "losses": 7,
+        "ties": 1
+      }
+    },
+    "synthAudits": [],
+    "gapAudits": [],
+    "synthRanks": [
+      {
+        "kind": "synth",
+        "id": "8102",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "R1",
+              "votes": [
+                "R1",
+                "R1",
+                "R2"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "R1",
+                  "reason": "Both reports have the same structure, and each has one serious misreading of E2. R1 presents 성지은·김수진's null findings as E2's meta-analysis result and wrongly says E3 found an increase in studies. R2 has more false sentences: it gives E10's satisfaction and re-participation indicators as E2's meta-analysis result (twice), says E5 'confirmed' a program effect (twice) without support, and states that no impact-factor meta-analysis had been tried while also citing 최운선's. R1's 'Abstract 형태로 제공되었다' line is filler, but R2's errors empty out its performance-analysis section."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R1",
+                  "reason": "Both reports have serious errors. R1 says thesis research is increasing, while E3 says it is limited, and it presents a single study's null result as E2's meta-analysis finding. R2 has more unsupported claims: it attributes E10's satisfaction and re-participation indicators to E2's meta-analysis twice, says E5 'confirmed' program effects twice without support, and cites E18 for the small-group proposal that comes from E2. R1's section 4 is weaker but stays closer to the evidence, which outweighs R2's more accurate attributions in a few other places (E3, 성지은·김수진) and R1's 'Abstract 형태' filler sentence."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R2",
+                  "reason": "R2 is narrowly better. R1 gets two findings backwards. It says the number of studies is growing (E3 says they are scarce). It also presents the null results of 성지은·김수진, a single study that E2 cites, as E2's own meta-analysis result, even though E2 found an overall effect size of 0.624. R1 also leaves a stray meta-sentence about E5 being 'Abstract 형태로 제공'. R2 has its own serious faults: in section 4 it attributes E10's satisfaction and re-participation metrics to E2, and twice states 'E5 confirmed effects' without support. Outside section 4, R2 attributes findings correctly and is more specific (E6 중간 수준 상관, E7 지식·기술·태도, E11 gap)."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "synth",
+        "id": "3a1c",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "R1",
+              "votes": [
+                "R1",
+                "tie",
+                "R1"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "R1",
+                  "reason": "Both reports share major errors: the wrong year (2023), the reversed E1 path, and an E3 summary that contradicts the paper's finding that dependence does not predict later depression. R2 also invents E6 results (dependence rising with age, effects of SNS and game time), recasts E7 as a buffering effect and attributes E10's text to E13. R1's slips are mostly misattributions (E16's method placed under E17, E5's content-frequency point given to E6 and E3), so R1 is somewhat more faithful even though R2 is cleaner in places, such as section 3's citations, E14 in section 4 and E2's 'inner strength' point in section 6."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "tie",
+                  "reason": "Both reports have the same headings, use the same papers and make the same major errors. Each says E3 found a two-way effect, while E3 found only that depression predicts later smartphone dependence. Each reverses E1's direction, gives the wrong year (2023 for 2021), and neither contrasts E3 with E4. The smaller differences cancel out: R1 merges E16's grouping into an E17 claim and repeats itself more, while R2 credits E10's claim to E13 and makes up specific E6 findings."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R1",
+                  "reason": "Both reports misread E3 as showing a two-way effect (it found only depression to smartphone dependence) and both give the wrong year (2023) for the 37.0% figure. R2 has more unsupported content: it attributes E10's statement to E13, invents E6 findings (dependence rising with age, SNS and game time), cites E17 for a future-research line that paper does not support, and states the exact path E3 found non-significant. R1's main faults are one conflation (E16's scoring groups cited as E17) and a repeated sentence, so R1 is narrowly ahead."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "synth",
+        "id": "630e",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "R1",
+              "votes": [
+                "R1",
+                "R1",
+                "R1"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "R1",
+                  "reason": "Both reports share most of their structure and text. R2 adds more evidence errors: it reads E4's remark that earlier studies used groups of 20 or fewer as a finding of E4's own 232-child grade 1-3 study (section 1 intro and summary, section 4 intro), says E16's preschool share is 28% when it is 26%, and labels background passages from E4, E24 and E3 as their '연구 결과'. R1 has some of the same E4 mix-up, but it reports E16's figures correctly and attributes E1's review to 권희연 et al., so it is more faithful overall."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R1",
+                  "reason": "Both reports share the same structure and some of the same errors: they wrongly present E4 as the paper that compared children by age, they drop the citation on the time-trend sentence, and they include off-topic summaries. R2 adds more faithfulness errors. It says adult and preschool studies were each 28% when E16 gives 28% and 26%, and it repeatedly calls E4's 232-child test a small-group study. It also invents an ordering for E1's topics ('뒤를 이었다') and gives an E16-cited future line E16 does not support. R1 also contradicts itself once on E4 (232 children yet '수가 적어'), but on the whole it is the safer report to cite."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R1",
+                  "reason": "The two reports share the same structure and much of the same wording, but R2 has more faithfulness errors. It says adult and preschool studies each make up 28% in E16, when preschool is 26%. It describes E4's 232-pupil study as a small-group study in several places, presents literature-review passages from E24 and E3 as their own findings, and attaches research needs to E3 and E24 that those papers never state. R1 has some of the same E4 mix-up, but less often, and its limitations section stays closer to what E1 and E24 actually say."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "synth",
+        "id": "85d2",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "R2",
+              "votes": [
+                "R2",
+                "R2",
+                "R2"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "R2",
+                  "reason": "R1 has more faithfulness errors. It says 온라인 where E3 says 오프라인, it credits E5's 1990–2005 trend claim to E1 (a 2003 paper), it adds a big-data and qualitative-methods future line that E5 does not support, and it leaves a bare '[E5]' sentence. R2 shares some weaknesses, such as reference-derived summaries of E10 and E11 and presenting LibQual+ as domestic, but it avoids these extra errors and repeats itself less."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R2",
+                  "reason": "R1 has more faithfulness and markup problems. Its section 5 intro says '온라인 환경을 전제로' where E3 says offline, which also contradicts its own summary. It invents a big-data and qualitative-method future line under [E5], attributes E5's 1990–2005 trend to E1 (then repeats it almost word for word), presents E10's references as E10's own business-agility study, and leaves a bare '[E5]' sentence. R2 keeps the same structure with fewer and milder errors (an unsupported SERVQUAL claim for E10 and a loose reading of E6 and E18 in section 5)."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R2",
+                  "reason": "R1 has more errors: a bare \"[E5]\" left as a sentence, an inversion that calls the old models built for online settings when E3 says offline, the 1990-2005 trend credited to E1 when it is E5's and then repeated, and made-up E5, E11 and E13 claims such as big-data prediction models and an international trend review. R2 is more faithful and specific (3 dimensions, 22 items; the correct 1980s/1990s points from E1), though it has smaller slips of its own, such as SERVQUAL/SERVPERF credited to E10 and an unsupported 'room for improvement' line for E18."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "synth",
+        "id": "9ba1",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "R2",
+              "votes": [
+                "R2",
+                "R2",
+                "R2"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "R2",
+                  "reason": "The two reports are nearly the same and share the same miscitations: E2 is cited for the moderation effect, and E18's survey data and E13's background are presented as findings. R1 adds a few unsupported claims: E17 '사회적 지지가 우울과 자살에 영향을 미치는 것을 확인', E10's buffering effect stated as its own '확인', and E2's inclusion criteria described as its method. R2 describes E10 and E2 more accurately, even though its section 5 has no future line and repeats E2's figures."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R2",
+                  "reason": "R2 is a little better. The two reports have the same structure and many identical sentences and shared errors. R2 describes E2 accurately as a systematic review and gives E10's analysis correctly, while R1 adds a finding E17 never reports (social support affecting depression and suicide) and repeats sections 3 and 5 almost word for word. R2's one extra flaw is a stretched reading of E1 in section 2, which is smaller."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R2",
+                  "reason": "두 보고서는 구조와 공통 오류가 거의 같다. 예를 들어 E10의 조절효과를 [E2]로 인용했고, E17·E18·E19는 참고문헌 목록에서 끌어온 주장을 담았다. 다만 R1은 E17이 '사회적 지지가 우울과 자살에 영향을 미침을 확인했다'는 근거 없는 발견을 하나 더 만들었고, 5절 요약(s56·57)이 3절(s29·30)을 거의 그대로 되풀이한다. R2는 2절에 E3의 구조적·기능적 지지 구분을 넣어 제목에 더 잘 답하고, E2의 방법(국내외 DB, 포함 기준)도 더 정확히 적어 근소하게 낫다."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "synth",
+        "id": "d60a",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "R1",
+              "votes": [
+                "tie",
+                "R1",
+                "R1"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "tie",
+                  "reason": "Both reports have the same structure and largely the same text, and they share the same errors. Each counts reference-list titles as findings of E10 and E16, cites the 33% news headline as an E16 result, and says interpersonal relations moderated the outcome in E9 when E9 found no such effect. Each also makes unique mistakes in about equal number: R1 attributes the E9 claim to the systematic review, gives a cited prior study as E9's own result, and misreads rising depression as rising research, while R2 invents a change in database search practice in E1 and pins future-research lines on E2 that E2 does not support."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R1",
+                  "reason": "The two reports are close in structure and share several errors: both treat E10's reference list as its findings and both misread E16's '33% of patients' line. R2 adds more unfaithful content: an invented trend claim that search methods 'changed' (s73, E1), E16's reference titles presented as its own analyses (s35, s76), generic 'seeks ways to improve mental health' filler, and future-research lines tied to E2, which does not support them. R1's main slips are blending the E1 review with an E9 finding (s45) and misreading E11 in its last future line."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "R1",
+                  "reason": "The two reports share most of their structure and errors. R2 adds more faults of its own: it presents the reference titles in E16 and the background statements in E9 as findings of those papers, repeats the unsupported line '정신건강 증진 방안을 모색한다' three times, and invents a trend in section 6 ('검색 방식으로 변화하였다' [E1]). R1's own slips are fewer, including mislabeling an E9 claim as a systematic-review result and muddling the 2016 vs 2011 figure of 29.2%. R1 also gives more grounded detail, such as the database list and the 2011 노인실태조사 figure."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "gapRanks": [
+      {
+        "kind": "gap",
+        "id": "06123d9d",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "L1",
+              "votes": [
+                "L1",
+                "L1",
+                "L1"
+              ]
+            },
+            {
+              "winner": "L3",
+              "votes": [
+                "L2",
+                "L3",
+                "L3"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "L1",
+                  "reason": "L1 pairs each paper's finding with a gap tied to the research question, such as the missing analysis of how concept definitions changed with user needs. L4 mostly summarizes the papers and adds inferences such as sentence 4's '공공도서관에서도 … 강조한다 [E2]', which E2 does not say. L4 also uses E4's exact title in sentence 6 and states almost no real gaps, even though it covers E5. L1 never cites E5, and its gap claims go somewhat beyond what the cited papers say."
+                },
+                {
+                  "winner": "L2",
+                  "reason": "L3 states more specific gaps but has a clear miscitation. Sentence 2 cites E4 for a gap in measuring E1's statistical elements, which E4 never discusses, and sentence 8 also leans weakly on E4. L2's summaries of E1–E5 are all accurate. Its weaknesses are two uncited closing sentences (7–8) and gaps that are generic. Because faithfulness weighs most, L2 wins."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L1",
+                  "reason": "L4 only summarizes the papers and never states a gap. It also writes one paper's title into the text and stretches E2 to cover public libraries in S4. L1 pairs each finding with a gap tied to the research question, though some of its '부족하다' claims (S4 citing E2, S5 citing E3) go beyond what those papers say."
+                },
+                {
+                  "winner": "L3",
+                  "reason": "L3 states specific gaps for each paper, such as the lack of methods reflecting public-library traits and the mismatch with e-service settings, and it cites every sentence, although S2 wrongly cites E4. L2 is mostly a summary: its only gap comes in two uncited closing sentences, one of which leaves in the framing '본 연구는'."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L1",
+                  "reason": "L1 sets each paper's finding against a concrete gap tied to the research question. L4 only summarizes the literature and draws no explicit gaps. L4 also puts E4's paper title almost word for word into the text and adds an inference that E2 does not support (sentence 4)."
+                },
+                {
+                  "winner": "L3",
+                  "reason": "L3 states a specific gap for each piece of evidence and covers E1 through E5. Its weak points are loose [E4] citations in sentences 2 and 8 and a redundant sentence 5. L2 is mostly summary and its gap is a generic restatement of the research question. L2's last two sentences have no citation and use the wrong '본 연구는' framing."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "gap",
+        "id": "20ddd3b9",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "L2",
+              "votes": [
+                "L2",
+                "L2",
+                "L2"
+              ]
+            },
+            {
+              "winner": "L4",
+              "votes": [
+                "L4",
+                "L4",
+                "L4"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "L2",
+                  "reason": "Both outputs wrongly cite E2 for the claim that studies focus on single factors. L3 adds further errors: it says the analysis of trends, methods and keywords since 2010 is still needed when E2 is that analysis, and it states without support that E5 did no interaction analysis. L2's E4-based variables are accurate and its gaps stay closer to the research question, though it repeats itself somewhat."
+                },
+                {
+                  "winner": "L4",
+                  "reason": "L4 cites only E2 for the unsupported claim that studies focus on individual factors, while L1 cites E2-E5 together for it. L4 also names specific mother-related and household variables drawn from E4. L1 ends with a filler '본 연구는 ... 분석하고자 한다' sentence that just restates the research question and is cited to E1 without support."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L2",
+                  "reason": "L3 garbles E1 by saying children match peers 'after age 5', and it adds an off-topic gap about analysing trends in research methods and keywords, which is the very analysis E2 carries out. It also says E5 did not analyse interactions, which the excerpt cannot show. L2 stays on the research question and uses E4's variables (mother's education, years living in Korea) specifically, though it repeats itself and its E2 citation is also weak."
+                },
+                {
+                  "winner": "L4",
+                  "reason": "L1 piles four papers onto one unsupported claim and treats support workers' role as a factor, misreading E3, where they only answered the survey. It also ends with a filler 'this study aims to...' sentence that only restates the research question and is wrongly cited to E1. L4 grounds a specific interaction gap in E4's variables (nationality, education, years living in Korea, economic level), uses single citations, and has no filler."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L2",
+                  "reason": "L3 misreads E2: it says trend analysis of methods, types and keywords is still needed, but E2 is that analysis, and the point is off the research question. L3 also turns E1 into 'after age 5, similar to peers' and claims E5 did no such analysis without support. L2 repeats itself, but it stays closer to the evidence and ties concrete E4 variables (education, residence length, home environment) to the interaction gap."
+                },
+                {
+                  "winner": "L4",
+                  "reason": "L4 names specific E4 variables (nationality, education, residence length, economic level) as the interaction gap and cites more cleanly. L1 stacks [E2][E3][E4][E5] on a claim none of them makes, and ends with a filler 'this study aims to...' sentence wrongly cited to E1."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "gap",
+        "id": "630e0d65",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "L1",
+              "votes": [
+                "L1",
+                "L1",
+                "L1"
+              ]
+            },
+            {
+              "winner": "L2",
+              "votes": [
+                "L2",
+                "L2",
+                "L2"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "L1",
+                  "reason": "L1 and L3 are nearly identical, but L3 has small faithfulness slips that L1 avoids. L3 cites the gender analysis to E3 when only E4 reports it, says variable studies 'vary greatly by research type', which E2 does not say, and cites its interaction conclusion to E4, which says nothing about interactions."
+                },
+                {
+                  "winner": "L2",
+                  "reason": "L2 matches its claims to the right sources, using E4 for the age and gender findings and E3 for the critique of missing language-area analysis. Its flaws are minor: a repeated [E5] mark and a closing sentence that speaks as if the writer were doing the study. L4 cites a claim that interaction research is lacking to E5, which only discusses sample size. It also jumps from E2's trend-analysis gap to a need for interaction research, and its '그러나' wrongly suggests E4's 765-child study had a small sample."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L1",
+                  "reason": "Both outputs share the same unsupported claim that prior work failed to examine 'complex relations' [E1]. Both also wrongly apply E5's small-sample remark to the grade 1-3 study. L3 adds further faithfulness errors: S3 claims, without support, that variable research 'varies widely by study type' [E2], and S6 cites E4 for the need for interaction research, which E4 does not say. L1 cites more accurately."
+                },
+                {
+                  "winner": "L2",
+                  "reason": "L2 credits E4 for the study's findings and E3 for the critique that domain-specific analysis is missing, and it correctly frames E5's small-sample point as a weakness of earlier studies. L4 cites E5 for a lack of interaction research, which E5 never states, and links E2 to an interaction-research need it does not imply. It also starts the next sentence after the E4 findings with '그러나' ('however'), which implies the 765-child study used small samples."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L1",
+                  "reason": "The two are almost identical, but L3 cites [E4] for its closing sentence, and that descriptive age/sex study does not support it. L3 also attributes '성별' analysis to [E3] and adds an unsupported claim that variable studies '연구 유형별로 편차가 크며'. L1's citations match their sources."
+                },
+                {
+                  "winner": "L2",
+                  "reason": "L2 correctly credits the age/sex study to [E4] and its missing per-domain analysis to [E3]. L4 cites [E5] for a claim that interaction studies are lacking, which E5 never makes. L4 also uses '그러나' to pin E5's small-sample critique onto the 765-child E4 study. L2's '본 연구는' closing and its doubled [E5] are smaller flaws."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "gap",
+        "id": "660ff17e",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "L3",
+              "votes": [
+                "L3",
+                "L3",
+                "L3"
+              ]
+            },
+            {
+              "winner": "L1",
+              "votes": [
+                "L1",
+                "L1",
+                "L1"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "L3",
+                  "reason": "L3 uses E1's actual finding on senior users and ties each study to the research question. Its only weak point is a loose E4 citation in sentence 3. L4 never uses E1's content, says studies are '미흡' or still '필요' without evidence for it, and leaves its final sentence uncited."
+                },
+                {
+                  "winner": "L1",
+                  "reason": "Each cited sentence in L1 accurately reflects its paper, though sentences 3 and 8 have no citation and it reads more like a literature summary. L2 is more focused on gaps, but its claim that a comprehensive model is '미흡하다' is cited to E4, which does not say that. It also repeats [E5] within one sentence."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L3",
+                  "reason": "L3 states a clearer gap: the E2 and E3 studies focus on particular settings, and E5 notes that existing models leave out user characteristics. Its weak points are citing [E4] for a synthesis claim and [E1] for its conclusion. L4 has more uncited sentences, including its final one, and two uncited 'not enough research' claims. It also has awkward phrasing ('연구는 필요하다') and a vague E3 sentence ('시사점을 제공한다')."
+                },
+                {
+                  "winner": "L1",
+                  "reason": "L1's citations each point to the paper that actually says the thing. Its faults are two uncited inference sentences (S3 and S8) and a summary-like structure. L2 has a sharper gap structure, but it cites [E4] for 'the public-library model is lacking', which E4 (a university-library study) does not say. It also cites [E1] for its conclusion, so faithfulness favors L1."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L3",
+                  "reason": "Both outputs name evidence papers by near-exact title. L4 also asserts without support that research reflecting public-library user characteristics is lacking ('미흡하다'), leaves its conclusion uncited, and never uses the senior-user finding from E1. L3 cites every sentence and builds its gap on E1's age-group finding; its [E4] citation is a stretch but is loosely backed by E4's note that research covering all user groups is needed."
+                },
+                {
+                  "winner": "L1",
+                  "reason": "L2 states its main gap, that a model covering public-library age groups is lacking ('미흡하다'), and cites E4, a university-library study that does not say this. It also leans on [E1] for its conclusion. L1 reads more like a literature summary and leaves two linking sentences uncited, but each paper description matches its source and it makes no unsupported claim that a topic is under-studied."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "gap",
+        "id": "911d9583",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "L4",
+              "votes": [
+                "L4",
+                "L4",
+                "L4"
+              ]
+            },
+            {
+              "winner": "L3",
+              "votes": [
+                "L1",
+                "L3",
+                "L3"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "L4",
+                  "reason": "L4 stays close to the evidence: it cites the seed with [E1] and accurately uses E2's point that study-room users value facilities. L2 repeatedly frames gaps as '본 연구에서는…', attaches quality of life to E3 even though E3 does not mention it, and stretches E4 into a claim about youth facility and program development."
+                },
+                {
+                  "winner": "L1",
+                  "reason": "L1 avoids E1's item count, where L3 gives '5개 항목'. L1 also brings in E5's facility, space and program service findings, which bear directly on the research question. L1 slightly overstates E5's correlations as effects on quality of life, and L3 is more concise, but L1 is more complete and keeps to the numbers rule."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L4",
+                  "reason": "L4 stays with what E1, E2 and E3 actually say and ties each one to facility and program factors. One example is its point about study-room users who care most about facilities, taken from E2. L2 adds 'this study will' sentences with no citation, stretches E3 into quality of life, and drifts off the research question into a youth-specific study from E4."
+                },
+                {
+                  "winner": "L3",
+                  "reason": "L3 is concise and ties each paper back to facility and program factors. L1 overstates E5 by turning correlations into claims that space and facility satisfaction improve quality of life, which the abstract does not support. L1 also ends with a generic filler sentence. Both outputs put paper titles in the text, and L3 also states the '5 items' number."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L4",
+                  "reason": "L4 stays close to E1-E3 and makes concrete points, such as E2's example of people who use the library as a study room caring most about facilities, and it ties each one to facility and program factors. L2 drifts away from the evidence: it reads quality of life into E3 and narrows E4 to teenage users of the multi-purpose space. It also uses awkward '본 연구에서는 ... 해야 한다' phrasing. Both quote the '5개' number."
+                },
+                {
+                  "winner": "L3",
+                  "reason": "L3 is shorter, and each implication ties to the research question's facility and program factors, for example comfortable space via E4. L1 is longer and mostly summarizes the papers with filler '시사한다' lines. Its S12 also overstates E5 by saying the space and facility services improve quality of life when E5 only reports correlations for them, though L1 does avoid quoting the '5개' number."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "gap",
+        "id": "9ba10849",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "L1",
+              "votes": [
+                "L1",
+                "L1",
+                "L1"
+              ]
+            },
+            {
+              "winner": "L3",
+              "votes": [
+                "L3",
+                "L4",
+                "L3"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "L1",
+                  "reason": "L1 sticks closer to the evidence. Its E1 and E2 sentences are accurate, though S6 wrongly cites E4 for the gap that E4 itself studies, and S7 gives E5 a citation that only decorates the sentence. L2 cites E1–E5 together for an unsupported \"미흡하다\" claim, cites E5 for a gap it never states, adds support subtypes to E1 that E1 does not list (지역사회, 정보적, 평가적), and repeats the same phrase three times."
+                },
+                {
+                  "winner": "L3",
+                  "reason": "Both misstate E2 and claim gaps in E4 that the evidence does not support. Both also echo paper titles. L3 has five uncited sentences and adds \"동료\", which is not in the evidence. L4 cites all five papers at once twice, says detailed subtype review is limited when E2 did that review, and is generic and repetitive. L3 ties its gaps more specifically to the research question: emotional support, support sources beyond family, and network types."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L1",
+                  "reason": "L1 summarizes E1, E2 and E3 accurately and names a concrete gap: E1 only studied rural elderly. Its errors are two uncited sentences, an E4 citation for a 'limited' claim that E4 itself refutes, and an E5 citation on a plan. L2 cites all five papers at once in S1, cites E5 for a gap it never states, invents support subtypes and cites them to E1, and repeats 'the specific type is understudied' without substance."
+                },
+                {
+                  "winner": "L4",
+                  "reason": "L4 is repetitive and cites all five papers at once twice, but its specific content is grounded: E1's mediating effects and E2's missing effect sizes. L3 has five of nine sentences uncited and misreads E2 as calling for the analysis it actually did. L3 also says sources other than family are understudied, but E2 reports that support from friends and significant others reduces depression."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L1",
+                  "reason": "L1 cites a single paper per claim and states a clear seed-based gap: the structural/functional split was tested only on rural elderly [E1]. It still misuses E4 and E5 and leaves two sentences uncited. L2 opens with a five-citation dump, attributes support subtypes to E1 that E1 never lists, and uses repetitive '미흡' filler, which outweighs its correct effect-size gap from E2."
+                },
+                {
+                  "winner": "L3",
+                  "reason": "L3 has precise single citations and specific gaps tied to the research question: the rural-only limit and support sources beyond family. However, it leaves several plan sentences uncited and makes one weakly supported '덜 연구되었다' claim. L4 cites all five papers twice, nearly restates paper titles in the text, and repeats itself in long run-on sentences that end in generic '필요하다' gaps."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "gap",
+        "id": "c816c7b2",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "L2",
+              "votes": [
+                "L2",
+                "L2",
+                "L2"
+              ]
+            },
+            {
+              "winner": "L1",
+              "votes": [
+                "L1",
+                "L1",
+                "L1"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "L2",
+                  "reason": "L4 cites the wrong papers in several places: E1's 'support system groundwork' is cited to E2/E3, a research need to E4, and an 'unstudied' claim to E5. It also says the topic was never studied, invents example subtypes, and ends with an uncited '본 연구는' sentence. L2 adds some unsupported gap claims (e.g., that E2 shows few rural-focused studies) and reuses near-verbatim titles, but it describes each paper accurately and cites the right source."
+                },
+                {
+                  "winner": "L1",
+                  "reason": "L1 is more specific and faithful in its descriptions. It says E3 found family support reduces depression, E1 found direct effects of material support, and E2 shows that many different scales are in use. L3 repeats the same generic 'relative influence analysis is lacking' gap for nearly every paper, has a typo ('사회적 지망'), and uses verbatim titles. L1's flaws are smaller: the 'Zimet 등' author mention and one unsupported claim about E2 lacking rural program evaluation."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L2",
+                  "reason": "L4 has several faithfulness problems. It cites E4 and E5 for claims those papers do not make, says 'no study was found', which breaks the rule against calling a topic unstudied, and ends with an uncited '본 연구는' sentence. L2 also over-reaches in places, for example its E2 gap claims, but it summarizes each paper accurately and ties its gaps to the research question."
+                },
+                {
+                  "winner": "L1",
+                  "reason": "L1 gives more specific, accurate findings (family support in E3, material support in E1) and more varied gaps, such as inconsistent scales in E2 and the lack of rural program evaluation. L3 repeats '상대적 영향력에 대한 구체적인 분석이 부족하다' for almost every paper, has the typo '사회적 지망', and copies paper titles nearly verbatim."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L2",
+                  "reason": "L2 describes each paper accurately, with citations that match what each paper says (E3, E1, E4, E5), and it ends with the seed gap. L4 cites papers for claims they do not make: it credits E1's 'basic data for a support system' to E2/E3, cites E4 for support subtypes, and pins an 'unstudied' claim on E5. It also claims topics were never studied and ends with an uncited sentence written as '본 연구'."
+                },
+                {
+                  "winner": "L1",
+                  "reason": "L1 gives specific, faithful findings, such as family support easing depression in E3 and material support in E1. Its gaps vary, including inconsistent support measures across studies and program effectiveness. L3 repeats one formula, 'lacks analysis of relative influence', in almost every sentence, has the typo '사회적 지망', and nearly reproduces E1's title. L1's only small slip is naming the author Zimet."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "gap",
+        "id": "d60a5dc1",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "L4",
+              "votes": [
+                "L4",
+                "L4",
+                "L4"
+              ]
+            },
+            {
+              "winner": "L3",
+              "votes": [
+                "L3",
+                "L3",
+                "L3"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "L4",
+                  "reason": "L1 cites papers for claims they do not make: the rural-versus-urban comparison is cited to E2 and the change-over-time need to E1. It also presents E2's sub-type analysis as still needed, and its E1 'same context' link is a stretch. L4 has two uncited inference sentences and repeats the effect-size point, but its cited claims match E2, E4 and E5, and its gaps are more specific."
+                },
+                {
+                  "winner": "L3",
+                  "reason": "Both misstate E2 by treating its detailed sub-type analysis as a limitation. L2 adds a rural-versus-urban difference that E4 never states, cites E3, whose text is only a reference list, and stays generic. L3 reports E2's effect-size limit and E4's mediation findings accurately and states more specific gaps, though it leaves one generic sentence uncited."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L4",
+                  "reason": "L1 cites papers that do not say what it claims: the rural-versus-urban comparison is cited to E2 and the change in support networks over time to E1, and it forces a link between E4 and E1. L4 says the effect-size point twice (sentences 3 and 4) and leaves two inference sentences without a citation, but its cited claims match E2, E4 and E5."
+                },
+                {
+                  "winner": "L3",
+                  "reason": "Both copy the seed and wrongly present E2's own analysis of support sub-types as missing. L2 also cites E3, whose excerpt is only a reference list, says sub-type research is lacking, and draws an urban-rural difference that E4 does not support. L3 describes E4 accurately and in detail and ties the effect-size and age-group gaps to E2 and E5, with only one uncited sentence."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L4",
+                  "reason": "L1 cites sources that do not say what it claims: the rural-versus-urban comparison is pinned to E2, and the change in support networks over time is pinned to E1. It also uses E1's self-esteem findings as a forced parallel. L4 stays faithful to E2 and E4 and ties its gaps to support type and age group, though its sentences 3 and 4 repeat the effect-size point and sentences 6 and 7 have no citation."
+                },
+                {
+                  "winner": "L3",
+                  "reason": "L2 is short and generic, and its sentence 2 cites E3, whose text holds only references. It also attributes a rural-versus-urban guess to E4 and comes close to calling the topic unstudied. L3 likewise misstates E2's scope in sentence 2, but it gives the specific E2 effect-size and meta-analysis gap, a detailed and accurate account of E4's structural and functional support findings, and a gap tied to E5's age groups."
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "kind": "gap",
+        "id": "d8348de8",
+        "rank": {
+          "pairs": [
+            {
+              "winner": "L3",
+              "votes": [
+                "L3",
+                "L3",
+                "L3"
+              ]
+            },
+            {
+              "winner": "tie",
+              "votes": [
+                "L1",
+                "tie",
+                "L4"
+              ]
+            }
+          ],
+          "votes": [
+            {
+              "pairs": [
+                {
+                  "winner": "L3",
+                  "reason": "L3 describes each paper's actual scope accurately and ties each gap to scheduling and efficiency, although it breaks the no-title rule throughout and repeats itself. L2 cites the hardware-grid point to [E2][E3] instead of [E1], and its claim that resource-use patterns differ by service type is not in [E4][E5]."
+                },
+                {
+                  "winner": "L1",
+                  "reason": "Both follow the same pattern: the seed sentence, a list of the papers, then a generic gap. L1 summarizes each paper roughly accurately, with only a mild stretch on [E3]. L4 cites all five papers [E1]-[E5] for a research-needed claim none of them makes, and adds an unsupported claim that resource requirements differ by service type."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L3",
+                  "reason": "L3 breaks the rule against naming papers, and its paper-by-paper list is repetitive. Its citations are accurate, though, and each gap is limited to the paper it cites. L2 miscites: it uses E2/E3 for the grid claim and E4/E5 for differing usage patterns. It also says the whole field lacks research, which the evidence does not support."
+                },
+                {
+                  "winner": "tie",
+                  "reason": "Both copy the seed, summarize the five papers with mostly correct citations, and end with a gap tied to the research question. L1 has a garbled run-on third sentence and ends with a research plan. L4 cites all five papers for a recommendation they do not support and loosely calls the grid paper cloud research. The two have a similar number and severity of errors."
+                }
+              ]
+            },
+            {
+              "pairs": [
+                {
+                  "winner": "L3",
+                  "reason": "L2 misattributes claims: it cites E2 and E3 for the hardware-grid point, which comes from E1, and cites E4 for service-type usage patterns that no evidence supports. L3 puts paper titles in the text and repeats one sentence pattern, but it describes each paper accurately, cites the right [E#] each time, and ties each one to the scheduling gap."
+                },
+                {
+                  "winner": "L4",
+                  "reason": "Both open with the seed, summarise the evidence and leave the gap claim uncited. L4 summarises the papers accurately and states a specific gap about scheduling across IaaS, PaaS and SaaS, though it cites all five papers at once. L1 overstates what E3 says, its gap sentence is run-on and awkward, and it ends with a research plan instead of a gap."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Audit"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Verify"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Rank"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "rank:faithful:synth:8102",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "adce40e2c6df7b586",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412119,
+      "queuedAt": 1792377412099,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/8102.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377474297,
+      "tokens": 117631,
+      "toolCalls": 7,
+      "durationMs": 62178,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R1\",\"reason\":\"Both reports have the same structure, and each has one serious misreading of E2. R1 presents 성지은·김수진's null findings as E2's meta-analysis result and wrongly says E3 found an increase in studies. R2 has more false sentences: it gives E10's satisfaction and re-participation indicators as E2's meta-analysis result (twice), says E5 'confirmed' a program effect (twic…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "rank:reader:synth:8102",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a892ebb02b4e5f559",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412119,
+      "queuedAt": 1792377412099,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/8102.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377473657,
+      "tokens": 117478,
+      "toolCalls": 6,
+      "durationMs": 61537,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R1\",\"reason\":\"Both reports have serious errors. R1 says thesis research is increasing, while E3 says it is limited, and it presents a single study's null result as E2's meta-analysis finding. R2 has more unsupported claims: it attributes E10's satisfaction and re-participation indicators to E2's meta-analysis twice, says E5 'confirmed' program effects twice without support, an…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "rank:demo:synth:8102",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a17efc526f91cc5c2",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412119,
+      "queuedAt": 1792377412100,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/8102.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377482777,
+      "tokens": 120462,
+      "toolCalls": 9,
+      "durationMs": 70656,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R2\",\"reason\":\"R2 is narrowly better. R1 gets two findings backwards. It says the number of studies is growing (E3 says they are scarce). It also presents the null results of 성지은·김수진, a single study that E2 cites, as E2's own meta-analysis result, even though E2 found an overall effect size of 0.624. R1 also leaves a stray meta-sentence about E5 being 'Abstract 형태로 제공'. R2 has …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "rank:faithful:synth:3a1c",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a4a6ead3842d3624f",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412186,
+      "queuedAt": 1792377412180,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/3a1c.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377496512,
+      "tokens": 122381,
+      "toolCalls": 9,
+      "durationMs": 84326,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R1\",\"reason\":\"Both reports share major errors: the wrong year (2023), the reversed E1 path, and an E3 summary that contradicts the paper's finding that dependence does not predict later depression. R2 also invents E6 results (dependence rising with age, effects of SNS and game time), recasts E7 as a buffering effect and attributes E10's text to E13. R1's slips are mostly misat…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "rank:reader:synth:3a1c",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "ae0070137d7aaefa6",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412186,
+      "queuedAt": 1792377412181,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/3a1c.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377501139,
+      "tokens": 122578,
+      "toolCalls": 10,
+      "durationMs": 88953,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"tie\",\"reason\":\"Both reports have the same headings, use the same papers and make the same major errors. Each says E3 found a two-way effect, while E3 found only that depression predicts later smartphone dependence. Each reverses E1's direction, gives the wrong year (2023 for 2021), and neither contrasts E3 with E4. The smaller differences cancel out: R1 merges E16's grouping i…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "rank:demo:synth:3a1c",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aba3200d202d084b0",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412186,
+      "queuedAt": 1792377412181,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/3a1c.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377489000,
+      "tokens": 121453,
+      "toolCalls": 6,
+      "durationMs": 76813,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R1\",\"reason\":\"Both reports misread E3 as showing a two-way effect (it found only depression to smartphone dependence) and both give the wrong year (2023) for the 37.0% figure. R2 has more unsupported content: it attributes E10's statement to E13, invents E6 findings (dependence rising with age, SNS and game time), cites E17 for a future-research line that paper does not suppor…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 7,
+      "label": "rank:faithful:synth:630e",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a2d13c0a883e688ed",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412245,
+      "queuedAt": 1792377412239,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/630e.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377454008,
+      "tokens": 110242,
+      "toolCalls": 4,
+      "durationMs": 41763,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R1\",\"reason\":\"Both reports share most of their structure and text. R2 adds more evidence errors: it reads E4's remark that earlier studies used groups of 20 or fewer as a finding of E4's own 232-child grade 1-3 study (section 1 intro and summary, section 4 intro), says E16's preschool share is 28% when it is 26%, and labels background passages from E4, E24 and E3 as their '연구 …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 8,
+      "label": "rank:reader:synth:630e",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "ae8a6c49213e00217",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412245,
+      "queuedAt": 1792377412239,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/630e.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377466325,
+      "tokens": 110747,
+      "toolCalls": 6,
+      "durationMs": 54079,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R1\",\"reason\":\"Both reports share the same structure and some of the same errors: they wrongly present E4 as the paper that compared children by age, they drop the citation on the time-trend sentence, and they include off-topic summaries. R2 adds more faithfulness errors. It says adult and preschool studies were each 28% when E16 gives 28% and 26%, and it repeatedly calls E4's …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 9,
+      "label": "rank:demo:synth:630e",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aa58ec93d919ea665",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412245,
+      "queuedAt": 1792377412239,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/630e.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377456326,
+      "tokens": 110725,
+      "toolCalls": 6,
+      "durationMs": 44080,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R1\",\"reason\":\"The two reports share the same structure and much of the same wording, but R2 has more faithfulness errors. It says adult and preschool studies each make up 28% in E16, when preschool is 26%. It describes E4's 232-pupil study as a small-group study in several places, presents literature-review passages from E24 and E3 as their own findings, and attaches research …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 10,
+      "label": "rank:faithful:synth:85d2",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aa252a685363a40c9",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412318,
+      "queuedAt": 1792377412313,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/85d2.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377453008,
+      "tokens": 109511,
+      "toolCalls": 3,
+      "durationMs": 40690,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R2\",\"reason\":\"R1 has more faithfulness errors. It says 온라인 where E3 says 오프라인, it credits E5's 1990–2005 trend claim to E1 (a 2003 paper), it adds a big-data and qualitative-methods future line that E5 does not support, and it leaves a bare '[E5]' sentence. R2 shares some weaknesses, such as reference-derived summaries of E10 and E11 and presenting LibQual+ as domestic, but it…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 11,
+      "label": "rank:reader:synth:85d2",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aa30825eb58b8c550",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412318,
+      "queuedAt": 1792377412313,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/85d2.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377457309,
+      "tokens": 109989,
+      "toolCalls": 5,
+      "durationMs": 44990,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R2\",\"reason\":\"R1 has more faithfulness and markup problems. Its section 5 intro says '온라인 환경을 전제로' where E3 says offline, which also contradicts its own summary. It invents a big-data and qualitative-method future line under [E5], attributes E5's 1990–2005 trend to E1 (then repeats it almost word for word), presents E10's references as E10's own business-agility study, and lea…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 12,
+      "label": "rank:demo:synth:85d2",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a050094af5ab3413a",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412318,
+      "queuedAt": 1792377412313,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/85d2.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377455529,
+      "tokens": 109967,
+      "toolCalls": 5,
+      "durationMs": 43210,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R2\",\"reason\":\"R1 has more errors: a bare \\\"[E5]\\\" left as a sentence, an inversion that calls the old models built for online settings when E3 says offline, the 1990-2005 trend credited to E1 when it is E5's and then repeated, and made-up E5, E11 and E13 claims such as big-data prediction models and an international trend review. R2 is more faithful and specific (3 dimensions,…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 13,
+      "label": "rank:faithful:synth:9ba1",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a41148c63dbf0b099",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412375,
+      "queuedAt": 1792377412370,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/9ba1.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377471541,
+      "tokens": 108666,
+      "toolCalls": 5,
+      "durationMs": 59166,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R2\",\"reason\":\"The two reports are nearly the same and share the same miscitations: E2 is cited for the moderation effect, and E18's survey data and E13's background are presented as findings. R1 adds a few unsupported claims: E17 '사회적 지지가 우울과 자살에 영향을 미치는 것을 확인', E10's buffering effect stated as its own '확인', and E2's inclusion criteria described as its method. R2 describes E10…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 14,
+      "label": "rank:reader:synth:9ba1",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "ab441cf097b256129",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412375,
+      "queuedAt": 1792377412370,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/9ba1.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377470135,
+      "tokens": 108168,
+      "toolCalls": 3,
+      "durationMs": 57760,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R2\",\"reason\":\"R2 is a little better. The two reports have the same structure and many identical sentences and shared errors. R2 describes E2 accurately as a systematic review and gives E10's analysis correctly, while R1 adds a finding E17 never reports (social support affecting depression and suicide) and repeats sections 3 and 5 almost word for word. R2's one extra flaw is a …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 15,
+      "label": "rank:demo:synth:9ba1",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a51c053249baf6464",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412375,
+      "queuedAt": 1792377412370,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/9ba1.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377468671,
+      "tokens": 108644,
+      "toolCalls": 5,
+      "durationMs": 56295,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R2\",\"reason\":\"두 보고서는 구조와 공통 오류가 거의 같다. 예를 들어 E10의 조절효과를 [E2]로 인용했고, E17·E18·E19는 참고문헌 목록에서 끌어온 주장을 담았다. 다만 R1은 E17이 '사회적 지지가 우울과 자살에 영향을 미침을 확인했다'는 근거 없는 발견을 하나 더 만들었고, 5절 요약(s56·57)이 3절(s29·30)을 거의 그대로 되풀이한다. R2는 2절에 E3의 구조적·기능적 지지 구분을 넣어 제목에 더 잘 답하고, E2의 방법(국내외 DB, 포함 기준)도 더 정확히 적어 근소하게 낫다.\"}]}"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 16,
+      "label": "rank:faithful:synth:d60a",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a10744c1815790819",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377412427,
+      "queuedAt": 1792377412424,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/d60a.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377464330,
+      "tokens": 109327,
+      "toolCalls": 7,
+      "durationMs": 51903,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"tie\",\"reason\":\"Both reports have the same structure and largely the same text, and they share the same errors. Each counts reference-list titles as findings of E10 and E16, cites the 33% news headline as an E16 result, and says interpersonal relations moderated the outcome in E9 when E9 found no such effect. Each also makes unique mistakes in about equal number: R1 attributes …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 17,
+      "label": "rank:reader:synth:d60a",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aac4c2d8457cb8b29",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377454056,
+      "queuedAt": 1792377412424,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/d60a.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377493072,
+      "tokens": 108812,
+      "toolCalls": 5,
+      "durationMs": 39015,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R1\",\"reason\":\"The two reports are close in structure and share several errors: both treat E10's reference list as its findings and both misread E16's '33% of patients' line. R2 adds more unfaithful content: an invented trend claim that search methods 'changed' (s73, E1), E16's reference titles presented as its own analyses (s35, s76), generic 'seeks ways to improve mental heal…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 18,
+      "label": "rank:demo:synth:d60a",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aa69a710835c2777b",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377454902,
+      "queuedAt": 1792377412424,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/synth/d60a.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one deep-research question, several candidate reports (outputs R1, R2, … — produced by different s…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377498193,
+      "tokens": 108622,
+      "toolCalls": 4,
+      "durationMs": 43291,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"R1\",\"reason\":\"The two reports share most of their structure and errors. R2 adds more faults of its own: it presents the reference titles in E16 and the background statements in E9 as findings of those papers, repeats the unsupported line '정신건강 증진 방안을 모색한다' three times, and invents a trend in section 6 ('검색 방식으로 변화하였다' [E1]). R1's own slips are fewer, including mislabeling an E…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 19,
+      "label": "rank:faithful:gap:06123d9d",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a3ad58a2d455f10c9",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377456421,
+      "queuedAt": 1792377412446,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/06123d9d.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377494539,
+      "tokens": 73628,
+      "toolCalls": 2,
+      "durationMs": 38118,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L1\",\"reason\":\"L1 pairs each paper's finding with a gap tied to the research question, such as the missing analysis of how concept definitions changed with user needs. L4 mostly summarizes the papers and adds inferences such as sentence 4's '공공도서관에서도 … 강조한다 [E2]', which E2 does not say. L4 also uses E4's exact title in sentence 6 and states almost no real gaps, even though it c…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 20,
+      "label": "rank:reader:gap:06123d9d",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a6de8c49421d371aa",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377457214,
+      "queuedAt": 1792377412446,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/06123d9d.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377490075,
+      "tokens": 73651,
+      "toolCalls": 2,
+      "durationMs": 32861,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L1\",\"reason\":\"L4 only summarizes the papers and never states a gap. It also writes one paper's title into the text and stretches E2 to cover public libraries in S4. L1 pairs each finding with a gap tied to the research question, though some of its '부족하다' claims (S4 citing E2, S5 citing E3) go beyond what those papers say.\"},{\"winner\":\"L3\",\"reason\":\"L3 states specific gaps for …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 21,
+      "label": "rank:demo:gap:06123d9d",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a41506ea00f6c63f6",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377458247,
+      "queuedAt": 1792377412446,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/06123d9d.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377485669,
+      "tokens": 73641,
+      "toolCalls": 2,
+      "durationMs": 27422,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L1\",\"reason\":\"L1 sets each paper's finding against a concrete gap tied to the research question. L4 only summarizes the literature and draws no explicit gaps. L4 also puts E4's paper title almost word for word into the text and adds an inference that E2 does not support (sentence 4).\"},{\"winner\":\"L3\",\"reason\":\"L3 states a specific gap for each piece of evidence and covers E1 t…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 22,
+      "label": "rank:faithful:gap:20ddd3b9",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a303b393dd46efb83",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377465494,
+      "queuedAt": 1792377412446,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/20ddd3b9.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377489912,
+      "tokens": 71098,
+      "toolCalls": 2,
+      "durationMs": 24418,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L2\",\"reason\":\"Both outputs wrongly cite E2 for the claim that studies focus on single factors. L3 adds further errors: it says the analysis of trends, methods and keywords since 2010 is still needed when E2 is that analysis, and it states without support that E5 did no interaction analysis. L2's E4-based variables are accurate and its gaps stay closer to the research question,…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 23,
+      "label": "rank:reader:gap:20ddd3b9",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a890c718052c79c1d",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377468040,
+      "queuedAt": 1792377412446,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/20ddd3b9.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377493169,
+      "tokens": 71119,
+      "toolCalls": 2,
+      "durationMs": 25129,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L2\",\"reason\":\"L3 garbles E1 by saying children match peers 'after age 5', and it adds an off-topic gap about analysing trends in research methods and keywords, which is the very analysis E2 carries out. It also says E5 did not analyse interactions, which the excerpt cannot show. L2 stays on the research question and uses E4's variables (mother's education, years living in Kore…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 24,
+      "label": "rank:demo:gap:20ddd3b9",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a82ab43c93c821377",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377470857,
+      "queuedAt": 1792377412446,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/20ddd3b9.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377493423,
+      "tokens": 71116,
+      "toolCalls": 2,
+      "durationMs": 22566,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L2\",\"reason\":\"L3 misreads E2: it says trend analysis of methods, types and keywords is still needed, but E2 is that analysis, and the point is off the research question. L3 also turns E1 into 'after age 5, similar to peers' and claims E5 did no such analysis without support. L2 repeats itself, but it stays closer to the evidence and ties concrete E4 variables (education, resid…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 25,
+      "label": "rank:faithful:gap:630e0d65",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aa02661c08f94d290",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377471316,
+      "queuedAt": 1792377412446,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/630e0d65.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377489441,
+      "tokens": 71971,
+      "toolCalls": 2,
+      "durationMs": 18125,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L1\",\"reason\":\"L1 and L3 are nearly identical, but L3 has small faithfulness slips that L1 avoids. L3 cites the gender analysis to E3 when only E4 reports it, says variable studies 'vary greatly by research type', which E2 does not say, and cites its interaction conclusion to E4, which says nothing about interactions.\"},{\"winner\":\"L2\",\"reason\":\"L2 matches its claims to the righ…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 26,
+      "label": "rank:reader:gap:630e0d65",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a0280129a6552d3da",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377472897,
+      "queuedAt": 1792377412446,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/630e0d65.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377495883,
+      "tokens": 72002,
+      "toolCalls": 2,
+      "durationMs": 22986,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L1\",\"reason\":\"Both outputs share the same unsupported claim that prior work failed to examine 'complex relations' [E1]. Both also wrongly apply E5's small-sample remark to the grade 1-3 study. L3 adds further faithfulness errors: S3 claims, without support, that variable research 'varies widely by study type' [E2], and S6 cites E4 for the need for interaction research, which E…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 27,
+      "label": "rank:demo:gap:630e0d65",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "af0dca41990a08448",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377474592,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/630e0d65.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377492320,
+      "tokens": 71984,
+      "toolCalls": 2,
+      "durationMs": 17727,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L1\",\"reason\":\"The two are almost identical, but L3 cites [E4] for its closing sentence, and that descriptive age/sex study does not support it. L3 also attributes '성별' analysis to [E3] and adds an unsupported claim that variable studies '연구 유형별로 편차가 크며'. L1's citations match their sources.\"},{\"winner\":\"L2\",\"reason\":\"L2 correctly credits the age/sex study to [E4] and its missin…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 28,
+      "label": "rank:faithful:gap:660ff17e",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "af267373d33937f96",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377475340,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/660ff17e.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377499070,
+      "tokens": 73181,
+      "toolCalls": 2,
+      "durationMs": 23730,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L3\",\"reason\":\"L3 uses E1's actual finding on senior users and ties each study to the research question. Its only weak point is a loose E4 citation in sentence 3. L4 never uses E1's content, says studies are '미흡' or still '필요' without evidence for it, and leaves its final sentence uncited.\"},{\"winner\":\"L1\",\"reason\":\"Each cited sentence in L1 accurately reflects its paper, thoug…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 29,
+      "label": "rank:reader:gap:660ff17e",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a05ae651d0d6802d9",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377484046,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/660ff17e.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377514302,
+      "tokens": 73207,
+      "toolCalls": 2,
+      "durationMs": 30256,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L3\",\"reason\":\"L3 states a clearer gap: the E2 and E3 studies focus on particular settings, and E5 notes that existing models leave out user characteristics. Its weak points are citing [E4] for a synthesis claim and [E1] for its conclusion. L4 has more uncited sentences, including its final one, and two uncited 'not enough research' claims. It also has awkward phrasing ('연구는 필요…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 30,
+      "label": "rank:demo:gap:660ff17e",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a50605ebf6df2cbf3",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377486524,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/660ff17e.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377514270,
+      "tokens": 73199,
+      "toolCalls": 2,
+      "durationMs": 27746,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L3\",\"reason\":\"Both outputs name evidence papers by near-exact title. L4 also asserts without support that research reflecting public-library user characteristics is lacking ('미흡하다'), leaves its conclusion uncited, and never uses the senior-user finding from E1. L3 cites every sentence and builds its gap on E1's age-group finding; its [E4] citation is a stretch but is loosely b…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 31,
+      "label": "rank:faithful:gap:911d9583",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aedd7d6233aaecb23",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377489875,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/911d9583.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377511543,
+      "tokens": 76590,
+      "toolCalls": 2,
+      "durationMs": 21668,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L4\",\"reason\":\"L4 stays close to the evidence: it cites the seed with [E1] and accurately uses E2's point that study-room users value facilities. L2 repeatedly frames gaps as '본 연구에서는…', attaches quality of life to E3 even though E3 does not mention it, and stretches E4 into a claim about youth facility and program development.\"},{\"winner\":\"L1\",\"reason\":\"L1 avoids E1's item cou…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 32,
+      "label": "rank:reader:gap:911d9583",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a7c7c9720dfe403a0",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377490325,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/911d9583.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377514146,
+      "tokens": 76621,
+      "toolCalls": 2,
+      "durationMs": 23821,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L4\",\"reason\":\"L4 stays with what E1, E2 and E3 actually say and ties each one to facility and program factors. One example is its point about study-room users who care most about facilities, taken from E2. L2 adds 'this study will' sentences with no citation, stretches E3 into quality of life, and drifts off the research question into a youth-specific study from E4.\"},{\"winner…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 33,
+      "label": "rank:demo:gap:911d9583",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a8f8947a4efcbdfd6",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377490903,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/911d9583.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377513869,
+      "tokens": 76598,
+      "toolCalls": 2,
+      "durationMs": 22966,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L4\",\"reason\":\"L4 stays close to E1-E3 and makes concrete points, such as E2's example of people who use the library as a study room caring most about facilities, and it ties each one to facility and program factors. L2 drifts away from the evidence: it reads quality of life into E3 and narrows E4 to teenage users of the multi-purpose space. It also uses awkward '본 연구에서는 ... 해야…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 34,
+      "label": "rank:faithful:gap:9ba10849",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "ab22ec7c44c1ad9d4",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377491031,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/9ba10849.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377531423,
+      "tokens": 74177,
+      "toolCalls": 2,
+      "durationMs": 40392,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L1\",\"reason\":\"L1 sticks closer to the evidence. Its E1 and E2 sentences are accurate, though S6 wrongly cites E4 for the gap that E4 itself studies, and S7 gives E5 a citation that only decorates the sentence. L2 cites E1–E5 together for an unsupported \\\"미흡하다\\\" claim, cites E5 for a gap it never states, adds support subtypes to E1 that E1 does not list (지역사회, 정보적, 평가적), and re…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 35,
+      "label": "rank:reader:gap:9ba10849",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aff22bbaa7cdbc7a2",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377493206,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/9ba10849.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377525469,
+      "tokens": 74189,
+      "toolCalls": 2,
+      "durationMs": 32263,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L1\",\"reason\":\"L1 summarizes E1, E2 and E3 accurately and names a concrete gap: E1 only studied rural elderly. Its errors are two uncited sentences, an E4 citation for a 'limited' claim that E4 itself refutes, and an E5 citation on a plan. L2 cites all five papers at once in S1, cites E5 for a gap it never states, invents support subtypes and cites them to E1, and repeats 'the …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 36,
+      "label": "rank:demo:gap:9ba10849",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a377f7192c1ee4397",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377494038,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/9ba10849.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377539519,
+      "tokens": 74176,
+      "toolCalls": 2,
+      "durationMs": 45480,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L1\",\"reason\":\"L1 cites a single paper per claim and states a clear seed-based gap: the structural/functional split was tested only on rural elderly [E1]. It still misuses E4 and E5 and leaves two sentences uncited. L2 opens with a five-citation dump, attributes support subtypes to E1 that E1 never lists, and uses repetitive '미흡' filler, which outweighs its correct effect-size …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 37,
+      "label": "rank:faithful:gap:c816c7b2",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aa918e91fefd636fa",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377494109,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/c816c7b2.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377523081,
+      "tokens": 72647,
+      "toolCalls": 2,
+      "durationMs": 28972,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L2\",\"reason\":\"L4 cites the wrong papers in several places: E1's 'support system groundwork' is cited to E2/E3, a research need to E4, and an 'unstudied' claim to E5. It also says the topic was never studied, invents example subtypes, and ends with an uncited '본 연구는' sentence. L2 adds some unsupported gap claims (e.g., that E2 shows few rural-focused studies) and reuses near-ve…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 38,
+      "label": "rank:reader:gap:c816c7b2",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "af25c9d2cf18474f3",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377494657,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/c816c7b2.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377517494,
+      "tokens": 72676,
+      "toolCalls": 2,
+      "durationMs": 22837,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L2\",\"reason\":\"L4 has several faithfulness problems. It cites E4 and E5 for claims those papers do not make, says 'no study was found', which breaks the rule against calling a topic unstudied, and ends with an uncited '본 연구는' sentence. L2 also over-reaches in places, for example its E2 gap claims, but it summarizes each paper accurately and ties its gaps to the research questio…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 39,
+      "label": "rank:demo:gap:c816c7b2",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "aca352216123b5e49",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377495446,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/c816c7b2.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377516287,
+      "tokens": 72658,
+      "toolCalls": 2,
+      "durationMs": 20841,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L2\",\"reason\":\"L2 describes each paper accurately, with citations that match what each paper says (E3, E1, E4, E5), and it ends with the seed gap. L4 cites papers for claims they do not make: it credits E1's 'basic data for a support system' to E2/E3, cites E4 for support subtypes, and pins an 'unstudied' claim on E5. It also claims topics were never studied and ends with an un…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 40,
+      "label": "rank:faithful:gap:d60a5dc1",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a1944b675ee84245b",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377496751,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/d60a5dc1.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377521373,
+      "tokens": 71730,
+      "toolCalls": 2,
+      "durationMs": 24622,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L4\",\"reason\":\"L1 cites papers for claims they do not make: the rural-versus-urban comparison is cited to E2 and the change-over-time need to E1. It also presents E2's sub-type analysis as still needed, and its E1 'same context' link is a stretch. L4 has two uncited inference sentences and repeats the effect-size point, but its cited claims match E2, E4 and E5, and its gaps are…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 41,
+      "label": "rank:reader:gap:d60a5dc1",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a1fdd7d7efc889fd4",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377497408,
+      "queuedAt": 1792377412447,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/d60a5dc1.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377530398,
+      "tokens": 71756,
+      "toolCalls": 2,
+      "durationMs": 32990,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L4\",\"reason\":\"L1 cites papers that do not say what it claims: the rural-versus-urban comparison is cited to E2 and the change in support networks over time to E1, and it forces a link between E4 and E1. L4 says the effect-size point twice (sentences 3 and 4) and leaves two inference sentences without a citation, but its cited claims match E2, E4 and E5.\"},{\"winner\":\"L3\",\"reaso…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 42,
+      "label": "rank:demo:gap:d60a5dc1",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a3059d332f9a9538d",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377499248,
+      "queuedAt": 1792377412448,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/d60a5dc1.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377523866,
+      "tokens": 71738,
+      "toolCalls": 2,
+      "durationMs": 24618,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L4\",\"reason\":\"L1 cites sources that do not say what it claims: the rural-versus-urban comparison is pinned to E2, and the change in support networks over time is pinned to E1. It also uses E1's self-esteem findings as a forced parallel. L4 stays faithful to E2 and E4 and ties its gaps to support type and age group, though its sentences 3 and 4 repeat the effect-size point and …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 43,
+      "label": "rank:faithful:gap:d8348de8",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "ae8494179e6175558",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377500596,
+      "queuedAt": 1792377412448,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/d8348de8.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377527257,
+      "tokens": 73287,
+      "toolCalls": 2,
+      "durationMs": 26660,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L3\",\"reason\":\"L3 describes each paper's actual scope accurately and ties each gap to scheduling and efficiency, although it breaks the no-title rule throughout and repeats itself. L2 cites the hardware-grid point to [E2][E3] instead of [E1], and its claim that resource-use patterns differ by service type is not in [E4][E5].\"},{\"winner\":\"L1\",\"reason\":\"Both follow the same patte…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 44,
+      "label": "rank:reader:gap:d8348de8",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "a42ec6742ef8d190d",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377502392,
+      "queuedAt": 1792377412448,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/d8348de8.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377528379,
+      "tokens": 73323,
+      "toolCalls": 2,
+      "durationMs": 25987,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L3\",\"reason\":\"L3 breaks the rule against naming papers, and its paper-by-paper list is repetitive. Its citations are accurate, though, and each gap is limited to the paper it cites. L2 miscites: it uses E2/E3 for the grid claim and E4/E5 for differing usage patterns. It also says the whole field lacks research, which the evidence does not support.\"},{\"winner\":\"tie\",\"reason\":\"B…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 45,
+      "label": "rank:demo:gap:d8348de8",
+      "phaseIndex": 3,
+      "phaseTitle": "Rank",
+      "agentId": "abf260245e310fb1c",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792377512468,
+      "queuedAt": 1792377412448,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are checking machine-written Korean text from a library research assistant. Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/llm-model-ab/judge_aa/gap/d8348de8.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nThe file holds one '연구 공백' (research gap) section input — original_question, topic_title, research_question, ga…",
+      "promptFramed": true,
+      "lastProgressAt": 1792377531297,
+      "tokens": 73295,
+      "toolCalls": 2,
+      "durationMs": 18829,
+      "resultPreview": "{\"pairs\":[{\"winner\":\"L3\",\"reason\":\"L2 misattributes claims: it cites E2 and E3 for the hardware-grid point, which comes from E1, and cites E4 for service-type usage patterns that no evidence supports. L3 puts paper titles in the text and repeats one sentence pattern, but it describes each paper accurately, cites the right [E#] each time, and ties each one to the scheduling gap.\"},{\"winner\":\"L4\",\"r…"
+    }
+  ],
+  "totalTokens": 4010661,
+  "totalToolCalls": 159
+}

@@ -1,0 +1,5 @@
+{
+ "_note": "실제 비교 예 — B 는 인덱싱을 멈춘 창에 Qwen 자리(:18082 등)로 띄운 후보. extra 는 그 모델에만 더할 요청 필드",
+ "A": {"url": "http://192.168.12.57:18080/v1/chat/completions", "model": "gemma-3-12b"},
+ "B": {"url": "http://192.168.12.57:18082/v1/chat/completions", "model": "gemma-4-26b-a4b", "extra": {}}
+}
