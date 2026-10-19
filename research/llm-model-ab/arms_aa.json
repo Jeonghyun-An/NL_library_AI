@@ -1,0 +1,5 @@
+{
+ "_note": "A/A — 둘 다 운영 gemma-3-12b. 하네스 확인과 같은 모델끼리의 흔들림(잡음 기준선)을 잰다",
+ "A": {"url": "http://192.168.12.57:18080/v1/chat/completions", "model": "gemma-3-12b"},
+ "B": {"url": "http://192.168.12.57:18080/v1/chat/completions", "model": "gemma-3-12b"}
+}
