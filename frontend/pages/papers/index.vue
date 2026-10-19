@@ -93,7 +93,7 @@
 
         <template v-else>
           <!-- AI 검색 결과 — 틀(머리·DeepRead 안내·2:1 두 칸)은 소장자료 결과와 같은 AiResultPanel. 결과가 0건이면 요약할 논문이 없어 그리지 않는다 -->
-          <AiResultPanel v-if="paperResult?.books.length" :loading="aiLoading" :hint="!!aiText && !aiLoading">
+          <AiResultPanel v-if="paperResult?.books.length" :loading="aiLoading" :hint="!!shownAiText && !aiLoading">
             <!-- 좌측: 요약 텍스트 -->
             <!-- AI 요약 실패의 [다시 시도](#after 줄 안내)는 다시 받는 동안 빠진다 — 초점을 이 패널로 먼저 옮긴다(tabindex="-1") -->
             <ClampedPanel
@@ -106,8 +106,8 @@
               scroll-anchor=".skx-aip"
             >
               <!-- 글 없이 실패하면 칸 안은 비우고 아래(#after) 안내만 보인다 -->
-              <div v-if="aiLoading || aiText || !aiError" class="skx-pai-main__scroll">
-                <template v-if="aiLoading && !aiText">
+              <div v-if="aiLoading || shownAiText || !aiError" class="skx-pai-main__scroll">
+                <template v-if="aiLoading && !shownAiText">
                   <div class="skx-pai-section">
                     <p class="skx-pai-section__text" style="color: #999">
                       AI가 논문을 분석하고 있습니다<span
@@ -119,7 +119,7 @@
                 <!-- 요약이 끝난 뒤(참고 목록이 정해진 뒤)에는 (1)·(1, 3) 인용 번호를 눌러 그 논문 카드를 본다 -->
                 <!-- 원문 보기는 팝오버가 파일을 먼저 확인하고(CitePopover — usePdfOpener) 있을 때만 알린다 -->
                 <SummaryText
-                  v-else-if="aiText"
+                  v-else-if="shownAiText"
                   :html="renderedAiText"
                   :refs="summaryRefs"
                   :linked="!aiLoading"
@@ -137,7 +137,7 @@
               <template #after>
                 <SkxInlineError
                   v-if="aiError && !aiLoading"
-                  :class="['skx-pai-main__failed', !aiText && 'is-alone']"
+                  :class="['skx-pai-main__failed', !shownAiText && 'is-alone']"
                   :message="aiError"
                   @retry="retryAiSummary"
                 />
@@ -315,6 +315,7 @@ import { awaitsV1Map, readHistoryQuery, routeFor } from "~/utils/historyRoute";
 import { readResearchDraft } from "~/utils/paperResearch";
 import { citeYear, type SummaryRef } from "~/utils/summaryCite";
 import { SUMMARY_PAPER_LIMIT, summaryExcerpt } from "~/utils/summaryExcerpt";
+import { tidySummary } from "~/utils/summaryTidy";
 import type { SearchModeId } from "~/utils/slashCommand";
 import type { BookSearchResponse, BookChunkGroup } from "~/types/search";
 import type { PaperEntry, PaperSnapshot } from "~/types/history";
@@ -386,8 +387,11 @@ const aiMainRef = ref<ComponentPublicInstance | null>(null);
 const aiRefs = ref<
   { num: number; book_id: string; title: string; authors: string }[]
 >([]);
+// 보이는 요약 — 자료가 없다는 말만 하는 항목을 빼고 섹션마다 4항목까지(utils/summaryTidy). 받은 글(aiText)과 기록은 원문 그대로 두고,
+// 받는 중·끝난 요약·복원한 기록 모두 여기서 다듬어 그린다. 다듬은 글이 비면 받은 글이 있어도 빈 요약으로 본다
+const shownAiText = computed(() => tidySummary(aiText.value, { streaming: aiLoading.value }));
 const renderedAiText = computed(() =>
-  aiText.value ? (marked.parse(aiText.value) as string) : "",
+  shownAiText.value ? (marked.parse(shownAiText.value) as string) : "",
 );
 
 // ── 정렬 / 페이지 ─────────────────────────────────────────────
