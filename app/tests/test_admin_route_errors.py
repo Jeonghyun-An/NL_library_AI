@@ -225,7 +225,9 @@ class TestDeleteAllEmbeddings:
         assert resp.json() == {"detail": "Milvus 컬렉션을 지우지 못했습니다. 서버 로그를 확인하세요"}
         assert "rpc error" not in resp.text
         assert e.session.ops == []
-        assert e.indexer._collection_cache is None
+        # 지우지 못했으면 캐시한 핸들을 그대로 둔다 — Milvus 장애 중에 캐시를 비우면 그 뒤 검색이 시간 한도 없는
+        # ensure_collection() 에서 Milvus 가 돌아올 때까지 붙들린다
+        assert e.indexer._collection_cache is e.stale
 
 
 # ── ingest_jobs 의 잘못된 job_id ───────────────────────────
