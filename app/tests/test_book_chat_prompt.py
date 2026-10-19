@@ -234,13 +234,13 @@ def test_the_page_rule_points_at_the_context_headers(book_chat):
 
 def test_cited_hits_match_the_one_based_pages(book_chat):
     stored_3_4 = _hit(book_chat, 3, 4)
-    for answer in ("p.4–5 에 나옵니다.", "p.4-5 참고", "(p.4)", "4–5페이지에", "4페이지에"):
+    for answer in ("p.4–5 에 나옵니다.", "p.4-5 참고", "(p.4)", "4–5페이지에", "4페이지에", "4–5쪽에", "4쪽에", "(4 쪽)"):
         assert book_chat._find_cited_hits(answer, [stored_3_4]) == [stored_3_4], answer
     # 저장값(0부터) 그대로 쓴 쪽·다른 쪽은 인용으로 보지 않는다
-    for answer in ("p.3–4 에 나옵니다.", "p.3", "3페이지", "p.40", "p.14"):
+    for answer in ("p.3–4 에 나옵니다.", "p.3", "3페이지", "p.40", "p.14", "3쪽", "14쪽", "40쪽"):
         assert book_chat._find_cited_hits(answer, [stored_3_4]) == [], answer
     # 쪽 정보 없는 대목(page_start 0 이하)은 어떤 쪽 표기로도 고르지 않는다
-    for answer in ("p.1", "p.0", "p.1–3", "1페이지"):
+    for answer in ("p.1", "p.0", "p.1–3", "1페이지", "1쪽"):
         assert book_chat._find_cited_hits(answer, [_hit(book_chat, 0, 2)]) == [], answer
 
 
