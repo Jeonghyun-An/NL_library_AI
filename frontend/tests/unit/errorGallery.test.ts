@@ -19,7 +19,8 @@ import { CHAT_MAX_CHARS } from "~/utils/deepReadSse";
 import { rawCss } from "./helpers/themeCss";
 
 const root = resolve(__dirname, "../..");
-const read = (rel: string) => readFileSync(resolve(root, rel), "utf-8");
+// 줄 끝은 \n 으로 맞춘다 — Windows 체크아웃(autocrlf)은 CRLF 라 줄 경계를 보는 정규식이 체크아웃마다 달라진다
+const read = (rel: string) => readFileSync(resolve(root, rel), "utf-8").replace(/\r\n/g, "\n");
 
 const bannerVue = read("components/SkxConnectionBanner.vue");
 const countVue = read("components/SkxCharCount.vue");
