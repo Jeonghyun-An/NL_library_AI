@@ -1,4 +1,6 @@
 // frontend/tests/unit/historySnapshot.test.ts
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   BOOK_INFO_FIELDS,
@@ -12,7 +14,7 @@ import {
 } from "~/utils/historySnapshot";
 import { kdcChip } from "~/utils/kdc";
 import { cardKeywords, cardMeta } from "~/utils/resultCard";
-import { SUMMARY_PAPER_LIMIT, summaryExcerpt, type ExcerptInfo } from "~/utils/summaryExcerpt";
+import { SHORT_ABSTRACT_CHARS, SUMMARY_PAPER_LIMIT, summaryExcerpt, type ExcerptInfo } from "~/utils/summaryExcerpt";
 
 function utf8Bytes(v: unknown): number {
   return new TextEncoder().encode(JSON.stringify(v)).length;
@@ -181,7 +183,7 @@ describe("slimPaperResult", () => {
         series_title: "학술지",
         grade: "KCI 등재",
         kci_citations: 12,
-        abstract: "초록".repeat(500),
+        abstract: "초록".repeat(1000),
         summary: "요약",
         introduction: "소개",
         references: Array.from({ length: 40 }, (_, i) => `참고 ${i}`),
@@ -200,7 +202,7 @@ describe("slimPaperResult", () => {
       kci_citations: 12,
       corporate_author: "학회",
     });
-    // 초록은 AI 요약이 읽는 앞쪽 논문에만 잘라 싣는다(아래 '요약 발췌') — 색인 요약·소개는 싣지 않는다
+    // 초록은 AI 요약이 읽는 앞쪽 논문에만 잘라 싣는다(아래 '요약 발췌') — 초록이 넉넉하면 색인 요약은, 소개는 늘 싣지 않는다
     expect(item.book_info!.abstract).toHaveLength(SNAPSHOT_EXCERPT_MAX_CHARS);
     expect(item.book_info).not.toHaveProperty("summary");
     expect(item.book_info).not.toHaveProperty("introduction");
@@ -208,16 +210,41 @@ describe("slimPaperResult", () => {
   });
 
   // 요약을 끝내기 전에 떠났거나 요약이 실패한 기록은 다시 열 때(applyPaperEntry)·[다시 시도] 때 스냅샷으로 요약을 다시 만든다 —
-  // 새 검색 때와 같은 발췌(초록, 없으면 색인 요약 본문)를 읽어야 한다
+  // 새 검색 때와 같은 발췌(초록, 없거나 짧으면 색인 요약 본문)를 읽어야 한다
   describe("요약 발췌 — AI 요약이 읽는 앞 5편", () => {
     const withInfo = (i: number, info: ExcerptInfo) => ({ book_id: `P${i}`, best_score: 1 - i / 100, chunks: [], book_info: { title: `논문 ${i}`, ...info } });
+    // 짧은 초록 기준보다 긴 초록 — 색인 요약을 덧붙이지 않는다
+    const longAbstract = (i: number) => `초록 ${i} ` + "가".repeat(SHORT_ABSTRACT_CHARS);
+    // 서버(app/services/search/paper_summary.py)가 발췌를 자르는 길이
+    const serverCap = Number(
+      /^_MAX_EXCERPT_CHARS = (\d+)/m.exec(readFileSync(resolve(__dirname, "../../../app/services/search/paper_summary.py"), "utf-8"))?.[1],
+    );
+    // 짝 없는 서로게이트 — 서버가 UTF-8 로 재다 500 을 낸다(app/api/history.py _json_bytes)
+    const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 
     it("앞 5편만 고른 발췌를 같은 필드 이름으로 싣고, 6번째부터는 싣지 않는다", () => {
-      const books = Array.from({ length: 8 }, (_, i) => withInfo(i, { abstract: `초록 ${i}`, summary: `요약 ${i}` }));
+      const books = Array.from({ length: 8 }, (_, i) => withInfo(i, { abstract: longAbstract(i), summary: `요약 ${i}` }));
       const snap = slimPaperResult({ query: "q", books })!;
-      expect(snap.books.slice(0, SUMMARY_PAPER_LIMIT).map((b) => b.book_info!.abstract)).toEqual(["초록 0", "초록 1", "초록 2", "초록 3", "초록 4"]);
+      expect(snap.books.slice(0, SUMMARY_PAPER_LIMIT).map((b) => b.book_info!.abstract)).toEqual([0, 1, 2, 3, 4].map(longAbstract));
       expect(snap.books.every((b) => !("summary" in b.book_info!))).toBe(true);
       expect(snap.books.slice(SUMMARY_PAPER_LIMIT).every((b) => !("abstract" in b.book_info!))).toBe(true);
+    });
+
+    it("초록이 짧아 색인 요약 본문을 덧붙인 논문은 둘 다 싣는다 — 복원한 기록도 같은 발췌를 만든다", () => {
+      const legacy = "## SUMMARY: 30개 연구 중 28개가 효과적이었다.\n**관련 연구자가 검색할 학술 키워드:** 노인, 우울";
+      const books = [withInfo(0, { abstract: "This study examines social support.", summary: legacy })];
+      const snap = slimPaperResult({ query: "q", books })!;
+      expect(snap.books[0]!.book_info).toMatchObject({ abstract: "This study examines social support.", summary: "30개 연구 중 28개가 효과적이었다." });
+      expect(summaryExcerpt(snap.books[0]!)).toBe(summaryExcerpt(books[0]!));
+    });
+
+    it("국문 초록 뒤의 영문 초록은 걷어 싣는다", () => {
+      const korean = "본 연구는 노인의 사회적 지지와 우울의 관계를 분석하였다. ".repeat(14).trim();
+      expect(korean.length).toBeGreaterThanOrEqual(SHORT_ABSTRACT_CHARS);
+      const books = [withInfo(0, { abstract: `${korean}\n\n##### ABSTRACT\n\nThis study analyzed social support and depression.` })];
+      const snap = slimPaperResult({ query: "q", books })!;
+      expect(snap.books[0]!.book_info!.abstract).toBe(korean);
+      expect(summaryExcerpt(snap.books[0]!)).toBe(summaryExcerpt(books[0]!));
     });
 
     it("초록이 없는 논문은 색인 요약의 본문을 summary 로 싣는다 — 복원한 기록도 새 검색과 같은 발췌를 고른다", () => {
@@ -231,13 +258,32 @@ describe("slimPaperResult", () => {
       expect(snap.books.map(summaryExcerpt)).toEqual(books.map(summaryExcerpt));
     });
 
-    it("긴 초록은 서버가 자르는 500자보다 넉넉히 잘라 담는다 — 복원 뒤 요약도 같은 앞부분을 읽는다", () => {
+    it("긴 초록은 서버가 자르는 길이(_MAX_EXCERPT_CHARS)보다 넉넉히 잘라 담는다 — 복원 뒤 요약도 같은 앞부분을 읽는다", () => {
       const abstract = "가나다라마바 ".repeat(300);
       const snap = slimPaperResult({ query: "q", books: [withInfo(0, { abstract })] })!;
       expect(snap.books[0]!.book_info!.abstract).toHaveLength(SNAPSHOT_EXCERPT_MAX_CHARS);
       const kept = summaryExcerpt(snap.books[0]!);
-      expect(SNAPSHOT_EXCERPT_MAX_CHARS).toBeGreaterThan(500);
-      expect(kept.slice(0, 500)).toBe(summaryExcerpt({ book_info: { abstract } }).slice(0, 500));
+      // 서버는 앞머리 표지를 걷고 한 글자 더 보아 문장 경계를 찾는다 — 그만큼 넉넉해야 같은 자리에서 자른다
+      expect(serverCap).toBeGreaterThan(0);
+      expect(SNAPSHOT_EXCERPT_MAX_CHARS).toBeGreaterThanOrEqual(serverCap + 100);
+      expect(kept.slice(0, serverCap + 1)).toBe(summaryExcerpt({ book_info: { abstract } }).slice(0, serverCap + 1));
+    });
+
+    // PDF 초록의 수학 이탤릭(𝑝·𝛽)·확장 한자·이모지는 서로게이트 쌍이다 — 코드 단위로 자르면 짝 없는 반쪽이 남아 기록 저장이
+    // 서버에서 500 으로 끝나고, 편지함이 그 편지에 막혀 기록 동기화가 멈췄다
+    it("BMP 밖 글자가 자르는 자리에 걸려도 서로게이트 쌍을 가르지 않는다", () => {
+      for (const at of [SNAPSHOT_EXCERPT_MAX_CHARS - 1, SNAPSHOT_EXCERPT_MAX_CHARS]) {
+        const abstract = "가".repeat(at) + "\u{1D45D} 값이 유의했다. \u{1D6FD}=.448";
+        const snap = slimPaperResult({ query: "q", books: [withInfo(0, { abstract })] })!;
+        const kept = snap.books[0]!.book_info!.abstract!;
+        expect(Array.from(kept)).toHaveLength(SNAPSHOT_EXCERPT_MAX_CHARS);
+        expect(LONE_SURROGATE.test(kept), `${at}`).toBe(false);
+        expect(LONE_SURROGATE.test(JSON.stringify(snap)), `${at}`).toBe(false);
+      }
+      // 색인 요약 본문도 같은 규칙으로 자른다
+      const summary = "나".repeat(SNAPSHOT_EXCERPT_MAX_CHARS - 1) + "\u{20000}끝";
+      const snap = slimPaperResult({ query: "q", books: [withInfo(0, { summary })] })!;
+      expect(snap.books[0]!.book_info!.summary).toBe("나".repeat(SNAPSHOT_EXCERPT_MAX_CHARS - 1) + "\u{20000}");
     });
   });
 

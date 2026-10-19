@@ -802,7 +802,7 @@ async function streamAiSummary(
     title: b.book_info?.title || "",
     authors:
       b.book_info?.personal_author || b.book_info?.corporate_author || "",
-    // 원문 초록, 없으면 색인 요약 본문 — chunks 는 참고문헌 조각일 때가 있어 쓰지 않는다(utils/summaryExcerpt).
+    // 원문 초록(목적뿐일 만큼 짧으면 색인 요약 본문을 덧붙임), 없으면 색인 요약 본문 — chunks 는 참고문헌 조각일 때가 있어 쓰지 않는다(utils/summaryExcerpt).
     // 복원한 기록(applyPaperEntry)은 스냅샷이 앞 5편의 발췌를 담아 둔다(slimPaperResult)
     best_chunk_text: summaryExcerpt(b),
   }));
