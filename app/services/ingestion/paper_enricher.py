@@ -706,8 +706,8 @@ def delete_enrichment_artifact(book_id: str, minio_client) -> None:
 # ── 8. 메인 엔트리 ─────────────────────────────────────────
 
 # 그림 설명(VLM) 동시 요청 수 — 문서 하나당. 보강은 celery-llm(4칸)에서 돌아 문서마다 그림을 한꺼번에 보내면
-# PAPER_MAX_FIGURES_PER_DOC(8) × 4 = 32건이 추출 OCR 이 쓰는 VLM 자리(max-num-seqs 8 = celery-cpu 4 ×
-# VLM_PAGE_CONCURRENCY 2)와 다툰다. 2 면 보강 쪽은 많아야 8건이다
+# PAPER_MAX_FIGURES_PER_DOC(8) × 4 = 32건이 추출 OCR 이 쓰는 VLM 자리(celery-cpu 4 × VLM_PAGE_CONCURRENCY 3 = 12,
+# 운영 max-num-seqs 16 — 2026-10-19)와 다툰다. 2 면 보강 쪽은 많아야 8건이다(둘이 함께 몰리면 4건이 vLLM 대기열에 선다)
 _FIGURE_VLM_CONCURRENCY = 2
 
 async def enrich_paper(

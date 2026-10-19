@@ -204,8 +204,10 @@ class Settings(BaseSettings):
     # 순차 VLM 호출을 유발해 잡 전체 처리량을 끌어내리는 것을 방지.
     # 초과분은 ODL 결과(비어있거나 부실해도)를 그대로 채택하고 VLM은 스킵한다.
     VLM_MAX_PAGES_PER_DOC: int = 60
-    # 문서 하나 안에서 동시에 보내는 OCR 요청 수 (추출 워커 4 × 2 = VLM max-num-seqs 8)
-    VLM_PAGE_CONCURRENCY: int = 2
+    # 문서 하나 안에서 동시에 보내는 OCR 요청 수 (추출 워커 4 × 3 = 12, VLM max-num-seqs 16. 그림 설명이 많아야 8건
+    # (paper_enricher._FIGURE_VLM_CONCURRENCY 2 × celery-llm 4)이라 둘이 함께 몰리면 4건이 vLLM 대기열에 선다 — 실패가 아니라 대기.
+    # 운영 2026-10-19 에 2 → 3, docker-compose.yml x-common-env 기본값과 같아야 한다 — tests/test_ingest_settings.py)
+    VLM_PAGE_CONCURRENCY: int = 3
     # 스캔본 판정(문서 단위만 — 쪽 단위 규칙은 표지·간지를 다시 VLM 으로 보낸다).
     # 머리말·꼬리말·스탬프 = 문서 쪽의 이 비율 이상에 되풀이되는 짧은 줄 — fitz 쪽 길이에서 뺀다
     SCAN_REPEAT_LINE_RATIO: float = 0.6
