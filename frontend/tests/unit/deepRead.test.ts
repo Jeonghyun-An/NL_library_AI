@@ -59,7 +59,7 @@ describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
     expect(target.passages?.[0]?.label).toBe(sourceLabel(src));
   });
 
-  it("p.5 칩은 원문 6쪽을 연다 — 저장값은 0부터 세어 뷰어 쪽은 하나 크다", () => {
+  it("저장값 5(0부터)의 칩은 p.6 이고 [원문 보기]도 6쪽을 연다 — 칩 글자와 여는 쪽이 같다", () => {
     expect(sourcePdfTarget("KCI_1", "제목", { page_start: 5, page_end: 7, text: "대목" })).toEqual({
       cntsId: "KCI_1",
       title: "제목",
