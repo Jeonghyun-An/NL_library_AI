@@ -7,7 +7,8 @@ paper_summary.py — 논문 검색 결과 핵심 요약 SSE 스트리밍
 
 summary 엔드포인트:
   - 입력: query + top-K 논문 book_id 목록 (검색 결과에서 전달)
-  - 처리: 각 논문의 best chunk 로 컨텍스트 구성 → LLM 스트리밍
+  - 처리: 각 논문의 발췌(best_chunk_text — 화면이 고른 원문 초록·색인 요약 본문, frontend/utils/summaryExcerpt.ts)를
+          문장 경계에서 잘라 컨텍스트 구성 → LLM 스트리밍
   - 출력: text 토큰 SSE + 마지막에 sources 이벤트(LLM 호출이 실패하거나 빈 답으로 끝나면 sources 뒤에 error 이벤트)
 """
 import json
@@ -24,7 +25,9 @@ from services.prompts import get_prompt
 log = logging.getLogger(__name__)
 cfg = get_settings()
 
-_MAX_EXCERPT_CHARS = 500   # 논문당 발췌 최대 길이
+# 논문당 발췌 최대 길이 — 500자일 때는 국문 초록이 결과·결론 앞에서, 영문 초록은 목적·방법에서 끊겨 요약이 결과를 지어냈다.
+# 국문 초록은 대개 이 안에 다 든다. 화면의 기록 스냅샷(SNAPSHOT_EXCERPT_MAX_CHARS)은 이보다 넉넉히 담는다
+_MAX_EXCERPT_CHARS = 1000
 _MAX_PAPERS = 5            # 요약에 사용할 최대 논문 수
 
 # 세 스트림이 LLM 호출 실패(httpx 연결·읽기 오류, 4xx·5xx 응답, 스트림 안 오류 줄·[DONE] 없이 끝남 — llm_sse.sse_deltas)로
@@ -51,6 +54,25 @@ def _truncate(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[:max_chars].rsplit(" ", 1)[0] + "…"
+
+
+# 문장 끝 — 마침표·물음표·느낌표 뒤가 공백·닫는 따옴표·괄호이거나 글 끝. 소수점(β=.448·p<.05)은 점 뒤가 숫자라 걸리지 않는다
+_SENTENCE_END_RE = re.compile(r"[.?!。](?=[\s\"'”’)\]]|$)")
+
+
+def _truncate_at_sentence(text: str, max_chars: int) -> str:
+    """max_chars 안의 마지막 문장 끝에서 자르고 ' …' 를 붙인다.
+
+    공백에서 자르면 문장 한가운데('…노인의 특성에 따른…')서 끊겨, 요약 모델이 뒷부분을 지어 채웠다(원문 결론과 다른 제언).
+    문장 끝이 앞쪽 절반 안에만 있으면(아주 긴 한 문장) 전처럼 공백에서 자른다.
+    """
+    if len(text) <= max_chars:
+        return text
+    # 한 글자 더 보아 자르는 자리 바로 뒤가 공백인지 가린다 — 마지막 칸의 점은 뒤를 모르므로 문장 끝으로 치지 않는다
+    ends = [m.end() for m in _SENTENCE_END_RE.finditer(text, 0, max_chars + 1) if m.end() <= max_chars]
+    if ends and ends[-1] >= max_chars // 2:
+        return text[: ends[-1]] + " …"
+    return _truncate(text, max_chars)
 
 
 def _clean_excerpt(text: str) -> str:
@@ -118,7 +140,7 @@ async def stream_paper_summary(
             "num": i + 1,
             "title": p.get("title") or "제목 없음",
             "authors": p.get("authors") or "저자 미상",
-            "excerpt": _truncate(_clean_excerpt(p.get("best_chunk_text") or ""), _MAX_EXCERPT_CHARS),
+            "excerpt": _truncate_at_sentence(_clean_excerpt(p.get("best_chunk_text") or ""), _MAX_EXCERPT_CHARS),
         }
         for i, p in enumerate(papers)
     ]
