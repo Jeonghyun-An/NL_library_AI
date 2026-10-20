@@ -216,15 +216,31 @@ def test_context_pages_are_one_based_like_the_report(book_chat):
     assert book_chat._context_label(_hit(book_chat, 0, 2)) == "[쪽 정보 없음]"
 
 
+def test_the_page_rule_points_at_the_context_headers(book_chat):
+    # 쪽 언급 규칙 — 답 글의 쪽은 그 대목 머리(_context_label)의 쪽 번호로만 대고, 머리가 [쪽 정보 없음]인 대목에는 쪽을
+    # 붙이지 않는다. 전에는 '출처(페이지)를 자연스럽게 언급하세요' 뿐이라 운영에서 [쪽 정보 없음] 대목에 '(p.1)' 을 단
+    # 답이 나왔다 — 그 쪽은 출처 칩으로 고를 수 없다(_find_cited_hits). 책·논문 프롬프트 모두 같은 두 줄이다
+    no_page = book_chat._context_label(_hit(book_chat, 0, 0))
+    ranged = book_chat._context_label(_hit(book_chat, 3, 4))
+    assert no_page == "[쪽 정보 없음]" and ranged == "[p.4–5]"
+    for doc_type in ("paper", "book"):
+        system = book_chat.chat_prompt(SimpleNamespace(doc_type=doc_type)).render(**VARS)[0]
+        assert "- 출처(페이지)는 그 내용이 실린 대목 머리([p.N]·[p.N–M])의 쪽 번호로만 자연스럽게 언급하세요.\n" in system
+        assert f"- 머리가 {no_page}인 대목에는 쪽을 붙이지 마세요.\n" in system
+        assert "출처(페이지)를 자연스럽게 언급하세요" not in system
+        # 규칙이 적은 머리 꼴([p.N–M])의 이음표가 문맥의 것과 같은 글자(–)다
+        assert ranged.replace("4", "N").replace("5", "M") in system
+
+
 def test_cited_hits_match_the_one_based_pages(book_chat):
     stored_3_4 = _hit(book_chat, 3, 4)
-    for answer in ("p.4–5 에 나옵니다.", "p.4-5 참고", "(p.4)", "4–5페이지에", "4페이지에"):
+    for answer in ("p.4–5 에 나옵니다.", "p.4-5 참고", "(p.4)", "4–5페이지에", "4페이지에", "4–5쪽에", "4쪽에", "(4 쪽)"):
         assert book_chat._find_cited_hits(answer, [stored_3_4]) == [stored_3_4], answer
     # 저장값(0부터) 그대로 쓴 쪽·다른 쪽은 인용으로 보지 않는다
-    for answer in ("p.3–4 에 나옵니다.", "p.3", "3페이지", "p.40", "p.14"):
+    for answer in ("p.3–4 에 나옵니다.", "p.3", "3페이지", "p.40", "p.14", "3쪽", "14쪽", "40쪽"):
         assert book_chat._find_cited_hits(answer, [stored_3_4]) == [], answer
     # 쪽 정보 없는 대목(page_start 0 이하)은 어떤 쪽 표기로도 고르지 않는다
-    for answer in ("p.1", "p.0", "p.1–3", "1페이지"):
+    for answer in ("p.1", "p.0", "p.1–3", "1페이지", "1쪽"):
         assert book_chat._find_cited_hits(answer, [_hit(book_chat, 0, 2)]) == [], answer
 
 

@@ -144,6 +144,9 @@ def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHi
             rf'p\.{ps}\b',              # p.23
             rf'\b{ps}[–\-~]{pe}페이지',  # 23–45페이지
             rf'\b{ps}페이지',            # 23페이지
+            # 프롬프트가 쪽을 '쪽'이라는 말로 지시하므로(book_chat*.yaml) '23–45쪽'·'23쪽'으로 답해도 출처 칩을 고른다
+            rf'\b{ps}[–\-~]{pe}\s?쪽',   # 23–45쪽
+            rf'\b{ps}\s?쪽',             # 23쪽
         ]
         for pat in patterns:
             if re.search(pat, response_text):

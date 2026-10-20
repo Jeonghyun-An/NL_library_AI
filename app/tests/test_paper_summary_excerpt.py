@@ -85,7 +85,17 @@ def test_the_system_prompt_keeps_the_grounding_rules(monkeypatch):
     payloads = fake_llm(monkeypatch, paper_summary, [delta("요약"), "data: [DONE]"])
     _collect(paper_summary.stream_paper_summary("q", [{"book_id": "K1", "title": "t", "best_chunk_text": "초록."}]))
     system = payloads[0]["messages"][0]["content"]
-    # 그 내용을 직접 말한 논문만 출처로, 생략된 뒤를 짐작하지 않기, 없는 권고·메타 문장 금지, 없으면 섹션 빼기
+    # 그 내용을 직접 말한 논문만 출처로, 생략된 뒤를 짐작하지 않기, 없는 권고·메타 문장 금지, 쓸 내용이 없으면 항목·섹션 빼기
     for rule in ("직접 말한 논문의 번호만", "짐작해 채우지 마세요", "('~해야 한다')", "확인할 수 없다는 문장은 쓰지 마세요",
-                 "섹션을 통째로 빼세요", "마침표 바로 앞에", "굵은 글씨 소제목을 붙이지 마세요"):
+                 "그 항목이나 섹션을 빼세요", "마침표 바로 앞에", "굵은 글씨 소제목을 붙이지 마세요",
+                 "후속 연구 과제를 결과나 실천 방안으로 바꾸지 마세요"):
         assert rule in system, rule
+
+
+def test_the_summary_asks_for_the_two_sections_only(monkeypatch):
+    # '## 시사점 및 한계' 는 뺐다 — 운영에서 지어낸 제언·권고가 대부분 이 섹션에서 나왔다. 남은 두 섹션 제목은 그대로다
+    payloads = fake_llm(monkeypatch, paper_summary, [delta("요약"), "data: [DONE]"])
+    _collect(paper_summary.stream_paper_summary("q", [{"book_id": "K1", "title": "t", "best_chunk_text": "초록."}]))
+    system = payloads[0]["messages"][0]["content"]
+    assert [line for line in system.splitlines() if line.startswith("## ")] == ["## 핵심 요약", "## 연구 방법 및 근거"]
+    assert "시사점" not in system and "후속 연구 방향" not in system
