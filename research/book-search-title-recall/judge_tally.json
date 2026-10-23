@@ -5,21 +5,36 @@
    "top3": 2.517,
    "top1": 0.983,
    "ndcg": 0.621,
-   "zeros_top10": 4.6
+   "zeros_top10": 4.6,
+   "judged": 200,
+   "slots": 200
   },
   "A": {
    "top10": 7.8,
    "top3": 3.183,
    "top1": 1.283,
    "ndcg": 0.721,
-   "zeros_top10": 4.4
+   "zeros_top10": 4.4,
+   "judged": 200,
+   "slots": 200
   },
-  "AH": {
+  "AH0": {
    "top10": 7.75,
    "top3": 3.183,
    "top1": 1.283,
    "ndcg": 0.719,
-   "zeros_top10": 4.45
+   "zeros_top10": 4.45,
+   "judged": 200,
+   "slots": 200
+  },
+  "AH": {
+   "top10": 7.8,
+   "top3": 3.183,
+   "top1": 1.283,
+   "ndcg": 0.721,
+   "zeros_top10": 4.4,
+   "judged": 200,
+   "slots": 200
   }
  },
  "queries": [
@@ -31,21 +46,36 @@
     "top3": 6.0,
     "top1": 2.0,
     "ndcg": 0.958,
-    "zeros_top10": 0
+    "zeros_top10": 0,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 17.333,
     "top3": 6.0,
     "top1": 2.0,
     "ndcg": 0.939,
-    "zeros_top10": 1
+    "zeros_top10": 1,
+    "judged": 10,
+    "slots": 10
    },
-   "AH": {
+   "AH0": {
     "top10": 16.333,
     "top3": 6.0,
     "top1": 2.0,
     "ndcg": 0.907,
-    "zeros_top10": 2
+    "zeros_top10": 2,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH": {
+    "top10": 17.333,
+    "top3": 6.0,
+    "top1": 2.0,
+    "ndcg": 0.939,
+    "zeros_top10": 1,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -56,21 +86,36 @@
     "top3": 4.0,
     "top1": 2.0,
     "ndcg": 0.94,
-    "zeros_top10": 1
+    "zeros_top10": 1,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 10.0,
     "top3": 4.0,
     "top1": 2.0,
     "ndcg": 0.946,
-    "zeros_top10": 1
+    "zeros_top10": 1,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 10.0,
+    "top3": 4.0,
+    "top1": 2.0,
+    "ndcg": 0.946,
+    "zeros_top10": 1,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 10.0,
     "top3": 4.0,
     "top1": 2.0,
     "ndcg": 0.946,
-    "zeros_top10": 1
+    "zeros_top10": 1,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -81,21 +126,36 @@
     "top3": 3.667,
     "top1": 2.0,
     "ndcg": 0.983,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 4.333,
     "top3": 2.667,
     "top1": 2.0,
     "ndcg": 0.92,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 4.333,
+    "top3": 2.667,
+    "top1": 2.0,
+    "ndcg": 0.92,
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 4.333,
     "top3": 2.667,
     "top1": 2.0,
     "ndcg": 0.92,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -106,21 +166,36 @@
     "top3": 2.0,
     "top1": 0.0,
     "ndcg": 0.622,
-    "zeros_top10": 3
+    "zeros_top10": 3,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 8.0,
     "top3": 3.333,
     "top1": 0.0,
     "ndcg": 0.634,
-    "zeros_top10": 4
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 8.0,
+    "top3": 3.333,
+    "top1": 0.0,
+    "ndcg": 0.634,
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 8.0,
     "top3": 3.333,
     "top1": 0.0,
     "ndcg": 0.634,
-    "zeros_top10": 4
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -131,21 +206,36 @@
     "top3": 2.333,
     "top1": 1.0,
     "ndcg": 0.805,
-    "zeros_top10": 3
+    "zeros_top10": 3,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 4.333,
     "top3": 2.333,
     "top1": 0.333,
     "ndcg": 0.45,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 4.333,
+    "top3": 2.333,
+    "top1": 0.333,
+    "ndcg": 0.45,
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 4.333,
     "top3": 2.333,
     "top1": 0.333,
     "ndcg": 0.45,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -156,21 +246,36 @@
     "top3": 2.0,
     "top1": 1.0,
     "ndcg": 0.745,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 5.333,
     "top3": 1.0,
     "top1": 1.0,
     "ndcg": 0.659,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 5.333,
+    "top3": 1.0,
+    "top1": 1.0,
+    "ndcg": 0.659,
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 5.333,
     "top3": 1.0,
     "top1": 1.0,
     "ndcg": 0.659,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -181,21 +286,36 @@
     "top3": 2.667,
     "top1": 2.0,
     "ndcg": 0.621,
-    "zeros_top10": 5
+    "zeros_top10": 5,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 9.0,
     "top3": 4.0,
     "top1": 2.0,
     "ndcg": 0.748,
-    "zeros_top10": 4
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 9.0,
+    "top3": 4.0,
+    "top1": 2.0,
+    "ndcg": 0.748,
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 9.0,
     "top3": 4.0,
     "top1": 2.0,
     "ndcg": 0.748,
-    "zeros_top10": 4
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -206,21 +326,36 @@
     "top3": 0.0,
     "top1": 0.0,
     "ndcg": 0.15,
-    "zeros_top10": 8
+    "zeros_top10": 8,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 8.0,
     "top3": 5.0,
     "top1": 2.0,
     "ndcg": 0.825,
-    "zeros_top10": 4
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 8.0,
+    "top3": 5.0,
+    "top1": 2.0,
+    "ndcg": 0.825,
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 8.0,
     "top3": 5.0,
     "top1": 2.0,
     "ndcg": 0.825,
-    "zeros_top10": 4
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -231,21 +366,36 @@
     "top3": 4.0,
     "top1": 1.0,
     "ndcg": 0.615,
-    "zeros_top10": 3
+    "zeros_top10": 3,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 9.0,
     "top3": 5.0,
     "top1": 2.0,
     "ndcg": 0.77,
-    "zeros_top10": 4
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 9.0,
+    "top3": 5.0,
+    "top1": 2.0,
+    "ndcg": 0.77,
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 9.0,
     "top3": 5.0,
     "top1": 2.0,
     "ndcg": 0.77,
-    "zeros_top10": 4
+    "zeros_top10": 4,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -256,21 +406,36 @@
     "top3": 4.0,
     "top1": 1.0,
     "ndcg": 0.642,
-    "zeros_top10": 5
+    "zeros_top10": 5,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 7.0,
     "top3": 3.0,
     "top1": 1.0,
     "ndcg": 0.689,
-    "zeros_top10": 3
+    "zeros_top10": 3,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 7.0,
+    "top3": 3.0,
+    "top1": 1.0,
+    "ndcg": 0.689,
+    "zeros_top10": 3,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 7.0,
     "top3": 3.0,
     "top1": 1.0,
     "ndcg": 0.689,
-    "zeros_top10": 3
+    "zeros_top10": 3,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -281,21 +446,36 @@
     "top3": 5.0,
     "top1": 2.0,
     "ndcg": 0.899,
-    "zeros_top10": 0
+    "zeros_top10": 0,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 17.0,
     "top3": 6.0,
     "top1": 2.0,
     "ndcg": 0.88,
-    "zeros_top10": 1
+    "zeros_top10": 1,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 17.0,
+    "top3": 6.0,
+    "top1": 2.0,
+    "ndcg": 0.88,
+    "zeros_top10": 1,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 17.0,
     "top3": 6.0,
     "top1": 2.0,
     "ndcg": 0.88,
-    "zeros_top10": 1
+    "zeros_top10": 1,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -306,21 +486,36 @@
     "top3": 0.0,
     "top1": 0.0,
     "ndcg": 0.089,
-    "zeros_top10": 9
+    "zeros_top10": 9,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 4.0,
     "top3": 4.0,
     "top1": 2.0,
     "ndcg": 0.879,
-    "zeros_top10": 7
+    "zeros_top10": 7,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 4.0,
+    "top3": 4.0,
+    "top1": 2.0,
+    "ndcg": 0.879,
+    "zeros_top10": 7,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 4.0,
     "top3": 4.0,
     "top1": 2.0,
     "ndcg": 0.879,
-    "zeros_top10": 7
+    "zeros_top10": 7,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -331,21 +526,36 @@
     "top3": 1.667,
     "top1": 0.667,
     "ndcg": 0.844,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 3.667,
     "top3": 2.667,
     "top1": 0.667,
     "ndcg": 0.891,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 3.667,
+    "top3": 2.667,
+    "top1": 0.667,
+    "ndcg": 0.891,
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 3.667,
     "top3": 2.667,
     "top1": 0.667,
     "ndcg": 0.891,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -356,21 +566,36 @@
     "top3": 2.0,
     "top1": 1.0,
     "ndcg": 0.639,
-    "zeros_top10": 5
+    "zeros_top10": 5,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 4.667,
     "top3": 2.0,
     "top1": 1.0,
     "ndcg": 0.61,
-    "zeros_top10": 5
+    "zeros_top10": 5,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 4.667,
+    "top3": 2.0,
+    "top1": 1.0,
+    "ndcg": 0.61,
+    "zeros_top10": 5,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 4.667,
     "top3": 2.0,
     "top1": 1.0,
     "ndcg": 0.61,
-    "zeros_top10": 5
+    "zeros_top10": 5,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -381,21 +606,36 @@
     "top3": 2.0,
     "top1": 1.0,
     "ndcg": 0.455,
-    "zeros_top10": 7
+    "zeros_top10": 7,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 5.667,
     "top3": 1.0,
     "top1": 0.0,
     "ndcg": 0.449,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 5.667,
+    "top3": 1.0,
+    "top1": 0.0,
+    "ndcg": 0.449,
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 5.667,
     "top3": 1.0,
     "top1": 0.0,
     "ndcg": 0.449,
-    "zeros_top10": 6
+    "zeros_top10": 6,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -406,21 +646,36 @@
     "top3": 3.0,
     "top1": 1.0,
     "ndcg": 0.738,
-    "zeros_top10": 1
+    "zeros_top10": 1,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 12.0,
     "top3": 3.0,
     "top1": 1.0,
     "ndcg": 0.842,
-    "zeros_top10": 0
+    "zeros_top10": 0,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 12.0,
+    "top3": 3.0,
+    "top1": 1.0,
+    "ndcg": 0.842,
+    "zeros_top10": 0,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 12.0,
     "top3": 3.0,
     "top1": 1.0,
     "ndcg": 0.842,
-    "zeros_top10": 0
+    "zeros_top10": 0,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -431,21 +686,36 @@
     "top3": 0.0,
     "top1": 0.0,
     "ndcg": 0.148,
-    "zeros_top10": 9
+    "zeros_top10": 9,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 2.667,
     "top3": 1.333,
     "top1": 1.333,
     "ndcg": 0.715,
-    "zeros_top10": 8
+    "zeros_top10": 8,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 2.667,
+    "top3": 1.333,
+    "top1": 1.333,
+    "ndcg": 0.715,
+    "zeros_top10": 8,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 2.667,
     "top3": 1.333,
     "top1": 1.333,
     "ndcg": 0.715,
-    "zeros_top10": 8
+    "zeros_top10": 8,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -456,21 +726,36 @@
     "top3": 0.0,
     "top1": 0.0,
     "ndcg": 0.312,
-    "zeros_top10": 8
+    "zeros_top10": 8,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 0.667,
     "top3": 0.0,
     "top1": 0.0,
     "ndcg": 0.12,
-    "zeros_top10": 9
+    "zeros_top10": 9,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 0.667,
+    "top3": 0.0,
+    "top1": 0.0,
+    "ndcg": 0.12,
+    "zeros_top10": 9,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 0.667,
     "top3": 0.0,
     "top1": 0.0,
     "ndcg": 0.12,
-    "zeros_top10": 9
+    "zeros_top10": 9,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -481,21 +766,36 @@
     "top3": 0.0,
     "top1": 0.0,
     "ndcg": 0.255,
-    "zeros_top10": 7
+    "zeros_top10": 7,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 4.333,
     "top3": 1.333,
     "top1": 1.333,
     "ndcg": 0.454,
-    "zeros_top10": 7
+    "zeros_top10": 7,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 4.333,
+    "top3": 1.333,
+    "top1": 1.333,
+    "ndcg": 0.454,
+    "zeros_top10": 7,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 4.333,
     "top3": 1.333,
     "top1": 1.333,
     "ndcg": 0.454,
-    "zeros_top10": 7
+    "zeros_top10": 7,
+    "judged": 10,
+    "slots": 10
    }
   },
   {
@@ -506,21 +806,36 @@
     "top3": 6.0,
     "top1": 2.0,
     "ndcg": 0.964,
-    "zeros_top10": 0
+    "zeros_top10": 0,
+    "judged": 10,
+    "slots": 10
    },
    "A": {
     "top10": 19.0,
     "top3": 6.0,
     "top1": 2.0,
     "ndcg": 0.992,
-    "zeros_top10": 0
+    "zeros_top10": 0,
+    "judged": 10,
+    "slots": 10
+   },
+   "AH0": {
+    "top10": 19.0,
+    "top3": 6.0,
+    "top1": 2.0,
+    "ndcg": 0.992,
+    "zeros_top10": 0,
+    "judged": 10,
+    "slots": 10
    },
    "AH": {
     "top10": 19.0,
     "top3": 6.0,
     "top1": 2.0,
     "ndcg": 0.992,
-    "zeros_top10": 0
+    "zeros_top10": 0,
+    "judged": 10,
+    "slots": 10
    }
   }
  ]

@@ -1,4 +1,4 @@
-"""판정 묶음 — 판정 질의마다 방식 CUR·A·AH 의 상위 10권을 합쳐 섞고, 도서 정보(운영 GET /api/books/{id})를 붙인다 (1회성).
+"""판정 묶음 — 판정 질의마다 방식 CUR·A·AH0 의 상위 10권을 합쳐 섞고, 도서 정보(운영 GET /api/books/{id})를 붙인다 (1회성).
 
 판정자는 어느 방식에서 나온 책인지 모른다(라벨 B1… 은 질의마다 섞는다). 열쇠는 judge/key.json.
 
@@ -17,7 +17,7 @@ HERE = Path(__file__).resolve().parent
 sys.stdout.reconfigure(encoding="utf-8")
 BASE = "https://skovix.landsoft.co.kr"
 TOP = 10
-VARIANTS = ("CUR", "A", "AH")
+VARIANTS = ("CUR", "A", "AH0")   # 판정 묶음을 만든 방식 — AH(지금 구현)는 tally 가 판정 범위 안에서 센다
 
 
 def info(book_id: str) -> dict:

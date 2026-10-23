@@ -21,6 +21,13 @@
    "found": 41,
    "n": 1246
   },
+  "AH0": {
+   "queries": 41,
+   "hit1": 41,
+   "hit5": 41,
+   "found": 41,
+   "n": 2135
+  },
   "AH": {
    "queries": 41,
    "hit1": 41,
@@ -50,6 +57,13 @@
    "hit5": 12,
    "found": 15,
    "n": 600
+  },
+  "AH0": {
+   "queries": 20,
+   "hit1": 16,
+   "hit5": 17,
+   "found": 17,
+   "n": 887
   },
   "AH": {
    "queries": 20,
@@ -81,6 +95,13 @@
    "found": 10,
    "n": 306
   },
+  "AH0": {
+   "queries": 10,
+   "hit1": 10,
+   "hit5": 10,
+   "found": 10,
+   "n": 486
+  },
   "AH": {
    "queries": 10,
    "hit1": 10,
@@ -110,6 +131,13 @@
    "hit5": 7,
    "found": 7,
    "n": 242
+  },
+  "AH0": {
+   "queries": 8,
+   "hit1": 8,
+   "hit5": 8,
+   "found": 8,
+   "n": 391
   },
   "AH": {
    "queries": 8,
@@ -141,6 +169,13 @@
    "found": 2,
    "n": 131
   },
+  "AH0": {
+   "queries": 5,
+   "hit1": 4,
+   "hit5": 5,
+   "found": 5,
+   "n": 215
+  },
   "AH": {
    "queries": 5,
    "hit1": 4,
@@ -170,6 +205,13 @@
    "hit5": 0,
    "found": 0,
    "n": 522
+  },
+  "AH0": {
+   "queries": 20,
+   "hit1": 0,
+   "hit5": 0,
+   "found": 0,
+   "n": 807
   },
   "AH": {
    "queries": 20,

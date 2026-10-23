@@ -28,7 +28,7 @@ from services.search.metadata_filter import extract_metadata_filter, MetadataFil
 from services.search.reranker import rerank as rerank_docs
 from services.search.context_expander import expand_context, ExpandedContext
 from services.ingestion.embedder import embed_texts
-from services.ingestion.indexer import search_chunks, search_by_book
+from services.ingestion.indexer import SearchHit, search_chunks, search_by_book
 from schemas.book import (
     ChunkHit,
     BookChunkGroup,
@@ -131,7 +131,8 @@ async def search(
         log.info(f"Milvus expression: {milvus_expr}")
 
     # ② 쿼리 임베딩 (dense + sparse) — 원래 질의 갈래를 쓰면 두 질의를 한 번에 임베딩한다
-    with_original = mode != "chunk" and include_original and rewritten is not None and rewritten != query
+    with_original = (mode != "chunk" and include_original and rewritten is not None
+                     and rewritten.strip() != query.strip())
     texts = [search_query, query] if with_original else [search_query]
     dense_vecs, sparse_vecs = embed_texts(texts, is_query=True)
     query_dense = dense_vecs[0]
@@ -288,7 +289,7 @@ def best_chunk_score(chunks: list[ChunkHit], *, default: float) -> float:
     return max((c.rerank_score or c.score for c in chunks), default=default)
 
 
-def _book_groups(book_hits: dict, query_text: str, use_rerank: bool) -> list[BookChunkGroup]:
+def _book_groups(book_hits: dict[str, list[SearchHit]], query_text: str, use_rerank: bool) -> list[BookChunkGroup]:
     """search_by_book 결과 → 도서별 묶음. 본문 청크를 query_text 로 재정렬해 best_score(로그 부스트 포함)를 매긴다."""
     groups = []
     for book_id, hits in book_hits.items():
@@ -377,7 +378,7 @@ async def _search_book_mode(
         top_k_books=fetch_books,
         meta_expr=meta_expr,
     )
-    original_hits = {}
+    original_hits: dict[str, list[SearchHit]] = {}   # 원래 질의 갈래를 쓰지 않으면 빈 채로 둔다
     if original_vectors is not None:
         original_hits = search_by_book(
             original_vectors[0],
