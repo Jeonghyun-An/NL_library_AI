@@ -3550,16 +3550,179 @@ html.skx-scroll-lock {
   line-height: 1.4;
   letter-spacing: -0.01em;
 }
-.skx-chat-intro__text {
-  margin: 0;
-  font-size: 0.68rem;
-  line-height: 1.65;
+/* 대화 첫 차례 — 브로셔 머리말 · 추천 질문(번호 → 물어보면 체크) · 출처 안내. 남는 공간이 있으면 입력 칸 쪽으로 내려앉아
+   대화가 아래에서부터 쌓인다(빈 패널 위쪽에 카드만 떠 있지 않게). 내용이 넘치면 auto 가 0 이 되어 스크롤은 그대로다 */
+.skx-chat-opening {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
 }
-.skx-chat-intro__hint {
-  margin: 0.4rem 0 0;
-  font-size: 0.62rem;
-  line-height: 1.55;
+.skx-chat-opening .skx-chat-intro__title {
+  margin: 0;
+}
+.skx-chat-opening__label {
+  margin: 0.15rem 0 0;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   opacity: 0.75;
+}
+.skx-chat-starters {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.skx-chat-starter {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: var(--skx-radius-md);
+  background: var(--skx-chat-row-bg);
+  color: var(--skx-ink-on-light);
+  font: inherit;
+  font-size: 0.66rem;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s;
+}
+.skx-chat-starter:hover {
+  background: var(--skx-chat-row-hover);
+}
+.skx-chat-starter:focus-visible {
+  outline: 2px solid var(--skx-ink-on-light);
+  outline-offset: 1px;
+}
+.skx-chat-starter[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
+}
+.skx-chat-starter__num {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 1.5px solid var(--skx-ink-on-light);
+  border-radius: var(--skx-radius-pill);
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.skx-chat-starter__num svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: none;
+  stroke: var(--skx-chat-cite-on);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.skx-chat-starter.is-asked .skx-chat-starter__num {
+  background: var(--skx-ink-on-light);
+  color: var(--skx-chat-cite-on);
+}
+.skx-chat-starter.is-asked .skx-chat-starter__text {
+  opacity: 0.75;
+}
+.skx-chat-starter__text {
+  flex: 1;
+  min-width: 0;
+}
+.skx-chat-starter__arrow {
+  flex-shrink: 0;
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: var(--skx-ink-on-light);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.55;
+  transition:
+    transform 0.12s,
+    opacity 0.12s;
+}
+.skx-chat-starter:hover .skx-chat-starter__arrow {
+  transform: translateX(2px);
+  opacity: 1;
+}
+.skx-chat-starter__go {
+  flex-shrink: 0;
+  font-size: 0.56rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+/* 출처 안내 — 답 카드의 '출처 N건'처럼 가는 선 아래, 견본 칩(p.3)이 앞에 선다 */
+.skx-chat-opening__cite {
+  margin: 0.15rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--skx-rule);
+  font-size: 0.6rem;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+.skx-chat-opening__cite .skx-chat-cite {
+  margin: 0 0.35em 0 0;
+}
+/* 다음 질문 — 끝난 답 아래 질문 말풍선 자리의 점선 말풍선. 올리면 실제 질문 말풍선 면으로 채워져 '누르면 내 질문'이 보인다 */
+.skx-chat-next {
+  align-self: flex-end;
+  max-width: 82%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+.skx-chat-next__label {
+  font-size: 0.56rem;
+  font-weight: 600;
+  color: var(--skx-ink-strong);
+  opacity: 0.7;
+}
+.skx-chat-next__btn {
+  padding: 0.5rem 0.8rem;
+  border: 1px dashed var(--skx-ink-strong);
+  border-radius: 14px;
+  border-bottom-right-radius: 4px;
+  background: transparent;
+  color: var(--skx-ink-strong);
+  font: inherit;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  opacity: 0.85;
+  transition:
+    background-color 0.12s,
+    opacity 0.12s;
+}
+.skx-chat-next__btn:hover {
+  background: var(--skx-chat-user-bg);
+  border-style: solid;
+  opacity: 1;
+}
+.skx-chat-next__btn:focus-visible {
+  outline: 2px solid var(--skx-ink-strong);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-chat-starter__arrow {
+    transition: none;
+  }
+  .skx-chat-starter:hover .skx-chat-starter__arrow {
+    transform: none;
+  }
 }
 /* 글 속 쪽 번호 — 누르면 아래 출처 목록에서 그 쪽 원문이 펼쳐진다(button), 출처를 아직 모르면(받는 중) 모양만(.is-static) */
 .skx-chat-cite-group {

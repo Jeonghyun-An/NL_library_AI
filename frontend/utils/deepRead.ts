@@ -12,11 +12,16 @@ import { citedPdfTarget } from "~/utils/pdfViewer";
 export type DocKind = "book" | "paper";
 
 // stopLabel 은 답을 받는 동안 보내기 단추가 바뀌는 [멈춤] 단추의 이름(화면낭독기·마우스 툴팁).
-// introTitle·introBody 는 빈 대화의 안내 — 브로셔 DeepRead 소개('자료와의 대화만으로 핵심 내용 파악')를 화면 말투(해요체)로 옮긴다.
-// '안녕하세요! …자유롭게 물어보세요!'·'이 자료 내용을 바탕으로 답해요.'는 AI 말투·밋밋하다고 바꿨다(사용자 2026-10-23)
+// introTitle 은 대화 첫 차례의 머리말 — 브로셔 DeepRead 소개('자료와의 대화만으로 핵심 내용 파악') 그대로.
+// starters 는 그 아래 바로 눌러 묻는 추천 질문(순서대로, 정적 — 자료별 질문을 만들 API 는 없다). 운영 딥리드에서 출처 단추가
+// 붙는 것만 골랐다(2026-10-23 논문 4편·소장자료 5편 — 논문 대상·방법 4/4, 결과 수치 3/4, 제언 2/4·시연 논문 둘 다 붙음,
+// 소장자료 사건·주장 5/5, 마무리 4/5, 인물·기관 4/5). '이 연구의 결론은?'은 0/4 라 뺐다 — 초록(1쪽)·요약에서 답이 나오는
+// 개요·목적·결론 질문은 단추가 없고, '출처·인용·참고문헌'을 넣으면 참고문헌 목록으로 답한다.
+// 소장자료는 학위논문·재정 보고서·영미 고전소설이 섞여 종류를 단정하지 않는 말로.
+// '안녕하세요! …자유롭게 물어보세요!'·설명 문장 두 줄(머리말과 같은 말)은 AI 말투·되풀이라 걷었다(사용자 2026-10-23)
 export interface ChatCopy {
   introTitle: string;
-  introBody: string;
+  starters: readonly string[];
   placeholder: string;
   inputLabel: string;
   sendLabel: string;
@@ -26,7 +31,11 @@ export interface ChatCopy {
 const COPY: Record<DocKind, ChatCopy> = {
   book: {
     introTitle: "자료와의 대화만으로 핵심 내용 파악",
-    introBody: "자료를 다 읽지 않아도 묻고 답하며 주요 내용을 파악할 수 있어요.",
+    starters: [
+      "가장 중요한 사건이나 주장은 무엇인가요?",
+      "마지막 부분은 어떻게 마무리되나요?",
+      "중심이 되는 인물이나 기관은 누구인가요?",
+    ],
     placeholder: "자료에 대해 질문해 주세요",
     inputLabel: "자료에 대한 질문 입력",
     sendLabel: "질문 보내기",
@@ -34,7 +43,11 @@ const COPY: Record<DocKind, ChatCopy> = {
   },
   paper: {
     introTitle: "자료와의 대화만으로 핵심 내용 파악",
-    introBody: "논문을 다 읽지 않아도 묻고 답하며 주요 내용을 파악할 수 있어요.",
+    starters: [
+      "누구를 대상으로, 어떤 방법으로 연구했나요?",
+      "주요 결과를 수치와 함께 알려 주세요.",
+      "결론에서 무엇을 제언했나요?",
+    ],
     placeholder: "논문에 대해 질문해 주세요",
     inputLabel: "논문에 대한 질문 입력",
     sendLabel: "질문 보내기",

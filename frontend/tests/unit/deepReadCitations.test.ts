@@ -208,3 +208,33 @@ describe("BookChat — 근거 목록과 글 속 쪽 번호를 그린다", () => 
     expect(chat).toContain("onBeforeUnmount(clearWait);");
   });
 });
+
+// 대화 첫 차례 — 설명 문장 두 줄(머리말과 같은 말)을 걷고, 바로 눌러 묻는 추천 질문과 출처 안내 한 줄로(사용자 2026-10-23)
+describe("BookChat — 첫 차례는 머리말 · 추천 질문 · 출처 안내", () => {
+  const chat = readFileSync(resolve(__dirname, "../../components/BookChat.vue"), "utf-8").replace(/\r\n/g, "\n");
+  const template = chat.slice(0, chat.indexOf("<script")).replace(/<!--[\s\S]*?-->/g, "");
+
+  it("첫 차례는 대화가 시작돼도 남고, 추천 질문은 물어보면 체크와 [답 보기]가 된다", () => {
+    expect(template).toContain('class="skx-chat-msg skx-chat-msg--ai skx-chat-opening"');
+    expect(template).not.toContain("messages.length === 0 && !isStreaming");
+    expect(template).toContain('v-for="s in starters"');
+    expect(template).toContain("답 보기");
+    expect(template).not.toMatch(/introBody|skx-chat-intro__hint/);
+  });
+
+  it("출처 안내는 견본 칩(누르지 않는 span) 뒤에 CITE_HINT 그대로", () => {
+    expect(template).toContain('<span class="skx-chat-cite is-static" aria-hidden="true">p.3</span>');
+    expect(template).toContain("{{ CITE_HINT }}");
+  });
+
+  it("끝난 답 아래에 아직 묻지 않은 추천 질문 하나를 '다음 질문'으로 권하고, 받는 중·실패 때는 숨긴다", () => {
+    expect(template).toContain('v-if="nextStarter"');
+    expect(template).toContain("다음 질문");
+    expect(chat).toContain("!messages.value.length || isStreaming.value || failure.value ? null");
+  });
+
+  it("추천 질문으로 보낼 때 입력 칸에 되살린 같은 질문은 비운다([다시 시도]와 같은 규칙)", () => {
+    expect(chat).toContain("if (inputText.value.trim() === s.q) inputText.value = \"\";");
+    expect(chat).toContain("await ask(() => sendChat(s.q));");
+  });
+});

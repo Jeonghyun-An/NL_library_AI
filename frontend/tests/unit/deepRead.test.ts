@@ -28,18 +28,29 @@ describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
   it("안내 머리말은 브로셔와 같고, 책은 '자료'·논문은 '논문' — 느낌표·'자유롭게' 없이, 보내기 버튼 이름은 둘 다 '질문 보내기'", () => {
     const book = chatCopy("book");
     expect(book.introTitle).toBe("자료와의 대화만으로 핵심 내용 파악");
-    expect(book.introBody).toBe("자료를 다 읽지 않아도 묻고 답하며 주요 내용을 파악할 수 있어요.");
+    expect(book.starters).toEqual([
+      "가장 중요한 사건이나 주장은 무엇인가요?",
+      "마지막 부분은 어떻게 마무리되나요?",
+      "중심이 되는 인물이나 기관은 누구인가요?",
+    ]);
     expect(book.placeholder).toBe("자료에 대해 질문해 주세요");
     expect(book.inputLabel).toBe("자료에 대한 질문 입력");
     expect(book.sendLabel).toBe("질문 보내기");
 
     const paper = chatCopy("paper");
     expect(paper.introTitle).toBe("자료와의 대화만으로 핵심 내용 파악");
-    expect(paper.introBody).toBe("논문을 다 읽지 않아도 묻고 답하며 주요 내용을 파악할 수 있어요.");
+    expect(paper.starters).toEqual([
+      "누구를 대상으로, 어떤 방법으로 연구했나요?",
+      "주요 결과를 수치와 함께 알려 주세요.",
+      "결론에서 무엇을 제언했나요?",
+    ]);
     expect(paper.placeholder).toBe("논문에 대해 질문해 주세요");
     for (const kind of ["book", "paper"] as const) {
       const c = chatCopy(kind);
-      expect(`${c.introTitle} ${c.introBody} ${c.placeholder}`).not.toMatch(/!|자유롭게|안녕하세요/);
+      const shown = [c.introTitle, ...c.starters, c.placeholder].join(" ");
+      expect(shown).not.toMatch(/!|자유롭게|안녕하세요|당신|대목|근거|✦/);
+      // 추천 질문에 '출처·인용·참고'가 들어가면 서버가 참고문헌 질문으로 알아듣고 쪽 출처 없이 답한다(book_chat 참고문헌 의도)
+      for (const q of c.starters) expect(q).not.toMatch(/출처|인용|참고/);
     }
     expect(paper.inputLabel).toBe("논문에 대한 질문 입력");
     expect(paper.sendLabel).toBe("질문 보내기");
