@@ -24,21 +24,22 @@ describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
     expect(chatCopy("paper").stopLabel).toBe("답 받기 멈추기");
   });
 
-  // AI 말투('안녕하세요! …자유롭게 물어보세요!')를 걷고 무엇을 바탕으로 답하는지만 짧게 — 제목은 창 머리에 있어 다시 쓰지 않는다(2026-10-23)
-  it("책은 '자료', 논문은 '논문' 문구 — 느낌표·'자유롭게' 없이, 보내기 버튼 이름은 둘 다 '질문 보내기'", () => {
+  // 빈 대화의 안내는 브로셔 DeepRead 소개를 화면 말투로 — AI 말투('안녕하세요! …자유롭게 물어보세요!')는 걷었다(2026-10-23)
+  it("안내 머리말은 브로셔와 같고, 책은 '자료'·논문은 '논문' — 느낌표·'자유롭게' 없이, 보내기 버튼 이름은 둘 다 '질문 보내기'", () => {
     const book = chatCopy("book");
-    expect(book.greeting("어린 왕자")).toBe("이 자료 내용을 바탕으로 답해요.");
-    expect(book.greeting()).toBe("이 자료 내용을 바탕으로 답해요.");
+    expect(book.introTitle).toBe("자료와의 대화만으로 핵심 내용 파악");
+    expect(book.introBody).toBe("자료를 다 읽지 않아도 묻고 답하며 주요 내용을 파악할 수 있어요.");
     expect(book.placeholder).toBe("책에 대해 질문해 주세요");
     expect(book.inputLabel).toBe("책에 대한 질문 입력");
     expect(book.sendLabel).toBe("질문 보내기");
 
     const paper = chatCopy("paper");
-    expect(paper.greeting("노인의 우울과 사회적 지지")).toBe("이 논문 내용을 바탕으로 답해요.");
+    expect(paper.introTitle).toBe("자료와의 대화만으로 핵심 내용 파악");
+    expect(paper.introBody).toBe("논문을 다 읽지 않아도 묻고 답하며 주요 내용을 파악할 수 있어요.");
     expect(paper.placeholder).toBe("논문에 대해 질문해 주세요");
     for (const kind of ["book", "paper"] as const) {
       const c = chatCopy(kind);
-      expect(`${c.greeting()} ${c.placeholder}`).not.toMatch(/!|자유롭게|안녕하세요/);
+      expect(`${c.introTitle} ${c.introBody} ${c.placeholder}`).not.toMatch(/!|자유롭게|안녕하세요/);
     }
     expect(paper.inputLabel).toBe("논문에 대한 질문 입력");
     expect(paper.sendLabel).toBe("질문 보내기");

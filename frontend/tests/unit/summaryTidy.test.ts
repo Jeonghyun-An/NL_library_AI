@@ -367,9 +367,11 @@ describe("논문 검색 AI 요약 그리기 배선 — pages/papers/index.vue", 
   it("받은 글(aiText)을 tidySummary 로 다듬은 글(shownAiText)을 marked 로 그린다 — 받는 중이면 streaming", () => {
     expect(src).toContain('import { tidySummary } from "~/utils/summaryTidy";');
     expect(src).toContain("const shownAiText = computed(() => tidySummary(aiText.value, { streaming: aiLoading.value }));");
-    expect(src).toMatch(/const renderedAiText = computed\(\(\) =>\s*shownAiText\.value \? \(marked\.parse\(shownAiText\.value\) as string\) : "",\s*\);/);
-    // marked 로 그리는 곳은 이 한 곳뿐이다 — 받은 글을 그대로 그리는 길이 없다
-    expect(src.match(/marked\.parse\(/g)).toHaveLength(1);
+    // 물결표를 글자로 그리는 renderMarkdown(utils/markdown) — '2006~2010년 … 2005~2009년'이 취소선이 되지 않게(2026-10-23)
+    expect(src).toMatch(/const renderedAiText = computed\(\(\) =>\s*renderMarkdown\(shownAiText\.value\),\s*\);/);
+    // 마크다운으로 그리는 곳은 이 한 곳뿐이다 — 받은 글을 그대로 그리는 길이 없다
+    expect(src.match(/renderMarkdown\(/g)).toHaveLength(1);
+    expect(src).not.toContain("marked.parse(");
   });
 
   it("요약 칸의 보이기 조건도 다듬은 글로 정한다 — 다 빠지면 빈 요약", () => {

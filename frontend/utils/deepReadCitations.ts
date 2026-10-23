@@ -7,6 +7,7 @@
 import { marked } from "marked";
 import { pageLabel } from "~/utils/citations";
 import type { DeepReadSource } from "~/utils/deepReadSse";
+import { MARKDOWN_CODE, escapeTildeText } from "~/utils/markdown";
 import { passageText } from "~/utils/passageText";
 
 /** 같은 쪽 표기(label)의 대목 묶음 — 목록 한 줄 */
@@ -50,8 +51,8 @@ const NO_PAGE_RULES: readonly [RegExp, string][] = [
   [new RegExp(String.raw`[ \t]*\(\s*\[\s*쪽\s?정보\s?없음\s*\]\s*\)`, "g"), ""],
   [new RegExp(String.raw`[ \t]*${NO_PAGE_HEAD}`, "g"), ""],
 ];
-// 마크다운 코드(코드 블록·코드 칸) — 그 안은 HTML 이 살지 않아 쪽 번호로 바꾸지 않고 글자 그대로 둔다
-const CODE = /(```[\s\S]*?(?:```|$)|`[^`\n]*`)/g;
+// 마크다운 코드(코드 블록·코드 칸 — utils/markdown) 안은 HTML 이 살지 않아 쪽 번호로 바꾸지 않고 글자 그대로 둔다
+const CODE = MARKDOWN_CODE;
 // 쪽 번호 자리표시 — 사설 영역 글자로 감싼다. marked 가 강조(**…**)를 판단할 때 문장부호로 보지 않아 '**p.3**에'도 굵게 그려진다
 // (HTML 태그를 먼저 넣으면 닫는 '**' 앞이 '>' 가 되어 강조가 닫히지 않았다). marked 를 거친 뒤 단추 HTML 로 바꾼다
 const MARK_OPEN = "";
@@ -156,7 +157,8 @@ function stripNoPage(text: string): string {
 /**
  * 답 글(마크다운)을 HTML 로 — 쪽 표기는 쪽 번호로, '[쪽 정보 없음]'은 걷는다. 코드 블록·코드 칸 안은 글자 그대로 둔다.
  * link 가 있으면(받기를 마친 답) 출처 묶음을 가리키는 단추, 없으면(받는 중·실패한 글·낭독용) 모양만 같은 글자다.
- * 쪽 번호는 자리표시로 marked 를 거친 뒤 HTML 로 바꾼다(강조 판단이 쪽 표기 글자를 그대로 보게)
+ * 쪽 번호는 자리표시로 marked 를 거친 뒤 HTML 로 바꾼다(강조 판단이 쪽 표기 글자를 그대로 보게). 물결표는 쪽 표기를 읽은 뒤
+ * 글자로 바꾼다('p.3~4' 는 쪽 번호로, '2006~2010년 … 2005~2009년' 은 취소선이 아닌 글자로 — utils/markdown)
  */
 export function renderAnswer(answer: string, link: CiteLink | null): string {
   if (!answer) return "";
@@ -166,14 +168,16 @@ export function renderAnswer(answer: string, link: CiteLink | null): string {
     .map((part, k) =>
       k % 2 === 1
         ? part
-        : stripNoPage(part).replace(CITE, (...args: string[]) => {
-            const pages = matchPages(args);
-            if (pages.length === 0) return args[0]!;
-            const html = pages.map((p) => citeChip(p.start, p.end, link));
-            // 여럿이면 줄바꿈에 갈리지 않게 한 덩이로
-            chips.push(html.length > 1 ? `<span class="skx-chat-cite-group">${html.join("")}</span>` : html[0]!);
-            return `${MARK_OPEN}${chips.length - 1}${MARK_CLOSE}`;
-          }),
+        : escapeTildeText(
+            stripNoPage(part).replace(CITE, (...args: string[]) => {
+              const pages = matchPages(args);
+              if (pages.length === 0) return args[0]!;
+              const html = pages.map((p) => citeChip(p.start, p.end, link));
+              // 여럿이면 줄바꿈에 갈리지 않게 한 덩이로
+              chips.push(html.length > 1 ? `<span class="skx-chat-cite-group">${html.join("")}</span>` : html[0]!);
+              return `${MARK_OPEN}${chips.length - 1}${MARK_CLOSE}`;
+            }),
+          ),
     )
     .join("");
   const html = marked.parse(markdown) as string;

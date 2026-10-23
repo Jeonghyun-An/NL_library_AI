@@ -335,7 +335,7 @@
 </template>
 
 <script setup lang="ts">
-import { marked } from "marked";
+import { renderMarkdown } from "~/utils/markdown";
 import type { ComponentPublicInstance } from "vue";
 import { useBookmark } from "~/composables/useBookmark";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
@@ -479,7 +479,7 @@ const summaryDone = ref(false);
 const summaryError = ref("");
 const summaryQuestionText = ref("");
 const summaryFailedRef = ref<ComponentPublicInstance | null>(null);
-const renderedSummary = computed(() => (summaryText.value ? (marked.parse(summaryText.value) as string) : ""));
+const renderedSummary = computed(() => renderMarkdown(summaryText.value));
 
 // AI 큐레이션 탭 — 글이 없는 탭은 뺀다. 고른 탭이 빠지면 첫 탭. [AI 요약]은 [다시 시도]로 다시 받는 동안에도 남는다
 const curationTab = ref<string | null>("ai-summary");

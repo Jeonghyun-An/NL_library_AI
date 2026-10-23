@@ -1,9 +1,10 @@
 <template>
   <div ref="rootEl" class="skx-chat-body">
     <div class="skx-chat-messages" ref="messagesEl">
-      <!-- 빈 상태 — 무엇을 바탕으로 답하는지와 쪽 번호 쓰는 법 한 줄 -->
+      <!-- 빈 상태 — 브로셔 DeepRead 소개와 같은 머리말 · 한 줄 설명 · 쪽 번호 쓰는 법 -->
       <div v-if="messages.length === 0 && !isStreaming" class="skx-chat-msg skx-chat-msg--ai skx-chat-msg--intro">
-        <p class="skx-chat-intro__text">{{ copy.greeting(bookTitle) }}</p>
+        <p class="skx-chat-intro__title">{{ copy.introTitle }}</p>
+        <p class="skx-chat-intro__text">{{ copy.introBody }}</p>
         <p class="skx-chat-intro__hint">{{ CITE_HINT }}</p>
       </div>
 
@@ -151,18 +152,18 @@
 </template>
 
 <script setup lang="ts">
-import { marked } from "marked";
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from "vue";
 import { useDeepReadChat } from "~/composables/useDeepReadChat";
 import type { OpenPdfPayload } from "~/types/research";
 import { type DocKind, chatCopy, sourcePdfTarget } from "~/utils/deepRead";
 import { type SourceGroup, groupSources, renderAnswer } from "~/utils/deepReadCitations";
 import { CHAT_MAX_CHARS, type DeepReadMessage, type DeepReadSource } from "~/utils/deepReadSse";
+import { renderMarkdown } from "~/utils/markdown";
 import { passageText } from "~/utils/passageText";
 
 // 빈 대화의 쓰는 법 한 줄 — 답의 쪽 번호가 이 화면의 핵심이라 처음부터 알린다. 화면 말은 사서가 쓰는 말(출처·원문·쪽)로 —
 // '대목'·'근거'·'자유롭게 물어보세요!' 같은 말은 AI 말투로 읽혀 걷었다(사용자 2026-10-23)
-const CITE_HINT = "답변의 쪽 번호를 누르면 해당 원문을 볼 수 있어요.";
+const CITE_HINT = "답변의 출처를 쪽 번호로 보여 드려요. 누르면 해당 원문이 펼쳐져요.";
 // 첫 글이 오기 전의 안내 — 서버는 먼저 이 자료의 원문에서 찾고(1초 안팎) 찾은 내용으로 답을 쓴다. 단계 신호는 없어 시간으로 넘긴다
 const WAIT_STEPS = ["원문에서 찾고 있어요", "답변을 작성하고 있어요"] as const;
 const WAIT_STEP_MS = 1800;
@@ -207,9 +208,9 @@ const countId = `skx-chat-count-${useId()}`;
 // 화면낭독기가 읽을 끝난 답(HTML) — 방금 보낸 질문의 답만 싣는다(논문을 바꿔 다른 대화를 펼칠 때 옛 답을 다시 읽지 않게)
 const liveHtml = ref("");
 
+// 질문 글 — 물결표는 글자로('2006~2010' 이 취소선이 되지 않게 — utils/markdown)
 function formatText(text: string) {
-  if (!text) return "";
-  return marked.parse(text) as string;
+  return renderMarkdown(text);
 }
 
 // 답마다 근거 묶음(같은 쪽 대목 한 줄) — 글과 sources 로만 정해져 펼침이 바뀌어도 다시 묶지 않는다
