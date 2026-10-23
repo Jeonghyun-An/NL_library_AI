@@ -204,12 +204,13 @@ def _fix_timeouts(monkeypatch, *, finalize=900, book=120, intro=120, plot=120, r
 
 
 def test_reduce_budget_formula(monkeypatch):
-    """예산 = 마무리 단계 타임아웃 − 최종 호출 몫 − 여유 60초(− 표지를 만들면 표지 프롬프트 LLM + FLUX), 하한 60초.
-    동시 한도가 호출 수 이상이면 최종 호출은 한 차례라 몫은 가장 긴 타임아웃 하나다."""
+    """예산 = 마무리 단계 타임아웃 − 최종 호출 몫 − 여유 60초(− 표지를 만들면 표지 프롬프트 LLM 최대 3번 + FLUX), 하한 60초.
+    동시 한도가 호출 수 이상이면 최종 호출은 한 차례라 몫은 가장 긴 타임아웃 하나다. 표지 프롬프트는 장면·다시 쓰기·추상
+    전환으로 많게는 3번 묻는다(cover_generator.COVER_PROMPT_MAX_CALLS — 2026-10-23 표지 개편)."""
     _fix_timeouts(monkeypatch)
     monkeypatch.setattr(stages.cfg, "LLM_SECTION_CONCURRENCY", 4)
     assert stages._reduce_budget_seconds([120, 100], make_cover=False) == 900 - 120 - 60
-    assert stages._reduce_budget_seconds([120, 100], make_cover=True) == 900 - 120 - 60 - (60 + 300)
+    assert stages._reduce_budget_seconds([120, 100], make_cover=True) == 900 - 120 - 60 - (3 * 60 + 300)
     monkeypatch.setattr(stages.cfg, "INGEST_STAGE_TIMEOUT_FINALIZE", 100)    # 몫이 마감을 넘으면 하한
     assert stages._reduce_budget_seconds([120, 100], make_cover=False) == 60
     assert stages._reduce_budget_seconds([120, 100], make_cover=True) == 60
@@ -230,7 +231,7 @@ def test_reduce_budget_reserves_the_longest_timeout_per_wave(monkeypatch, concur
     monkeypatch.setattr(stages.cfg, "LLM_SECTION_CONCURRENCY", concurrency)
     timeouts = [100, 110, 130, 90]
     assert stages._reduce_budget_seconds(timeouts, make_cover=False) == budget
-    expected_with_cover = max(60, budget - (60 + 300))
+    expected_with_cover = max(60, budget - (3 * 60 + 300))   # 표지 프롬프트 LLM 최대 3번 + FLUX
     assert stages._reduce_budget_seconds(timeouts, make_cover=True) == expected_with_cover
 
 

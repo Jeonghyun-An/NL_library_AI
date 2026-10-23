@@ -2,10 +2,12 @@
 도서 표지 자동 생성 모듈.
 
 흐름:
-  ① LLM에게 표지 이미지 생성용 영문 프롬프트를 만들어달라고 요청
-     (책 소개·테마·장르를 시각적 장면으로 변환)
-  ② FLUX.1-dev 서버에 프롬프트를 보내 표지 이미지(JPEG) 생성
-  ③ MinIO 업로드 후 key 반환
+  ① 사진 종류·색 보정·구도는 코드가 자료 id 로 고른다(cover_art.art_direction — 실사풍)
+  ② LLM 은 '카메라가 무엇을 찍는지' 한 문장만 쓴다(cover_scene). 장면에 금지어가 있으면 걸린 말을 알려 다시 쓰게 하고(두 번까지),
+     그래도 남은 문학 아닌 자료는 표지를 만들지 않는다(재난 자료의 배·물에 뜬 물건 같은 아픈 그림을 내보내지 않는다)
+  ③ 코드가 '사진 종류: 장면 구도 색 보정. 글자 없는 장면' 한 줄로 조립해 FLUX.1-dev 서버에 보내 표지 이미지(JPEG) 생성
+  ④ MinIO 업로드 후 key 반환
+2026-10-23 전에는 LLM 이 화풍까지 한 번에 썼다 — 재정 보고서 표지가 톱니·도시·빛줄기로 모였다(cover_art 머리말)
 
 외부 의존:
   - LLM_BASE_URL (기존 vLLM 서버)
@@ -22,6 +24,76 @@ log = logging.getLogger(__name__)
 
 
 # ── 표지 프롬프트 생성 ──────────────────────────────────────
+async def _ask(name: str, timeout: float, **vars) -> str:
+    """프롬프트 하나로 LLM 에 한 번 묻고 장면 한 문장으로 다듬는다(cover_art.clean_scene)."""
+    from services.ingestion.cover_art import clean_scene
+    from services.llm_client import chat
+    from services.prompts import get_prompt
+
+    system, user, params = get_prompt(name).render(**vars)
+    text = await chat(
+        [{"role": "system", "content": system}, {"role": "user", "content": user}],
+        params=params,
+        timeout=timeout,
+    )
+    return clean_scene(text or "")
+
+
+# 표지 한 장에 LLM 을 부르는 최대 횟수 — 장면 → (금지어면) 다시 → (그래도면) 한 번 더.
+# 적재 마무리의 시간 예산(stages._reduce_budget_seconds)이 이만큼을 표지 몫으로 남긴다
+COVER_PROMPT_MAX_CALLS = 3
+
+
+async def compose_cover(
+    title: str,
+    author: str,
+    kdc: str,
+    themes: str,
+    introduction: str,
+    summary: str,
+    *,
+    book_id: str = "",
+    doc_type: str | None = "book",
+    avoid: list[str] | None = None,
+) -> tuple[str, str] | None:
+    """자료 메타로 (FLUX 프롬프트 한 줄, 장면 한 문장)을 만든다 — 아트 디렉션은 코드, 장면은 LLM. 못 만들면 None.
+
+    avoid 는 같은 묶음에서 방금 쓴 장면 핵심어(다시 만들기 스크립트가 넘긴다 — 되풀이를 막는다). 장면을 따로 돌려주는 것은
+    스크립트가 다음 표지의 avoid 를 장면에서 뽑게 하려고다(사진 종류 문구에 ': ' 가 있을 수 있어 완성 줄에서 장면을 잘라 내지 않는다).
+    다시 쓰기 호출이 실패하면 그 앞 장면으로 판단을 이어 간다 — 첫 장면이 멀쩡하면 버리지 않는다.
+    """
+    from services.ingestion import cover_art
+
+    cfg = get_settings()
+    timeout = cfg.COVER_PROMPT_TIMEOUT
+    ad = cover_art.art_direction(book_id or title or "", doc_type, title or "", themes or "", summary or "")
+    scene_vars = dict(doc_type=doc_type or "", title=title or "Untitled", author=author or "Unknown", kdc=kdc or "N/A",
+                      themes=themes or "N/A", summary=(summary or introduction or "")[:1500],
+                      scale=cover_art.SCALE_TEXT[ad.scale], avoid=", ".join((avoid or [])[-12:]))
+    scene = await _ask("cover_scene", timeout, **scene_vars, retry_from="", retry_hits="")
+    hits = cover_art.banned_terms(scene, title or "")
+    for _ in range(COVER_PROMPT_MAX_CALLS - 1):
+        if not (scene and hits):
+            break
+        try:
+            again = await _ask("cover_scene", timeout, **scene_vars, retry_from=scene, retry_hits=", ".join(hits))
+        except Exception as e:  # 다시 쓰기가 실패하면 앞 장면으로 판단을 이어 간다
+            log.warning(f"[{book_id}] 표지 장면 다시 쓰기 실패: {e}")
+            break
+        again_hits = cover_art.banned_terms(again, title or "")
+        if again and len(again_hits) <= len(hits):
+            scene, hits = again, again_hits
+    if scene and hits:
+        log.warning(f"[{book_id}] 표지 장면에 금지어가 남았다: {hits} — {scene[:120]}")
+        # 문학이 아니면(정책 보고서·일반 도서) 표지를 만들지 않는다 — 글자가 생기는 사물·재난의 아픈 그림을 내보내지 않는다
+        # (다시 만들기 스크립트는 그 자료의 옛 표지를 그대로 두고 기록에 남긴다). 문학은 장면을 그대로 둔다
+        if ad.genre == "policy":
+            return None
+    if not scene:
+        return None
+    return cover_art.assemble(ad, scene), scene
+
+
 async def generate_cover_prompt(
     title: str,
     author: str,
@@ -29,33 +101,15 @@ async def generate_cover_prompt(
     themes: str,
     introduction: str,
     summary: str,
+    *,
+    book_id: str = "",
+    doc_type: str | None = "book",
+    avoid: list[str] | None = None,
 ) -> str | None:
-    """책 메타·소개를 받아 FLUX용 영문 프롬프트를 LLM으로 생성."""
-    from services.prompts import get_prompt
-
-    cfg = get_settings()
-    system, user, params = get_prompt("cover_prompt").render(
-        title=title or "Untitled",
-        author=author or "Unknown",
-        kdc=kdc or "N/A",
-        themes=themes or "N/A",
-        introduction=(introduction or "")[:1500],
-        summary=(summary or "")[:1500],
-    )
-    from services.llm_client import chat
-    text = (await chat(
-        [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        params=params,
-        timeout=cfg.COVER_PROMPT_TIMEOUT,
-    )).strip()
-    if not text:
-        return None
-    if text.startswith('"') and text.endswith('"'):
-        text = text[1:-1].strip()
-    return text
+    """자료 메타로 FLUX 영문 프롬프트 한 줄 — compose_cover 의 프롬프트만. 못 만들면 None."""
+    made = await compose_cover(title, author, kdc, themes, introduction, summary,
+                               book_id=book_id, doc_type=doc_type, avoid=avoid)
+    return made[0] if made else None
 
 
 # 표지가 "정책보고서"처럼 사실적/건조하게 나오는 걸 막기 위한 기본 negative prompt.
@@ -120,6 +174,8 @@ async def generate_and_store_cover(
     introduction: str,
     summary: str,
     minio_client,
+    doc_type: str | None = "book",
+    avoid: list[str] | None = None,
 ) -> tuple[str | None, str | None]:
     """
     표지 프롬프트 생성 → 이미지 생성 → MinIO 업로드 일괄 수행.
@@ -133,6 +189,7 @@ async def generate_and_store_cover(
         prompt = await generate_cover_prompt(
             title=title, author=author, kdc=kdc,
             themes=themes, introduction=introduction, summary=summary,
+            book_id=book_id, doc_type=doc_type, avoid=avoid,
         )
     except Exception as e:
         log.warning(f"[{book_id}] 표지 프롬프트 생성 실패: {e}")

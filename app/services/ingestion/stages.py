@@ -917,8 +917,9 @@ _REDUCE_MIN_BUDGET_SECONDS = 60     # 몫을 빼고 남는 시간이 이보다 �
 def _reduce_budget_seconds(final_timeouts: list[float], make_cover: bool) -> float:
     """계층 요약이 쓸 수 있는 최대 시간(초).
 
-    INGEST_STAGE_TIMEOUT_FINALIZE − 최종 호출 몫 − 여유 (표지를 만들면 표지 프롬프트 LLM·FLUX 타임아웃도
-    뺀다), 하한 _REDUCE_MIN_BUDGET_SECONDS. final_timeouts 는 계층 요약 뒤에 나가는 최종 호출(요약·소개글,
+    INGEST_STAGE_TIMEOUT_FINALIZE − 최종 호출 몫 − 여유 (표지를 만들면 표지 프롬프트 LLM 최대 호출 수만큼의
+    타임아웃과 FLUX 타임아웃도 뺀다 — 장면·다시 쓰기·추상 전환, cover_generator.COVER_PROMPT_MAX_CALLS),
+    하한 _REDUCE_MIN_BUDGET_SECONDS. final_timeouts 는 계층 요약 뒤에 나가는 최종 호출(요약·소개글,
     도서류는 줄거리·독후 효과까지)의 타임아웃이다. 이 호출들은 LLM_SECTION_CONCURRENCY 개씩(0 이하는 1)
     동시에 나가므로 몫은 ceil(호출 수 / 동시 한도) 차례 × 가장 긴 타임아웃이다 — 차례마다 가장 긴 것만큼
     걸린다고 보면 어떤 순서로 끝나도 그 안에 든다.
@@ -926,7 +927,9 @@ def _reduce_budget_seconds(final_timeouts: list[float], make_cover: bool) -> flo
     waves = math.ceil(len(final_timeouts) / max(1, cfg.LLM_SECTION_CONCURRENCY))
     reserve = waves * max(final_timeouts) + _FINALIZE_MARGIN_SECONDS
     if make_cover:
-        reserve += cfg.COVER_PROMPT_TIMEOUT + cfg.FLUX_TIMEOUT
+        from services.ingestion.cover_generator import COVER_PROMPT_MAX_CALLS
+
+        reserve += COVER_PROMPT_MAX_CALLS * cfg.COVER_PROMPT_TIMEOUT + cfg.FLUX_TIMEOUT
     return max(_REDUCE_MIN_BUDGET_SECONDS, cfg.INGEST_STAGE_TIMEOUT_FINALIZE - reserve)
 
 
@@ -1060,7 +1063,7 @@ def run_finalize(ctx: StageContext) -> dict:
             cover_key, cover_prompt = run_async(generate_and_store_cover(
                 book_id=book_id, title=title, author=author, kdc=kdc,
                 themes=book_themes or "", introduction=book_introduction or "",
-                summary=book_summary or "", minio_client=minio_client(),
+                summary=book_summary or "", minio_client=minio_client(), doc_type=doc_type,
             ))
         except Exception as e:
             log.warning(f"[{book_id}] 표지 생성 단계 실패: {e}")
