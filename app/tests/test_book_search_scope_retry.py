@@ -2,12 +2,15 @@
 
 예전에는 doc_scope 를 풀어 다시 찾았다(doc_type 스칼라가 없던 옛 인덱스 대비). 운영 2026-10-23 에 날짜 필터(LLM)가
 '올리버 트위스트'를 2026년으로 읽어 도서가 0권이 되자, 범위를 푼 재시도가 2026년 논문 30편을 소장자료 결과로 보였다
-(research/book-search-filter-recall). 이제 도서 범위는 그대로 두고 날짜 조건(use_metadata_filter)만 빼고 다시 찾는다.
+(research/book-search-filter-recall). 이제 도서 범위는 그대로 두고 날짜 조건(발행 연도·정렬 — use_metadata_filter)을 빼고
+다시 찾는다.
 
 pipeline.search 는 대역(받은 인자를 적고 준비한 응답을 차례로 돌려준다), DB 는 서지가 없는 가짜 세션이다. async 테스트 없음.
 """
+import ast
 import importlib
 import sys
+from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
@@ -89,6 +92,22 @@ def make_client(monkeypatch):
     next(gen, None)
 
 
+def _pipeline_search_params() -> set[str]:
+    """pipeline.search 의 인자 이름 — 대역은 **kwargs 로 다 받아서, 인자명이 어긋나면 운영에서만 TypeError 로 드러난다.
+    시그니처만 보면 되므로 소스를 ast 로 읽는다(test_research_explorer.py 와 같은 방식)."""
+    src = Path(__file__).resolve().parents[1] / "services" / "search" / "pipeline.py"
+    fn = next(node for node in ast.parse(src.read_text(encoding="utf-8")).body
+              if isinstance(node, ast.AsyncFunctionDef) and node.name == "search")
+    return {a.arg for a in fn.args.args + fn.args.kwonlyargs}
+
+
+def _assert_real_kwargs_and_same_db(calls: list[dict]) -> None:
+    for kwargs in calls:
+        assert set(kwargs) <= _pipeline_search_params()
+    # 재시도도 같은 DB 세션을 넘긴다 — 빠지면 재작성의 DB 보강과 날짜 필터가 조용히 꺼진다
+    assert calls[-1]["db"] is calls[0]["db"] is not None
+
+
 BODY = {"query": "올리버 트위스트", "mode": "book", "top_k": 10, "use_rewrite": False}
 
 
@@ -114,6 +133,7 @@ def test_book_search_zero_books_retries_inside_books_without_date_filter(make_cl
     # 화면이 고른 나머지 인자는 그대로
     same = ("mode", "top_k", "use_rewrite", "use_rerank")
     assert {k: calls[1][k] for k in same} == {k: calls[0][k] for k in same}
+    _assert_real_kwargs_and_same_db(calls)
 
 
 def test_book_search_zero_books_twice_answers_empty_not_papers(make_client):
@@ -133,3 +153,4 @@ def test_scenario_zero_books_retries_inside_books_without_date_filter(make_clien
     assert calls[0]["doc_scope"] == "book"
     assert calls[1]["doc_scope"] == "book"
     assert calls[1]["use_metadata_filter"] is False
+    _assert_real_kwargs_and_same_db(calls)

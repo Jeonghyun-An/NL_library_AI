@@ -34,7 +34,7 @@ async def scenario_recommend(
             db=db,
         )
 
-        # 도서가 0권이면 날짜 조건만 빼고 도서 안에서 다시 찾는다 — 범위를 풀면 논문을 도서로 추천한다(api/book.py 와 같다)
+        # 도서가 0권이면 날짜 조건(발행 연도·정렬)을 빼고 도서 안에서 다시 찾는다 — 범위를 풀면 논문을 도서로 추천한다(api/book.py 와 같다)
         if not result.books:
             log.warning("도서 필터 검색 0건 — 날짜 조건 없이 도서 안에서 재시도")
             result = await search(

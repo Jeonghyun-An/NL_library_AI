@@ -27,22 +27,23 @@ class MetadataFilter:
     has_filter:    bool = False
 
 
-_RECENT_N_YEARS = re.compile(r"최근\s*(\d+)\s*년")
+_LAST_N_YEARS = re.compile(r"(?:최근|지난)\s*(\d+)\s*개?\s*년")
 
 
 def _year_grounded(year: int, query: str, current_year: int) -> bool:
-    """연도가 질의 글자에 근거가 있는가 — 프롬프트 규칙(metadata_filter.yaml)이 연도를 만드는 표현만 본다."""
+    """연도가 질의 글자에 근거가 있는가 — 숫자로 쓴 연도·연대, 그리고 올해(금년)·작년(지난해)·재작년·최근(지난) N년처럼
+    오늘을 기준으로 연도를 가리키는 말만 근거로 친다."""
     if str(year) in query:                                   # 2020년 이후 · 1984
         return True
-    if f"{year // 10 * 10}년대" in query:                    # 1930년대 → 1930~1939
+    if f"{year // 10 * 10}년대" in query or re.search(rf"(?<!\d){year % 100 // 10}0년대", query):   # 1930년대 · 90년대
         return True
-    if year == current_year and "올해" in query:
+    if year == current_year and ("올해" in query or "금년" in query):
         return True
-    if year == current_year - 1 and ("작년" in query or "지난해" in query):
+    if year == current_year - 1 and (re.search(r"(?<!재)작년", query) or "지난해" in query):
         return True
     if year == current_year - 2 and "재작년" in query:
         return True
-    m = _RECENT_N_YEARS.search(query)                        # 최근 3년 → 2023(2024 로 세기도 한다)~올해
+    m = _LAST_N_YEARS.search(query)                          # 최근 3년 → 2023(2024 로 세기도 한다)~올해
     return bool(m) and current_year - int(m.group(1)) <= year <= current_year
 
 
