@@ -1,0 +1,561 @@
+{
+ "kind": "title_kr",
+ "query": "하늘과 바람과 별과 시",
+ "targets": [
+  "WS_010"
+ ],
+ "on": {
+  "rewritten": "자연의 숭고함, 우주적 경이로움, 시적 영감과 사유, 삶과 죽음의 순환, 동양적 사유와 은유",
+  "elapsed_ms": 2109.3,
+  "wall_s": 2.33,
+  "books": [
+   {
+    "book_id": "CNTS-00052064565",
+    "best": 0.5243,
+    "content": 0.5242819639157117,
+    "title_score": 0.0,
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063321",
+    "best": 0.5021,
+    "content": 0.5020991192458433,
+    "title_score": 0.0,
+    "title": "韓國 四時歌의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063588",
+    "best": 0.4852,
+    "content": 0.48516505361237394,
+    "title_score": 0.0,
+    "title": "柳致環 詩의 效用論的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.4841,
+    "content": 0.4840886483233606,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-409",
+    "best": 0.4595,
+    "content": 0.4595220804157738,
+    "title_score": 0.0,
+    "title": "Catriona",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.4562,
+    "content": 0.4562325374867733,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "best": 0.4028,
+    "content": 0.4028257692515177,
+    "title_score": 0.0,
+    "title": "Moby-Dick; Or, The Whale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-26",
+    "best": 0.3814,
+    "content": 0.38138521634615385,
+    "title_score": 0.0,
+    "title": "Paradise Lost",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-153",
+    "best": 0.3473,
+    "content": 0.3473430354753654,
+    "title_score": 0.0,
+    "title": "Jude the Obscure",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-216",
+    "best": 0.3411,
+    "content": 0.3410996395380733,
+    "title_score": 0.0,
+    "title": "The Merry Men and Other Tales",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.3356,
+    "content": 0.3355611098313642,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2527",
+    "best": 0.3262,
+    "content": 0.326171875,
+    "title_score": 0.0,
+    "title": "The Sorrows of Young Werther",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.3259,
+    "content": 0.32586669921875,
+    "title_score": 0.0,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "best": 0.3162,
+    "content": 0.31617149939903844,
+    "title_score": 0.0,
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "title_remainder": "毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "best": 0.3079,
+    "content": 0.3079266786551086,
+    "title_score": 0.0,
+    "title": "The Mill on the Floss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "best": 0.2909,
+    "content": 0.29086244079438317,
+    "title_score": 0.0,
+    "title": "The Faerie Queene",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2759",
+    "best": 0.2809,
+    "content": 0.28085232665997995,
+    "title_score": 0.0,
+    "title": "The Man in the Iron Mask",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-84",
+    "best": 0.2801,
+    "content": 0.28011807528409094,
+    "title_score": 0.0,
+    "title": "Frankenstein",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065117",
+    "best": 0.2712,
+    "content": 0.27116009593082313,
+    "title_score": 0.0,
+    "title": "張維 詩文學 硏究",
+    "title_remainder": "莊子的 天機論을 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "best": 0.2403,
+    "content": 0.24027876420454553,
+    "title_score": 0.0,
+    "title": "The History of Tom Jones, a Foundling",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064623",
+    "best": 0.2372,
+    "content": 0.23720469602329153,
+    "title_score": 0.0,
+    "title": "韓國基督敎 初期 讚頌詩歌의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-164",
+    "best": 0.2345,
+    "content": 0.234466552734375,
+    "title_score": 0.0,
+    "title": "Twenty Thousand Leagues under the Sea",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "best": 0.2301,
+    "content": 0.23009236653645826,
+    "title_score": 0.0,
+    "title": "Roughing It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.2236,
+    "content": 0.22358194986979163,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7411",
+    "best": 0.218,
+    "content": 0.21797318892045459,
+    "title_score": 0.0,
+    "title": "The Sea-Wolf",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-141",
+    "best": 0.204,
+    "content": 0.20404607599431823,
+    "title_score": 0.0,
+    "title": "Mansfield Park",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-8395",
+    "best": 0.1904,
+    "content": 0.1904296875,
+    "title_score": 0.0,
+    "title": "The Gods of Pegana",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3285",
+    "best": 0.0916,
+    "content": 0.091552734375,
+    "title_score": 0.0,
+    "title": "The Deerslayer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23245",
+    "best": 0.0714,
+    "content": 0.07135009765625,
+    "title_score": 0.0,
+    "title": "The Story Girl",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-345",
+    "best": 0.0627,
+    "content": 0.06268310546875,
+    "title_score": 0.0,
+    "title": "Dracula",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 932.5,
+  "wall_s": 2.3,
+  "books": [
+   {
+    "book_id": "WS_010",
+    "best": 1.0,
+    "content": 0.71533203125,
+    "title_score": 1.0,
+    "title": "하늘과 바람과 별과 시",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_021",
+    "best": 0.6608,
+    "content": 0.660772040935302,
+    "title_score": 0.0,
+    "title": "정지용 시집",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "best": 0.5987,
+    "content": 0.5986955902065028,
+    "title_score": 0.0,
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "title_remainder": "毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_002",
+    "best": 0.5984,
+    "content": 0.5983516729292448,
+    "title_score": 0.0,
+    "title": "진달래꽃",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_039",
+    "best": 0.5426,
+    "content": 0.5425569582696997,
+    "title_score": 0.0,
+    "title": "해파리의 노래",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064069",
+    "best": 0.5286,
+    "content": 0.5285909996668161,
+    "title_score": 0.0,
+    "title": "牧隱 李穡의 詩文學 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.5204,
+    "content": 0.5204048500783909,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064810",
+    "best": 0.515,
+    "content": 0.5150347935741044,
+    "title_score": 0.0,
+    "title": "時調의 韻律構造 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-409",
+    "best": 0.5104,
+    "content": 0.5104284002880397,
+    "title_score": 0.0,
+    "title": "Catriona",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064565",
+    "best": 0.502,
+    "content": 0.501953125,
+    "title_score": 0.0,
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-26",
+    "best": 0.5008,
+    "content": 0.500754855809137,
+    "title_score": 0.0,
+    "title": "Paradise Lost",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064759",
+    "best": 0.4941,
+    "content": 0.49410544244158416,
+    "title_score": 0.0,
+    "title": "1930年代 韓國詩의 意識構造硏究",
+    "title_remainder": "世界喪失과 그 變移過程을 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "best": 0.4933,
+    "content": 0.4933178746125162,
+    "title_score": 0.0,
+    "title": "The Country of the Blind",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "best": 0.4892,
+    "content": 0.4892006557176105,
+    "title_score": 0.0,
+    "title": "The Canterbury Tales",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063398",
+    "best": 0.4768,
+    "content": 0.47679181606251886,
+    "title_score": 0.0,
+    "title": "辛夕汀 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.4759,
+    "content": 0.4759327045635523,
+    "title_score": 0.0,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_003",
+    "best": 0.4581,
+    "content": 0.4581005470628793,
+    "title_score": 0.0,
+    "title": "님의 침묵",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1337",
+    "best": 0.4411,
+    "content": 0.44111952243289876,
+    "title_score": 0.0,
+    "title": "The Black Arrow",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-107",
+    "best": 0.4312,
+    "content": 0.431209816907296,
+    "title_score": 0.0,
+    "title": "Far from the Madding Crowd",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23245",
+    "best": 0.3987,
+    "content": 0.39866002206063567,
+    "title_score": 0.0,
+    "title": "The Story Girl",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1013",
+    "best": 0.3533,
+    "content": 0.35333251953125,
+    "title_score": 0.0,
+    "title": "The First Men in the Moon",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "best": 0.3446,
+    "content": 0.34459339488636365,
+    "title_score": 0.0,
+    "title": "The Star Rover",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2527",
+    "best": 0.3154,
+    "content": 0.3154135628292879,
+    "title_score": 0.0,
+    "title": "The Sorrows of Young Werther",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-110",
+    "best": 0.3149,
+    "content": 0.31485262784090917,
+    "title_score": 0.0,
+    "title": "Tess of the d'Urbervilles",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063898",
+    "best": 0.2975,
+    "content": 0.2975408380681819,
+    "title_score": 0.0,
+    "title": "金洙暎 詩의 모더니즘 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.2839,
+    "content": 0.2838911576704546,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16",
+    "best": 0.2618,
+    "content": 0.26178042499338017,
+    "title_score": 0.0,
+    "title": "Peter Pan",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.2578,
+    "content": 0.25777637933961883,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-289",
+    "best": 0.2465,
+    "content": 0.24649325284090917,
+    "title_score": 0.0,
+    "title": "The Wind in the Willows",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_011",
+    "best": 0.0102,
+    "content": 0.010204081423580647,
+    "title_score": 0.0,
+    "title": "날개",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

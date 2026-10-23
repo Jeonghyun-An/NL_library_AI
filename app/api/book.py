@@ -126,6 +126,8 @@ async def search_books(
             use_rewrite=req.use_rewrite,
             use_rerank=req.use_rerank,
             doc_scope="book",   # 논문 제외, 도서만 검색
+            # 재작성이 제목만 넣은 질의를 주제어로 바꿔('구운몽' → '요몽, 이상향…') 그 책을 놓치던 것 — 원래 질의로도 찾는다
+            include_original=True,
             db=db,
         )
 
@@ -138,6 +140,7 @@ async def search_books(
                 top_k=req.top_k,
                 use_rewrite=req.use_rewrite,
                 use_rerank=req.use_rerank,
+                include_original=True,
                 db=db,
             )
 
