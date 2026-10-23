@@ -131,15 +131,20 @@ async def search_books(
             db=db,
         )
 
-        # doc_type 스칼라 미지정 구버전 인덱스 대비: 도서 필터 결과가 없으면 전체로 재시도
+        # 도서가 0권이면 날짜 조건(LLM 이 질의에서 뽑은 발행 연도)만 빼고 도서 안에서 다시 찾는다. 예전에는 doc_scope 를
+        # 풀었다(doc_type 스칼라가 없던 옛 인덱스 대비) — 지금은 doc_type 이 컬렉션 필수 필드이고 빈 값도 도서 조건을
+        # 통과해 그 대비는 할 일이 없는데, 날짜 조건이 도서를 다 걸러 낸 질의('올리버 트위스트' → 2026년)에서 그해 논문을
+        # 소장자료 결과로 보였다(운영 2026-10-23, research/book-search-filter-recall)
         if isinstance(result, BookSearchResponse) and not result.books:
-            log.warning("도서 필터 검색 0건 — doc_scope 없이 재시도")
+            log.warning("도서 필터 검색 0건 — 날짜 조건 없이 도서 안에서 재시도")
             result = await search(
                 req.query,
                 mode=req.mode,
                 top_k=req.top_k,
                 use_rewrite=req.use_rewrite,
                 use_rerank=req.use_rerank,
+                doc_scope="book",
+                use_metadata_filter=False,
                 include_original=True,
                 db=db,
             )
