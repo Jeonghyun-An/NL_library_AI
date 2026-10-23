@@ -24,20 +24,22 @@ describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
     expect(chatCopy("paper").stopLabel).toBe("답 받기 멈추기");
   });
 
-  it("책은 지금 문구 그대로, 논문은 '논문' 문구 — 보내기 버튼 이름은 둘 다 '질문 보내기'", () => {
+  // AI 말투('안녕하세요! …자유롭게 물어보세요!')를 걷고 무엇을 바탕으로 답하는지만 짧게 — 제목은 창 머리에 있어 다시 쓰지 않는다(2026-10-23)
+  it("책은 '자료', 논문은 '논문' 문구 — 느낌표·'자유롭게' 없이, 보내기 버튼 이름은 둘 다 '질문 보내기'", () => {
     const book = chatCopy("book");
-    expect(book.greeting("어린 왕자")).toBe("안녕하세요! 《어린 왕자》에 대해 궁금한 것을 자유롭게 물어보세요!");
-    expect(book.greeting()).toBe("안녕하세요! 이 자료에 대해 궁금한 것을 자유롭게 물어보세요!");
-    expect(book.placeholder).toBe("책에 대해서 자유롭게 질문해보세요!");
+    expect(book.greeting("어린 왕자")).toBe("이 자료 내용을 바탕으로 답해요.");
+    expect(book.greeting()).toBe("이 자료 내용을 바탕으로 답해요.");
+    expect(book.placeholder).toBe("책에 대해 질문해 주세요");
     expect(book.inputLabel).toBe("책에 대한 질문 입력");
     expect(book.sendLabel).toBe("질문 보내기");
 
     const paper = chatCopy("paper");
-    expect(paper.greeting("노인의 우울과 사회적 지지")).toBe(
-      "안녕하세요! 《노인의 우울과 사회적 지지》 논문에 대해 궁금한 것을 자유롭게 물어보세요!",
-    );
-    expect(paper.greeting()).toBe("안녕하세요! 이 논문에 대해 궁금한 것을 자유롭게 물어보세요!");
-    expect(paper.placeholder).toBe("논문에 대해서 자유롭게 질문해보세요!");
+    expect(paper.greeting("노인의 우울과 사회적 지지")).toBe("이 논문 내용을 바탕으로 답해요.");
+    expect(paper.placeholder).toBe("논문에 대해 질문해 주세요");
+    for (const kind of ["book", "paper"] as const) {
+      const c = chatCopy(kind);
+      expect(`${c.greeting()} ${c.placeholder}`).not.toMatch(/!|자유롭게|안녕하세요/);
+    }
     expect(paper.inputLabel).toBe("논문에 대한 질문 입력");
     expect(paper.sendLabel).toBe("질문 보내기");
   });

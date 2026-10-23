@@ -103,10 +103,10 @@ describe("renderAnswer — 글 속 쪽 표기를 쪽 번호로", () => {
     const groups = groupSources(sources, "[p.2, p.19]");
     const html = inline("필요성 [p.2, p.19].", { msg: 3, groups, active: 1 });
     expect(html).toContain(
-      '<button type="button" class="skx-chat-cite" data-msg="3" data-cite="0" aria-label="p.2 근거 대목 펼치기">p.2</button>',
+      '<button type="button" class="skx-chat-cite" data-msg="3" data-cite="0" aria-label="p.2 원문 보기">p.2</button>',
     );
     expect(html).toContain(
-      '<button type="button" class="skx-chat-cite is-active" data-msg="3" data-cite="1" aria-label="p.19 근거 대목 펼치기">p.19</button>',
+      '<button type="button" class="skx-chat-cite is-active" data-msg="3" data-cite="1" aria-label="p.19 원문 보기">p.19</button>',
     );
   });
 
@@ -194,8 +194,17 @@ describe("BookChat — 근거 목록과 글 속 쪽 번호를 그린다", () => 
     expect(chat).toMatch(/function onRepeatEnter\(e: KeyboardEvent\) \{\s*if \(e\.repeat\) e\.preventDefault\(\);\s*\}/);
   });
 
+  // 화면 말은 사서가 쓰는 말로 — '대목'·'근거'·'✦' 는 AI 말투로 읽혀 걷었다(사용자 2026-10-23)
+  it("출처 목록은 '출처 N건', 같은 쪽 여럿은 '외 n건' — 템플릿에 '대목'·'근거'·'✦' 가 보이지 않는다", () => {
+    expect(chat).toContain("출처 {{ groupsByMsg[i]!.length }}건");
+    expect(chat).toContain("외 {{ g.passages.length - 1 }}건");
+    const template = chat.slice(0, chat.indexOf("<script")).replace(/<!--[\s\S]*?-->/g, "");
+    expect(template).not.toMatch(/대목|근거|✦/);
+    expect(chat).toContain('const CITE_HINT = "답변의 쪽 번호를 누르면 해당 원문을 볼 수 있어요.";');
+  });
+
   it("첫 글을 기다리는 동안 지금 하는 일을 보이고, 화면을 떠나면 타이머를 멈춘다", () => {
-    expect(chat).toContain('const WAIT_STEPS = ["원문에서 관련 대목을 찾는 중…", "찾은 대목을 읽고 답을 쓰는 중…"] as const;');
+    expect(chat).toContain('const WAIT_STEPS = ["원문에서 찾고 있어요", "답변을 작성하고 있어요"] as const;');
     expect(chat).toContain("onBeforeUnmount(clearWait);");
   });
 });

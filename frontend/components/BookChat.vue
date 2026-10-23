@@ -1,14 +1,13 @@
 <template>
   <div ref="rootEl" class="skx-chat-body">
     <div class="skx-chat-messages" ref="messagesEl">
-      <!-- 빈 상태 — 인사와 쪽 번호 쓰는 법 한 줄 -->
+      <!-- 빈 상태 — 무엇을 바탕으로 답하는지와 쪽 번호 쓰는 법 한 줄 -->
       <div v-if="messages.length === 0 && !isStreaming" class="skx-chat-msg skx-chat-msg--ai skx-chat-msg--intro">
-        <p class="skx-chat-answer__head" aria-hidden="true"><span class="skx-chat-answer__mark">✦</span>{{ DEEP_READ }}</p>
         <p class="skx-chat-intro__text">{{ copy.greeting(bookTitle) }}</p>
         <p class="skx-chat-intro__hint">{{ CITE_HINT }}</p>
       </div>
 
-      <!-- 메시지 목록 — 질문은 오른쪽 말풍선, 답은 너비를 다 쓰는 답 카드(머리 · 글 · 근거 목록) -->
+      <!-- 메시지 목록 — 질문은 오른쪽 말풍선, 답은 너비를 다 쓰는 답 카드(글 · 출처 목록) -->
       <div
         v-for="(msg, i) in messages"
         :key="i"
@@ -16,13 +15,12 @@
       >
         <div v-if="msg.role === 'user'" v-html="formatText(msg.content)" />
         <template v-else>
-          <p class="skx-chat-answer__head" aria-hidden="true"><span class="skx-chat-answer__mark">✦</span>{{ DEEP_READ }}</p>
-          <!-- 글 속 쪽 번호(.skx-chat-cite 단추)는 v-html 이라 누름을 여기서 받는다(onCiteClick) — 그 쪽의 근거 대목을 아래 목록에서 펼친다 -->
+          <!-- 글 속 쪽 번호(.skx-chat-cite 단추)는 v-html 이라 누름을 여기서 받는다(onCiteClick) — 그 쪽의 원문을 아래 출처 목록에서 펼친다 -->
           <div class="skx-chat-answer__text" v-html="formatAnswer(msg, i)" @click="onCiteClick" />
-          <!-- 근거 목록 — 같은 쪽 대목은 한 줄로 묶고 첫 대목의 머리 글을 보인다. 줄을 누르면 그 아래 대목이 펼쳐지고 다시 누르면 접는다.
-               같은 쪽 대목이 여럿이면 ‹ › 로 넘긴다(끝에서도 disabled 로 막지 않는다 — 누른 단추가 막히면 키보드 초점이 사라진다). 원문 열기는 펼친 대목 아래 [원문 보기]이고 pdfLinks 인 곳(연구 화면 오른쪽 패널)에만 둔다 -->
+          <!-- 출처 목록 — 같은 쪽 원문 조각은 한 줄로 묶어('외 n건') 첫 조각의 머리 글을 보인다. 줄을 누르면 그 아래 원문이 펼쳐지고 다시
+               누르면 접는다. 같은 쪽 조각이 여럿이면 ‹ › 로 넘긴다(끝에서도 disabled 로 막지 않는다 — 누른 단추가 막히면 키보드 초점이 사라진다). 원문 열기는 펼친 대목 아래 [원문 보기]이고 pdfLinks 인 곳(연구 화면 오른쪽 패널)에만 둔다 -->
           <div v-if="groupsByMsg[i]?.length" class="skx-chat-sources">
-            <p class="skx-chat-sources__head">근거 {{ groupsByMsg[i]!.length }}곳</p>
+            <p class="skx-chat-sources__head">출처 {{ groupsByMsg[i]!.length }}건</p>
             <ul class="skx-chat-source-list">
               <li v-for="(g, gi) in groupsByMsg[i]" :key="g.label" class="skx-chat-source">
                 <button
@@ -37,14 +35,14 @@
                 >
                   <span class="skx-chat-source-row__page">{{ g.label }}</span>
                   <span class="skx-chat-source-row__snippet">{{ g.snippet }}</span>
-                  <span v-if="g.passages.length > 1" class="skx-chat-source-row__count">대목 {{ g.passages.length }}개</span>
+                  <span v-if="g.passages.length > 1" class="skx-chat-source-row__count">외 {{ g.passages.length - 1 }}건</span>
                 </button>
                 <div v-if="msg.pinnedChip === gi" :id="previewId(i, gi)" class="skx-chat-source-preview">
                   <div v-if="g.passages.length > 1" class="skx-chat-source-pager">
                     <button
                       type="button"
                       class="skx-chat-source-pager__btn"
-                      aria-label="이전 대목"
+                      aria-label="이전 원문"
                       :aria-disabled="passageIndex(msg, g) === 0"
                       @click="movePassage(msg, g, -1)"
                     >
@@ -54,7 +52,7 @@
                     <button
                       type="button"
                       class="skx-chat-source-pager__btn"
-                      aria-label="다음 대목"
+                      aria-label="다음 원문"
                       :aria-disabled="passageIndex(msg, g) === g.passages.length - 1"
                       @click="movePassage(msg, g, 1)"
                     >
@@ -95,11 +93,10 @@
         </div>
       </template>
 
-      <!-- 스트리밍 중 — 첫 글이 오기 전에는 지금 하는 일(대목 찾기 → 답 쓰기)을 보이고, 글이 흐르는 동안은 끝에 커서가 깜박인다.
+      <!-- 스트리밍 중 — 첫 글이 오기 전에는 지금 하는 일(원문 찾기 → 답변 작성)을 보이고, 글이 흐르는 동안은 끝에 커서가 깜박인다.
            쪽 번호는 근거(sources)가 답 끝에 오므로 받는 동안은 모양만 같은 글자다 -->
       <template v-if="isStreaming">
         <div v-if="streamingText" class="skx-chat-msg skx-chat-msg--ai is-streaming">
-          <p class="skx-chat-answer__head" aria-hidden="true"><span class="skx-chat-answer__mark">✦</span>{{ DEEP_READ }}</p>
           <div class="skx-chat-answer__text" v-html="formatStatic(streamingText)" />
         </div>
         <div v-else class="skx-chat-typing">
@@ -158,16 +155,16 @@ import { marked } from "marked";
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from "vue";
 import { useDeepReadChat } from "~/composables/useDeepReadChat";
 import type { OpenPdfPayload } from "~/types/research";
-import { DEEP_READ } from "~/utils/brand";
 import { type DocKind, chatCopy, sourcePdfTarget } from "~/utils/deepRead";
 import { type SourceGroup, groupSources, renderAnswer } from "~/utils/deepReadCitations";
 import { CHAT_MAX_CHARS, type DeepReadMessage, type DeepReadSource } from "~/utils/deepReadSse";
 import { passageText } from "~/utils/passageText";
 
-// 빈 대화의 쓰는 법 한 줄 — 답의 쪽 번호가 이 화면의 핵심이라 처음부터 알린다
-const CITE_HINT = "답에 붙은 쪽 번호를 누르면 근거가 된 원문 대목이 펼쳐져요.";
-// 첫 글이 오기 전의 안내 — 서버는 먼저 이 자료에서 대목을 찾고(1초 안팎) 그 대목으로 답을 쓴다. 단계 신호는 없어 시간으로 넘긴다
-const WAIT_STEPS = ["원문에서 관련 대목을 찾는 중…", "찾은 대목을 읽고 답을 쓰는 중…"] as const;
+// 빈 대화의 쓰는 법 한 줄 — 답의 쪽 번호가 이 화면의 핵심이라 처음부터 알린다. 화면 말은 사서가 쓰는 말(출처·원문·쪽)로 —
+// '대목'·'근거'·'자유롭게 물어보세요!' 같은 말은 AI 말투로 읽혀 걷었다(사용자 2026-10-23)
+const CITE_HINT = "답변의 쪽 번호를 누르면 해당 원문을 볼 수 있어요.";
+// 첫 글이 오기 전의 안내 — 서버는 먼저 이 자료의 원문에서 찾고(1초 안팎) 찾은 내용으로 답을 쓴다. 단계 신호는 없어 시간으로 넘긴다
+const WAIT_STEPS = ["원문에서 찾고 있어요", "답변을 작성하고 있어요"] as const;
 const WAIT_STEP_MS = 1800;
 
 // 딥리드 대화 칸 — 논문 상세·논문 검색 결과 채팅·도서 상세·TopResult 와 연구 화면의 오른쪽 패널(06e)이 함께 쓴다.

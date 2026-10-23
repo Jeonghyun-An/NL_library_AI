@@ -144,7 +144,7 @@ function citeChip(start: number, end: number, link: CiteLink | null): string {
   const active = link.active === gi ? " is-active" : "";
   return (
     `<button type="button" class="skx-chat-cite${active}" data-msg="${link.msg}" data-cite="${gi}" ` +
-    `aria-label="${label} 근거 대목 펼치기">${label}</button>`
+    `aria-label="${label} 원문 보기">${label}</button>`
   );
 }
 
