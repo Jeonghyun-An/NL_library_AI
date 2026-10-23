@@ -1,0 +1,6 @@
+{
+ "_note": "실제 비교 (2026-10-20) — A 는 운영 gemma-3-12b, B 는 Qwen 을 내린 자리에 띄운 Gemma 4 26B-A4B(RedHatAI FP8-dynamic, vLLM v0.31.0, --reasoning-parser gemma4, 서버 기본 enable_thinking false). 샘플링은 팔마다 서버 기본(각 모델의 generation_config)에 요청의 temperature 만 얹는다 — 운영에서 모델을 바꿀 때와 같은 조건. extra 의 chat_template_kwargs 는 서버 설정이 빠져도 thinking 이 꺼지게 하는 이중 장치",
+ "A": {"url": "http://192.168.12.57:18080/v1/chat/completions", "model": "gemma-3-12b"},
+ "B": {"url": "http://192.168.12.57:18082/v1/chat/completions", "model": "gemma-4-26b-a4b",
+       "extra": {"chat_template_kwargs": {"enable_thinking": false}}}
+}

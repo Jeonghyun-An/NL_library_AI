@@ -1,0 +1,72 @@
+{
+ "metrics": {
+  "job": "d8348de8",
+  "arm": "B",
+  "model": "gemma-4-26b-a4b",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "titles": 0,
+  "reasoning_attempts": 0,
+  "sec": 3.24,
+  "completion_tokens": 222
+ },
+ "attempts": [
+  {
+   "sec": 3.24,
+   "finish": "stop",
+   "usage": {
+    "prompt_tokens": 3697,
+    "total_tokens": 3919,
+    "completion_tokens": 222,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 0
+    }
+   },
+   "raw": "클라우드 컴퓨팅은 네트워크를 통해 하드웨어, 소프트웨어, 데이터 등 IT 자원을 서비스 형태로 제공하며, 사용자가 필요한 만큼 자원을 빌려 사용함으로써 자원 활용률을 제고하고 유휴 자원을 최소화할 수 있는 모델이다 [E2, E4, E5]. 클라우드 서비스는 제공 유형에 따라 사설, 공용, 혼합, 커뮤니티 클라우드로 분류되며, 서비스 유형에 따라 IaaS, PaaS, SaaS로 구분된다 [E2, E5].\n\n선행연구에서는 클라우드 컴퓨팅의 정의와 서비스 유형에 따른 개인정보 보호 방안을 다루거나 [E2], 공공부문에서의 서비스 아키텍처 구현 방안을 제시하였다 [E5]. 또한 그리드 컴퓨팅 기법을 통해 처리 성능을 높이려는 노력이 이루어지고 있다 [E1]. 그러나 클라우드 컴퓨팅 환경에서 자원 활용의 효율성을 높이기 위한 추가적인 연구가 필요하다는 과제가 남아 있다 [E1].",
+   "reasoning": null
+  }
+ ],
+ "paragraphs": [
+  {
+   "id": "p1",
+   "text": "클라우드 컴퓨팅은 네트워크를 통해 하드웨어, 소프트웨어, 데이터 등 IT 자원을 서비스 형태로 제공하며, 사용자가 필요한 만큼 자원을 빌려 사용함으로써 자원 활용률을 제고하고 유휴 자원을 최소화할 수 있는 모델이다 [E2] [E4] [E5]. 클라우드 서비스는 제공 유형에 따라 사설, 공용, 혼합, 커뮤니티 클라우드로 분류되며, 서비스 유형에 따라 IaaS, PaaS, SaaS로 구분된다 [E2] [E5].",
+   "state": "proposed",
+   "cites": [
+    "KCI_FI002042120",
+    "KCI_FI001975013",
+    "KCI_FI001516854"
+   ],
+   "checks": {
+    "dropped": 0,
+    "dropped_f": 0,
+    "unmarked": 0,
+    "numbers": [],
+    "softened": 0
+   },
+   "gen_id": null
+  },
+  {
+   "id": "p2",
+   "text": "선행연구에서는 클라우드 컴퓨팅의 정의와 서비스 유형에 따른 개인정보 보호 방안을 다루거나 [E2], 공공부문에서의 서비스 아키텍처 구현 방안을 제시하였다 [E5]. 또한 그리드 컴퓨팅 기법을 통해 처리 성능을 높이려는 노력이 이루어지고 있다 [E1]. 그러나 클라우드 컴퓨팅 환경에서 자원 활용의 효율성을 높이기 위한 추가적인 연구가 필요하다는 과제가 남아 있다 [E1].",
+   "state": "proposed",
+   "cites": [
+    "KCI_FI002042120",
+    "KCI_FI001516854",
+    "KCI_FI001176183"
+   ],
+   "checks": {
+    "dropped": 0,
+    "dropped_f": 0,
+    "unmarked": 0,
+    "numbers": [],
+    "softened": 0
+   },
+   "gen_id": null
+  }
+ ]
+}

@@ -49,10 +49,13 @@ async def one(client, sem, arm_name: str, arm: dict, rec: dict, r: int, out: Pat
         resp.raise_for_status()
         data = resp.json()
         choice = data["choices"][0]
-        raw = choice["message"]["content"]
+        msg = choice["message"]
+        raw = msg.get("content")
+        # reasoning parser 를 켠 모델(Gemma 4)은 답이 reasoning 칸으로 빠지면 content 가 None 이다 — 따로 남긴다
         attempts.append({"sec": round(time.time() - t0, 2), "finish": choice.get("finish_reason"),
-                         "usage": data.get("usage"), "raw": raw})
-        parsed = section._parse(raw)
+                         "usage": data.get("usage"), "raw": raw,
+                         "reasoning": msg.get("reasoning") or msg.get("reasoning_content")})
+        parsed = section._parse(raw) if raw else None
         if parsed is None:
             continue
         bound = section._bind(parsed, inp)
@@ -66,6 +69,7 @@ async def one(client, sem, arm_name: str, arm: dict, rec: dict, r: int, out: Pat
          "numbers": sum(len(p["checks"]["numbers"]) for p in paragraphs),
          "dropped": sum(p["checks"]["dropped"] for p in paragraphs),
          "titles": title_mentions(text, inp["papers"]),
+         "reasoning_attempts": sum(1 for a in attempts if a["reasoning"]),
          "sec": round(sum(a["sec"] for a in attempts), 2),
          "completion_tokens": sum(((a["usage"] or {}).get("completion_tokens") or 0) for a in attempts)}
     (out / f"{arm_name}_r{r}.json").write_text(json.dumps(
