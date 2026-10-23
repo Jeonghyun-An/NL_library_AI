@@ -1,0 +1,518 @@
+{
+ "kind": "title_en_kr",
+ "query": "위대한 유산",
+ "targets": [
+  "LIT-GUTENBERG-1400"
+ ],
+ "res": {
+  "elapsed_ms": 1197.9,
+  "wall_s": 1.47,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-2638",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Idiot",
+    "best": 0.5924,
+    "rrf": [
+     0.004717,
+     0.0046083,
+     0.0133333,
+     0.0138889,
+     0.0111111,
+     0.0055866,
+     0.0184451,
+     0.0125,
+     0.0119048,
+     0.0108696
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Our Mutual Friend",
+    "best": 0.5434,
+    "rrf": [
+     0.0067568,
+     0.009434,
+     0.009901,
+     0.0116279,
+     0.0106383,
+     0.0066225,
+     0.0104167,
+     0.010989,
+     0.0114943,
+     0.0097087,
+     0.0092479,
+     0.0062893,
+     0.004902,
+     0.006993,
+     0.0108696,
+     0.0077519,
+     0.0075188,
+     0.0107527,
+     0.0063694,
+     0.007813,
+     0.01,
+     0.0053476,
+     0.0113636,
+     0.0089286,
+     0.0105263,
+     0.0048077,
+     0.0111111,
+     0.0074074,
+     0.01,
+     0.012987,
+     0.0068493
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Ambassadors",
+    "best": 0.5159,
+    "rrf": [
+     0.0102041,
+     0.0055249,
+     0.0049261,
+     0.0057471,
+     0.0085554,
+     0.014536,
+     0.005291,
+     0.0157263,
+     0.0092124,
+     0.0055556,
+     0.0046512,
+     0.013529,
+     0.0060606,
+     0.005848,
+     0.0049505,
+     0.0077519,
+     0.0064935,
+     0.0066225
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Innocents Abroad",
+    "best": 0.4871,
+    "rrf": [
+     0.0081967,
+     0.0113636,
+     0.0069444,
+     0.0075737,
+     0.0072993,
+     0.0098039,
+     0.0078125,
+     0.0053476,
+     0.0089286,
+     0.0086957,
+     0.0072464,
+     0.0047847,
+     0.005814
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Count of Monte Cristo",
+    "best": 0.4403,
+    "rrf": [
+     0.0233438,
+     0.0182471,
+     0.0120482,
+     0.0063951,
+     0.0106383,
+     0.0078841,
+     0.0115694,
+     0.0151515,
+     0.019457,
+     0.015625,
+     0.0057143,
+     0.0153846,
+     0.0205285,
+     0.0147059,
+     0.0133333,
+     0.0129913,
+     0.0077302,
+     0.0142857
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-59244",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Red House Mystery",
+    "best": 0.4095,
+    "rrf": [
+     0.017918,
+     0.008,
+     0.0187433,
+     0.0160957,
+     0.0061728,
+     0.0171027,
+     0.0123457,
+     0.0119048,
+     0.009901,
+     0.0062112,
+     0.0125455,
+     0.0157974,
+     0.0064103,
+     0.0080538,
+     0.0135135,
+     0.0096154,
+     0.0064935,
+     0.0090909,
+     0.0074627,
+     0.0119942,
+     0.0070423,
+     0.011236,
+     0.0052083,
+     0.0138509,
+     0.005102,
+     0.0075485,
+     0.0048544
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7469",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Daniel Deronda",
+    "best": 0.3924,
+    "rrf": [
+     0.0086207,
+     0.0071684,
+     0.0071429,
+     0.0107527,
+     0.0052356,
+     0.0071429,
+     0.0076336,
+     0.0216983,
+     0.0048309,
+     0.0054945,
+     0.0067114,
+     0.0047619,
+     0.0155375
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Journey to the Centre of the Earth",
+    "best": 0.3779,
+    "rrf": [
+     0.0050251,
+     0.0046948,
+     0.0046729,
+     0.0091743,
+     0.0070922
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "War and Peace",
+    "best": 0.3752,
+    "rrf": [
+     0.004878,
+     0.0098039,
+     0.0063291,
+     0.0051546
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Moby-Dick; Or, The Whale",
+    "best": 0.3745,
+    "rrf": [
+     0.0054348,
+     0.0050761,
+     0.0068027,
+     0.005618,
+     0.0103093,
+     0.006135,
+     0.0147059
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-155",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Moonstone",
+    "best": 0.3661,
+    "rrf": [
+     0.0068493,
+     0.0142857,
+     0.0061728,
+     0.0051813,
+     0.0068027,
+     0.008547,
+     0.0052356,
+     0.0144928,
+     0.0092593,
+     0.0045872
+    ]
+   },
+   {
+    "book_id": "WS_037",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "개척자",
+    "best": 0.3648,
+    "rrf": [
+     0.0103093,
+     0.0050505,
+     0.009009,
+     0.0076336
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Women",
+    "best": 0.3646,
+    "rrf": [
+     0.010989,
+     0.0142677,
+     0.0088496
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-145",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Middlemarch",
+    "best": 0.3531,
+    "rrf": [
+     0.0117647,
+     0.0053191,
+     0.0128205,
+     0.0084746,
+     0.0047847,
+     0.0135135,
+     0.0075188,
+     0.0064103,
+     0.0046512
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1260",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Jane Eyre",
+    "best": 0.3524,
+    "rrf": [
+     0.0065371,
+     0.0106113,
+     0.0057239,
+     0.0109765,
+     0.0070423,
+     0.0091223,
+     0.0220779
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Wonderful Visit",
+    "best": 0.3495,
+    "rrf": [
+     0.0282187,
+     0.0241935,
+     0.0250264,
+     0.0076713,
+     0.0048309,
+     0.0196736
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The History of Tom Jones, a Foundling",
+    "best": 0.336,
+    "rrf": [
+     0.0153846,
+     0.0051282,
+     0.0154762,
+     0.0131579,
+     0.0148331
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Decameron",
+    "best": 0.3303,
+    "rrf": [
+     0.0198525,
+     0.0195273,
+     0.0065789,
+     0.0052632
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-122",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Return of the Native",
+    "best": 0.3278,
+    "rrf": [
+     0.0140845,
+     0.0144928,
+     0.0149254,
+     0.0151515
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Bleak House",
+    "best": 0.3169,
+    "rrf": [
+     0.0065789,
+     0.007874,
+     0.0097087,
+     0.0054645,
+     0.0079365,
+     0.0074627,
+     0.0072993
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2852",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Hound of the Baskervilles",
+    "best": 0.2972,
+    "rrf": [
+     0.0146837,
+     0.021572,
+     0.0156865,
+     0.0123107
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-174",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Picture of Dorian Gray",
+    "best": 0.286,
+    "rrf": [
+     0.0114301,
+     0.00625,
+     0.005988,
+     0.0067114
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-43",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Strange Case of Dr. Jekyll and Mr. Hyde",
+    "best": 0.2747,
+    "rrf": [
+     0.0091743,
+     0.0054054,
+     0.005848,
+     0.0075758
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Dorrit",
+    "best": 0.2604,
+    "rrf": [
+     0.015873,
+     0.0136986,
+     0.0160436,
+     0.0052083
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-170",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Phoenix and the Carpet",
+    "best": 0.2568,
+    "rrf": [
+     0.0049505,
+     0.0066667,
+     0.0105263,
+     0.0055249
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "best": 0.2544,
+    "rrf": [
+     0.0104167,
+     0.0056497
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-8117",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Demons",
+    "best": 0.2444,
+    "rrf": [
+     0.0325225,
+     0.0163934
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Country of the Blind",
+    "best": 0.2406,
+    "rrf": [
+     0.0099213,
+     0.0163919
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Woman in White",
+    "best": 0.2095,
+    "rrf": [
+     0.008547,
+     0.0093458,
+     0.0082645
+    ]
+   },
+   {
+    "book_id": "CNTS-00049655768",
+    "doc_type": "policy",
+    "pub_date": "----",
+    "title": "재정연방주의와 연방예산의 삭감",
+    "best": 0.0539,
+    "rrf": [
+     0.0096154
+    ]
+   }
+  ]
+ }
+}

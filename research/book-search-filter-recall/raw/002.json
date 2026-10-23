@@ -1,0 +1,432 @@
+{
+ "kind": "title_kr",
+ "query": "님의 침묵",
+ "targets": [
+  "WS_003"
+ ],
+ "res": {
+  "elapsed_ms": 1164.5,
+  "wall_s": 2.19,
+  "books": [
+   {
+    "book_id": "WS_003",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "님의 침묵",
+    "best": 1.0,
+    "rrf": [
+     0.023482,
+     0.0264196,
+     0.0263993,
+     0.015625,
+     0.0184806,
+     0.0144928,
+     0.0185969,
+     0.0151515,
+     0.0142857
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1028",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Professor",
+    "best": 0.4437,
+    "rrf": [
+     0.0045872,
+     0.0059524,
+     0.0072464,
+     0.0076923,
+     0.0153846,
+     0.0136986,
+     0.009434,
+     0.0095238
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mysteries of Udolpho",
+    "best": 0.4304,
+    "rrf": [
+     0.0113636,
+     0.0068027,
+     0.005814,
+     0.004878,
+     0.0060976,
+     0.0084746
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Lord Jim",
+    "best": 0.41,
+    "rrf": [
+     0.0240031,
+     0.005988,
+     0.0176471,
+     0.0051282,
+     0.0055866
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "A Tale of Two Cities",
+    "best": 0.3838,
+    "rrf": [
+     0.0070922,
+     0.0068966,
+     0.0100671,
+     0.012203,
+     0.0052632,
+     0.0048077,
+     0.0064668
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-345",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Dracula",
+    "best": 0.3825,
+    "rrf": [
+     0.0209834,
+     0.0076684,
+     0.0135135,
+     0.0062893,
+     0.0056818,
+     0.0076583
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-155",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Moonstone",
+    "best": 0.3732,
+    "rrf": [
+     0.0071429,
+     0.0151515,
+     0.004717,
+     0.0084034,
+     0.0190359,
+     0.0081967,
+     0.0066225,
+     0.0072464,
+     0.0216033,
+     0.0074074,
+     0.0053476,
+     0.0235327,
+     0.006993,
+     0.0046512
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Woman in White",
+    "best": 0.3697,
+    "rrf": [
+     0.0056497,
+     0.008,
+     0.0144928,
+     0.011236,
+     0.0086957,
+     0.0142857,
+     0.0052356,
+     0.0081301,
+     0.0095238,
+     0.0062112,
+     0.0145249,
+     0.0096154
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-974",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Secret Agent",
+    "best": 0.3604,
+    "rrf": [
+     0.0126582,
+     0.0170807,
+     0.0077519,
+     0.0083705,
+     0.0074507,
+     0.0078551,
+     0.0098186,
+     0.0068493,
+     0.0116239,
+     0.0085809,
+     0.0116279,
+     0.0059524
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-940",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Spy",
+    "best": 0.3558,
+    "rrf": [
+     0.0173132,
+     0.0072993,
+     0.005102,
+     0.0060241,
+     0.0054054,
+     0.0102211,
+     0.0047393
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-482",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Woodlanders",
+    "best": 0.3178,
+    "rrf": [
+     0.0181305,
+     0.0126582,
+     0.0062893,
+     0.005814,
+     0.0121951,
+     0.0138889,
+     0.0057471
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-8395",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Gods of Pegana",
+    "best": 0.3131,
+    "rrf": [
+     0.0133333,
+     0.0135135,
+     0.012987,
+     0.0125,
+     0.0131579
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-767",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Agnes Grey",
+    "best": 0.3099,
+    "rrf": [
+     0.0107527,
+     0.0146758,
+     0.0075556
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2759",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Man in the Iron Mask",
+    "best": 0.2998,
+    "rrf": [
+     0.0086207,
+     0.0141648,
+     0.0138889,
+     0.0084034,
+     0.0117647,
+     0.0121951
+    ]
+   },
+   {
+    "book_id": "WS_037",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "개척자",
+    "best": 0.2783,
+    "rrf": [
+     0.01493,
+     0.0047393,
+     0.0097087
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Count of Monte Cristo",
+    "best": 0.2735,
+    "rrf": [
+     0.0159247,
+     0.0046083,
+     0.0185123,
+     0.0052356,
+     0.0223322
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Journey to the Centre of the Earth",
+    "best": 0.2646,
+    "rrf": [
+     0.0111111,
+     0.0107527,
+     0.011236
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1752",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Seagull",
+    "best": 0.2614,
+    "rrf": [
+     0.0116148,
+     0.0064103,
+     0.0052632
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-863",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mysterious Affair at Styles",
+    "best": 0.2594,
+    "rrf": [
+     0.0053476,
+     0.0098039,
+     0.0128205,
+     0.0103093
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-4276",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "North and South",
+    "best": 0.2574,
+    "rrf": [
+     0.009901,
+     0.015625,
+     0.012987
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1259",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Three Musketeers",
+    "best": 0.2473,
+    "rrf": [
+     0.0066225,
+     0.0250735,
+     0.022032
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Wonderful Visit",
+    "best": 0.2417,
+    "rrf": [
+     0.0119048,
+     0.0128205
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Women",
+    "best": 0.2265,
+    "rrf": [
+     0.0079365,
+     0.0120482,
+     0.0089286
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-105",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Persuasion",
+    "best": 0.2034,
+    "rrf": [
+     0.0133333
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1938",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Resurrection",
+    "best": 0.2023,
+    "rrf": [
+     0.0114117,
+     0.015106,
+     0.0116076
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Roughing It",
+    "best": 0.1971,
+    "rrf": [
+     0.0134014,
+     0.0082327,
+     0.0124585
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-967",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Nicholas Nickleby",
+    "best": 0.1908,
+    "rrf": [
+     0.0114943,
+     0.0123457
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-77",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Five Children and It",
+    "best": 0.1714,
+    "rrf": [
+     0.0149254
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2153",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Mary Barton",
+    "best": 0.1484,
+    "rrf": [
+     0.0111111,
+     0.0046083
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1695",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Man Who Was Thursday",
+    "best": 0.0577,
+    "rrf": [
+     0.0123457
+    ]
+   }
+  ]
+ }
+}

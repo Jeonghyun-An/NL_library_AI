@@ -1,0 +1,570 @@
+{
+ "kind": "title_kr",
+ "query": "개척자",
+ "targets": [
+  "WS_037"
+ ],
+ "res": {
+  "elapsed_ms": 882.0,
+  "wall_s": 2.02,
+  "books": [
+   {
+    "book_id": "WS_037",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "개척자",
+    "best": 1.0,
+    "rrf": [
+     0.02041,
+     0.0235917,
+     0.021473,
+     0.0142857,
+     0.0218254,
+     0.0151515,
+     0.0204202,
+     0.0153846,
+     0.0045872
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Ambassadors",
+    "best": 0.5588,
+    "rrf": [
+     0.008547,
+     0.0051282,
+     0.0044643,
+     0.0054348,
+     0.0089286,
+     0.0048544,
+     0.0056497,
+     0.0079365,
+     0.0075188,
+     0.004717,
+     0.0048309,
+     0.0098039,
+     0.0054054,
+     0.0096154,
+     0.0044248,
+     0.0071942,
+     0.0049261,
+     0.0053476,
+     0.0065789,
+     0.0052083,
+     0.005291,
+     0.0113636,
+     0.007874,
+     0.0108696,
+     0.0083333,
+     0.0058824,
+     0.0045045,
+     0.0114943,
+     0.005618,
+     0.0095238,
+     0.005814,
+     0.0066667,
+     0.0054945,
+     0.0104167,
+     0.0078125,
+     0.0055249,
+     0.0091743,
+     0.0085362,
+     0.0062893
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Roughing It",
+    "best": 0.5436,
+    "rrf": [
+     0.0198571,
+     0.016637,
+     0.010989,
+     0.0131579,
+     0.0139332,
+     0.0259893,
+     0.0120163,
+     0.0073529,
+     0.0214204,
+     0.0089286,
+     0.0060606,
+     0.0056818,
+     0.0199572,
+     0.0055556,
+     0.0114536,
+     0.0127279,
+     0.0096737,
+     0.02,
+     0.0133221,
+     0.0088496,
+     0.0125455,
+     0.011236,
+     0.0267427,
+     0.0057803,
+     0.0158117,
+     0.0044444,
+     0.0144928,
+     0.0212052,
+     0.0256536,
+     0.0044843,
+     0.0231971,
+     0.0115527,
+     0.0090909,
+     0.0045662,
+     0.0044643,
+     0.0082645,
+     0.0045249,
+     0.0108536,
+     0.0158418,
+     0.011116,
+     0.007716,
+     0.0182366,
+     0.0274024,
+     0.0062876,
+     0.0071734,
+     0.021391,
+     0.0090137,
+     0.005988,
+     0.0073707,
+     0.0093458,
+     0.0198126,
+     0.0076923,
+     0.0064935,
+     0.0072993,
+     0.0203236,
+     0.0071921,
+     0.0051813,
+     0.0162111,
+     0.0070423,
+     0.017402,
+     0.015625,
+     0.0107527,
+     0.0101588,
+     0.0050251,
+     0.004878,
+     0.0067568,
+     0.008547,
+     0.0129875,
+     0.0060976,
+     0.0121951,
+     0.0045872,
+     0.0074074,
+     0.0131579,
+     0.0048544,
+     0.0130117,
+     0.0047393,
+     0.0045045,
+     0.0097207,
+     0.0135135,
+     0.0068546,
+     0.0169048,
+     0.0082645,
+     0.0123457,
+     0.0110136,
+     0.005102,
+     0.0066225,
+     0.0051546,
+     0.0054054,
+     0.0266901,
+     0.0053191,
+     0.0184746,
+     0.0189578,
+     0.0046729,
+     0.0047847,
+     0.0072464
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Adventures of Huckleberry Finn",
+    "best": 0.4705,
+    "rrf": [
+     0.0057803,
+     0.0051813,
+     0.0058824,
+     0.0044248,
+     0.0093458,
+     0.0062112,
+     0.0046729,
+     0.0072464,
+     0.0046948,
+     0.0044843,
+     0.0070423,
+     0.0090909,
+     0.0056818,
+     0.0097087,
+     0.005102,
+     0.0055249,
+     0.0111111,
+     0.0092593,
+     0.0056497,
+     0.0104167,
+     0.0054945,
+     0.0087719,
+     0.0063694,
+     0.0060241,
+     0.0102041,
+     0.0067568,
+     0.0080645,
+     0.0049505,
+     0.0108696,
+     0.009434,
+     0.0074074
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Bleak House",
+    "best": 0.4381,
+    "rrf": [
+     0.0070922,
+     0.0055866,
+     0.0047393,
+     0.004902,
+     0.00625,
+     0.0067114,
+     0.0064103,
+     0.0047619
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-139",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Lost World",
+    "best": 0.4324,
+    "rrf": [
+     0.0047619,
+     0.0080645,
+     0.0062112,
+     0.0046512,
+     0.0049751,
+     0.005,
+     0.0053191,
+     0.006135,
+     0.0045662
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7411",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Sea-Wolf",
+    "best": 0.4312,
+    "rrf": [
+     0.0181727,
+     0.0200188,
+     0.0125926,
+     0.0236472,
+     0.0097087,
+     0.0102103,
+     0.0076336,
+     0.0229215,
+     0.0216636,
+     0.0096271
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-215",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Call of the Wild",
+    "best": 0.4111,
+    "rrf": [
+     0.005848,
+     0.0064516,
+     0.0121951,
+     0.012987,
+     0.0063291,
+     0.0084034,
+     0.0050505,
+     0.0063694,
+     0.0114943,
+     0.0113636,
+     0.0068493,
+     0.0064935,
+     0.0060606
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-307",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Fathers and Sons",
+    "best": 0.3941,
+    "rrf": [
+     0.0053476,
+     0.0070922,
+     0.0059172,
+     0.0076923,
+     0.0103093,
+     0.0068027,
+     0.0051282
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1298",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Master of Ballantrae",
+    "best": 0.3771,
+    "rrf": [
+     0.0086207,
+     0.0161301,
+     0.0135965,
+     0.009901,
+     0.0144361,
+     0.0054645,
+     0.0116987,
+     0.0079075,
+     0.008799,
+     0.0050761,
+     0.0076274,
+     0.0097961,
+     0.0065755
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Moby-Dick; Or, The Whale",
+    "best": 0.3503,
+    "rrf": [
+     0.0061728,
+     0.012987,
+     0.0087719,
+     0.0130859,
+     0.0045455
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-541",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Age of Innocence",
+    "best": 0.3128,
+    "rrf": [
+     0.006135,
+     0.0055556,
+     0.005291,
+     0.0046296
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-74",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Adventures of Tom Sawyer",
+    "best": 0.3048,
+    "rrf": [
+     0.0071942,
+     0.0079365,
+     0.0076336,
+     0.0084746,
+     0.0075758,
+     0.0066667
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2610",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Hunchback of Notre-Dame",
+    "best": 0.2959,
+    "rrf": [
+     0.0081301,
+     0.0074627,
+     0.007874,
+     0.0071429,
+     0.0081967
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Star Rover",
+    "best": 0.2837,
+    "rrf": [
+     0.0052632,
+     0.004878,
+     0.0064516,
+     0.0059524
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-44747",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Red and the Black",
+    "best": 0.27,
+    "rrf": [
+     0.0120482,
+     0.0123457,
+     0.009009,
+     0.0128205
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Journey to the Centre of the Earth",
+    "best": 0.2656,
+    "rrf": [
+     0.0059172,
+     0.0057471,
+     0.0116279
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-345",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Dracula",
+    "best": 0.2645,
+    "rrf": [
+     0.0062893,
+     0.0065789,
+     0.006993,
+     0.0069444,
+     0.0066225
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Innocents Abroad",
+    "best": 0.2619,
+    "rrf": [
+     0.0075758,
+     0.0060976,
+     0.0064103
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Count of Monte Cristo",
+    "best": 0.2254,
+    "rrf": [
+     0.0073529,
+     0.0105263
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3179",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Gilded Age",
+    "best": 0.2212,
+    "rrf": [
+     0.0136986,
+     0.0169697,
+     0.0147059
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-27681",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Last of the Mohicans",
+    "best": 0.2044,
+    "rrf": [
+     0.0044444,
+     0.0053763
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-145",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Middlemarch",
+    "best": 0.1993,
+    "rrf": [
+     0.0045249,
+     0.0057471
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Women",
+    "best": 0.183,
+    "rrf": [
+     0.0051546,
+     0.005988
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-600",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Notes from the Underground",
+    "best": 0.174,
+    "rrf": [
+     0.0054348,
+     0.0048309
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Old Curiosity Shop",
+    "best": 0.1099,
+    "rrf": [
+     0.0068966
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "best": 0.072,
+    "rrf": [
+     0.0077519
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1013",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The First Men in the Moon",
+    "best": 0.0657,
+    "rrf": [
+     0.0067399
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3669",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Pathfinder",
+    "best": 0.0105,
+    "rrf": []
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2276",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Pioneers",
+    "best": 0.01,
+    "rrf": []
+   }
+  ]
+ }
+}

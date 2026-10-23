@@ -8,7 +8,8 @@ publisher/author 기반 필터는 메타데이터 전용 청크 임베딩이 처
 """
 import json
 import logging
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, replace
 from datetime import date
 
 import httpx
@@ -24,6 +25,41 @@ class MetadataFilter:
     pub_year_to:   int | None = None
     sort_by:       str | None = None   # "recent" | "oldest" | None
     has_filter:    bool = False
+
+
+_LAST_N_YEARS = re.compile(r"(?:최근|지난)\s*(\d+)\s*개?\s*년")
+
+
+def _year_grounded(year: int, query: str, current_year: int) -> bool:
+    """연도가 질의 글자에 근거가 있는가 — 숫자로 쓴 연도·연대, 그리고 올해(금년)·작년(지난해)·재작년·최근(지난) N년처럼
+    오늘을 기준으로 연도를 가리키는 말만 근거로 친다."""
+    if str(year) in query:                                   # 2020년 이후 · 1984
+        return True
+    if f"{year // 10 * 10}년대" in query or re.search(rf"(?<!\d){year % 100 // 10}0년대", query):   # 1930년대 · 90년대
+        return True
+    if year == current_year and ("올해" in query or "금년" in query):
+        return True
+    if year == current_year - 1 and (re.search(r"(?<!재)작년", query) or "지난해" in query):
+        return True
+    if year == current_year - 2 and "재작년" in query:
+        return True
+    m = _LAST_N_YEARS.search(query)                          # 최근 3년 → 2023(2024 로 세기도 한다)~올해
+    return bool(m) and current_year - int(m.group(1)) <= year <= current_year
+
+
+def _drop_ungrounded_years(f: MetadataFilter, query: str, current_year: int) -> MetadataFilter:
+    """LLM 이 질의에 없는 연도를 발행 연도 조건으로 거는 일이 있다(운영 2026-10-23) — '올리버'·'올바른'·'올림픽'의 '올'을
+    '올해'로 읽어 2026년 자료만, '82년생 김지영'을 1982년 자료만 찾았다. 소장자료 검색은 도서가 0권이 되어 그해 논문으로
+    떨어졌고 논문 검색도 그해 논문만 보였다(research/book-search-filter-recall). 근거 없는 연도는 버리고 정렬은 그대로
+    둔다. 조건을 빼기만 하고 켜지는 않는다 — has_filter 는 LLM 값이 참이고 남은 조건이 있을 때만 참이다."""
+    year_from = f.pub_year_from if f.pub_year_from and _year_grounded(f.pub_year_from, query, current_year) else None
+    year_to = f.pub_year_to if f.pub_year_to and _year_grounded(f.pub_year_to, query, current_year) else None
+    if (year_from, year_to) == (f.pub_year_from, f.pub_year_to):
+        return f
+    log.info(f"메타데이터 필터: 질의에 근거 없는 연도 버림 '{query}' "
+             f"({f.pub_year_from}~{f.pub_year_to} → {year_from}~{year_to})")
+    return replace(f, pub_year_from=year_from, pub_year_to=year_to,
+                   has_filter=f.has_filter and bool(year_from or year_to or f.sort_by))
 
 
 async def extract_metadata_filter(query: str) -> MetadataFilter:
@@ -63,12 +99,12 @@ async def extract_metadata_filter(query: str) -> MetadataFilter:
         else:
             data = json.loads(content)
 
-        return MetadataFilter(
+        return _drop_ungrounded_years(MetadataFilter(
             pub_year_from=int(data["pub_year_from"]) if data.get("pub_year_from") else None,
             pub_year_to=int(data["pub_year_to"])     if data.get("pub_year_to")   else None,
             sort_by=data.get("sort_by") or None,
             has_filter=bool(data.get("has_filter")),
-        )
+        ), query, current_year)
 
     except Exception as e:
         log.warning(f"메타데이터 필터 추출 실패: {e}")

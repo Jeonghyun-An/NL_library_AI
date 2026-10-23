@@ -1,0 +1,462 @@
+{
+ "kind": "title_kr",
+ "query": "운수 좋은 날",
+ "targets": [
+  "WS_004"
+ ],
+ "res": {
+  "elapsed_ms": 769.1,
+  "wall_s": 1.87,
+  "books": [
+   {
+    "book_id": "WS_004",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "운수 좋은 날",
+    "best": 1.0,
+    "rrf": [
+     0.0322581,
+     0.0303309,
+     0.0149254,
+     0.0275009,
+     0.0151515,
+     0.0153846,
+     0.0117647,
+     0.0106383
+    ]
+   },
+   {
+    "book_id": "CNTS-00047956839",
+    "doc_type": "literature",
+    "pub_date": "2001",
+    "title": "인연의 덫",
+    "best": 0.4459,
+    "rrf": [
+     0.0052356,
+     0.0091743,
+     0.0077519,
+     0.0113636,
+     0.0117647,
+     0.005102,
+     0.0079365,
+     0.0071429,
+     0.005,
+     0.0076336,
+     0.0078125
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Count of Monte Cristo",
+    "best": 0.4165,
+    "rrf": [
+     0.0063694,
+     0.0105263,
+     0.0169502,
+     0.0134699,
+     0.007874,
+     0.0053476,
+     0.0065789,
+     0.0060606,
+     0.0107527,
+     0.0047847,
+     0.0068027,
+     0.0086207,
+     0.0111111,
+     0.0084746,
+     0.0119048,
+     0.0063694,
+     0.0072464,
+     0.0081967,
+     0.0055249
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-227",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Secret Sharer",
+    "best": 0.3828,
+    "rrf": [
+     0.0080645,
+     0.0066667,
+     0.0081301,
+     0.009009,
+     0.0049505,
+     0.0050761,
+     0.011236,
+     0.0055556,
+     0.0072993,
+     0.0064103,
+     0.009901,
+     0.0067568,
+     0.005102,
+     0.0123457,
+     0.010989,
+     0.006993
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Pickwick Papers",
+    "best": 0.3811,
+    "rrf": [
+     0.0114943,
+     0.0128205,
+     0.0070423,
+     0.009434,
+     0.0133333,
+     0.0076923,
+     0.012987,
+     0.0136986,
+     0.0078125,
+     0.0120482,
+     0.0131579
+    ]
+   },
+   {
+    "book_id": "WS_014",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "구운몽",
+    "best": 0.3767,
+    "rrf": [
+     0.0050505,
+     0.0075098,
+     0.0102817,
+     0.0118672,
+     0.0123242,
+     0.0057471,
+     0.0054645,
+     0.004717
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3669",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Pathfinder",
+    "best": 0.3763,
+    "rrf": [
+     0.0149254,
+     0.0135135,
+     0.0059172,
+     0.0111111,
+     0.0103093,
+     0.0097087,
+     0.010989,
+     0.0093458,
+     0.0086957,
+     0.01,
+     0.0090909,
+     0.0067114
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-128",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Arabian Nights' Entertainments",
+    "best": 0.3535,
+    "rrf": [
+     0.0055556,
+     0.0068966,
+     0.0054348,
+     0.0133333,
+     0.0121951,
+     0.0066667,
+     0.0089286,
+     0.0102041,
+     0.0140845,
+     0.0135135,
+     0.0084034,
+     0.0126582
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Canterbury Tales",
+    "best": 0.3247,
+    "rrf": [
+     0.0052083,
+     0.005618,
+     0.0131579,
+     0.0126582,
+     0.0119048,
+     0.009434,
+     0.0067568,
+     0.0048077
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Adventures of Huckleberry Finn",
+    "best": 0.3151,
+    "rrf": [
+     0.0102041,
+     0.0125,
+     0.0049261,
+     0.0074627,
+     0.009901
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "No Name",
+    "best": 0.3081,
+    "rrf": [
+     0.0081301,
+     0.005848,
+     0.0060241,
+     0.006993,
+     0.0057803,
+     0.0047847,
+     0.0128205,
+     0.0096154
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1232",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Prince",
+    "best": 0.308,
+    "rrf": [
+     0.0058824,
+     0.0062893,
+     0.012987,
+     0.011236,
+     0.0076336
+    ]
+   },
+   {
+    "book_id": "WS_034",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "귀의 성",
+    "best": 0.3004,
+    "rrf": [
+     0.0082645,
+     0.0123457,
+     0.0070922,
+     0.0059172
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2226",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Kim",
+    "best": 0.2957,
+    "rrf": [
+     0.0151515,
+     0.0048309,
+     0.0075188,
+     0.0140845,
+     0.0136986
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-521",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Robinson Crusoe",
+    "best": 0.2952,
+    "rrf": [
+     0.0084746,
+     0.0144928,
+     0.004902,
+     0.0106383,
+     0.0050761,
+     0.005988
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-41537",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Divine Comedy",
+    "best": 0.2695,
+    "rrf": [
+     0.0066225,
+     0.0086207,
+     0.004878,
+     0.0116279,
+     0.010101,
+     0.0097087
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2641",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "A Room with a View",
+    "best": 0.2558,
+    "rrf": [
+     0.0083333,
+     0.0108696,
+     0.0081967,
+     0.0064935,
+     0.009009
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Moby-Dick; Or, The Whale",
+    "best": 0.2461,
+    "rrf": [
+     0.0086957,
+     0.005848,
+     0.0133041,
+     0.0090909
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6130",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Iliad",
+    "best": 0.2427,
+    "rrf": [
+     0.0093458,
+     0.0125,
+     0.0098039,
+     0.0068027
+    ]
+   },
+   {
+    "book_id": "WS_007",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "태평천하",
+    "best": 0.2422,
+    "rrf": [
+     0.0146287
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-122",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Return of the Native",
+    "best": 0.219,
+    "rrf": [
+     0.0048077,
+     0.0264946,
+     0.0261823,
+     0.0230576
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-105",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Persuasion",
+    "best": 0.1945,
+    "rrf": [
+     0.0104167,
+     0.0092593
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Old Curiosity Shop",
+    "best": 0.1905,
+    "rrf": [
+     0.0153846,
+     0.0088496
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mill on the Floss",
+    "best": 0.1847,
+    "rrf": [
+     0.0120482,
+     0.0052632
+    ]
+   },
+   {
+    "book_id": "WS_001",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "무정",
+    "best": 0.1815,
+    "rrf": [
+     0.0138889
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "A Tale of Two Cities",
+    "best": 0.1784,
+    "rrf": [
+     0.008547,
+     0.0095238,
+     0.0114943
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-158",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Emma",
+    "best": 0.1762,
+    "rrf": [
+     0.0147059,
+     0.0144928
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1752",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Seagull",
+    "best": 0.1646,
+    "rrf": [
+     0.0121951,
+     0.0138889
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The House of the Seven Gables",
+    "best": 0.1355,
+    "rrf": [
+     0.0088496,
+     0.0104167
+    ]
+   },
+   {
+    "book_id": "GM_004",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "미스터 방",
+    "best": 0.0962,
+    "rrf": [
+     0.0142857
+    ]
+   }
+  ]
+ }
+}

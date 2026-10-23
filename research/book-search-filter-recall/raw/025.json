@@ -1,0 +1,480 @@
+{
+ "kind": "title_kr",
+ "query": "물레방아",
+ "targets": [
+  "WS_026"
+ ],
+ "res": {
+  "elapsed_ms": 790.5,
+  "wall_s": 1.95,
+  "books": [
+   {
+    "book_id": "WS_026",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "물레방아",
+    "best": 1.0,
+    "rrf": [
+     0.0325225,
+     0.031498,
+     0.0055249,
+     0.0300769,
+     0.0064935,
+     0.0300769,
+     0.0128534
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-289",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Wind in the Willows",
+    "best": 0.4769,
+    "rrf": [
+     0.0106383,
+     0.0047393,
+     0.0117647,
+     0.0140845,
+     0.0062112,
+     0.0120482,
+     0.0082645,
+     0.0051546,
+     0.0072993,
+     0.009901,
+     0.0054945,
+     0.0102041
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-236",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Jungle Book",
+    "best": 0.4522,
+    "rrf": [
+     0.0138889,
+     0.0131579,
+     0.010989,
+     0.0060606,
+     0.0136986,
+     0.0135135,
+     0.0119048,
+     0.0049505
+    ]
+   },
+   {
+    "book_id": "WS_009",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "인간문제",
+    "best": 0.4366,
+    "rrf": [
+     0.0048544,
+     0.0068966,
+     0.0131579,
+     0.0103093,
+     0.0133333,
+     0.0050251,
+     0.0269439,
+     0.0125,
+     0.0093458,
+     0.010989,
+     0.008,
+     0.006993,
+     0.0054645,
+     0.0082645,
+     0.0107527,
+     0.0097087
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-829",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Gulliver's Travels",
+    "best": 0.404,
+    "rrf": [
+     0.0055866,
+     0.0056818,
+     0.0084746,
+     0.0111111,
+     0.0050761,
+     0.0053191,
+     0.0047619,
+     0.0048544,
+     0.0064103,
+     0.005,
+     0.009009
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Adventures of Huckleberry Finn",
+    "best": 0.3929,
+    "rrf": [
+     0.0090909,
+     0.0126582,
+     0.0068027,
+     0.0051813,
+     0.0064516,
+     0.0103093,
+     0.0096154,
+     0.0052356,
+     0.0075188,
+     0.005814,
+     0.0073529,
+     0.0066225,
+     0.0116279,
+     0.0105263,
+     0.0070423,
+     0.0061728,
+     0.005988,
+     0.0057471,
+     0.0072464,
+     0.0055249,
+     0.0048077,
+     0.0050505
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Swiss Family Robinson",
+    "best": 0.3721,
+    "rrf": [
+     0.0091743,
+     0.005618,
+     0.0123457,
+     0.0113636,
+     0.0093458,
+     0.009434,
+     0.0076336,
+     0.0084034,
+     0.0056497,
+     0.0075758,
+     0.0051282
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Count of Monte Cristo",
+    "best": 0.3721,
+    "rrf": [
+     0.0147059,
+     0.0059172,
+     0.0066667,
+     0.0058824,
+     0.0054645,
+     0.0138889,
+     0.0080697,
+     0.006993,
+     0.005291,
+     0.0046948,
+     0.0135135,
+     0.005,
+     0.0125887,
+     0.0136986,
+     0.0065359,
+     0.0047619,
+     0.0051546,
+     0.0057803,
+     0.0062893,
+     0.0063291,
+     0.0098087,
+     0.0064516,
+     0.0144928
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-996",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Don Quixote",
+    "best": 0.3671,
+    "rrf": [
+     0.0088496,
+     0.0092593,
+     0.0076923,
+     0.0051813,
+     0.0072993,
+     0.0064103,
+     0.0069444,
+     0.0074074,
+     0.0121951,
+     0.0061728,
+     0.0098039,
+     0.0070423
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mill on the Floss",
+    "best": 0.3073,
+    "rrf": [
+     0.0062893,
+     0.0052632,
+     0.0307692,
+     0.031498,
+     0.012987,
+     0.0120482,
+     0.0128205
+    ]
+   },
+   {
+    "book_id": "CNTS-00052065025",
+    "doc_type": "literature",
+    "pub_date": "1993",
+    "title": "李泰俊文學硏究",
+    "best": 0.3062,
+    "rrf": [
+     0.0048309,
+     0.0105263,
+     0.0059524,
+     0.0055866,
+     0.0070922
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-307",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Fathers and Sons",
+    "best": 0.2941,
+    "rrf": [
+     0.005102,
+     0.0074627,
+     0.0125
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-160",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Awakening",
+    "best": 0.2887,
+    "rrf": [
+     0.0113636,
+     0.008547,
+     0.0083333,
+     0.0096154
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Roughing It",
+    "best": 0.2858,
+    "rrf": [
+     0.010101,
+     0.0058824,
+     0.0070922,
+     0.01,
+     0.0081301
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "doc_type": "literature",
+    "pub_date": "1988",
+    "title": "韓國 女性文學 硏究",
+    "best": 0.2828,
+    "rrf": [
+     0.009901,
+     0.0050505,
+     0.0075188,
+     0.0054945
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Our Mutual Friend",
+    "best": 0.28,
+    "rrf": [
+     0.0053763,
+     0.0077519,
+     0.0063694,
+     0.0098039,
+     0.0086207
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-110",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Tess of the d'Urbervilles",
+    "best": 0.2748,
+    "rrf": [
+     0.0114943,
+     0.011236,
+     0.0140845,
+     0.0142857,
+     0.010101,
+     0.0119048
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Lord Jim",
+    "best": 0.2589,
+    "rrf": [
+     0.0071429,
+     0.0102041,
+     0.0081967,
+     0.01
+    ]
+   },
+   {
+    "book_id": "WS_007",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "태평천하",
+    "best": 0.2576,
+    "rrf": [
+     0.0063291,
+     0.009434,
+     0.0071942
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Coral Island",
+    "best": 0.2347,
+    "rrf": [
+     0.0104167,
+     0.0128205,
+     0.0063694,
+     0.0067114
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-521",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Robinson Crusoe",
+    "best": 0.2315,
+    "rrf": [
+     0.0108696,
+     0.0107527,
+     0.012987
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1056",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Martin Eden",
+    "best": 0.2308,
+    "rrf": [
+     0.0086957,
+     0.0104167,
+     0.0086207,
+     0.0084746
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-41537",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Divine Comedy",
+    "best": 0.2185,
+    "rrf": [
+     0.0080645,
+     0.0087719,
+     0.0095238
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Journey to the Centre of the Earth",
+    "best": 0.2178,
+    "rrf": [
+     0.0144928,
+     0.0133333
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Villette",
+    "best": 0.1997,
+    "rrf": [
+     0.0108696,
+     0.0106383,
+     0.0116279
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Alice's Adventures in Wonderland",
+    "best": 0.1851,
+    "rrf": [
+     0.0147059,
+     0.0080645
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-107",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Far from the Madding Crowd",
+    "best": 0.1797,
+    "rrf": [
+     0.0095238,
+     0.011236
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-36",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The War of the Worlds",
+    "best": 0.1705,
+    "rrf": [
+     0.0121951,
+     0.0114943
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Ambassadors",
+    "best": 0.1423,
+    "rrf": [
+     0.0117647,
+     0.0123457
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18727",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Railway Children",
+    "best": 0.1402,
+    "rrf": [
+     0.0111111,
+     0.0091743
+    ]
+   }
+  ]
+ }
+}

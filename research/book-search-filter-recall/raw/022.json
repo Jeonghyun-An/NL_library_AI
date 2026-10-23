@@ -1,0 +1,533 @@
+{
+ "kind": "title_kr",
+ "query": "혈의 누",
+ "targets": [
+  "WS_023"
+ ],
+ "res": {
+  "elapsed_ms": 860.7,
+  "wall_s": 2.05,
+  "books": [
+   {
+    "book_id": "WS_023",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "혈의 누",
+    "best": 1.0,
+    "rrf": [
+     0.016129
+    ]
+   },
+   {
+    "book_id": "CNTS-00052065111",
+    "doc_type": "literature",
+    "pub_date": "1997",
+    "title": "新小說의 近代文學的 位相",
+    "best": 0.6823,
+    "rrf": [
+     0.032002,
+     0.0310245,
+     0.0123457,
+     0.0143029,
+     0.0283094,
+     0.0052083,
+     0.00625,
+     0.0093458,
+     0.0247304,
+     0.015625,
+     0.0072464,
+     0.0057803,
+     0.008,
+     0.008547,
+     0.0070922,
+     0.0141321,
+     0.0077519,
+     0.0097087,
+     0.005848,
+     0.020007,
+     0.0159757,
+     0.0050761,
+     0.0071429,
+     0.0066225,
+     0.0165841,
+     0.0086957,
+     0.0173223,
+     0.0168129,
+     0.0256781,
+     0.0050505,
+     0.0069444,
+     0.014926,
+     0.0125,
+     0.0209282,
+     0.0164569,
+     0.0150896,
+     0.0075188,
+     0.0057143,
+     0.0063694,
+     0.0071942,
+     0.0103093,
+     0.0058824,
+     0.01,
+     0.0073529,
+     0.006993,
+     0.0070423,
+     0.005,
+     0.0142857,
+     0.0067114,
+     0.0176384,
+     0.0182102,
+     0.0076923,
+     0.0074074,
+     0.0060606,
+     0.0080645,
+     0.0054348,
+     0.0072993,
+     0.0062893,
+     0.0068027
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-601",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Monk",
+    "best": 0.6283,
+    "rrf": [
+     0.0131579,
+     0.0056497,
+     0.01,
+     0.0071942,
+     0.0153846,
+     0.0116279,
+     0.004902,
+     0.0054348,
+     0.0068493,
+     0.0073529,
+     0.0075758,
+     0.005988,
+     0.0049751
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "doc_type": "literature",
+    "pub_date": "1992",
+    "title": "韓國 近代小說論 硏究",
+    "best": 0.62,
+    "rrf": [
+     0.0101254,
+     0.0065789,
+     0.0163268,
+     0.0064516,
+     0.0146647,
+     0.0145507,
+     0.0144385,
+     0.0143282,
+     0.0136986,
+     0.0133333,
+     0.005618,
+     0.0140845,
+     0.0098039,
+     0.0064935,
+     0.0119048,
+     0.0121951,
+     0.0120482,
+     0.0052356,
+     0.0113636,
+     0.0127995
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-345",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Dracula",
+    "best": 0.5344,
+    "rrf": [
+     0.005291,
+     0.004878,
+     0.0142372,
+     0.0099524,
+     0.005814,
+     0.0163934,
+     0.0135135,
+     0.0104167,
+     0.0055249,
+     0.0048077,
+     0.0098039,
+     0.0088496,
+     0.0142857,
+     0.0052083,
+     0.00625,
+     0.0155715,
+     0.010989,
+     0.0149254,
+     0.0064103,
+     0.0190972,
+     0.0119048,
+     0.0120482,
+     0.0063291,
+     0.0128205,
+     0.0108696,
+     0.0140845,
+     0.0090909,
+     0.0086207,
+     0.0092593,
+     0.0136986,
+     0.0068966,
+     0.004717,
+     0.0147059,
+     0.010101,
+     0.0047393,
+     0.0078125,
+     0.0138889,
+     0.0070423,
+     0.0097977,
+     0.0126582,
+     0.0097087,
+     0.0060976,
+     0.0138428,
+     0.0085838,
+     0.0055866,
+     0.0148936,
+     0.0068027,
+     0.0144928,
+     0.006993
+    ]
+   },
+   {
+    "book_id": "CNTS-00052065073",
+    "doc_type": "literature",
+    "pub_date": "1986",
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "best": 0.4607,
+    "rrf": [
+     0.0108696,
+     0.010101,
+     0.0102041,
+     0.0079365,
+     0.0096154,
+     0.010989,
+     0.0107527,
+     0.0084746,
+     0.0089286,
+     0.0106383,
+     0.0105263,
+     0.0083333,
+     0.0084034,
+     0.0088496,
+     0.0087719,
+     0.009434,
+     0.0075758,
+     0.0078125
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-228",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Aeneid",
+    "best": 0.4481,
+    "rrf": [
+     0.0091743,
+     0.0047393,
+     0.0046296,
+     0.0059172,
+     0.0117647,
+     0.0065789,
+     0.0057803,
+     0.0074074,
+     0.0133333,
+     0.005618,
+     0.011236,
+     0.0060606
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-227",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Secret Sharer",
+    "best": 0.4342,
+    "rrf": [
+     0.005,
+     0.0054945,
+     0.0056818,
+     0.0050251,
+     0.005291,
+     0.009901,
+     0.0073052,
+     0.0067568
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1251",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Le Morte d'Arthur",
+    "best": 0.4085,
+    "rrf": [
+     0.0111111,
+     0.009009
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-110",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Tess of the d'Urbervilles",
+    "best": 0.3805,
+    "rrf": [
+     0.0054645,
+     0.0121951,
+     0.0047847,
+     0.0060241,
+     0.0056497,
+     0.0059524,
+     0.0055866,
+     0.0053476,
+     0.0048544,
+     0.0053191
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Faerie Queene",
+    "best": 0.3469,
+    "rrf": [
+     0.0096154,
+     0.0095238,
+     0.008547,
+     0.0077519,
+     0.006135,
+     0.0057143
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6130",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Iliad",
+    "best": 0.339,
+    "rrf": [
+     0.0063694,
+     0.0051282,
+     0.0046948,
+     0.0051813,
+     0.0076336
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063059",
+    "doc_type": "literature",
+    "pub_date": "1991",
+    "title": "朝鮮初期 樓亭記의 硏究",
+    "best": 0.3355,
+    "rrf": [
+     0.0069444,
+     0.005848,
+     0.0051546,
+     0.0048309,
+     0.0087719
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063882",
+    "doc_type": "literature",
+    "pub_date": "1994",
+    "title": "1930年代 韓國 心理小說 硏究",
+    "best": 0.3316,
+    "rrf": [
+     0.004717,
+     0.0046948,
+     0.0082645
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-25344",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Scarlet Letter",
+    "best": 0.2939,
+    "rrf": [
+     0.0049505,
+     0.0048544,
+     0.0076923,
+     0.0125,
+     0.0084746
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-153",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Jude the Obscure",
+    "best": 0.2771,
+    "rrf": [
+     0.0058824,
+     0.0047619,
+     0.0082645,
+     0.0055556,
+     0.0084034,
+     0.0083333,
+     0.0081967
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5230",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Invisible Man",
+    "best": 0.2489,
+    "rrf": [
+     0.012987,
+     0.0054645
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Great Expectations",
+    "best": 0.2399,
+    "rrf": [
+     0.0048309,
+     0.0052632,
+     0.0079365,
+     0.0062893,
+     0.0055249
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "best": 0.2295,
+    "rrf": [
+     0.0076336,
+     0.0062112,
+     0.0052632
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7469",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Daniel Deronda",
+    "best": 0.2271,
+    "rrf": [
+     0.0089286,
+     0.0066225,
+     0.0071429,
+     0.0072993,
+     0.0105263
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-8395",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Gods of Pegana",
+    "best": 0.222,
+    "rrf": [
+     0.005102,
+     0.007874
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Star Rover",
+    "best": 0.1945,
+    "rrf": [
+     0.0117647,
+     0.0126582
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-41537",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Divine Comedy",
+    "best": 0.1796,
+    "rrf": [
+     0.0114943
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Bleak House",
+    "best": 0.1665,
+    "rrf": [
+     0.0102041
+    ]
+   },
+   {
+    "book_id": "WS_012",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "홍길동전",
+    "best": 0.1476,
+    "rrf": [
+     0.0086207
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Decameron",
+    "best": 0.1394,
+    "rrf": [
+     0.0086957
+    ]
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "doc_type": "literature",
+    "pub_date": "1989",
+    "title": "조선조 가정소설 연구",
+    "best": 0.131,
+    "rrf": [
+     0.007874
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "War and Peace",
+    "best": 0.1144,
+    "rrf": [
+     0.0075188
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Canterbury Tales",
+    "best": 0.113,
+    "rrf": [
+     0.008
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17375",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Enchanted Castle",
+    "best": 0.0479,
+    "rrf": [
+     0.0080645
+    ]
+   }
+  ]
+ }
+}

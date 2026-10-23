@@ -1,0 +1,522 @@
+{
+ "kind": "title_kr",
+ "query": "미스터 방",
+ "targets": [
+  "GM_004"
+ ],
+ "res": {
+  "elapsed_ms": 825.9,
+  "wall_s": 1.75,
+  "books": [
+   {
+    "book_id": "GM_004",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "미스터 방",
+    "best": 1.0,
+    "rrf": [
+     0.0260695,
+     0.0303309,
+     0.0211594,
+     0.0292111,
+     0.0289495,
+     0.0295716,
+     0.0224879,
+     0.0210831,
+     0.0282587,
+     0.0305361,
+     0.017787,
+     0.028373,
+     0.0289495,
+     0.0206863,
+     0.0236985,
+     0.019487,
+     0.0238566,
+     0.028125
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1260",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Jane Eyre",
+    "best": 0.5231,
+    "rrf": [
+     0.0065789,
+     0.019338,
+     0.0053763,
+     0.0147609,
+     0.005,
+     0.0116975,
+     0.010101,
+     0.0060976,
+     0.007874,
+     0.0069444,
+     0.0087719,
+     0.0196022,
+     0.0056818,
+     0.009901,
+     0.0055866,
+     0.0092593,
+     0.0117647,
+     0.0096154,
+     0.0047619
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Adventures of Sherlock Holmes",
+    "best": 0.4931,
+    "rrf": [
+     0.0138423,
+     0.0136496,
+     0.0081301,
+     0.0153409,
+     0.0180556,
+     0.0179429,
+     0.0081967,
+     0.0207393,
+     0.0093136,
+     0.0147028,
+     0.0044248,
+     0.0089447,
+     0.0086207,
+     0.0076923,
+     0.0104638,
+     0.0067568,
+     0.0071429
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5230",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Invisible Man",
+    "best": 0.4884,
+    "rrf": [
+     0.008547,
+     0.0135802,
+     0.0068966,
+     0.0046948,
+     0.0047847,
+     0.0054054,
+     0.0046512,
+     0.0162352,
+     0.0050505,
+     0.0124344,
+     0.004386,
+     0.0125911,
+     0.0055249,
+     0.0065359,
+     0.0046083,
+     0.0043478,
+     0.0055249,
+     0.0052632,
+     0.0045662,
+     0.0049751,
+     0.0076923
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Dorrit",
+    "best": 0.4607,
+    "rrf": [
+     0.0070922,
+     0.011236,
+     0.0056497,
+     0.0052356,
+     0.0046729,
+     0.0054645,
+     0.0078125,
+     0.0062893,
+     0.0044643,
+     0.0079365,
+     0.0098039
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Pickwick Papers",
+    "best": 0.4436,
+    "rrf": [
+     0.0050761,
+     0.0105263,
+     0.008,
+     0.0064103,
+     0.0075758,
+     0.0057471,
+     0.0081301,
+     0.0053763,
+     0.0055556,
+     0.0116279,
+     0.006135,
+     0.0045455,
+     0.0075188,
+     0.0047393,
+     0.0048309,
+     0.0054645,
+     0.0123457
+    ]
+   },
+   {
+    "book_id": "CNTS-00047956839",
+    "doc_type": "literature",
+    "pub_date": "2001",
+    "title": "인연의 덫",
+    "best": 0.4378,
+    "rrf": [
+     0.0164835,
+     0.0151138,
+     0.0060241,
+     0.005988,
+     0.0059524,
+     0.0059172,
+     0.0058824,
+     0.005848,
+     0.0105129,
+     0.005291,
+     0.0118588,
+     0.0141251,
+     0.0046512,
+     0.0046296,
+     0.0046083,
+     0.0045872,
+     0.0045662,
+     0.0045455,
+     0.0095335
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-170",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Phoenix and the Carpet",
+    "best": 0.414,
+    "rrf": [
+     0.008,
+     0.0061689,
+     0.0063291,
+     0.0070703,
+     0.0081967,
+     0.0045045,
+     0.0053191,
+     0.01,
+     0.0091743
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Old Curiosity Shop",
+    "best": 0.4113,
+    "rrf": [
+     0.0108696,
+     0.0074074,
+     0.005618,
+     0.0049505,
+     0.0111111,
+     0.004717,
+     0.0048077
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Count of Monte Cristo",
+    "best": 0.4083,
+    "rrf": [
+     0.0165735,
+     0.0051282,
+     0.0140628,
+     0.0050505,
+     0.0086207,
+     0.0068027
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7849",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Trial",
+    "best": 0.4059,
+    "rrf": [
+     0.0123457,
+     0.0053476,
+     0.0092593,
+     0.0116279,
+     0.0120482,
+     0.0114943,
+     0.0126582,
+     0.0121951,
+     0.0084034,
+     0.0054348
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2350",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "His Last Bow",
+    "best": 0.3954,
+    "rrf": [
+     0.0052632,
+     0.0108678,
+     0.0052356,
+     0.0054054,
+     0.0045872,
+     0.0084746,
+     0.010989,
+     0.0043478
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-370",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Moll Flanders",
+    "best": 0.3945,
+    "rrf": [
+     0.0119583,
+     0.0046948,
+     0.0043668,
+     0.0078125
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-834",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Memoirs of Sherlock Holmes",
+    "best": 0.3849,
+    "rrf": [
+     0.0144633,
+     0.0086957,
+     0.0062112,
+     0.0127897,
+     0.0111798,
+     0.0074627,
+     0.004329
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-223",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Wisdom of Father Brown",
+    "best": 0.3445,
+    "rrf": [
+     0.0076208,
+     0.0120482,
+     0.0126582,
+     0.0098039,
+     0.0104167
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Country of the Blind",
+    "best": 0.3392,
+    "rrf": [
+     0.0050251,
+     0.009901,
+     0.0046296,
+     0.0064935,
+     0.0084746,
+     0.0049261,
+     0.0071942,
+     0.009009,
+     0.0056818,
+     0.004902
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mysteries of Udolpho",
+    "best": 0.3214,
+    "rrf": [
+     0.0072464,
+     0.004386,
+     0.0048309,
+     0.0046729,
+     0.0138889,
+     0.00625,
+     0.0055556,
+     0.0097087,
+     0.0144928,
+     0.0140845
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-233",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Sister Carrie",
+    "best": 0.2868,
+    "rrf": [
+     0.0097087,
+     0.0090909,
+     0.0077519,
+     0.0048544
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1155",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Secret Adversary",
+    "best": 0.2854,
+    "rrf": [
+     0.0106383,
+     0.0104167
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Coral Island",
+    "best": 0.2805,
+    "rrf": [
+     0.0114943,
+     0.0260504,
+     0.0131579,
+     0.0272894,
+     0.0250623,
+     0.0061728
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-25344",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Scarlet Letter",
+    "best": 0.2783,
+    "rrf": [
+     0.0105263,
+     0.0047393,
+     0.0095238
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1752",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Seagull",
+    "best": 0.2704,
+    "rrf": [
+     0.0087719,
+     0.0070423
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-143",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mayor of Casterbridge",
+    "best": 0.2406,
+    "rrf": [
+     0.0096154,
+     0.005848,
+     0.005814
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-67979",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Blue Castle",
+    "best": 0.2303,
+    "rrf": [
+     0.0089286,
+     0.0135135,
+     0.011236,
+     0.012987,
+     0.0072993
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Great Expectations",
+    "best": 0.2189,
+    "rrf": [
+     0.0177047,
+     0.0060606,
+     0.0088496
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-28054",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Brothers Karamazov",
+    "best": 0.2097,
+    "rrf": [
+     0.0083333,
+     0.006993,
+     0.0053191
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-903",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The White Company",
+    "best": 0.2088,
+    "rrf": [
+     0.0093458,
+     0.0119048,
+     0.0102041
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Moby-Dick; Or, The Whale",
+    "best": 0.2085,
+    "rrf": [
+     0.0074627,
+     0.0103093,
+     0.0107527
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-158",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Emma",
+    "best": 0.1997,
+    "rrf": [
+     0.005102,
+     0.0052083,
+     0.009434
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Our Mutual Friend",
+    "best": 0.1152,
+    "rrf": [
+     0.0089286
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,457 @@
+{
+ "kind": "title_kr",
+ "query": "발가락이 닮았다",
+ "targets": [
+  "GM_005"
+ ],
+ "res": {
+  "elapsed_ms": 1134.6,
+  "wall_s": 1.76,
+  "books": [
+   {
+    "book_id": "GM_005",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "김동인 <발가락이 닮았다>",
+    "best": 0.8332,
+    "rrf": [
+     0.0298507,
+     0.0291986,
+     0.0283094,
+     0.0247064,
+     0.0315136,
+     0.0277831,
+     0.0217593,
+     0.025974,
+     0.027598,
+     0.0277992,
+     0.0281746,
+     0.0266667,
+     0.0303658,
+     0.0300179,
+     0.023953,
+     0.0278846,
+     0.0254787,
+     0.0185242,
+     0.0310993,
+     0.0288501,
+     0.0320184,
+     0.0181596
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "War and Peace",
+    "best": 0.6526,
+    "rrf": [
+     0.0106383,
+     0.0075188,
+     0.0087719,
+     0.0074627,
+     0.0107527,
+     0.0076336,
+     0.0070423,
+     0.009009
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-834",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Memoirs of Sherlock Holmes",
+    "best": 0.5576,
+    "rrf": [
+     0.0077519,
+     0.0056818,
+     0.0093458,
+     0.008,
+     0.00625,
+     0.004717,
+     0.0053763,
+     0.006135,
+     0.0068966,
+     0.0072993
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Adventures of Sherlock Holmes",
+    "best": 0.5455,
+    "rrf": [
+     0.0098039,
+     0.0089286,
+     0.0060241,
+     0.0108696,
+     0.0067114,
+     0.0050505,
+     0.0090909,
+     0.0082645,
+     0.009901,
+     0.0062893
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5230",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Invisible Man",
+    "best": 0.5091,
+    "rrf": [
+     0.0131579,
+     0.0111111,
+     0.0104167,
+     0.010989
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17375",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Enchanted Castle",
+    "best": 0.5084,
+    "rrf": [
+     0.005291,
+     0.0090909,
+     0.0054348,
+     0.0047393,
+     0.0102041,
+     0.0045872,
+     0.0095238
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-27681",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Last of the Mohicans",
+    "best": 0.4941,
+    "rrf": [
+     0.010101,
+     0.0121951,
+     0.0060976,
+     0.0071429,
+     0.0113636,
+     0.007874
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2097",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Sign of the Four",
+    "best": 0.4801,
+    "rrf": [
+     0.005848,
+     0.0117647,
+     0.0057143,
+     0.008547,
+     0.0087719,
+     0.0053476
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-67979",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Blue Castle",
+    "best": 0.475,
+    "rrf": [
+     0.0097087,
+     0.005291,
+     0.0086207,
+     0.0082645,
+     0.0048309,
+     0.0054054,
+     0.0060606,
+     0.0105263,
+     0.0088496
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Woman in White",
+    "best": 0.4615,
+    "rrf": [
+     0.0058824,
+     0.011765,
+     0.0131981,
+     0.0060606,
+     0.005,
+     0.0090151,
+     0.0081582
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-204",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Innocence of Father Brown",
+    "best": 0.4451,
+    "rrf": [
+     0.0114943,
+     0.0096154,
+     0.0084746,
+     0.0079365,
+     0.0106383,
+     0.0051813,
+     0.0055249
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-940",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Spy",
+    "best": 0.4392,
+    "rrf": [
+     0.0116279,
+     0.0123457,
+     0.0097087,
+     0.0128205,
+     0.011236,
+     0.0045872,
+     0.0056497
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mysteries of Udolpho",
+    "best": 0.4366,
+    "rrf": [
+     0.0093458,
+     0.0049261,
+     0.005102,
+     0.0084746,
+     0.008,
+     0.00625,
+     0.0079365,
+     0.0066225,
+     0.0055866,
+     0.0053763,
+     0.0081301,
+     0.0052632,
+     0.0075758,
+     0.0078125
+    ]
+   },
+   {
+    "book_id": "WS_001",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "무정",
+    "best": 0.4209,
+    "rrf": [
+     0.01,
+     0.0048544,
+     0.0084034,
+     0.0049261,
+     0.0105263,
+     0.0051282
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2350",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "His Last Bow",
+    "best": 0.3979,
+    "rrf": [
+     0.0066225,
+     0.0083333,
+     0.0095238,
+     0.0054945,
+     0.0048309
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-829",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Gulliver's Travels",
+    "best": 0.3891,
+    "rrf": [
+     0.0080645,
+     0.0063694,
+     0.005618,
+     0.0107527,
+     0.0076923
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2759",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Man in the Iron Mask",
+    "best": 0.3817,
+    "rrf": [
+     0.0091743,
+     0.005618,
+     0.0053191,
+     0.0057143,
+     0.0059172,
+     0.0072993,
+     0.0045662
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Old Curiosity Shop",
+    "best": 0.3768,
+    "rrf": [
+     0.010101,
+     0.0081967
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Coral Island",
+    "best": 0.2853,
+    "rrf": [
+     0.0083333,
+     0.0092593,
+     0.006135,
+     0.0096154,
+     0.0057803,
+     0.004878,
+     0.01
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-967",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Nicholas Nickleby",
+    "best": 0.2801,
+    "rrf": [
+     0.0048077,
+     0.0104167,
+     0.0113636,
+     0.0108696
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1399",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Anna Karenina",
+    "best": 0.2796,
+    "rrf": [
+     0.0116279,
+     0.0114943,
+     0.0117647
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The House of the Seven Gables",
+    "best": 0.2716,
+    "rrf": [
+     0.0098039,
+     0.0111111,
+     0.009901
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Our Mutual Friend",
+    "best": 0.2671,
+    "rrf": [
+     0.0091743
+    ]
+   },
+   {
+    "book_id": "WS_034",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "귀의 성",
+    "best": 0.249,
+    "rrf": [
+     0.011236,
+     0.0067568,
+     0.0065359
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-14591",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Faust: Part 1",
+    "best": 0.2419,
+    "rrf": [
+     0.0086957,
+     0.0047619,
+     0.010989,
+     0.0103093
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-105",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Persuasion",
+    "best": 0.2286,
+    "rrf": [
+     0.0089286,
+     0.0084034,
+     0.009434
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-110",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Tess of the d'Urbervilles",
+    "best": 0.1404,
+    "rrf": [
+     0.0103093
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063929",
+    "doc_type": "literature",
+    "pub_date": "1995",
+    "title": "이기영 소설의 여성의식 연구",
+    "best": 0.1,
+    "rrf": [
+     0.0119048
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Great Expectations",
+    "best": 0.0798,
+    "rrf": [
+     0.009434
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Adventures of Huckleberry Finn",
+    "best": 0.0685,
+    "rrf": [
+     0.009009
+    ]
+   }
+  ]
+ }
+}

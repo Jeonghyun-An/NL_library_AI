@@ -1,0 +1,573 @@
+{
+ "kind": "title_en_kr",
+ "query": "허클베리 핀의 모험",
+ "targets": [
+  "LIT-GUTENBERG-76"
+ ],
+ "res": {
+  "elapsed_ms": 1115.9,
+  "wall_s": 1.72,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Adventures of Huckleberry Finn",
+    "best": 0.8156,
+    "rrf": [
+     0.0113636,
+     0.0046948,
+     0.005848,
+     0.004717,
+     0.004329,
+     0.0122968,
+     0.0128616,
+     0.0157149,
+     0.0040816,
+     0.0307692,
+     0.0312805,
+     0.0102979,
+     0.0290309,
+     0.0050505,
+     0.0080335,
+     0.0118499,
+     0.0135847,
+     0.0275836,
+     0.0050761,
+     0.0146647,
+     0.005102,
+     0.0041667,
+     0.0049261,
+     0.0073665,
+     0.0060241,
+     0.0088235,
+     0.013291,
+     0.004065,
+     0.0060642,
+     0.0266856,
+     0.0152802,
+     0.00625,
+     0.0138125,
+     0.0103539,
+     0.0072543,
+     0.0128264,
+     0.0269928,
+     0.0109765,
+     0.0041667,
+     0.0140976,
+     0.0123499,
+     0.0131368,
+     0.006993,
+     0.0100174,
+     0.0112512,
+     0.0115765,
+     0.0255788,
+     0.0153038,
+     0.0046296,
+     0.0098933,
+     0.010763,
+     0.0125313,
+     0.004717,
+     0.0055249,
+     0.0074115,
+     0.0292111,
+     0.0065359,
+     0.0040161,
+     0.011783,
+     0.011845,
+     0.0270468,
+     0.0039216,
+     0.0126288,
+     0.0231407,
+     0.0134448,
+     0.004329,
+     0.0178256,
+     0.0147531,
+     0.0186267,
+     0.0039062,
+     0.006993,
+     0.0109077,
+     0.0073146,
+     0.0067575,
+     0.0047619,
+     0.026905,
+     0.003937,
+     0.0113608,
+     0.004878,
+     0.007484,
+     0.0239899,
+     0.0040486,
+     0.0129365,
+     0.0063291,
+     0.0050251,
+     0.0105263,
+     0.0109179,
+     0.0101391,
+     0.0293865,
+     0.0091802,
+     0.0198068,
+     0.005291,
+     0.0119713,
+     0.0077863,
+     0.0047847,
+     0.0170503,
+     0.0284455,
+     0.0073189,
+     0.0052083,
+     0.0230444,
+     0.0182744,
+     0.0066667,
+     0.0062968,
+     0.0089647,
+     0.0266667,
+     0.0188061,
+     0.0327869,
+     0.0104828,
+     0.0049505,
+     0.0155287,
+     0.0078341,
+     0.00625,
+     0.0057471,
+     0.0042017,
+     0.0088397,
+     0.0308349,
+     0.0307765,
+     0.0053763,
+     0.0216672,
+     0.0040816,
+     0.0043103,
+     0.0093664,
+     0.0071429,
+     0.0151996,
+     0.0093986,
+     0.0247517,
+     0.0187996,
+     0.004902,
+     0.0208022,
+     0.0128469,
+     0.0257086,
+     0.0231841,
+     0.007905,
+     0.0063291,
+     0.0179984,
+     0.0078939,
+     0.022074,
+     0.0165697,
+     0.0083884,
+     0.0177004,
+     0.0066225,
+     0.0209957,
+     0.0179912,
+     0.0267541,
+     0.0189637,
+     0.0090819
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-74",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Adventures of Tom Sawyer",
+    "best": 0.7091,
+    "rrf": [
+     0.0195004,
+     0.0074074,
+     0.0074627,
+     0.0194193,
+     0.0187839,
+     0.0060241,
+     0.0174985,
+     0.0127317,
+     0.0048544,
+     0.0135147,
+     0.0094275,
+     0.004386,
+     0.0059172,
+     0.0046083,
+     0.0221154,
+     0.0088607,
+     0.0173529,
+     0.0225498,
+     0.0092891,
+     0.0093406,
+     0.0162172,
+     0.0109031,
+     0.0064935,
+     0.0039841,
+     0.0261207,
+     0.0196248,
+     0.0043103,
+     0.019901,
+     0.0157058,
+     0.02578,
+     0.0142437,
+     0.0204758,
+     0.0098213,
+     0.0208977,
+     0.010159,
+     0.0078125,
+     0.0051282,
+     0.0084034,
+     0.0079895,
+     0.0068966,
+     0.0075758,
+     0.0045045,
+     0.0155486,
+     0.0165622,
+     0.0043668,
+     0.0063694,
+     0.0188824,
+     0.0149719,
+     0.0086207,
+     0.0080645,
+     0.0064935,
+     0.0081967,
+     0.0070423,
+     0.0181041,
+     0.0068493,
+     0.0175076,
+     0.0106383,
+     0.0047393,
+     0.0058848,
+     0.0064516,
+     0.0054645,
+     0.0088496,
+     0.0106804,
+     0.0154587,
+     0.0071429,
+     0.0049751,
+     0.0063756,
+     0.0074074,
+     0.0135141,
+     0.0155187
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2788",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Men",
+    "best": 0.4274,
+    "rrf": [
+     0.004902,
+     0.0057803
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Peter Pan",
+    "best": 0.4192,
+    "rrf": [
+     0.0046083,
+     0.0066667,
+     0.003876,
+     0.0055249,
+     0.0046512,
+     0.0048544,
+     0.0052356,
+     0.0045249,
+     0.0045662,
+     0.0057471,
+     0.004,
+     0.0054348,
+     0.0040323,
+     0.0040486,
+     0.0038911
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-940",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Spy",
+    "best": 0.3587,
+    "rrf": [
+     0.0056818,
+     0.004878,
+     0.0056497,
+     0.0040984,
+     0.004386,
+     0.005,
+     0.0062112
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Journey to the Centre of the Earth",
+    "best": 0.357,
+    "rrf": [
+     0.0071942,
+     0.0039683,
+     0.0049751,
+     0.0044643,
+     0.0041322,
+     0.0072464,
+     0.0043668,
+     0.0045455,
+     0.0054645
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Wonderful Visit",
+    "best": 0.3321,
+    "rrf": [
+     0.0044444,
+     0.0047619,
+     0.0061728,
+     0.0041152,
+     0.0062893,
+     0.0054945,
+     0.0057143,
+     0.0052356,
+     0.0055556,
+     0.005848,
+     0.0041841,
+     0.0051282
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Our Mutual Friend",
+    "best": 0.3014,
+    "rrf": [
+     0.0042553,
+     0.0049261
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-27681",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Last of the Mohicans",
+    "best": 0.275,
+    "rrf": [
+     0.0046948,
+     0.0039526,
+     0.0039216
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-143",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mayor of Casterbridge",
+    "best": 0.242,
+    "rrf": [
+     0.0056497,
+     0.0056818,
+     0.0060976,
+     0.0051546
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-35",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Time Machine",
+    "best": 0.2411,
+    "rrf": [
+     0.003861,
+     0.0042373
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Pickwick Papers",
+    "best": 0.2336,
+    "rrf": [
+     0.0047393,
+     0.0048077,
+     0.0048309
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Roughing It",
+    "best": 0.2024,
+    "rrf": [
+     0.0044248
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-829",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Gulliver's Travels",
+    "best": 0.1949,
+    "rrf": [
+     0.0042918
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-44747",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Red and the Black",
+    "best": 0.1732,
+    "rrf": [
+     0.005618,
+     0.0050505,
+     0.0039526
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-83",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "From the Earth to the Moon",
+    "best": 0.1696,
+    "rrf": [
+     0.0040323,
+     0.0048309
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Faerie Queene",
+    "best": 0.1657,
+    "rrf": [
+     0.003876,
+     0.004
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Woman in White",
+    "best": 0.1616,
+    "rrf": [
+     0.0042017
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The History of Tom Jones, a Foundling",
+    "best": 0.1564,
+    "rrf": [
+     0.0047847
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Moby-Dick; Or, The Whale",
+    "best": 0.1514,
+    "rrf": [
+     0.0054945,
+     0.0041494
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Dombey and Son",
+    "best": 0.1494,
+    "rrf": [
+     0.0042194,
+     0.0042373
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Coral Island",
+    "best": 0.1344,
+    "rrf": [
+     0.0045872,
+     0.0044643
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-910",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "White Fang",
+    "best": 0.1174,
+    "rrf": [
+     0.0040161
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3285",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Deerslayer",
+    "best": 0.115,
+    "rrf": [
+     0.0044444
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Swiss Family Robinson",
+    "best": 0.0939,
+    "rrf": [
+     0.0055866
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Count of Monte Cristo",
+    "best": 0.0772,
+    "rrf": [
+     0.0039683
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-215",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Call of the Wild",
+    "best": 0.0545,
+    "rrf": [
+     0.003937
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Dorrit",
+    "best": 0.0523,
+    "rrf": [
+     0.0038911
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1155",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Secret Adversary",
+    "best": 0.0443,
+    "rrf": [
+     0.0038462
+    ]
+   }
+  ]
+ }
+}
