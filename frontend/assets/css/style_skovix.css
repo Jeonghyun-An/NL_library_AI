@@ -3289,6 +3289,25 @@ html.skx-scroll-lock {
   position: sticky;
   top: 1.2rem;
 }
+/* 상세 화면의 넓은 DeepRead 창(.skx-chat-panel--wide) — 상세는 사이드바를 띠로 접고(AppSidebar foldOnEnter) 그 폭을 이 창에 준다(요청 2026-10-23).
+   화면 폭의 45%를 24rem~40rem(20px 기준 480~800px) 안에서 쓴다. 1280px(1920 화면 150%)에서 창 576px·본문 568px —
+   전(사이드바 펼침 + 창 24rem)의 본문 408px 보다 넓다. 1100px 이하의 덮는 창은 아래 미디어 구간이 다시 정한다 */
+.skx-chat-panel--wide.is-open,
+.skx-chat-panel--wide .skx-chat-panel__inner {
+  width: clamp(24rem, 45vw, 40rem);
+}
+/* 사이드바를 펴고 접는 동안 안쪽 카드도 창과 같이 줄고 는다 — 안쪽만 바로 바뀌면 0.42초 동안 빈 띠가 생기거나 오른쪽(보내기 단추)이 잘렸다 */
+.skx-chat-panel--wide .skx-chat-panel__inner {
+  transition: width 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* 상세 화면에서 사이드바를 다시 펼치면 그 폭을 돌려받는다 — 창은 전처럼 24rem(1280px 에서 본문이 278px 까지 줄던 것을 막는다).
+   본문을 미는 넓은 화면에서만 — 1100px 이하의 덮는 창은 사이드바와 상관없다 */
+@media (min-width: 1101px) {
+  .skx-app:has(.skx-lnb:not(.is-lnb-collapsed)) .skx-chat-panel--wide.is-open,
+  .skx-app:has(.skx-lnb:not(.is-lnb-collapsed)) .skx-chat-panel--wide .skx-chat-panel__inner {
+    width: 24rem;
+  }
+}
 /* DeepRead 패널은 1100px 이하에서 본문을 밀지 않고 오른쪽에서 열려 위를 덮는다 — 펼친 사이드바(16rem) + 패널(24rem)이 함께 폭을 쓰면
    1024px 에서 본문이 118px, 375px 에서는 화면 밖으로 밀려 가로 스크롤이 생겼다. 닫힌 패널은 visibility: hidden(키보드 초점도 가지 않음),
    휴대폰(≤600px)에서는 화면 폭을 다 덮는다. 넓은 화면(>1100px)은 지금처럼 본문을 민다 */
@@ -3324,6 +3343,15 @@ html.skx-scroll-lock {
     top: 0;
     border-radius: var(--skx-radius-lg) 0 0 var(--skx-radius-lg);
     box-shadow: var(--skx-shadow-banner);
+  }
+  /* 상세 화면의 넓은 창은 덮을 때도 조금 넓게(30rem) — 안쪽은 패널 폭을 그대로 채운다(위의 넓은 폭 규칙을 되돌린다) */
+  .skx-chat-panel--wide,
+  .skx-chat-panel--wide.is-open {
+    width: min(30rem, 100vw);
+  }
+  .skx-chat-panel--wide .skx-chat-panel__inner {
+    width: 100%;
+    transition: none;
   }
 }
 @media (max-width: 600px) {

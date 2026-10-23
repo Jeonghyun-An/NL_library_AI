@@ -1,6 +1,8 @@
 <template>
   <div class="skx-app">
+    <!-- 상세 화면은 사이드바를 띠로 접은 채 열고, 그 폭을 넓은 DeepRead 창(.skx-chat-panel--wide)에 준다 -->
     <AppSidebar
+      fold-on-enter
       @cart="showToast('대출 장바구니 기능은 준비 중이에요.')"
       @save="showToast('저장목록 기능은 준비 중이에요.')"
     />
@@ -291,7 +293,7 @@
     </main>
 
     <!-- 채팅 패널 -->
-    <aside v-if="paper" id="dt-chat" :class="['skx-chat-panel', chatOpen && 'is-open']">
+    <aside v-if="paper" id="dt-chat" :class="['skx-chat-panel', 'skx-chat-panel--wide', chatOpen && 'is-open']">
       <div class="skx-chat-panel__inner">
         <div class="skx-chat-header">
           <button type="button" class="skx-chat-close" aria-label="DeepRead 닫기" @click="chatOpen = false">

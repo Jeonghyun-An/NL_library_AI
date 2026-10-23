@@ -392,7 +392,7 @@ describe("도서 상세 — pages/books/[cnts_id].vue", () => {
   });
 
   it("?chat=1 로 왔어도 도서를 불러온 뒤에만 DeepRead 패널을 연다 — 못 불러오면 닫을 수 없는 빈 패널이 화면을 덮지 않는다", () => {
-    expect(src).toContain(":class=\"['skx-chat-panel', chatPanelOpen && book && 'is-open']\"");
+    expect(src).toContain(":class=\"['skx-chat-panel', 'skx-chat-panel--wide', chatPanelOpen && book && 'is-open']\"");
     expect(src).toMatch(
       /async function loadPage\(\) \{\s*await fetchBook\(\);\s*if \(!book\.value\) return;[\s\S]*?if \(route\.query\.chat === "1"\) chatPanelOpen\.value = true;/,
     );
