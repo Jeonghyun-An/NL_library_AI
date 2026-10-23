@@ -1,0 +1,507 @@
+{
+ "kind": "title_kr",
+ "query": "산골 나그네",
+ "targets": [
+  "GM_002"
+ ],
+ "res": {
+  "elapsed_ms": 1655.7,
+  "wall_s": 1.81,
+  "books": [
+   {
+    "book_id": "GM_002",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "산골 나그네",
+    "best": 1.0,
+    "rrf": [
+     0.0312805,
+     0.0305789,
+     0.0289916,
+     0.0304147,
+     0.03031,
+     0.0313188,
+     0.0296443,
+     0.0301178,
+     0.0297095,
+     0.0294691
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-767",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Agnes Grey",
+    "best": 0.4737,
+    "rrf": [
+     0.0084034,
+     0.0056818,
+     0.0065359,
+     0.0055249,
+     0.018635,
+     0.0050251,
+     0.0049505,
+     0.013265,
+     0.0091743,
+     0.0057471,
+     0.0080645,
+     0.0152028,
+     0.0047619,
+     0.0050761,
+     0.0089286,
+     0.0053191,
+     0.0076923,
+     0.0057143,
+     0.0072993,
+     0.0051546,
+     0.0083333,
+     0.0052632,
+     0.0071429,
+     0.0051282,
+     0.0116279,
+     0.0114943,
+     0.005988,
+     0.0054945,
+     0.0066225,
+     0.0087719,
+     0.0079365,
+     0.0053763,
+     0.0067114,
+     0.008547,
+     0.0046083,
+     0.0060241,
+     0.004902,
+     0.0064103,
+     0.0060606,
+     0.0074627,
+     0.0055866,
+     0.0093458,
+     0.0047393,
+     0.0081301,
+     0.005814,
+     0.0090909,
+     0.0053476,
+     0.0046948,
+     0.0070922,
+     0.0046512,
+     0.0095238,
+     0.0048309,
+     0.0064516,
+     0.004878,
+     0.005102,
+     0.0063291,
+     0.0058824,
+     0.0098039,
+     0.008629,
+     0.0063694,
+     0.0049261,
+     0.0056497,
+     0.005618,
+     0.0086207,
+     0.0050505
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-967",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Nicholas Nickleby",
+    "best": 0.3979,
+    "rrf": [
+     0.0105263,
+     0.0106383,
+     0.0055866,
+     0.0086957,
+     0.0136986,
+     0.0076923,
+     0.0047619,
+     0.0135135,
+     0.0050505,
+     0.0126582,
+     0.0119048,
+     0.0048544,
+     0.011236,
+     0.0107527,
+     0.0064516,
+     0.0063291,
+     0.009901,
+     0.0087719
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Bleak House",
+    "best": 0.3948,
+    "rrf": [
+     0.0054945,
+     0.0119048,
+     0.0052356,
+     0.0069444,
+     0.008547,
+     0.0048309,
+     0.01,
+     0.0062893,
+     0.0049505,
+     0.0114943,
+     0.0120482,
+     0.0072993,
+     0.0068027,
+     0.0121951
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mysteries of Udolpho",
+    "best": 0.3929,
+    "rrf": [
+     0.005102,
+     0.0050251,
+     0.0064103,
+     0.01,
+     0.0128205,
+     0.0055556
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-170",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Phoenix and the Carpet",
+    "best": 0.3835,
+    "rrf": [
+     0.0064935,
+     0.005,
+     0.004717,
+     0.0082645,
+     0.0066667,
+     0.0068493,
+     0.0060976,
+     0.0073529,
+     0.0048544,
+     0.0092593,
+     0.0046729,
+     0.0048077,
+     0.010989,
+     0.0076336,
+     0.0075758,
+     0.0061728,
+     0.0081967,
+     0.0069444,
+     0.0047847,
+     0.0055556,
+     0.0054645,
+     0.0075188
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Journey to the Centre of the Earth",
+    "best": 0.3522,
+    "rrf": [
+     0.0086957,
+     0.0136986,
+     0.0138889,
+     0.0135135,
+     0.006993
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2864",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Trumpet-Major",
+    "best": 0.3507,
+    "rrf": [
+     0.0150423,
+     0.0046948,
+     0.004902,
+     0.0111111,
+     0.0052632,
+     0.0062893,
+     0.0117647,
+     0.0065359,
+     0.0066667
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-996",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Don Quixote",
+    "best": 0.3314,
+    "rrf": [
+     0.0095238,
+     0.0102041,
+     0.0084034,
+     0.0108696,
+     0.0088496,
+     0.005291,
+     0.0059524
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1842",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Michael Strogoff",
+    "best": 0.3296,
+    "rrf": [
+     0.005618,
+     0.006993,
+     0.0093458
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1752",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Seagull",
+    "best": 0.3104,
+    "rrf": [
+     0.0049261,
+     0.0078125,
+     0.0060976,
+     0.0060606,
+     0.009434,
+     0.0073529,
+     0.0057803
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mill on the Floss",
+    "best": 0.3103,
+    "rrf": [
+     0.0082645,
+     0.0107527,
+     0.0053191,
+     0.0051813,
+     0.0046512,
+     0.0051546,
+     0.005,
+     0.0053476
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Innocents Abroad",
+    "best": 0.3043,
+    "rrf": [
+     0.0088496,
+     0.0047393,
+     0.005848,
+     0.0051813,
+     0.0103093,
+     0.0097087
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "doc_type": "literature",
+    "pub_date": "1990",
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "best": 0.2963,
+    "rrf": [
+     0.0133333,
+     0.0091743
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Blithedale Romance",
+    "best": 0.2867,
+    "rrf": [
+     0.009901,
+     0.0128205,
+     0.0133333,
+     0.0104167,
+     0.012987
+    ]
+   },
+   {
+    "book_id": "WS_002",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "진달래꽃",
+    "best": 0.2629,
+    "rrf": [
+     0.0125,
+     0.0123457,
+     0.0068493
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-223",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Wisdom of Father Brown",
+    "best": 0.26,
+    "rrf": [
+     0.010989,
+     0.010101,
+     0.011236,
+     0.0047847,
+     0.0116279
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The House of the Seven Gables",
+    "best": 0.2498,
+    "rrf": [
+     0.0055249,
+     0.0121951,
+     0.009434
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-103",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Around the World in Eighty Days",
+    "best": 0.2464,
+    "rrf": [
+     0.0096154,
+     0.010101,
+     0.0111111,
+     0.0102041
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-204",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Innocence of Father Brown",
+    "best": 0.2408,
+    "rrf": [
+     0.0106383,
+     0.0056497,
+     0.0078125,
+     0.0105263
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Our Mutual Friend",
+    "best": 0.2403,
+    "rrf": [
+     0.0074074,
+     0.0131579,
+     0.0054348,
+     0.0079365
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1695",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Man Who Was Thursday",
+    "best": 0.2362,
+    "rrf": [
+     0.0131579,
+     0.012987,
+     0.0103093,
+     0.0046296
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Ambassadors",
+    "best": 0.1993,
+    "rrf": [
+     0.0126582,
+     0.0117647,
+     0.0113636
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-60",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Scarlet Pimpernel",
+    "best": 0.1864,
+    "rrf": [
+     0.0097087,
+     0.0086207,
+     0.0058824
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063883",
+    "doc_type": "literature",
+    "pub_date": "1997",
+    "title": "황순원 소설의 이미지 분석을 통한 동일성 연구",
+    "best": 0.1193,
+    "rrf": [
+     0.0108696
+    ]
+   },
+   {
+    "book_id": "WS_016",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "탈출기",
+    "best": 0.1138,
+    "rrf": [
+     0.0113636
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Woman in White",
+    "best": 0.086,
+    "rrf": [
+     0.0259371
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2465",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Carmen",
+    "best": 0.0655,
+    "rrf": [
+     0.0098039
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Dombey and Son",
+    "best": 0.0575,
+    "rrf": [
+     0.0092593
+    ]
+   },
+   {
+    "book_id": "WS_026",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "물레방아",
+    "best": 0.0104,
+    "rrf": []
+   }
+  ]
+ }
+}

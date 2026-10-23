@@ -1,0 +1,462 @@
+{
+ "kind": "title_kr",
+ "query": "날개",
+ "targets": [
+  "WS_011"
+ ],
+ "res": {
+  "elapsed_ms": 1394.4,
+  "wall_s": 2.37,
+  "books": [
+   {
+    "book_id": "WS_011",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "날개",
+    "best": 1.0,
+    "rrf": [
+     0.0322581,
+     0.0272367
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The House of the Seven Gables",
+    "best": 0.5314,
+    "rrf": [
+     0.0133333,
+     0.0103093,
+     0.0081967,
+     0.009434,
+     0.0125,
+     0.005814,
+     0.0131579,
+     0.0089286,
+     0.0067114,
+     0.0068966,
+     0.0075188,
+     0.0067114,
+     0.0088496,
+     0.0046512,
+     0.0055866
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Moby-Dick; Or, The Whale",
+    "best": 0.4725,
+    "rrf": [
+     0.0079365,
+     0.0046083,
+     0.0053476,
+     0.009009,
+     0.017691,
+     0.0060976,
+     0.010989,
+     0.0056497,
+     0.0086207,
+     0.005618,
+     0.0054054,
+     0.0057143,
+     0.0054945,
+     0.0062112,
+     0.005291,
+     0.0072464,
+     0.0065789,
+     0.0063291,
+     0.010101,
+     0.0064103,
+     0.0056818,
+     0.0090909,
+     0.0190748,
+     0.0051813,
+     0.0087719,
+     0.0064516,
+     0.0135135,
+     0.00625,
+     0.0058824
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Canterbury Tales",
+    "best": 0.4719,
+    "rrf": [
+     0.0067568,
+     0.0068493,
+     0.0078125,
+     0.0119048,
+     0.0063694,
+     0.0077519,
+     0.0123457,
+     0.009009,
+     0.0072464,
+     0.0084034,
+     0.0066225,
+     0.0055249,
+     0.011236,
+     0.010101,
+     0.0076336
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063398",
+    "doc_type": "literature",
+    "pub_date": "1988",
+    "title": "辛夕汀 硏究",
+    "best": 0.4633,
+    "rrf": [
+     0.0205755,
+     0.0054645,
+     0.0151515,
+     0.015873,
+     0.0059524,
+     0.0169945,
+     0.0080645,
+     0.0111111
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063059",
+    "doc_type": "literature",
+    "pub_date": "1991",
+    "title": "朝鮮初期 樓亭記의 硏究",
+    "best": 0.4629,
+    "rrf": [
+     0.0126582,
+     0.0125,
+     0.0114943,
+     0.0131579
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-289",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Wind in the Willows",
+    "best": 0.4353,
+    "rrf": [
+     0.016119,
+     0.008547,
+     0.0158681,
+     0.009901,
+     0.0105923,
+     0.0200321,
+     0.0234303,
+     0.0064935,
+     0.0152802,
+     0.0150671,
+     0.0117364,
+     0.0107118,
+     0.0114379,
+     0.0194327,
+     0.0207535
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-236",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Jungle Book",
+    "best": 0.4197,
+    "rrf": [
+     0.0133741,
+     0.0128205,
+     0.0266879,
+     0.0200292,
+     0.0072234,
+     0.028665,
+     0.0199214,
+     0.0074074,
+     0.0199603,
+     0.0053763
+    ]
+   },
+   {
+    "book_id": "WS_021",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "정지용 시집",
+    "best": 0.4134,
+    "rrf": [
+     0.0095238,
+     0.0071429,
+     0.0047393,
+     0.0082645,
+     0.0147877,
+     0.0076336
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Blithedale Romance",
+    "best": 0.4126,
+    "rrf": [
+     0.0120482,
+     0.0044843,
+     0.0053763,
+     0.0153846,
+     0.0074627,
+     0.0059524,
+     0.0072993,
+     0.0070922,
+     0.0111111,
+     0.0047847
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1259",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Three Musketeers",
+    "best": 0.3945,
+    "rrf": [
+     0.0216077,
+     0.0166576,
+     0.020757
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2788",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Men",
+    "best": 0.3764,
+    "rrf": [
+     0.0081301,
+     0.024172,
+     0.0174083,
+     0.0113136,
+     0.0160957
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-500",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Adventures of Pinocchio",
+    "best": 0.3498,
+    "rrf": [
+     0.0140845,
+     0.0091743,
+     0.0133333
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17396",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Secret Garden",
+    "best": 0.3403,
+    "rrf": [
+     0.0046948,
+     0.0136986,
+     0.005988,
+     0.0138889
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-139",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Lost World",
+    "best": 0.3366,
+    "rrf": [
+     0.01835,
+     0.0223502,
+     0.012987,
+     0.0147059
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1260",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Jane Eyre",
+    "best": 0.3132,
+    "rrf": [
+     0.0086957,
+     0.0091743,
+     0.0057803,
+     0.007874,
+     0.0045872,
+     0.0121951,
+     0.0044643
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063929",
+    "doc_type": "literature",
+    "pub_date": "1995",
+    "title": "이기영 소설의 여성의식 연구",
+    "best": 0.3038,
+    "rrf": [
+     0.0088496,
+     0.0046296,
+     0.0108696
+    ]
+   },
+   {
+    "book_id": "CNTS-00052064069",
+    "doc_type": "literature",
+    "pub_date": "1992",
+    "title": "牧隱 李穡의 詩文學 硏究",
+    "best": 0.3037,
+    "rrf": [
+     0.0153846
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mill on the Floss",
+    "best": 0.3028,
+    "rrf": [
+     0.0095238,
+     0.0071942,
+     0.0084746,
+     0.0063694,
+     0.0083333,
+     0.0126582,
+     0.004902,
+     0.0048077
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-160",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Awakening",
+    "best": 0.3021,
+    "rrf": [
+     0.0098039,
+     0.0117647,
+     0.0116279,
+     0.0107527
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-903",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The White Company",
+    "best": 0.2925,
+    "rrf": [
+     0.0107527,
+     0.0050251
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-86",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "A Connecticut Yankee in King Arthur's Court",
+    "best": 0.2656,
+    "rrf": [
+     0.0136986,
+     0.0120482,
+     0.0102041,
+     0.0144928
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Star Rover",
+    "best": 0.2489,
+    "rrf": [
+     0.0142857,
+     0.0048309
+    ]
+   },
+   {
+    "book_id": "CNTS-00049655779",
+    "doc_type": "policy",
+    "pub_date": "1999",
+    "title": "경제백서 1999",
+    "best": 0.2418,
+    "rrf": [
+     0.0104167,
+     0.0047847,
+     0.0060241
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-120",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Treasure Island",
+    "best": 0.2407,
+    "rrf": [
+     0.0075758,
+     0.0119048
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063883",
+    "doc_type": "literature",
+    "pub_date": "1997",
+    "title": "황순원 소설의 이미지 분석을 통한 동일성 연구",
+    "best": 0.2305,
+    "rrf": [
+     0.0108696,
+     0.0111252
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Ambassadors",
+    "best": 0.1929,
+    "rrf": [
+     0.0044843,
+     0.0105263,
+     0.0097087
+    ]
+   },
+   {
+    "book_id": "WS_002",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "진달래꽃",
+    "best": 0.1863,
+    "rrf": [
+     0.0152084
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-202",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Nostromo",
+    "best": 0.1741,
+    "rrf": [
+     0.0083333,
+     0.0119589,
+     0.0065789
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-159",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Island of Doctor Moreau",
+    "best": 0.0972,
+    "rrf": [
+     0.0106383
+    ]
+   }
+  ]
+ }
+}

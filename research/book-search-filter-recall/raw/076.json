@@ -1,0 +1,498 @@
+{
+ "kind": "title_in_question",
+ "query": "심훈 상록수 찾아줘",
+ "targets": [
+  "WS_008"
+ ],
+ "res": {
+  "elapsed_ms": 1394.8,
+  "wall_s": 2.12,
+  "books": [
+   {
+    "book_id": "CNTS-00052065087",
+    "doc_type": "literature",
+    "pub_date": "1988",
+    "title": "日帝 强占期 韓國小說에 나타난 獨立運動家像 硏",
+    "best": 0.6175,
+    "rrf": [
+     0.0315136,
+     0.0105263,
+     0.0183935,
+     0.03125,
+     0.0237693,
+     0.024223,
+     0.0290309,
+     0.0206689,
+     0.0253556,
+     0.0227623,
+     0.0138889,
+     0.0284389,
+     0.0281746,
+     0.0107527,
+     0.0150331,
+     0.0215201,
+     0.0075758,
+     0.0070922,
+     0.005848,
+     0.0045045,
+     0.0200925,
+     0.0205985,
+     0.014848,
+     0.0151092,
+     0.0203998,
+     0.0206326,
+     0.0144928,
+     0.0207908,
+     0.0142857,
+     0.0264302,
+     0.0199605,
+     0.0312576,
+     0.0200148,
+     0.0147059,
+     0.0228938,
+     0.022421,
+     0.0125
+    ]
+   },
+   {
+    "book_id": "WS_008",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "상록수",
+    "best": 0.6112,
+    "rrf": [
+     0.0084746,
+     0.0151515,
+     0.0061728,
+     0.016129
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2350",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "His Last Bow",
+    "best": 0.4245,
+    "rrf": [
+     0.0091743,
+     0.0054945,
+     0.0103093,
+     0.005988,
+     0.0070423,
+     0.0077519,
+     0.0062893,
+     0.0055249,
+     0.0112318,
+     0.0072993,
+     0.0080645,
+     0.0078125
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Adventures of Sherlock Holmes",
+    "best": 0.4063,
+    "rrf": [
+     0.0115923,
+     0.008547,
+     0.0074074,
+     0.0152709,
+     0.011236,
+     0.0093458,
+     0.0108696,
+     0.0075758,
+     0.0089486,
+     0.0062112,
+     0.005102,
+     0.0125,
+     0.0080645,
+     0.0105263,
+     0.0082645,
+     0.0127581,
+     0.0059524,
+     0.0068027,
+     0.0049751,
+     0.004717,
+     0.0055866
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-164",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Twenty Thousand Leagues under the Sea",
+    "best": 0.3761,
+    "rrf": [
+     0.0144928,
+     0.0047393,
+     0.008,
+     0.0060976,
+     0.0098039,
+     0.005291,
+     0.0045872,
+     0.010989,
+     0.0092593,
+     0.0046729,
+     0.0142857,
+     0.0074627,
+     0.005,
+     0.0107527,
+     0.0088496,
+     0.006135,
+     0.0060606,
+     0.0057143,
+     0.0136986
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Journey to the Centre of the Earth",
+    "best": 0.3594,
+    "rrf": [
+     0.0117647,
+     0.0071429,
+     0.0068966,
+     0.0084746,
+     0.0065359,
+     0.0114943,
+     0.0113636,
+     0.0063291,
+     0.005848,
+     0.0056818,
+     0.0049261,
+     0.0055556,
+     0.0049505,
+     0.0050251,
+     0.0047619,
+     0.0081301
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063883",
+    "doc_type": "literature",
+    "pub_date": "1997",
+    "title": "황순원 소설의 이미지 분석을 통한 동일성 연구",
+    "best": 0.354,
+    "rrf": [
+     0.007874,
+     0.0081967,
+     0.0049261,
+     0.0068493,
+     0.0061728,
+     0.0177744,
+     0.010101,
+     0.0050761,
+     0.0076923,
+     0.0059172
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "doc_type": "literature",
+    "pub_date": "1992",
+    "title": "韓國 近代小說論 硏究",
+    "best": 0.3403,
+    "rrf": [
+     0.0050251,
+     0.005,
+     0.0049751,
+     0.0048309,
+     0.0050505,
+     0.0106383,
+     0.00625
+    ]
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "doc_type": "literature",
+    "pub_date": "1996",
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "best": 0.333,
+    "rrf": [
+     0.0116279,
+     0.0076336,
+     0.0065359,
+     0.0052356,
+     0.0121951,
+     0.0081967,
+     0.0046296,
+     0.0067568,
+     0.0058824
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "doc_type": "literature",
+    "pub_date": "1995",
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "best": 0.328,
+    "rrf": [
+     0.0058824,
+     0.0053191,
+     0.0064103,
+     0.0076336,
+     0.0053476,
+     0.0096154
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1695",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Man Who Was Thursday",
+    "best": 0.3154,
+    "rrf": [
+     0.007874,
+     0.0045455,
+     0.0066667,
+     0.0056497,
+     0.0046296,
+     0.005102
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Country of the Blind",
+    "best": 0.304,
+    "rrf": [
+     0.0066225,
+     0.0073529,
+     0.0050505,
+     0.0053763,
+     0.0086957,
+     0.01,
+     0.005618,
+     0.0069444
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Swiss Family Robinson",
+    "best": 0.2998,
+    "rrf": [
+     0.0064103,
+     0.004878,
+     0.009009,
+     0.0089286,
+     0.0069444,
+     0.0073529
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Bleak House",
+    "best": 0.2973,
+    "rrf": [
+     0.0103093,
+     0.0074074,
+     0.0071942,
+     0.0084034,
+     0.008547,
+     0.0052083,
+     0.0095238,
+     0.0068966,
+     0.006993
+    ]
+   },
+   {
+    "book_id": "WS_037",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "개척자",
+    "best": 0.2951,
+    "rrf": [
+     0.009901,
+     0.0050761,
+     0.0088496,
+     0.009434,
+     0.008,
+     0.0086207,
+     0.0055556
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "doc_type": "literature",
+    "pub_date": "1988",
+    "title": "韓國 女性文學 硏究",
+    "best": 0.2678,
+    "rrf": [
+     0.0048077,
+     0.0083333
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Pickwick Papers",
+    "best": 0.2651,
+    "rrf": [
+     0.006993,
+     0.0078125,
+     0.0045249,
+     0.0044843,
+     0.0052083
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-500",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Adventures of Pinocchio",
+    "best": 0.2428,
+    "rrf": [
+     0.0097087,
+     0.0098039,
+     0.0087719,
+     0.0045045,
+     0.0092593
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Woman in White",
+    "best": 0.2211,
+    "rrf": [
+     0.0106383,
+     0.0133333,
+     0.0097087,
+     0.0126582
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063554",
+    "doc_type": "literature",
+    "pub_date": "1988",
+    "title": "1940년대 초기 한국 농민소설 연구",
+    "best": 0.2172,
+    "rrf": [
+     0.0114943
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-120",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Treasure Island",
+    "best": 0.2156,
+    "rrf": [
+     0.0068027,
+     0.0120482,
+     0.0079365,
+     0.0048309
+    ]
+   },
+   {
+    "book_id": "WS_001",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "무정",
+    "best": 0.2059,
+    "rrf": [
+     0.0093458,
+     0.0054054
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Decameron",
+    "best": 0.1932,
+    "rrf": [
+     0.0090909,
+     0.0086957,
+     0.0089286
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2153",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Mary Barton",
+    "best": 0.1844,
+    "rrf": [
+     0.010101,
+     0.0102041,
+     0.0104167
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2097",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Sign of the Four",
+    "best": 0.1796,
+    "rrf": [
+     0.0140845,
+     0.0147059
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-204",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Innocence of Father Brown",
+    "best": 0.1737,
+    "rrf": [
+     0.0079365,
+     0.0074627,
+     0.0066667
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-27681",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Last of the Mohicans",
+    "best": 0.1504,
+    "rrf": [
+     0.0057803,
+     0.0128205
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-766",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "David Copperfield",
+    "best": 0.1456,
+    "rrf": [
+     0.0091743,
+     0.01
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-131",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Pilgrim's Progress",
+    "best": 0.114,
+    "rrf": [
+     0.009901
+    ]
+   },
+   {
+    "book_id": "WS_031",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "박씨전",
+    "best": 0.0081,
+    "rrf": []
+   }
+  ]
+ }
+}

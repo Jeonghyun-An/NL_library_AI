@@ -1,0 +1,518 @@
+{
+ "kind": "title_kr",
+ "query": "메밀꽃 필 무렵",
+ "targets": [
+  "WS_005"
+ ],
+ "res": {
+  "elapsed_ms": 1173.7,
+  "wall_s": 1.89,
+  "books": [
+   {
+    "book_id": "WS_005",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "메밀꽃 필 무렵",
+    "best": 1.0,
+    "rrf": [
+     0.0322581,
+     0.0265471,
+     0.0186314,
+     0.0261327,
+     0.0238095,
+     0.0208205,
+     0.0095238,
+     0.015149,
+     0.0143539,
+     0.0054348
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mysteries of Udolpho",
+    "best": 0.5165,
+    "rrf": [
+     0.009901,
+     0.008907,
+     0.0111111,
+     0.0068027,
+     0.0083384,
+     0.0071031,
+     0.0079365,
+     0.009009,
+     0.0054645,
+     0.0051282,
+     0.0091743,
+     0.0102041,
+     0.006993,
+     0.009009,
+     0.007874,
+     0.0060976,
+     0.0063291,
+     0.0182096,
+     0.0211161,
+     0.0064935,
+     0.0066667,
+     0.0047619,
+     0.0052083,
+     0.0103093,
+     0.0060606,
+     0.0123457,
+     0.009434,
+     0.0119895,
+     0.0050251,
+     0.006993,
+     0.0077519,
+     0.005102,
+     0.0089286,
+     0.0084839,
+     0.0074074,
+     0.0098039,
+     0.0096154,
+     0.0064516,
+     0.0113636,
+     0.0092593,
+     0.0050505,
+     0.0074627,
+     0.0091743,
+     0.0090909,
+     0.0069444,
+     0.0048544,
+     0.0084034,
+     0.00625,
+     0.0047393,
+     0.0063694,
+     0.0051546,
+     0.0050761,
+     0.0081967,
+     0.0056497,
+     0.0060241,
+     0.0064516,
+     0.0072464,
+     0.0072993,
+     0.0237749,
+     0.0079895,
+     0.0104167,
+     0.0072464,
+     0.0080645,
+     0.0053191,
+     0.0049261,
+     0.0046948,
+     0.0058056,
+     0.0075188,
+     0.0067568,
+     0.0060606,
+     0.0081301,
+     0.005102,
+     0.0066667,
+     0.0120803,
+     0.0068966,
+     0.0074074
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-351",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Betrothed",
+    "best": 0.5019,
+    "rrf": [
+     0.0140845,
+     0.0133333,
+     0.0061728,
+     0.0055866,
+     0.0081967,
+     0.011236,
+     0.0086957,
+     0.0074627,
+     0.004717,
+     0.0135135,
+     0.01,
+     0.0059172,
+     0.0049751,
+     0.0071429,
+     0.0174198,
+     0.0060241,
+     0.0062893,
+     0.0057471,
+     0.012987,
+     0.0083333,
+     0.0084746,
+     0.0081301,
+     0.005618,
+     0.009901,
+     0.005291,
+     0.0114943,
+     0.0096876,
+     0.0084034,
+     0.0059524,
+     0.0136986,
+     0.0105263,
+     0.010101,
+     0.0117647,
+     0.0071429,
+     0.0098344,
+     0.004878,
+     0.0097087,
+     0.0056497,
+     0.0125,
+     0.0123457,
+     0.0082645,
+     0.0121951,
+     0.0106383,
+     0.0107313,
+     0.0111111,
+     0.0053191,
+     0.0138889,
+     0.0052632,
+     0.0113636
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063368",
+    "doc_type": "literature",
+    "pub_date": "1989",
+    "title": "韓國古典小說의 文體論的 硏究",
+    "best": 0.4031,
+    "rrf": [
+     0.015873
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "doc_type": "literature",
+    "pub_date": "1988",
+    "title": "韓國 女性文學 硏究",
+    "best": 0.4,
+    "rrf": [
+     0.0153011,
+     0.0147059,
+     0.011236,
+     0.0064935,
+     0.0177032,
+     0.0144608,
+     0.0142857,
+     0.0107527,
+     0.0089286,
+     0.0144928,
+     0.0151515,
+     0.0065359,
+     0.0087332,
+     0.0093458,
+     0.0073529,
+     0.0084746
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-482",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Woodlanders",
+    "best": 0.3904,
+    "rrf": [
+     0.015873,
+     0.0072993,
+     0.0079365,
+     0.0153846,
+     0.0047847,
+     0.0076923,
+     0.0048309,
+     0.006135,
+     0.0086957,
+     0.015625,
+     0.0050251,
+     0.0067568,
+     0.0136986
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-766",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "David Copperfield",
+    "best": 0.3504,
+    "rrf": [
+     0.012987,
+     0.005814,
+     0.0120482,
+     0.0068966,
+     0.0095238,
+     0.0059524,
+     0.0067114,
+     0.0065789,
+     0.0096154,
+     0.0049751,
+     0.0102041,
+     0.0092593,
+     0.0057143,
+     0.0083333,
+     0.005848
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1298",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Master of Ballantrae",
+    "best": 0.3304,
+    "rrf": [
+     0.008547,
+     0.0063291,
+     0.0080645,
+     0.0046729,
+     0.005
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Blithedale Romance",
+    "best": 0.3224,
+    "rrf": [
+     0.0127241,
+     0.0132991,
+     0.0102214,
+     0.0053763
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-965",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Black Tulip",
+    "best": 0.3029,
+    "rrf": [
+     0.0117647,
+     0.0046948
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Canterbury Tales",
+    "best": 0.2725,
+    "rrf": [
+     0.0054054,
+     0.0186828,
+     0.0142857
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2759",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Man in the Iron Mask",
+    "best": 0.2634,
+    "rrf": [
+     0.0093458,
+     0.0087719,
+     0.0054645,
+     0.0051813,
+     0.0047619
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-107",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Far from the Madding Crowd",
+    "best": 0.2557,
+    "rrf": [
+     0.0054945,
+     0.0098039,
+     0.0086207,
+     0.0055556,
+     0.0058824
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1399",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Anna Karenina",
+    "best": 0.2475,
+    "rrf": [
+     0.0097087,
+     0.005988,
+     0.0049261
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2097",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Sign of the Four",
+    "best": 0.2258,
+    "rrf": [
+     0.006135,
+     0.0060976,
+     0.0088496,
+     0.008547
+    ]
+   },
+   {
+    "book_id": "WS_002",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "진달래꽃",
+    "best": 0.22,
+    "rrf": [
+     0.0121951,
+     0.0131579,
+     0.0114943
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-60",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Scarlet Pimpernel",
+    "best": 0.2144,
+    "rrf": [
+     0.0103093,
+     0.0144928,
+     0.01,
+     0.015625
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1938",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Resurrection",
+    "best": 0.2086,
+    "rrf": [
+     0.010989,
+     0.0106383,
+     0.010101
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2864",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Trumpet-Major",
+    "best": 0.1714,
+    "rrf": [
+     0.0104167
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-105",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Persuasion",
+    "best": 0.1645,
+    "rrf": [
+     0.0086207,
+     0.0107527
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-689",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Death of Ivan Ilyich",
+    "best": 0.1411,
+    "rrf": [
+     0.0126582,
+     0.00625
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-12",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Through the Looking-Glass",
+    "best": 0.1273,
+    "rrf": [
+     0.0128205
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Moby-Dick; Or, The Whale",
+    "best": 0.1246,
+    "rrf": [
+     0.0082645
+    ]
+   },
+   {
+    "book_id": "WS_016",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "탈출기",
+    "best": 0.1105,
+    "rrf": [
+     0.0108696
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-345",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Dracula",
+    "best": 0.0953,
+    "rrf": [
+     0.0105263
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "doc_type": "literature",
+    "pub_date": "1990",
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "best": 0.092,
+    "rrf": [
+     0.010989
+    ]
+   },
+   {
+    "book_id": "CNTS-00052064565",
+    "doc_type": "literature",
+    "pub_date": "1992",
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "best": 0.0871,
+    "rrf": [
+     0.0089918
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-77",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Five Children and It",
+    "best": 0.0808,
+    "rrf": [
+     0.0087719
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-902",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Happy Prince and Other Tales",
+    "best": 0.0801,
+    "rrf": [
+     0.009434
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Dorrit",
+    "best": 0.0526,
+    "rrf": [
+     0.0133333
+    ]
+   }
+  ]
+ }
+}

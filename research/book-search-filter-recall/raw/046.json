@@ -1,0 +1,573 @@
+{
+ "kind": "title_en_kr",
+ "query": "오즈의 마법사",
+ "targets": [
+  "LIT-GUTENBERG-55"
+ ],
+ "res": {
+  "elapsed_ms": 1126.9,
+  "wall_s": 1.73,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-55",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Wonderful Wizard of Oz",
+    "best": 0.7205,
+    "rrf": [
+     0.0081301,
+     0.0242967,
+     0.0086207,
+     0.011236,
+     0.0046948,
+     0.032002,
+     0.0206793,
+     0.0263338,
+     0.0257937,
+     0.0049505,
+     0.0209138,
+     0.0145118,
+     0.0113636,
+     0.0260443,
+     0.0096154,
+     0.0214204,
+     0.0249708,
+     0.0177714,
+     0.0269736,
+     0.0122174,
+     0.0107278,
+     0.0192118,
+     0.0127575,
+     0.004902,
+     0.0093563,
+     0.0106383,
+     0.0242662,
+     0.0274436,
+     0.0273897,
+     0.0220482,
+     0.0050761,
+     0.0183093,
+     0.0243258,
+     0.0259109,
+     0.006993,
+     0.0065359,
+     0.0077519,
+     0.0111406,
+     0.0228564,
+     0.0234588,
+     0.0114943,
+     0.0124013,
+     0.0041322,
+     0.0125598,
+     0.0088496,
+     0.004,
+     0.0054054,
+     0.0064516,
+     0.0082645,
+     0.0184772,
+     0.0078125,
+     0.0180708,
+     0.0056818,
+     0.0245408,
+     0.0063291,
+     0.0055866,
+     0.0066667,
+     0.0149759,
+     0.020939,
+     0.0077519,
+     0.0327869,
+     0.0237093,
+     0.0045872,
+     0.0083333,
+     0.0104167,
+     0.0057143,
+     0.0050505,
+     0.0141762,
+     0.0045045,
+     0.0153038,
+     0.0120333,
+     0.023736,
+     0.0068493,
+     0.027032,
+     0.0226424,
+     0.0207706,
+     0.013946,
+     0.0045662,
+     0.0042017,
+     0.0049261,
+     0.0151412,
+     0.0153863,
+     0.0097087,
+     0.0169037,
+     0.0106437,
+     0.00625,
+     0.0125349,
+     0.005848,
+     0.021996,
+     0.0126851,
+     0.008837,
+     0.0133277,
+     0.0181319,
+     0.0133157,
+     0.032002,
+     0.0183734,
+     0.0064103,
+     0.0040323,
+     0.0230182,
+     0.018101,
+     0.0160512,
+     0.010989,
+     0.0040984,
+     0.0227215,
+     0.0213152,
+     0.0261717,
+     0.0153199,
+     0.0047619,
+     0.0129761,
+     0.0236894,
+     0.0104251,
+     0.0124918,
+     0.0133289,
+     0.0213978,
+     0.0128503,
+     0.011226,
+     0.0253556,
+     0.0105832,
+     0.0113689,
+     0.0091443,
+     0.0057685,
+     0.0136265,
+     0.0125838,
+     0.0205108,
+     0.0114302,
+     0.0072458,
+     0.010039,
+     0.009409,
+     0.0124378,
+     0.0217491,
+     0.0178571,
+     0.0131368,
+     0.0187436,
+     0.0168067,
+     0.0172993,
+     0.0117059,
+     0.0076336,
+     0.0104109,
+     0.0196759,
+     0.0089397,
+     0.0227802,
+     0.0094685,
+     0.0184844,
+     0.0046296,
+     0.0117103,
+     0.0086957,
+     0.0176791,
+     0.0098039,
+     0.0246416,
+     0.005291,
+     0.0090301,
+     0.0053763,
+     0.004065,
+     0.0121921,
+     0.0116144,
+     0.0200758,
+     0.0107576,
+     0.0114782,
+     0.0119561
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2781",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Just So Stories",
+    "best": 0.4052,
+    "rrf": [
+     0.0048309,
+     0.0051813,
+     0.0039526,
+     0.0055249,
+     0.0046729
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2350",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "His Last Bow",
+    "best": 0.3948,
+    "rrf": [
+     0.0107861,
+     0.004,
+     0.0045455,
+     0.0041152,
+     0.0040161,
+     0.0073529,
+     0.0044643,
+     0.0041667,
+     0.004902,
+     0.0040323,
+     0.0045662,
+     0.0046512,
+     0.0051546,
+     0.0070423,
+     0.0042373,
+     0.0052083,
+     0.0050505,
+     0.0062893,
+     0.0058824,
+     0.0044248,
+     0.0083003,
+     0.0047847,
+     0.0059172,
+     0.0042735,
+     0.0071942,
+     0.0040486,
+     0.0072464
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3160",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Odyssey",
+    "best": 0.3848,
+    "rrf": [
+     0.0088896,
+     0.0070559,
+     0.003937,
+     0.0087426,
+     0.0086221,
+     0.0044843,
+     0.0044248,
+     0.0049751,
+     0.0060976,
+     0.0068734
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-77",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Five Children and It",
+    "best": 0.3345,
+    "rrf": [
+     0.0064103,
+     0.005291,
+     0.005102,
+     0.0075758,
+     0.00625
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-996",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Don Quixote",
+    "best": 0.3257,
+    "rrf": [
+     0.0055556,
+     0.0072897,
+     0.0089367,
+     0.0045455,
+     0.004717,
+     0.004878,
+     0.0048077,
+     0.0044643
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Faerie Queene",
+    "best": 0.3107,
+    "rrf": [
+     0.0041667,
+     0.0051813,
+     0.0045249,
+     0.0053191,
+     0.0050251,
+     0.0064516
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Adventures of Sherlock Holmes",
+    "best": 0.3106,
+    "rrf": [
+     0.0089587,
+     0.0060241,
+     0.0054054,
+     0.004065,
+     0.0041322,
+     0.0057143,
+     0.0043478,
+     0.0046083
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-86",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "A Connecticut Yankee in King Arthur's Court",
+    "best": 0.3094,
+    "rrf": [
+     0.0046948,
+     0.0057803,
+     0.005,
+     0.0039526,
+     0.005618,
+     0.0054348
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2226",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Kim",
+    "best": 0.305,
+    "rrf": [
+     0.0062112,
+     0.0055866,
+     0.0049505
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Country of the Blind",
+    "best": 0.3023,
+    "rrf": [
+     0.0046083,
+     0.0054945,
+     0.0065359
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Canterbury Tales",
+    "best": 0.3019,
+    "rrf": [
+     0.0067568,
+     0.0070922,
+     0.0057471,
+     0.0045872,
+     0.0043668
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17375",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Enchanted Castle",
+    "best": 0.2892,
+    "rrf": [
+     0.0043103,
+     0.0040816,
+     0.0044053,
+     0.0039841
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16389",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Enchanted April",
+    "best": 0.2464,
+    "rrf": [
+     0.0046296,
+     0.0053476,
+     0.0041494,
+     0.0046729,
+     0.004717
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2097",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Sign of the Four",
+    "best": 0.2427,
+    "rrf": [
+     0.0040984,
+     0.0059524,
+     0.005988,
+     0.005
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2852",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Hound of the Baskervilles",
+    "best": 0.2369,
+    "rrf": [
+     0.0069444,
+     0.0063291,
+     0.0063694
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17396",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Secret Garden",
+    "best": 0.2234,
+    "rrf": [
+     0.0047619,
+     0.0054645,
+     0.0040816
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Great Expectations",
+    "best": 0.2204,
+    "rrf": [
+     0.0053191,
+     0.0054945,
+     0.0054348
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3289",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Poison Belt",
+    "best": 0.2143,
+    "rrf": [
+     0.0052632,
+     0.0064935,
+     0.0056497,
+     0.005814
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-209",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Turn of the Screw",
+    "best": 0.2086,
+    "rrf": [
+     0.0042553,
+     0.0039683,
+     0.0051282
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-67979",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Blue Castle",
+    "best": 0.2002,
+    "rrf": [
+     0.0043103,
+     0.0047393,
+     0.0045045
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-730",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Oliver Twist",
+    "best": 0.198,
+    "rrf": [
+     0.0044444,
+     0.0043478,
+     0.0042918
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-128",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Arabian Nights' Entertainments",
+    "best": 0.1933,
+    "rrf": [
+     0.0050761,
+     0.0044444
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Innocents Abroad",
+    "best": 0.175,
+    "rrf": [
+     0.004878,
+     0.004329
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-103",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Around the World in Eighty Days",
+    "best": 0.1646,
+    "rrf": [
+     0.0061728
+    ]
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "doc_type": "literature",
+    "pub_date": "1996",
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "best": 0.105,
+    "rrf": [
+     0.0048309
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063978",
+    "doc_type": "literature",
+    "pub_date": "1992",
+    "title": "1930年代 世態小說 硏究",
+    "best": 0.0869,
+    "rrf": [
+     0.0065789
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Jungle",
+    "best": 0.0638,
+    "rrf": [
+     0.0045249
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "A Tale of Two Cities",
+    "best": 0.0624,
+    "rrf": [
+     0.0048544
+    ]
+   },
+   {
+    "book_id": "CNTS-00049202451",
+    "doc_type": "policy",
+    "pub_date": "2004",
+    "title": "에이즈가 아프리카 경제에 미치는 영향",
+    "best": 0.0498,
+    "rrf": [
+     0.0068966
+    ]
+   }
+  ]
+ }
+}

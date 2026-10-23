@@ -1,0 +1,487 @@
+{
+ "kind": "title_en",
+ "query": "The Jungle Book",
+ "targets": [
+  "LIT-GUTENBERG-236"
+ ],
+ "res": {
+  "elapsed_ms": 1486.4,
+  "wall_s": 1.64,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-236",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Jungle Book",
+    "best": 1.0,
+    "rrf": [
+     0.031746,
+     0.0275797,
+     0.0166624,
+     0.0105263,
+     0.0045662,
+     0.006993,
+     0.0068921,
+     0.0054348,
+     0.0289855,
+     0.0188291,
+     0.0229915,
+     0.0103093,
+     0.0267541,
+     0.0091743,
+     0.0048544,
+     0.0065789,
+     0.0202483,
+     0.0053476,
+     0.0071429,
+     0.0264808,
+     0.0047619,
+     0.0175253,
+     0.0068027,
+     0.0049261,
+     0.0231579,
+     0.0059172,
+     0.0168883,
+     0.0055866,
+     0.0107105,
+     0.030303,
+     0.009434,
+     0.009009,
+     0.0123457,
+     0.0155149,
+     0.011236,
+     0.0070922,
+     0.0121322,
+     0.0292735,
+     0.0102041,
+     0.0266106,
+     0.0074627,
+     0.0181495,
+     0.0060606,
+     0.0046512,
+     0.0269439,
+     0.0049505,
+     0.0063694,
+     0.0105847,
+     0.009901,
+     0.0133333,
+     0.0125,
+     0.0068966,
+     0.0068027,
+     0.0246416,
+     0.0231222,
+     0.0081967,
+     0.0230555,
+     0.0045455,
+     0.0054054,
+     0.0111111,
+     0.0082645
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Jungle",
+    "best": 1.0,
+    "rrf": [
+     0.015625,
+     0.0135135
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-139",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Lost World",
+    "best": 0.5554,
+    "rrf": [
+     0.0050761,
+     0.0048309,
+     0.0051282,
+     0.0117647,
+     0.0071942,
+     0.0051813,
+     0.0062112,
+     0.0050505,
+     0.0095238,
+     0.005814,
+     0.0072464,
+     0.0136986,
+     0.0089286,
+     0.010101,
+     0.0065359,
+     0.0057471,
+     0.0128205,
+     0.0078125,
+     0.0093458,
+     0.0086957,
+     0.008547,
+     0.0070922,
+     0.0046296,
+     0.0060241,
+     0.0061728
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-215",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Call of the Wild",
+    "best": 0.5159,
+    "rrf": [
+     0.005848,
+     0.0064103,
+     0.01,
+     0.0135135,
+     0.0120482,
+     0.0046729,
+     0.0098039,
+     0.0072993,
+     0.0108696,
+     0.0066667
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Swiss Family Robinson",
+    "best": 0.4761,
+    "rrf": [
+     0.0068966,
+     0.0104167,
+     0.0055556,
+     0.0054645,
+     0.0113636,
+     0.007874,
+     0.0063291,
+     0.0047847,
+     0.0149254
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Our Mutual Friend",
+    "best": 0.464,
+    "rrf": [
+     0.0059524,
+     0.006135,
+     0.0091743,
+     0.0098039,
+     0.0060976,
+     0.0064516,
+     0.0045872,
+     0.0053191,
+     0.0046729,
+     0.0062112,
+     0.005102,
+     0.0103093,
+     0.0097087,
+     0.0086957,
+     0.0053763,
+     0.0071429,
+     0.0117647,
+     0.0050251
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Great Expectations",
+    "best": 0.4265,
+    "rrf": [
+     0.0095238,
+     0.0080645,
+     0.0061728,
+     0.0051546,
+     0.009901,
+     0.005618,
+     0.0090909,
+     0.0048077,
+     0.010101,
+     0.0084746,
+     0.007874,
+     0.0057471,
+     0.0089286,
+     0.0084034,
+     0.008547,
+     0.0108696,
+     0.0045455,
+     0.0075758,
+     0.0071942,
+     0.0083333,
+     0.0102041,
+     0.0088496,
+     0.0072993,
+     0.0066225,
+     0.0049505,
+     0.0050505
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-159",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Island of Doctor Moreau",
+    "best": 0.4252,
+    "rrf": [
+     0.004878,
+     0.0123457,
+     0.0066225,
+     0.0086207
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-829",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Gulliver's Travels",
+    "best": 0.3812,
+    "rrf": [
+     0.0054945,
+     0.0067568,
+     0.0096154,
+     0.005618,
+     0.0070423,
+     0.0057803
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Canterbury Tales",
+    "best": 0.3798,
+    "rrf": [
+     0.0074627,
+     0.0111111,
+     0.0070423,
+     0.0105263,
+     0.0066667,
+     0.005814,
+     0.0075188
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2781",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Just So Stories",
+    "best": 0.3756,
+    "rrf": [
+     0.0075758,
+     0.0077519,
+     0.0068493,
+     0.0047847,
+     0.0064516,
+     0.0107527,
+     0.0059524
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-965",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Black Tulip",
+    "best": 0.3548,
+    "rrf": [
+     0.0054348,
+     0.0047393,
+     0.009434,
+     0.0047619
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-351",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Betrothed",
+    "best": 0.3484,
+    "rrf": [
+     0.0128205,
+     0.0140845,
+     0.0096154
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-482",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Woodlanders",
+    "best": 0.3282,
+    "rrf": [
+     0.0052356,
+     0.0067568,
+     0.0104167,
+     0.0055866
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1260",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Jane Eyre",
+    "best": 0.3268,
+    "rrf": [
+     0.0087719,
+     0.0046512
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-601",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Monk",
+    "best": 0.3243,
+    "rrf": [
+     0.0053476,
+     0.00625,
+     0.0079365,
+     0.0051813
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-44747",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Red and the Black",
+    "best": 0.294,
+    "rrf": [
+     0.012987,
+     0.0065789
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-155",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Moonstone",
+    "best": 0.2754,
+    "rrf": []
+   },
+   {
+    "book_id": "LIT-GUTENBERG-941",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Riddle of the Sands",
+    "best": 0.2497,
+    "rrf": [
+     0.0114943
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Alice's Adventures in Wonderland",
+    "best": 0.2484,
+    "rrf": [
+     0.0049751,
+     0.0088496,
+     0.0079365
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-766",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "David Copperfield",
+    "best": 0.2326,
+    "rrf": [
+     0.0136986,
+     0.0049751
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7411",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Sea-Wolf",
+    "best": 0.2316,
+    "rrf": [
+     0.0082645
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-174",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Picture of Dorian Gray",
+    "best": 0.2229,
+    "rrf": [
+     0.010989
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1752",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Seagull",
+    "best": 0.2084,
+    "rrf": [
+     0.009009
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-500",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Adventures of Pinocchio",
+    "best": 0.1812,
+    "rrf": [
+     0.0093458
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Innocents Abroad",
+    "best": 0.1618,
+    "rrf": [
+     0.0087719
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1268",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mysterious Island",
+    "best": 0.1365,
+    "rrf": []
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Roughing It",
+    "best": 0.1214,
+    "rrf": [
+     0.0126582
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1335",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Armadale",
+    "best": 0.11,
+    "rrf": []
+   },
+   {
+    "book_id": "CNTS-00049655755",
+    "doc_type": "policy",
+    "pub_date": "----",
+    "title": "KOREA, REPUBLIC OF",
+    "best": 0.0791,
+    "rrf": [
+     0.0086207
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,519 @@
+{
+ "kind": "title_kr",
+ "query": "자유종",
+ "targets": [
+  "WS_035"
+ ],
+ "res": {
+  "elapsed_ms": 1465.6,
+  "wall_s": 1.62,
+  "books": [
+   {
+    "book_id": "WS_035",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "자유종",
+    "best": 1.0,
+    "rrf": [
+     0.0271997,
+     0.0172962,
+     0.0167361,
+     0.0158696,
+     0.0151346,
+     0.0154554,
+     0.0176749,
+     0.0093458
+    ]
+   },
+   {
+    "book_id": "CNTS-00052065111",
+    "doc_type": "literature",
+    "pub_date": "1997",
+    "title": "新小說의 近代文學的 位相",
+    "best": 0.6893,
+    "rrf": [
+     0.0290404,
+     0.0232529,
+     0.0202501,
+     0.0155678,
+     0.023489,
+     0.0172439,
+     0.0198106,
+     0.0201899,
+     0.0224879,
+     0.0141406,
+     0.0164799,
+     0.0201425,
+     0.0188268,
+     0.0171717,
+     0.0193001
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "doc_type": "literature",
+    "pub_date": "1992",
+    "title": "韓國 近代小說論 硏究",
+    "best": 0.6352,
+    "rrf": [
+     0.0131452,
+     0.0087719,
+     0.0121951,
+     0.0176599,
+     0.0122039,
+     0.0135135,
+     0.01,
+     0.0046512,
+     0.0117647,
+     0.0095238,
+     0.0106383,
+     0.0104167,
+     0.0116279,
+     0.0074074,
+     0.0103093,
+     0.008547,
+     0.0083333,
+     0.0091743,
+     0.0098039,
+     0.0090909,
+     0.0102041,
+     0.0119048,
+     0.0089286
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-202",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Nostromo",
+    "best": 0.4961,
+    "rrf": [
+     0.006993,
+     0.0050761,
+     0.0075758,
+     0.0048544,
+     0.0060241,
+     0.0065359,
+     0.0135135,
+     0.0126582,
+     0.007874,
+     0.0070423,
+     0.01,
+     0.004902,
+     0.0103093,
+     0.0070922,
+     0.0045662,
+     0.0068493,
+     0.00625,
+     0.0046948,
+     0.0064935,
+     0.005814,
+     0.0080645,
+     0.0054945,
+     0.0056497,
+     0.0119048,
+     0.0072464,
+     0.0078125,
+     0.0045872,
+     0.0049751,
+     0.008,
+     0.0063694,
+     0.0054645,
+     0.0064103,
+     0.0088496,
+     0.0045249,
+     0.0059524,
+     0.0140845,
+     0.0057803
+    ]
+   },
+   {
+    "book_id": "CNTS-00049204004",
+    "doc_type": "policy",
+    "pub_date": "2005",
+    "title": "세계화와 개방정책",
+    "best": 0.4607,
+    "rrf": [
+     0.0059172,
+     0.0064103,
+     0.0061728,
+     0.0055866,
+     0.0076923,
+     0.0057143,
+     0.0066225,
+     0.0045455,
+     0.0063291,
+     0.0052356,
+     0.006135,
+     0.0054348,
+     0.004878,
+     0.0065789,
+     0.005,
+     0.0051546,
+     0.0060976,
+     0.0054054,
+     0.0045249,
+     0.0047619
+    ]
+   },
+   {
+    "book_id": "CNTS-00052065073",
+    "doc_type": "literature",
+    "pub_date": "1986",
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "best": 0.4598,
+    "rrf": [
+     0.0190747,
+     0.0092593,
+     0.0208777,
+     0.0133333,
+     0.0076336,
+     0.015625,
+     0.0047393,
+     0.0197192,
+     0.0082645,
+     0.0062893,
+     0.019792,
+     0.009434,
+     0.0093458,
+     0.0092593,
+     0.0091743,
+     0.0045455,
+     0.004717,
+     0.0047847,
+     0.019092,
+     0.0082645,
+     0.006993
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-28054",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Brothers Karamazov",
+    "best": 0.3882,
+    "rrf": [
+     0.0120482,
+     0.0086957,
+     0.0144928,
+     0.0056818,
+     0.0126582,
+     0.0073529,
+     0.0049505,
+     0.0056818,
+     0.0107527,
+     0.0046512,
+     0.0077519,
+     0.0123457,
+     0.0079365,
+     0.0069444,
+     0.0116279,
+     0.0051813
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-26",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Paradise Lost",
+    "best": 0.3855,
+    "rrf": [
+     0.0086207,
+     0.0049751,
+     0.0071942,
+     0.0083333,
+     0.0076336,
+     0.0084746,
+     0.0096154,
+     0.0075188,
+     0.0078125
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1260",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Jane Eyre",
+    "best": 0.356,
+    "rrf": [
+     0.005102,
+     0.0068493,
+     0.0153846,
+     0.0064516,
+     0.0045872,
+     0.0053476,
+     0.0136986
+    ]
+   },
+   {
+    "book_id": "CNTS-00049202839",
+    "doc_type": "policy",
+    "pub_date": "2005",
+    "title": "Diversity in Development",
+    "best": 0.3547,
+    "rrf": [
+     0.0053191,
+     0.0054645,
+     0.005988,
+     0.0055556,
+     0.0064516,
+     0.0046729,
+     0.0058824,
+     0.0050251,
+     0.0072993,
+     0.005102
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-245",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Life on the Mississippi",
+    "best": 0.3524,
+    "rrf": [
+     0.0142857,
+     0.0149254,
+     0.0063694,
+     0.0128205,
+     0.0133333,
+     0.0125
+    ]
+   },
+   {
+    "book_id": "GM_003",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "레디메이드 인생",
+    "best": 0.2921,
+    "rrf": [
+     0.008,
+     0.0081967,
+     0.0086207,
+     0.0074627
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Old Curiosity Shop",
+    "best": 0.2802,
+    "rrf": [
+     0.0090909,
+     0.0114943,
+     0.0121951,
+     0.0108696
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-128",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Arabian Nights' Entertainments",
+    "best": 0.2703,
+    "rrf": [
+     0.0068027,
+     0.0075758,
+     0.0050251,
+     0.0070423,
+     0.0054054
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The History of Tom Jones, a Foundling",
+    "best": 0.2464,
+    "rrf": [
+     0.0117647,
+     0.0074074,
+     0.009901,
+     0.00625
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-164",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Twenty Thousand Leagues under the Sea",
+    "best": 0.2416,
+    "rrf": [
+     0.015625,
+     0.016129,
+     0.015873
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Canterbury Tales",
+    "best": 0.2413,
+    "rrf": [
+     0.0067114,
+     0.0077519,
+     0.0084746,
+     0.0071429,
+     0.009434
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-67979",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Blue Castle",
+    "best": 0.2407,
+    "rrf": [
+     0.0131579,
+     0.012987,
+     0.0080645,
+     0.0138889,
+     0.0147059,
+     0.005848
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-8117",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Demons",
+    "best": 0.2317,
+    "rrf": [
+     0.0074627,
+     0.0102041,
+     0.0098039,
+     0.0081301,
+     0.0062893
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Our Mutual Friend",
+    "best": 0.2242,
+    "rrf": [
+     0.0113636,
+     0.0104167,
+     0.0111111,
+     0.0097087,
+     0.0087719
+    ]
+   },
+   {
+    "book_id": "CNTS-00049203605",
+    "doc_type": "policy",
+    "pub_date": "2004",
+    "title": "무역원활화 규범화를 위한 개도국 지원방안의 모색",
+    "best": 0.2199,
+    "rrf": [
+     0.0057471,
+     0.0081301
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-696",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Castle of Otranto",
+    "best": 0.202,
+    "rrf": [
+     0.0073529,
+     0.0060241,
+     0.0072464
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-236",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Jungle Book",
+    "best": 0.1926,
+    "rrf": [
+     0.0076923,
+     0.009009,
+     0.007874
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-689",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Death of Ivan Ilyich",
+    "best": 0.1911,
+    "rrf": [
+     0.0081967,
+     0.0053191,
+     0.0095238
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2788",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Men",
+    "best": 0.181,
+    "rrf": [
+     0.011236,
+     0.0089286
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mill on the Floss",
+    "best": 0.1752,
+    "rrf": [
+     0.0107527,
+     0.0106383,
+     0.0105263
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Jungle",
+    "best": 0.1549,
+    "rrf": [
+     0.0075188,
+     0.005291
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "No Name",
+    "best": 0.1449,
+    "rrf": [
+     0.0072993,
+     0.0057143
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-176",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Europeans",
+    "best": 0.1406,
+    "rrf": [
+     0.006135,
+     0.010101
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-940",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Spy",
+    "best": 0.0532,
+    "rrf": [
+     0.0084034
+    ]
+   }
+  ]
+ }
+}

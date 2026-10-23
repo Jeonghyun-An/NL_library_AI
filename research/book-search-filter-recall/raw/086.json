@@ -1,0 +1,389 @@
+{
+ "kind": "probe",
+ "query": "올빼미",
+ "targets": [],
+ "res": {
+  "elapsed_ms": 2406.6,
+  "wall_s": 3.81,
+  "books": [
+   {
+    "book_id": "KCI_FI003326995",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "허백당 성현의 장자 인식 - ‘심재’의 사상과 노닒의 미학",
+    "best": 0.4995,
+    "rrf": [
+     0.016129,
+     0.015625,
+     0.0153846
+    ]
+   },
+   {
+    "book_id": "KCI_FI003330566",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "『위대한 개츠비』의 ‘가장 위대한 꿈’: 명명, 서사적 정화, 그리고 아메리칸 드림의 이데올로기적 작동",
+    "best": 0.4249,
+    "rrf": [
+     0.032002,
+     0.0327869,
+     0.0225011,
+     0.0083333,
+     0.0192104,
+     0.022096,
+     0.0070922
+    ]
+   },
+   {
+    "book_id": "KCI_FI003327022",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "찬양과 슬픔의 서술 방식을 통해 본 당송(唐宋) 제문 (祭文)의 애도 의식 소고 —중당(中唐)~북송 제문을 중심으로",
+    "best": 0.4165,
+    "rrf": [
+     0.0144928
+    ]
+   },
+   {
+    "book_id": "KCI_FI003301117",
+    "doc_type": "paper",
+    "pub_date": "2026.01",
+    "title": "<아침바다 갈매기는>이 재현하는 지방 소멸의 파국적 표상- 내부식민주의와 전위된 폭력의 구조",
+    "best": 0.3992,
+    "rrf": [
+     0.0105263,
+     0.0086207,
+     0.0054945,
+     0.0081301,
+     0.011236,
+     0.0117647,
+     0.0126582,
+     0.0060606,
+     0.0119048,
+     0.0120482,
+     0.0140845,
+     0.0084034,
+     0.0142857,
+     0.0055866,
+     0.0060976
+    ]
+   },
+   {
+    "book_id": "KCI_FI003331625",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "도시공간과 시민의 삶의 재현 -모라비아와 라히리의 『로마 이야기』 비교 연구",
+    "best": 0.3765,
+    "rrf": [
+     0.0131579
+    ]
+   },
+   {
+    "book_id": "KCI_FI003305366",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "ANT로 보는 쇠퇴한 영등신앙의 현전(現前) ― 사천 선상지 ‘할만네새미’를 중심으로 ―",
+    "best": 0.3707,
+    "rrf": [
+     0.0114943,
+     0.0169759,
+     0.004878,
+     0.0116279,
+     0.0053763,
+     0.004717,
+     0.0176462,
+     0.0059172,
+     0.0144928,
+     0.0058824,
+     0.0046729,
+     0.013792,
+     0.015625,
+     0.0092593,
+     0.0097087
+    ]
+   },
+   {
+    "book_id": "KCI_FI003311453",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "Biological characteristics, chemical composition and bioactivity of black ants (Polyrhachis vicina Roger): A new approach in insect food",
+    "best": 0.3696,
+    "rrf": [
+     0.0067568,
+     0.0256778,
+     0.0191886,
+     0.0130699,
+     0.009434,
+     0.0114943,
+     0.0108696,
+     0.010989
+    ]
+   },
+   {
+    "book_id": "KCI_FI003305215",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "Two species of Endotricha Zeller, 1897 (Lepidoptera, Pyralidae, Pyralinae) new to Korea",
+    "best": 0.3251,
+    "rrf": [
+     0.0133333,
+     0.0128205,
+     0.0136986
+    ]
+   },
+   {
+    "book_id": "KCI_FI003318068",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "The Multiverse as Ideological Closure: Formal Excess, Algorithmic Variation, and the Crisis of Futurity in Everything Everywhere All at Once",
+    "best": 0.3172,
+    "rrf": [
+     0.0104167,
+     0.006993,
+     0.010989,
+     0.0082645,
+     0.0128205,
+     0.0048544,
+     0.0076336,
+     0.0065359,
+     0.0086957,
+     0.0090909,
+     0.0052632,
+     0.0057471,
+     0.009009
+    ]
+   },
+   {
+    "book_id": "KCI_FI003311700",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "현대 패션브랜드에 표현된 그리스 여신 이미지 활용에 대한사례연구",
+    "best": 0.3009,
+    "rrf": [
+     0.0076336,
+     0.0140845,
+     0.0071429,
+     0.0050505,
+     0.005291
+    ]
+   },
+   {
+    "book_id": "KCI_FI003325054",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "은유로서의 원초적 자연: 헨리 베스톤의 『가장 외딴집』에 나타난 시적 상상력의 생태학",
+    "best": 0.2995,
+    "rrf": [
+     0.0077519,
+     0.0153846,
+     0.0065789,
+     0.0048309,
+     0.0107527,
+     0.0133333
+    ]
+   },
+   {
+    "book_id": "KCI_FI003331986",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "소래산(경기 시흥·인천)의 관속식물상",
+    "best": 0.2922,
+    "rrf": [
+     0.0142857
+    ]
+   },
+   {
+    "book_id": "KCI_FI003310575",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "근현대 지역 패션문화의 형성과 발전에 관한 탐색적 연구 –광주 충장로를 중심으로-",
+    "best": 0.2814,
+    "rrf": [
+     0.0125,
+     0.0135135,
+     0.0121951,
+     0.0123457,
+     0.0119048
+    ]
+   },
+   {
+    "book_id": "KCI_FI003320411",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "다중상태모형을 이용한 노인장기요양보험의 재정 전망",
+    "best": 0.2411,
+    "rrf": [
+     0.0138889,
+     0.0063291
+    ]
+   },
+   {
+    "book_id": "KCI_FI003331739",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "한국고대 유물에 대한 시각적 환유의 재해석- 3세기~ 6세기 상형토기와 토우를 중심으로-",
+    "best": 0.2393,
+    "rrf": [
+     0.012987,
+     0.005848
+    ]
+   },
+   {
+    "book_id": "KCI_FI003305232",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "진정성과 성실성 리더십 성공 사례 연구: 장진호 전투를 중심으로 한 올리버 스미스 장군의 리더십",
+    "best": 0.2259,
+    "rrf": [
+     0.0138889,
+     0.0120482,
+     0.0126582
+    ]
+   },
+   {
+    "book_id": "KCI_FI003331992",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "두 상업용 돼지 SNP 칩 간의 유전자형 일치율 및 데이터 호환성 평가",
+    "best": 0.2217,
+    "rrf": [
+     0.00625,
+     0.015873
+    ]
+   },
+   {
+    "book_id": "KCI_FI003319756",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "기업분할과 조세회피: 물적분할과 인적분할의 차별적 효과",
+    "best": 0.2147,
+    "rrf": [
+     0.012987
+    ]
+   },
+   {
+    "book_id": "KCI_FI003307577",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "A Study on Layout Optimization of Large-Scale Offshore Wind Farms",
+    "best": 0.2104,
+    "rrf": [
+     0.0121951,
+     0.0047393
+    ]
+   },
+   {
+    "book_id": "KCI_FI003311491",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "제주 용암해수를 이용한 오미자 추출물의 유효성분 함량 및 생리활성 증진 효과",
+    "best": 0.1837,
+    "rrf": [
+     0.0117647,
+     0.0111111
+    ]
+   },
+   {
+    "book_id": "KCI_FI003317227",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "정유공정 전환유연성의 2단계 확률모형: 단조 이득과 조건부 가치 소멸의 구조적 분석",
+    "best": 0.1781,
+    "rrf": [
+     0.0050505,
+     0.0136986
+    ]
+   },
+   {
+    "book_id": "KCI_FI003300094",
+    "doc_type": "paper",
+    "pub_date": "2026.01",
+    "title": "우리나라 조산원의 조산행위 분석 및 조산료 적정성 평가",
+    "best": 0.1768,
+    "rrf": [
+     0.0125
+    ]
+   },
+   {
+    "book_id": "KCI_FI003306847",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "아동 그림책에 재현된 죽음·애도·회복의 양상 분석",
+    "best": 0.1549,
+    "rrf": [
+     0.0131579
+    ]
+   },
+   {
+    "book_id": "KCI_FI003330199",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "강원 영서 중-북부 방언 연구의 현황과 과제",
+    "best": 0.1328,
+    "rrf": [
+     0.0135135
+    ]
+   },
+   {
+    "book_id": "KCI_FI003325044",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "Determinants of Green Consumption Intention: An SOR-Based Analysis of External and Internal Drivers",
+    "best": 0.1188,
+    "rrf": [
+     0.0123457
+    ]
+   },
+   {
+    "book_id": "KCI_FI003335600",
+    "doc_type": "paper",
+    "pub_date": "2026.05",
+    "title": "생성형 AI 시대 국내 통번역 연구의 동향과 과제: 2023-2025년 3대 학술지 메타 분석",
+    "best": 0.112,
+    "rrf": [
+     0.0113636
+    ]
+   },
+   {
+    "book_id": "KCI_FI003310812",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "Factors Associated with Depression among Female and Male Adolescents in South Korea: Body Image, Sleep, Weight Control, and Mukbang/Cookbang Viewing (KYRBS 2025)",
+    "best": 0.0908,
+    "rrf": [
+     0.0149254
+    ]
+   },
+   {
+    "book_id": "KCI_FI003315538",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "󰡔쥐󰡕에 나타난 트라우마의 시각화와 포스트메모리",
+    "best": 0.0903,
+    "rrf": [
+     0.0113636
+    ]
+   },
+   {
+    "book_id": "KCI_FI003321110",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "과체중 및 비만 소아청소년의 대사증후군 지표의 영향요인",
+    "best": 0.0879,
+    "rrf": [
+     0.0116279
+    ]
+   },
+   {
+    "book_id": "KCI_FI003333167",
+    "doc_type": "paper",
+    "pub_date": "2026.05",
+    "title": "Effects of Thermal Effluents on the Species Diversity and Community Structures of Benthic Macroinvertebrates and Fish in the Jukdangcheon Basin, South Korea",
+    "best": 0.0753,
+    "rrf": [
+     0.0147059
+    ]
+   }
+  ]
+ }
+}

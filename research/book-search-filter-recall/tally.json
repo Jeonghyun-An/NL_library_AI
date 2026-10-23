@@ -1,0 +1,2301 @@
+[
+ {
+  "kind": "title_kr",
+  "query": "무정",
+  "targets": [
+   "WS_001"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 267,
+  "window_full": true,
+  "max_single_rank": 179,
+  "max_twice_rank": 154,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1984",
+   "1988",
+   "1991",
+   "1995",
+   "1996",
+   "1997",
+   "2002"
+  ],
+  "top_chunks_share": 0.16104868913857678
+ },
+ {
+  "kind": "title_kr",
+  "query": "진달래꽃",
+  "targets": [
+   "WS_002"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 239,
+  "window_full": true,
+  "max_single_rank": 157,
+  "max_twice_rank": 154,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1984",
+   "1988",
+   "1992",
+   "1994",
+   "1996",
+   "1997"
+  ],
+  "top_chunks_share": 0.24267782426778242
+ },
+ {
+  "kind": "title_kr",
+  "query": "님의 침묵",
+  "targets": [
+   "WS_003"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 149,
+  "window_full": true,
+  "max_single_rank": 157,
+  "max_twice_rank": 157,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.09395973154362416
+ },
+ {
+  "kind": "title_kr",
+  "query": "운수 좋은 날",
+  "targets": [
+   "WS_004"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 179,
+  "window_full": true,
+  "max_single_rank": 152,
+  "max_twice_rank": 149,
+  "target_rank": 1,
+  "years": [
+   "",
+   "2001"
+  ],
+  "top_chunks_share": 0.10614525139664804
+ },
+ {
+  "kind": "title_kr",
+  "query": "메밀꽃 필 무렵",
+  "targets": [
+   "WS_005"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 235,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 150,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1989",
+   "1990",
+   "1992"
+  ],
+  "top_chunks_share": 0.32340425531914896
+ },
+ {
+  "kind": "title_kr",
+  "query": "봄봄",
+  "targets": [
+   "WS_006"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 225,
+  "window_full": true,
+  "max_single_rank": 164,
+  "max_twice_rank": 154,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1986",
+   "1988",
+   "1990",
+   "1992",
+   "1993",
+   "1997"
+  ],
+  "top_chunks_share": 0.13333333333333333
+ },
+ {
+  "kind": "title_kr",
+  "query": "태평천하",
+  "targets": [
+   "WS_007"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 218,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 140,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1988",
+   "1992",
+   "1994",
+   "1995",
+   "1997",
+   "2005",
+   "2006"
+  ],
+  "top_chunks_share": 0.10550458715596331
+ },
+ {
+  "kind": "title_kr",
+  "query": "상록수",
+  "targets": [
+   "WS_008"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 256,
+  "window_full": true,
+  "max_single_rank": 150,
+  "max_twice_rank": 140,
+  "target_rank": 1,
+  "years": [
+   "",
+   "----",
+   "1992",
+   "1995",
+   "1997",
+   "2003",
+   "2005",
+   "2006"
+  ],
+  "top_chunks_share": 0.25390625
+ },
+ {
+  "kind": "title_kr",
+  "query": "인간문제",
+  "targets": [
+   "WS_009"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 178,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 154,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1992",
+   "1993",
+   "1995",
+   "1996",
+   "1997",
+   "1999"
+  ],
+  "top_chunks_share": 0.12359550561797752
+ },
+ {
+  "kind": "title_kr",
+  "query": "하늘과 바람과 별과 시",
+  "targets": [
+   "WS_010"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 263,
+  "window_full": true,
+  "max_single_rank": 162,
+  "max_twice_rank": 159,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1988",
+   "1990",
+   "1992",
+   "1994",
+   "1996"
+  ],
+  "top_chunks_share": 0.12927756653992395
+ },
+ {
+  "kind": "title_kr",
+  "query": "날개",
+  "targets": [
+   "WS_011"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 179,
+  "window_full": true,
+  "max_single_rank": 164,
+  "max_twice_rank": 163,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1991",
+   "1992",
+   "1995",
+   "1997",
+   "1999"
+  ],
+  "top_chunks_share": 0.16201117318435754
+ },
+ {
+  "kind": "title_kr",
+  "query": "홍길동전",
+  "targets": [
+   "WS_012"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 285,
+  "window_full": true,
+  "max_single_rank": 194,
+  "max_twice_rank": 179,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1989",
+   "1990",
+   "1992",
+   "1993",
+   "1994",
+   "1997"
+  ],
+  "top_chunks_share": 0.28771929824561404
+ },
+ {
+  "kind": "title_kr",
+  "query": "흥부전",
+  "targets": [
+   "WS_013"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 242,
+  "window_full": true,
+  "max_single_rank": 161,
+  "max_twice_rank": 150,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1990",
+   "1993",
+   "1994",
+   "1995",
+   "1996",
+   "1997",
+   "1999",
+   "2005",
+   "2006"
+  ],
+  "top_chunks_share": 0.1859504132231405
+ },
+ {
+  "kind": "title_kr",
+  "query": "구운몽",
+  "targets": [
+   "WS_014"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 293,
+  "window_full": true,
+  "max_single_rank": 179,
+  "max_twice_rank": 176,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1989",
+   "1992",
+   "1993",
+   "1994",
+   "1995",
+   "1997"
+  ],
+  "top_chunks_share": 0.3310580204778157
+ },
+ {
+  "kind": "title_kr",
+  "query": "벙어리 삼룡이",
+  "targets": [
+   "WS_015"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 263,
+  "window_full": true,
+  "max_single_rank": 159,
+  "max_twice_rank": 157,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1995",
+   "1997"
+  ],
+  "top_chunks_share": 0.311787072243346
+ },
+ {
+  "kind": "title_kr",
+  "query": "탈출기",
+  "targets": [
+   "WS_016"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 236,
+  "window_full": true,
+  "max_single_rank": 164,
+  "max_twice_rank": 162,
+  "target_rank": 1,
+  "years": [
+   "",
+   "----"
+  ],
+  "top_chunks_share": 0.1652542372881356
+ },
+ {
+  "kind": "title_kr",
+  "query": "광야",
+  "targets": [
+   "WS_017"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 262,
+  "window_full": true,
+  "max_single_rank": 152,
+  "max_twice_rank": 150,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1992",
+   "1995",
+   "1997"
+  ],
+  "top_chunks_share": 0.12213740458015267
+ },
+ {
+  "kind": "title_kr",
+  "query": "감자",
+  "targets": [
+   "WS_018"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 157,
+  "window_full": true,
+  "max_single_rank": 152,
+  "max_twice_rank": 127,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1999"
+  ],
+  "top_chunks_share": 0.08280254777070063
+ },
+ {
+  "kind": "title_kr",
+  "query": "배따라기",
+  "targets": [
+   "WS_019"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 224,
+  "window_full": true,
+  "max_single_rank": 150,
+  "max_twice_rank": 148,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1994"
+  ],
+  "top_chunks_share": 0.14732142857142858
+ },
+ {
+  "kind": "title_kr",
+  "query": "붉은 산",
+  "targets": [
+   "WS_020"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 244,
+  "window_full": true,
+  "max_single_rank": 159,
+  "max_twice_rank": 147,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1996"
+  ],
+  "top_chunks_share": 0.13114754098360656
+ },
+ {
+  "kind": "title_kr",
+  "query": "정지용 시집",
+  "targets": [
+   "WS_021"
+  ],
+  "fallback": false,
+  "n_books": 9,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 255,
+  "max_twice_rank": 213,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1988",
+   "1992",
+   "1995",
+   "1996"
+  ],
+  "top_chunks_share": 0.6387959866220736
+ },
+ {
+  "kind": "title_kr",
+  "query": "금수회의록",
+  "targets": [
+   "WS_022"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 275,
+  "window_full": true,
+  "max_single_rank": 171,
+  "max_twice_rank": 167,
+  "target_rank": 1,
+  "years": [
+   "",
+   "----",
+   "1986",
+   "1989",
+   "1992",
+   "1994",
+   "1997",
+   "1999",
+   "2002",
+   "2003",
+   "2004",
+   "2005"
+  ],
+  "top_chunks_share": 0.1709090909090909
+ },
+ {
+  "kind": "title_kr",
+  "query": "혈의 누",
+  "targets": [
+   "WS_023"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 250,
+  "window_full": true,
+  "max_single_rank": 152,
+  "max_twice_rank": 152,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1986",
+   "1989",
+   "1991",
+   "1992",
+   "1994",
+   "1997"
+  ],
+  "top_chunks_share": 0.236
+ },
+ {
+  "kind": "title_kr",
+  "query": "빈처",
+  "targets": [
+   "WS_024"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 292,
+  "window_full": true,
+  "max_single_rank": 152,
+  "max_twice_rank": 152,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1992"
+  ],
+  "top_chunks_share": 0.4280821917808219
+ },
+ {
+  "kind": "title_kr",
+  "query": "고향",
+  "targets": [
+   "WS_025"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 224,
+  "window_full": true,
+  "max_single_rank": 161,
+  "max_twice_rank": 152,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1989",
+   "1990",
+   "1997"
+  ],
+  "top_chunks_share": 0.20535714285714285
+ },
+ {
+  "kind": "title_kr",
+  "query": "물레방아",
+  "targets": [
+   "WS_026"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 197,
+  "window_full": true,
+  "max_single_rank": 150,
+  "max_twice_rank": 150,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1993"
+  ],
+  "top_chunks_share": 0.116751269035533
+ },
+ {
+  "kind": "title_kr",
+  "query": "심청전",
+  "targets": [
+   "WS_027"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 260,
+  "window_full": true,
+  "max_single_rank": 216,
+  "max_twice_rank": 95,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1986",
+   "1989",
+   "1990",
+   "1992",
+   "1993",
+   "1994",
+   "1997",
+   "1999",
+   "2006"
+  ],
+  "top_chunks_share": 0.18461538461538463
+ },
+ {
+  "kind": "title_kr",
+  "query": "토끼전",
+  "targets": [
+   "WS_030"
+  ],
+  "fallback": false,
+  "n_books": 15,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 206,
+  "max_twice_rank": 202,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1993",
+   "1994",
+   "1997"
+  ],
+  "top_chunks_share": 0.8093645484949833
+ },
+ {
+  "kind": "title_kr",
+  "query": "박씨전",
+  "targets": [
+   "WS_031"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 294,
+  "window_full": true,
+  "max_single_rank": 179,
+  "max_twice_rank": 177,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1986",
+   "1989",
+   "1992",
+   "1993",
+   "1994",
+   "1996",
+   "1997"
+  ],
+  "top_chunks_share": 0.25510204081632654
+ },
+ {
+  "kind": "title_kr",
+  "query": "숙영낭자전",
+  "targets": [
+   "WS_032"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 287,
+  "window_full": true,
+  "max_single_rank": 169,
+  "max_twice_rank": 169,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1989",
+   "1990",
+   "1992",
+   "1993",
+   "1994",
+   "1995",
+   "1996",
+   "1997",
+   "2001"
+  ],
+  "top_chunks_share": 0.20905923344947736
+ },
+ {
+  "kind": "title_kr",
+  "query": "유충렬전",
+  "targets": [
+   "WS_033"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 219,
+  "window_full": true,
+  "max_single_rank": 159,
+  "max_twice_rank": 157,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1988",
+   "1989",
+   "1990",
+   "1992",
+   "1993",
+   "1994",
+   "1997",
+   "2005"
+  ],
+  "top_chunks_share": 0.1689497716894977
+ },
+ {
+  "kind": "title_kr",
+  "query": "귀의 성",
+  "targets": [
+   "WS_034"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 209,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 143,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1992",
+   "1995",
+   "1996",
+   "1997"
+  ],
+  "top_chunks_share": 0.24401913875598086
+ },
+ {
+  "kind": "title_kr",
+  "query": "자유종",
+  "targets": [
+   "WS_035"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 236,
+  "window_full": true,
+  "max_single_rank": 161,
+  "max_twice_rank": 161,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1986",
+   "1992",
+   "1997",
+   "2004",
+   "2005"
+  ],
+  "top_chunks_share": 0.15677966101694915
+ },
+ {
+  "kind": "title_kr",
+  "query": "개척자",
+  "targets": [
+   "WS_037"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 289,
+  "window_full": true,
+  "max_single_rank": 164,
+  "max_twice_rank": 164,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.328719723183391
+ },
+ {
+  "kind": "title_kr",
+  "query": "영랑시집",
+  "targets": [
+   "WS_038"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 238,
+  "window_full": true,
+  "max_single_rank": 164,
+  "max_twice_rank": 161,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1986",
+   "1988",
+   "1994",
+   "1995",
+   "1996",
+   "1997"
+  ],
+  "top_chunks_share": 0.3067226890756303
+ },
+ {
+  "kind": "title_kr",
+  "query": "해파리의 노래",
+  "targets": [
+   "WS_039"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 213,
+  "window_full": true,
+  "max_single_rank": 162,
+  "max_twice_rank": 154,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1993"
+  ],
+  "top_chunks_share": 0.14084507042253522
+ },
+ {
+  "kind": "title_kr",
+  "query": "동백꽃",
+  "targets": [
+   "GM_001"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 206,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 154,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1992",
+   "1994",
+   "1995",
+   "1996",
+   "1997"
+  ],
+  "top_chunks_share": 0.33495145631067963
+ },
+ {
+  "kind": "title_kr",
+  "query": "산골 나그네",
+  "targets": [
+   "GM_002"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 225,
+  "window_full": true,
+  "max_single_rank": 157,
+  "max_twice_rank": 150,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1990",
+   "1997"
+  ],
+  "top_chunks_share": 0.28888888888888886
+ },
+ {
+  "kind": "title_kr",
+  "query": "레디메이드 인생",
+  "targets": [
+   "GM_003"
+  ],
+  "fallback": false,
+  "n_books": 29,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 157,
+  "max_twice_rank": 154,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1996"
+  ],
+  "top_chunks_share": 0.42474916387959866
+ },
+ {
+  "kind": "title_kr",
+  "query": "미스터 방",
+  "targets": [
+   "GM_004"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 239,
+  "window_full": true,
+  "max_single_rank": 171,
+  "max_twice_rank": 159,
+  "target_rank": 1,
+  "years": [
+   "",
+   "2001"
+  ],
+  "top_chunks_share": 0.08786610878661087
+ },
+ {
+  "kind": "title_kr",
+  "query": "발가락이 닮았다",
+  "targets": [
+   "GM_005"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 174,
+  "window_full": true,
+  "max_single_rank": 159,
+  "max_twice_rank": 147,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1995"
+  ],
+  "top_chunks_share": 0.12643678160919541
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "돈키호테",
+  "targets": [
+   "LIT-GUTENBERG-996"
+  ],
+  "fallback": false,
+  "n_books": 1,
+  "chunks": 300,
+  "window_full": true,
+  "max_single_rank": 163,
+  "max_twice_rank": 152,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 1.0
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "드라큘라",
+  "targets": [
+   "LIT-GUTENBERG-345"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 293,
+  "window_full": true,
+  "max_single_rank": 194,
+  "max_twice_rank": 190,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.6996587030716723
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "작은 아씨들",
+  "targets": [
+   "LIT-GUTENBERG-514"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 264,
+  "window_full": true,
+  "max_single_rank": 152,
+  "max_twice_rank": 143,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1992"
+  ],
+  "top_chunks_share": 0.17424242424242425
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "피터 팬",
+  "targets": [
+   "LIT-GUTENBERG-16"
+  ],
+  "fallback": false,
+  "n_books": 9,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 238,
+  "max_twice_rank": 238,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.9096989966555183
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "크리스마스 캐럴",
+  "targets": [
+   "LIT-GUTENBERG-46"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 283,
+  "window_full": true,
+  "max_single_rank": 171,
+  "max_twice_rank": 159,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.2791519434628975
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "오즈의 마법사",
+  "targets": [
+   "LIT-GUTENBERG-55"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 290,
+  "window_full": true,
+  "max_single_rank": 194,
+  "max_twice_rank": 190,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1992",
+   "1996",
+   "2004"
+  ],
+  "top_chunks_share": 0.5482758620689655
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "레 미제라블",
+  "targets": [
+   "LIT-GUTENBERG-135"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 286,
+  "window_full": true,
+  "max_single_rank": 152,
+  "max_twice_rank": 149,
+  "target_rank": null,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.2097902097902098
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "프랑켄슈타인",
+  "targets": [
+   "LIT-GUTENBERG-84"
+  ],
+  "fallback": false,
+  "n_books": 18,
+  "chunks": 300,
+  "window_full": true,
+  "max_single_rank": 194,
+  "max_twice_rank": 194,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.7033333333333334
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "위대한 유산",
+  "targets": [
+   "LIT-GUTENBERG-1400"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 235,
+  "window_full": true,
+  "max_single_rank": 157,
+  "max_twice_rank": 149,
+  "target_rank": null,
+  "years": [
+   "",
+   "----"
+  ],
+  "top_chunks_share": 0.13191489361702127
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "올리버 트위스트",
+  "targets": [
+   "LIT-GUTENBERG-730"
+  ],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 169,
+  "window_full": true,
+  "max_single_rank": 135,
+  "max_twice_rank": 129,
+  "target_rank": null,
+  "years": [
+   "2026"
+  ],
+  "top_chunks_share": 0.14201183431952663
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "허클베리 핀의 모험",
+  "targets": [
+   "LIT-GUTENBERG-76"
+  ],
+  "fallback": false,
+  "n_books": 29,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 199,
+  "max_twice_rank": 194,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.4882943143812709
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "비밀의 화원",
+  "targets": [
+   "LIT-GUTENBERG-17396"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 222,
+  "window_full": true,
+  "max_single_rank": 161,
+  "max_twice_rank": 157,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1992"
+  ],
+  "top_chunks_share": 0.25225225225225223
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "정글북",
+  "targets": [
+   "LIT-GUTENBERG-236"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 258,
+  "window_full": true,
+  "max_single_rank": 150,
+  "max_twice_rank": 149,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1993",
+   "2004",
+   "2005"
+  ],
+  "top_chunks_share": 0.2713178294573643
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "하이디",
+  "targets": [
+   "LIT-GUTENBERG-1448"
+  ],
+  "fallback": false,
+  "n_books": 4,
+  "chunks": 300,
+  "window_full": true,
+  "max_single_rank": 210,
+  "max_twice_rank": 171,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.9766666666666667
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "로빈슨 크루소",
+  "targets": [
+   "LIT-GUTENBERG-521"
+  ],
+  "fallback": false,
+  "n_books": 9,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 174,
+  "max_twice_rank": 171,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.5719063545150501
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "피노키오",
+  "targets": [
+   "LIT-GUTENBERG-500"
+  ],
+  "fallback": false,
+  "n_books": 1,
+  "chunks": 300,
+  "window_full": true,
+  "max_single_rank": 226,
+  "max_twice_rank": 99,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 1.0
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "톰 소여의 모험",
+  "targets": [
+   "LIT-GUTENBERG-74"
+  ],
+  "fallback": false,
+  "n_books": 3,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 210,
+  "max_twice_rank": 210,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.8929765886287625
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "이상한 나라의 앨리스",
+  "targets": [
+   "LIT-GUTENBERG-11"
+  ],
+  "fallback": false,
+  "n_books": 15,
+  "chunks": 300,
+  "window_full": true,
+  "max_single_rank": 167,
+  "max_twice_rank": 164,
+  "target_rank": 2,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.43666666666666665
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "두 도시 이야기",
+  "targets": [
+   "LIT-GUTENBERG-98"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 222,
+  "window_full": true,
+  "max_single_rank": 162,
+  "max_twice_rank": 138,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1990"
+  ],
+  "top_chunks_share": 0.1036036036036036
+ },
+ {
+  "kind": "title_en_kr",
+  "query": "오페라의 유령",
+  "targets": [
+   "LIT-GUTENBERG-175"
+  ],
+  "fallback": false,
+  "n_books": 22,
+  "chunks": 300,
+  "window_full": true,
+  "max_single_rank": 229,
+  "max_twice_rank": 229,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.7566666666666667
+ },
+ {
+  "kind": "title_en",
+  "query": "Dracula",
+  "targets": [
+   "LIT-GUTENBERG-345"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 234,
+  "window_full": true,
+  "max_single_rank": 167,
+  "max_twice_rank": 164,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.5854700854700855
+ },
+ {
+  "kind": "title_en",
+  "query": "Little Women",
+  "targets": [
+   "LIT-GUTENBERG-514"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 202,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 152,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.3415841584158416
+ },
+ {
+  "kind": "title_en",
+  "query": "Heidi",
+  "targets": [
+   "LIT-GUTENBERG-1448"
+  ],
+  "fallback": false,
+  "n_books": 1,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 222,
+  "max_twice_rank": 149,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 1.0
+ },
+ {
+  "kind": "title_en",
+  "query": "The Jungle Book",
+  "targets": [
+   "LIT-GUTENBERG-236"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 207,
+  "window_full": true,
+  "max_single_rank": 159,
+  "max_twice_rank": 154,
+  "target_rank": 1,
+  "years": [
+   "",
+   "----"
+  ],
+  "top_chunks_share": 0.2946859903381642
+ },
+ {
+  "kind": "title_en",
+  "query": "Frankenstein",
+  "targets": [
+   "LIT-GUTENBERG-84"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 288,
+  "window_full": true,
+  "max_single_rank": 177,
+  "max_twice_rank": 169,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.5208333333333334
+ },
+ {
+  "kind": "title_en",
+  "query": "The Adventures of Pinocchio",
+  "targets": [
+   "LIT-GUTENBERG-500"
+  ],
+  "fallback": false,
+  "n_books": 18,
+  "chunks": 284,
+  "window_full": true,
+  "max_single_rank": 199,
+  "max_twice_rank": 48,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.9647887323943662
+ },
+ {
+  "kind": "title_en",
+  "query": "Great Expectations",
+  "targets": [
+   "LIT-GUTENBERG-1400"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 231,
+  "window_full": true,
+  "max_single_rank": 150,
+  "max_twice_rank": 148,
+  "target_rank": 1,
+  "years": [
+   "",
+   "----",
+   "2002",
+   "2003",
+   "2005"
+  ],
+  "top_chunks_share": 0.18614718614718614
+ },
+ {
+  "kind": "title_en",
+  "query": "Oliver Twist",
+  "targets": [
+   "LIT-GUTENBERG-730"
+  ],
+  "fallback": false,
+  "n_books": 6,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 171,
+  "max_twice_rank": 171,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.959866220735786
+ },
+ {
+  "kind": "title_en",
+  "query": "The Secret Garden",
+  "targets": [
+   "LIT-GUTENBERG-17396"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 215,
+  "window_full": true,
+  "max_single_rank": 152,
+  "max_twice_rank": 148,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1990"
+  ],
+  "top_chunks_share": 0.34418604651162793
+ },
+ {
+  "kind": "title_en",
+  "query": "A Tale of Two Cities",
+  "targets": [
+   "LIT-GUTENBERG-98"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 214,
+  "window_full": true,
+  "max_single_rank": 150,
+  "max_twice_rank": 143,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.48130841121495327
+ },
+ {
+  "kind": "title_in_question",
+  "query": "구운몽 줄거리가 궁금해",
+  "targets": [
+   "WS_014"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 291,
+  "window_full": true,
+  "max_single_rank": 177,
+  "max_twice_rank": 177,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1986",
+   "1988",
+   "1989",
+   "1992",
+   "1993",
+   "1994",
+   "1997"
+  ],
+  "top_chunks_share": 0.2646048109965636
+ },
+ {
+  "kind": "title_in_question",
+  "query": "김유정의 동백꽃",
+  "targets": [
+   "GM_001"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 235,
+  "window_full": true,
+  "max_single_rank": 167,
+  "max_twice_rank": 167,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1984",
+   "1988",
+   "1990",
+   "1992",
+   "1994",
+   "1995",
+   "1996",
+   "1997",
+   "2001"
+  ],
+  "top_chunks_share": 0.2425531914893617
+ },
+ {
+  "kind": "title_in_question",
+  "query": "현진건의 운수 좋은 날 읽고 싶어",
+  "targets": [
+   "WS_004"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 229,
+  "window_full": true,
+  "max_single_rank": 152,
+  "max_twice_rank": 149,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1988",
+   "1994",
+   "1997",
+   "2001"
+  ],
+  "top_chunks_share": 0.26200873362445415
+ },
+ {
+  "kind": "title_in_question",
+  "query": "채만식 태평천하",
+  "targets": [
+   "WS_007"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 270,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 148,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1988",
+   "1992",
+   "1993",
+   "1994",
+   "1995",
+   "1996",
+   "1997",
+   "2001"
+  ],
+  "top_chunks_share": 0.18518518518518517
+ },
+ {
+  "kind": "title_in_question",
+  "query": "이상의 소설 날개",
+  "targets": [
+   "WS_011"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 244,
+  "window_full": true,
+  "max_single_rank": 163,
+  "max_twice_rank": 154,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1984",
+   "1988",
+   "1989",
+   "1992",
+   "1994",
+   "1995",
+   "1997"
+  ],
+  "top_chunks_share": 0.19262295081967212
+ },
+ {
+  "kind": "title_in_question",
+  "query": "심훈 상록수 찾아줘",
+  "targets": [
+   "WS_008"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 216,
+  "window_full": true,
+  "max_single_rank": 163,
+  "max_twice_rank": 162,
+  "target_rank": 2,
+  "years": [
+   "",
+   "1988",
+   "1992",
+   "1995",
+   "1996",
+   "1997"
+  ],
+  "top_chunks_share": 0.1712962962962963
+ },
+ {
+  "kind": "title_in_question",
+  "query": "드라큘라 원작 소설",
+  "targets": [
+   "LIT-GUTENBERG-345"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 274,
+  "window_full": true,
+  "max_single_rank": 179,
+  "max_twice_rank": 179,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1994",
+   "1997",
+   "2005"
+  ],
+  "top_chunks_share": 0.8613138686131386
+ },
+ {
+  "kind": "title_in_question",
+  "query": "윤동주 하늘과 바람과 별과 시",
+  "targets": [
+   "WS_010"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 250,
+  "window_full": true,
+  "max_single_rank": 162,
+  "max_twice_rank": 159,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1988",
+   "1990",
+   "1992",
+   "1994",
+   "1996",
+   "1997"
+  ],
+  "top_chunks_share": 0.108
+ },
+ {
+  "kind": "author",
+  "query": "김유정 소설",
+  "targets": [
+   "GM_001",
+   "WS_006",
+   "GM_002"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 255,
+  "window_full": true,
+  "max_single_rank": 164,
+  "max_twice_rank": 164,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1984",
+   "1988",
+   "1991",
+   "1995",
+   "1997",
+   "2001"
+  ],
+  "top_chunks_share": 0.13333333333333333
+ },
+ {
+  "kind": "author",
+  "query": "현진건 단편소설",
+  "targets": [
+   "WS_004",
+   "WS_024",
+   "WS_025"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 282,
+  "window_full": true,
+  "max_single_rank": 159,
+  "max_twice_rank": 159,
+  "target_rank": 1,
+  "years": [
+   "",
+   "1983",
+   "1984",
+   "1988",
+   "1989",
+   "1992",
+   "1993",
+   "1994",
+   "1995",
+   "1997",
+   "2004",
+   "2006"
+  ],
+  "top_chunks_share": 0.2907801418439716
+ },
+ {
+  "kind": "author",
+  "query": "김동인 소설",
+  "targets": [
+   "WS_018",
+   "WS_019",
+   "WS_020",
+   "GM_005"
+  ],
+  "fallback": false,
+  "n_books": 25,
+  "chunks": 289,
+  "window_full": true,
+  "max_single_rank": 179,
+  "max_twice_rank": 176,
+  "target_rank": 3,
+  "years": [
+   "",
+   "1986",
+   "1988",
+   "1989",
+   "1990",
+   "1992",
+   "1993",
+   "1994",
+   "1996",
+   "1997"
+  ],
+  "top_chunks_share": 0.7024221453287197
+ },
+ {
+  "kind": "author",
+  "query": "찰스 디킨스 소설",
+  "targets": [
+   "LIT-GUTENBERG-46",
+   "LIT-GUTENBERG-98",
+   "LIT-GUTENBERG-1023",
+   "LIT-GUTENBERG-766",
+   "LIT-GUTENBERG-821",
+   "LIT-GUTENBERG-1400",
+   "LIT-GUTENBERG-786",
+   "LIT-GUTENBERG-963",
+   "LIT-GUTENBERG-967",
+   "LIT-GUTENBERG-730",
+   "LIT-GUTENBERG-883",
+   "LIT-GUTENBERG-700",
+   "LIT-GUTENBERG-580"
+  ],
+  "fallback": false,
+  "n_books": 30,
+  "chunks": 148,
+  "window_full": true,
+  "max_single_rank": 157,
+  "max_twice_rank": 143,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.1891891891891892
+ },
+ {
+  "kind": "author",
+  "query": "코난 도일 셜록 홈즈",
+  "targets": [
+   "LIT-GUTENBERG-1661",
+   "LIT-GUTENBERG-834",
+   "LIT-GUTENBERG-2852",
+   "LIT-GUTENBERG-2097",
+   "LIT-GUTENBERG-2350"
+  ],
+  "fallback": false,
+  "n_books": 7,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 159,
+  "max_twice_rank": 154,
+  "target_rank": 1,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.36789297658862874
+ },
+ {
+  "kind": "probe",
+  "query": "올리버",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 273,
+  "window_full": true,
+  "max_single_rank": 157,
+  "max_twice_rank": 149,
+  "target_rank": null,
+  "years": [
+   "2026"
+  ],
+  "top_chunks_share": 0.21611721611721613
+ },
+ {
+  "kind": "probe",
+  "query": "트위스트",
+  "targets": [],
+  "fallback": false,
+  "n_books": 2,
+  "chunks": 300,
+  "window_full": true,
+  "max_single_rank": 163,
+  "max_twice_rank": 141,
+  "target_rank": null,
+  "years": [
+   ""
+  ],
+  "top_chunks_share": 0.99
+ },
+ {
+  "kind": "probe",
+  "query": "올빼미",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 108,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 138,
+  "target_rank": null,
+  "years": [
+   "2026"
+  ],
+  "top_chunks_share": 0.1388888888888889
+ },
+ {
+  "kind": "probe",
+  "query": "올림픽",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 288,
+  "window_full": true,
+  "max_single_rank": 176,
+  "max_twice_rank": 174,
+  "target_rank": null,
+  "years": [
+   "2026"
+  ],
+  "top_chunks_share": 0.1909722222222222
+ },
+ {
+  "kind": "probe",
+  "query": "올해의 소설",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 179,
+  "window_full": true,
+  "max_single_rank": 150,
+  "max_twice_rank": 142,
+  "target_rank": null,
+  "years": [
+   "2026"
+  ],
+  "top_chunks_share": 0.15083798882681565
+ },
+ {
+  "kind": "probe",
+  "query": "1930년대 소설",
+  "targets": [],
+  "fallback": false,
+  "n_books": 0,
+  "chunks": 0,
+  "window_full": false,
+  "max_single_rank": null,
+  "max_twice_rank": null,
+  "target_rank": null,
+  "years": [],
+  "top_chunks_share": 0.0
+ },
+ {
+  "kind": "probe",
+  "query": "1930년대 세태소설 연구",
+  "targets": [],
+  "fallback": false,
+  "n_books": 4,
+  "chunks": 299,
+  "window_full": true,
+  "max_single_rank": 206,
+  "max_twice_rank": 206,
+  "target_rank": null,
+  "years": [
+   "1992",
+   "1993",
+   "1994",
+   "1997"
+  ],
+  "top_chunks_share": 0.6588628762541806
+ },
+ {
+  "kind": "probe",
+  "query": "1920년대 신소설",
+  "targets": [],
+  "fallback": false,
+  "n_books": 10,
+  "chunks": 298,
+  "window_full": true,
+  "max_single_rank": 159,
+  "max_twice_rank": 159,
+  "target_rank": null,
+  "years": [
+   "1986",
+   "1988",
+   "1992",
+   "1994",
+   "1995",
+   "1997"
+  ],
+  "top_chunks_share": 0.2651006711409396
+ },
+ {
+  "kind": "probe",
+  "query": "82년생 김지영",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 149,
+  "window_full": true,
+  "max_single_rank": 217,
+  "max_twice_rank": 79,
+  "target_rank": null,
+  "years": [
+   "1982"
+  ],
+  "top_chunks_share": 0.1476510067114094
+ },
+ {
+  "kind": "probe",
+  "query": "1984",
+  "targets": [],
+  "fallback": false,
+  "n_books": 1,
+  "chunks": 1,
+  "window_full": false,
+  "max_single_rank": 2,
+  "max_twice_rank": null,
+  "target_rank": null,
+  "years": [
+   "1984"
+  ],
+  "top_chunks_share": 1.0
+ },
+ {
+  "kind": "probe",
+  "query": "최신 소설",
+  "targets": [],
+  "fallback": false,
+  "n_books": 10,
+  "chunks": 302,
+  "window_full": true,
+  "max_single_rank": 216,
+  "max_twice_rank": 206,
+  "target_rank": null,
+  "years": [
+   "1989",
+   "1992",
+   "1993",
+   "1994",
+   "1997",
+   "2001"
+  ],
+  "top_chunks_share": 0.6158940397350994
+ },
+ {
+  "kind": "probe",
+  "query": "초기 근대소설",
+  "targets": [],
+  "fallback": false,
+  "n_books": 8,
+  "chunks": 399,
+  "window_full": true,
+  "max_single_rank": 273,
+  "max_twice_rank": 270,
+  "target_rank": null,
+  "years": [
+   "1988",
+   "1992",
+   "1994",
+   "1997"
+  ],
+  "top_chunks_share": 0.48872180451127817
+ },
+ {
+  "kind": "probe",
+  "query": "처음 나온 한글 소설",
+  "targets": [],
+  "fallback": false,
+  "n_books": 10,
+  "chunks": 177,
+  "window_full": false,
+  "max_single_rank": 210,
+  "max_twice_rank": 210,
+  "target_rank": null,
+  "years": [
+   "",
+   "1983",
+   "1984",
+   "1986",
+   "1988",
+   "1989",
+   "1990",
+   "1992"
+  ],
+  "top_chunks_share": 0.6045197740112994
+ },
+ {
+  "kind": "probe",
+  "query": "李光洙小說의 批評的 硏究",
+  "targets": [],
+  "fallback": false,
+  "n_books": 12,
+  "chunks": 297,
+  "window_full": true,
+  "max_single_rank": 226,
+  "max_twice_rank": 194,
+  "target_rank": null,
+  "years": [
+   "1983",
+   "1984",
+   "1986",
+   "1988",
+   "1989",
+   "1990",
+   "1992",
+   "1993",
+   "1995",
+   "2005"
+  ],
+  "top_chunks_share": 0.6902356902356902
+ },
+ {
+  "kind": "paper",
+  "query": "올리버 트위스트",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 169,
+  "window_full": true,
+  "max_single_rank": 135,
+  "max_twice_rank": 129,
+  "target_rank": null,
+  "years": [
+   "2026"
+  ],
+  "top_chunks_share": 0.14201183431952663
+ },
+ {
+  "kind": "paper",
+  "query": "Oliver Twist",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 200,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 141,
+  "target_rank": null,
+  "years": [
+   "2002",
+   "2003",
+   "2005",
+   "2006",
+   "2007",
+   "2009",
+   "2010",
+   "2011",
+   "2012",
+   "2013",
+   "2014",
+   "2015",
+   "2016",
+   "2018",
+   "2019",
+   "2021",
+   "2022",
+   "2024",
+   "2025"
+  ],
+  "top_chunks_share": 0.18
+ },
+ {
+  "kind": "paper",
+  "query": "올바른 양육 태도",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 281,
+  "window_full": true,
+  "max_single_rank": 179,
+  "max_twice_rank": 174,
+  "target_rank": null,
+  "years": [
+   "2026"
+  ],
+  "top_chunks_share": 0.20640569395017794
+ },
+ {
+  "kind": "paper",
+  "query": "청소년의 올바른 인터넷 사용",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 186,
+  "window_full": true,
+  "max_single_rank": 164,
+  "max_twice_rank": 152,
+  "target_rank": null,
+  "years": [
+   "2003",
+   "2004",
+   "2005",
+   "2006",
+   "2007",
+   "2008",
+   "2010",
+   "2011",
+   "2012",
+   "2013",
+   "2014",
+   "2015",
+   "2016",
+   "2018",
+   "2025"
+  ],
+  "top_chunks_share": 0.15053763440860216
+ },
+ {
+  "kind": "paper",
+  "query": "올레길 관광",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 185,
+  "window_full": true,
+  "max_single_rank": 177,
+  "max_twice_rank": 157,
+  "target_rank": null,
+  "years": [
+   "2026"
+  ],
+  "top_chunks_share": 0.2702702702702703
+ },
+ {
+  "kind": "paper",
+  "query": "노인 사회적 지지와 우울",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 268,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 149,
+  "target_rank": null,
+  "years": [
+   "2006",
+   "2007",
+   "2009",
+   "2011",
+   "2012",
+   "2013",
+   "2014",
+   "2015",
+   "2016",
+   "2017",
+   "2019",
+   "2020",
+   "2021",
+   "2025"
+  ],
+  "top_chunks_share": 0.26119402985074625
+ },
+ {
+  "kind": "paper",
+  "query": "노인의 사회적 지지가 우울에 미치는 영향",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 257,
+  "window_full": true,
+  "max_single_rank": 154,
+  "max_twice_rank": 142,
+  "target_rank": null,
+  "years": [
+   "2007",
+   "2009",
+   "2010",
+   "2011",
+   "2012",
+   "2013",
+   "2014",
+   "2015",
+   "2016",
+   "2017",
+   "2019",
+   "2020",
+   "2021",
+   "2022",
+   "2025"
+  ],
+  "top_chunks_share": 0.14785992217898833
+ },
+ {
+  "kind": "paper",
+  "query": "2020년 이후 노인 우울 연구",
+  "targets": [],
+  "fallback": true,
+  "n_books": 30,
+  "chunks": 237,
+  "window_full": true,
+  "max_single_rank": 169,
+  "max_twice_rank": 161,
+  "target_rank": null,
+  "years": [
+   "2020",
+   "2021",
+   "2022",
+   "2023",
+   "2024",
+   "2025",
+   "2026"
+  ],
+  "top_chunks_share": 0.11814345991561181
+ },
+ {
+  "kind": "paper",
+  "query": "최근 3년 노인 우울",
+  "targets": [],
+  "fallback": true,
+  "n_books": 10,
+  "chunks": 98,
+  "window_full": false,
+  "max_single_rank": 206,
+  "max_twice_rank": 143,
+  "target_rank": null,
+  "years": [
+   "2025",
+   "2026"
+  ],
+  "top_chunks_share": 0.2653061224489796
+ },
+ {
+  "kind": "paper",
+  "query": "작년 노인 우울 논문",
+  "targets": [],
+  "fallback": true,
+  "n_books": 25,
+  "chunks": 294,
+  "window_full": true,
+  "max_single_rank": 162,
+  "max_twice_rank": 162,
+  "target_rank": null,
+  "years": [
+   "2025",
+   "2026"
+  ],
+  "top_chunks_share": 0.12585034013605442
+ }
+]
