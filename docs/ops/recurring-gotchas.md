@@ -178,6 +178,7 @@
 - **원인**: lifespan 의 `ALTER TABLE library_catalog ADD COLUMN IF NOT EXISTS …`(14번의 두 번째 경로)는 컬럼이 이미 있어도 먼저 ACCESS EXCLUSIVE 잠금을 잡으려 한다. `library_catalog` 를 읽은 트랜잭션이 하나라도 열려 있으면 그게 끝날 때까지 기다리고, PostgreSQL 은 대기 중인 배타 요청 뒤로 새 조회를 줄 세운다. 딥리서치 워커는 `explore()` 가 서지를 조회한 트랜잭션을 연 채 critic LLM 응답(수십 초)을 기다렸다 — SQLAlchemy 세션은 첫 쿼리에서 트랜잭션을 열고 `commit`/`rollback` 전까지 닫지 않는다.
 - **해결**: 러너가 `explore()` 직후 `db.commit()` 으로 읽기 트랜잭션을 닫는다(`runner.explore_subquestion`). 워커의 취소 확인(`_current_status`)도 읽고 바로 닫고, 계획 태스크는 LLM 을 부르기 전에 닫는다.
 - **재발 방지**: DB 세션을 쥔 채 LLM·외부 HTTP·긴 CPU 연산을 기다리지 않는다 — 기다리기 전에 커밋한다. 의심되면 `select pid, state, xact_start, left(query, 80) from pg_stat_activity where state = 'idle in transaction'` 으로 찾는다. lifespan 의 `ALTER` 블록을 없애는 것은 14번의 스키마 경로 정리와 같은 일이다.
+- **재발(2026-10-23, 이번엔 교착으로 터졌다)**: '자료' 표현 백필(`backfill_summary`) 중 08:33 UTC 에 fastapi 가 다시 떴고, 백필이 `DeadlockDetected` 로 죽었다. 백필은 책마다 만료된 서지 행을 다시 읽어 `library_catalog` 를 잡고 `book_sections` 를 기다렸다. lifespan 은 `book_sections` 를 먼저 배타로 잡고 `library_catalog` 를 기다렸다 — 잠금 순서가 반대라 줄서기가 아니라 교착이 됐다. `workers/tasks.py` 의 백필 셋(`backfill_plot`·`backfill_read_effect`·`backfill_summary`)이 LLM 을 기다리는 동안 트랜잭션을 연다(아직 안 고침 — `00_status.md` 다음 할 일). 섹션 조회가 `try` 밖이라 책 하나가 아니라 태스크 전체가 죽는다. 책마다 커밋해서 앞서 쓴 책은 남는다. 백필·긴 생성이 도는 동안에는 fastapi 를 다시 띄우지 않는다.
 
 ## 19. Celery 소프트 리밋은 asyncio 코루틴 안에서 믿을 수 없다
 
