@@ -53,6 +53,16 @@ def test_every_style_is_a_photograph():
             assert "photograph" in style.lower() or "still from" in style.lower(), (genre, style)
 
 
+# v8(2026-10-23) — 정물·접사·스튜디오 사진 종류와 사물 하나만 두는 구도가 흙 위의 비녀·도랑 속 밸브 같은 표지를 냈다
+def test_styles_and_compositions_always_frame_a_scene():
+    for genre, styles in cover_art.STYLES.items():
+        for style, _ in styles:
+            low = style.lower()
+            assert not any(w in low for w in ("still-life", "still life", "macro", "close-up", "studio", "museum",
+                                              "tilt-shift", "high-key")), (genre, style)
+    assert {scale for _, scale in cover_art.COMPOSITIONS} == set(cover_art.SCALE_TEXT) == {"vignette", "wide"}
+
+
 def test_classical_styles_come_from_the_classical_list():
     picks = {cover_art.art_direction(f"L{n}", "literature", "朝鮮初期 樓亭記의 硏究").style for n in range(100)}
     assert picks <= {s for s, _ in cover_art.STYLES["classical"]}
@@ -72,6 +82,10 @@ def test_banned_terms_match_whole_words_not_prefixes():
     assert cover_art.banned_terms("a maple tree in a European square with an array of fancy signal lamps") == []
     assert cover_art.banned_terms("Signs and maps") == ["map", "sign"]          # 복수는 잡는다
     assert cover_art.banned_terms("a glowing calligraphy scroll") == ["calligraphy", "glow", "scroll"]
+    # 'gear' 하나는 옷·장비(waterproof gear)라 두고, 톱니(gears·cogwheel)만 막는다. 컴퓨터는 화면 글자가 찍힌다
+    assert cover_art.banned_terms("workers in waterproof gear adjusting a pump") == []
+    assert cover_art.banned_terms("brass gears and a cogwheel") == ["cogwheel", "gears"]
+    assert cover_art.banned_terms("citizens at a row of computers") == ["computer"]
 
 
 def test_disaster_titles_also_ban_boats_and_floating_things_including_compounds():
@@ -82,6 +96,10 @@ def test_disaster_titles_also_ban_boats_and_floating_things_including_compounds(
     assert cover_art.banned_terms("A fishing boat in a bay", "2004 재난연감") == ["boat"]
     # 합성어도(리뷰 지적 — lifeboat·warship 가 지나갔다)
     assert cover_art.banned_terms("Crews launching a lifeboat near a warship", "2004 재난연감") == ["lifeboat", "warship"]
+    # 무너진 건물·잔해도 재난 자료에서만(v8 견본 — '무너진 아파트 잔해 속 구조대')
+    scene = "Rescue workers move through the rubble of a collapsed apartment block"
+    assert cover_art.banned_terms(scene, "2004 재난연감") == ["collapsed", "rubble"]
+    assert cover_art.banned_terms(scene, "조선조 가정소설 연구") == []
 
 
 # 리뷰 지적 — '안전'(사회안전망)·'사고'(思考)는 재난이 아닌 제목에도 있다
@@ -117,7 +135,7 @@ def test_assemble_photo_line_and_own_colour_styles_skip_the_grade():
         "Aerial drone photograph looking straight down: A dam in a valley. Viewed from directly overhead. "
         "Colour grade: warm golden film tones. Unlettered scene with clean unmarked surfaces.")
     bw = cover_art.ArtDirection("modern", "Black-and-white film photograph", True, "warm tungsten tones",
-                                "Shown as a bold silhouette against a bright background.", "object")
+                                "Everything sits in the lower half beneath a wide, calm sky.", "wide")
     assert "Colour grade" not in cover_art.assemble(bw, "A streetcar.")
 
 

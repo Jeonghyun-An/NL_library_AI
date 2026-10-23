@@ -8,7 +8,8 @@
 그래서
   - 장르(정책·일반 / 고전문학 / 근현대문학)를 코드가 정하고 장르별 사진 종류·색 보정 목록에서 자료 id 해시로 고른다(축마다
     다른 소금 — 같은 자료는 늘 같은 값, 다시 만들어도 같은 사진 종류다)
-  - 구도마다 장면 크기(object·vignette·wide)를 붙여 LLM 에 알린다 — 구도와 장면이 어긋나지 않게
+  - 구도마다 장면 크기(vignette·wide)를 붙여 LLM 에 알린다 — 구도와 장면이 어긋나지 않게. 사물 하나만 덩그러니 두는 구도·
+    정물 사진 종류는 두지 않는다(STYLES 주석)
   - 모든 자료가 실사 장면이다. 일반 재정 보고서(예산 지침·연간 계획·백서)는 예산이 닿는 실제 현장을 찍는다. 추상 그래픽 표지는
     두지 않는다(사용자 2026-10-23 — 대표는 전에 '너무 심오하다', 이번엔 '실사풍'을 원해 추상은 받아들여지지 않는다)
   - 완성 줄은 코드가 조립한다: '{사진 종류}: {장면} {구도} Colour grade: {색}. {글자 없는 장면}' — FLUX 는 부정 프롬프트를
@@ -22,41 +23,39 @@ import hashlib
 import re
 from dataclasses import dataclass
 
-# ── 장르별 사진 종류 (문구, 제 색이 있는 사진인가 — 흑백·세피아·손 채색처럼 색이 정해진 사진은 색 보정을 붙이지 않는다) ──
+# ── 장르별 사진 종류 (문구, 제 색이 있는 사진인가 — 흑백·세피아처럼 색이 정해진 사진은 색 보정을 붙이지 않는다) ──
+# 모두 '장면을 찍는' 사진 종류이고 빛(시간대·날씨)을 함께 정한다. 정물·접사·스튜디오·틸트시프트·하이키·유물 사진은 뺐다 —
+# 견본(2026-10-23 v7)에서 흙 위의 비녀·도랑 속 밸브·돌 위의 천처럼 사물 하나만 덩그러니 나왔고, 같은 자료를 손으로 쓴 장면
+# 프롬프트(사람이 고른 사진 종류 + 배경이 있는 장면)는 내부 FLUX 로도 외부 생성기(아스트라)와 거의 같은 그림이 나왔다
 STYLES: dict[str, list[tuple[str, bool]]] = {
     "policy": [
         ("Editorial documentary photograph, natural daylight, 35mm lens, crisp detail", False),
-        ("Aerial drone photograph looking straight down", False),
-        ("Studio still-life photograph on a seamless coloured backdrop, softbox lighting, sharp focus", False),
+        ("Aerial drone photograph from a high oblique angle, clear daylight", False),
         ("Wide landscape photograph in clear morning light", False),
-        ("Macro close-up photograph with shallow depth of field and soft background blur", False),
-        ("Architectural photograph with strong clean lines and corrected verticals", False),
-        ("Tilt-shift miniature-effect photograph from a high viewpoint", False),
         ("Overcast documentary photograph with soft even light", False),
-        ("High-key bright photograph with clean white surroundings", False),
-        ("Low-angle photograph against an open sky, wide-angle lens", False),
         ("Golden-hour photograph with long warm shadows", False),
-        ("Medium-format film photograph with fine grain", False),
+        ("Low-angle photograph against an open sky, wide-angle lens, bright midday light", False),
+        ("Medium-format film photograph with fine grain, soft afternoon light", False),
+        ("Photojournalism photograph in early-morning light, telephoto lens compressing the scene", False),
+        ("Rain-washed documentary photograph on a wet overcast day, glistening surfaces", False),
     ],
     "classical": [
-        ("Cinematic still from a Korean historical drama, natural light, shallow depth of field", False),
-        ("Museum artifact photograph on a dark velvet background, gallery spot lighting", False),
+        ("Cinematic still from a Korean historical drama, soft early-morning light, shallow depth of field", False),
+        ("Cinematic still from a Korean historical film, moody dusk light", False),
+        ("Cinematic wide still from a Korean period film, candle-lit night interior", False),
         ("Documentary photograph of a preserved Joseon-era site, soft morning light", False),
-        ("Still-life photograph of traditional Korean objects on plain hanji, soft window light", False),
         ("Landscape photograph of real Korean mountains and rivers, clear air", False),
-        ("Cinematic wide still from a Korean period film, candle-lit interior", False),
-        ("Close-up photograph of traditional craft textures, shallow depth of field", False),
-        ("Overcast documentary photograph of a traditional village, muted natural colours", True),
+        ("Cinematic still from a Korean historical drama, overcast daylight, muted natural colours", True),
     ],
     "modern": [
+        ("Cinematic still from a Korean period film set in the early twentieth century, moody dusk light", False),
+        ("Cinematic still from a Korean period drama, soft overcast daylight", False),
+        ("Cinematic wide still from a Korean period film, golden late-afternoon light", False),
         ("Black-and-white film photograph in the style of 1930s press photography", True),
         ("Sepia-toned vintage photograph with soft vignetting", True),
-        ("Cinematic still from a period drama set in early twentieth-century Korea, moody light", False),
-        ("Hand-tinted antique photograph with faded colours", True),
-        ("Documentary street photograph, available light, grainy film", False),
-        ("Still-life photograph of period objects on a wooden table, soft window light", False),
-        ("Medium-format film photograph with fine grain and muted colours", True),
+        ("Documentary street photograph, available light, grainy colour film", False),
         ("Low-light cinematic photograph lit by a single warm lamp", False),
+        ("Medium-format colour film photograph, soft morning light, fine grain", False),
     ],
 }
 # 장르별 색 보정
@@ -67,25 +66,22 @@ PALETTES: dict[str, list[str]] = {
                   "deep rich colours with dark shadows", "pale cool tones", "warm autumn tones"],
     "modern": ["cool desaturated tones", "warm tungsten tones", "muted earthy tones", "soft faded colours"],
 }
-# (구도 문구, 장면 크기) — 넓은 장면은 셋뿐이다(작은 사람이 많은 파노라마는 검색 결과 썸네일에서 알아보기 어렵다)
+# (구도 문구, 장면 크기) — 사물 하나만 두는 구도(object)는 뺐다(위 STYLES 주석). 넓은 장면이 너무 많으면 작은 사람이 많은
+# 파노라마가 되어 검색 결과 썸네일에서 알아보기 어려워, 중간 장면(vignette)을 더 둔다
 COMPOSITIONS: list[tuple[str, str]] = [
-    ("A single subject shown large and centred against a plain, uncluttered background.", "object"),
-    ("Tight close-up crop, the frame edges cutting through the shapes.", "object"),
-    ("Shown as a bold silhouette against a bright background.", "object"),
-    ("Held up in a pair of anonymous hands entering from the bottom of the frame.", "object"),
-    ("Viewed from directly overhead.", "vignette"),
+    ("Medium shot at eye level, the main subject filling the lower two thirds of the frame.", "vignette"),
+    ("Seen from slightly behind the nearest figure or object, looking past it into the scene.", "vignette"),
     ("Strictly symmetrical, centred and balanced framing.", "vignette"),
     ("Strong diagonal line running from lower left to upper right.", "vignette"),
     ("Subject placed off-centre to the right, balanced by open space on the left.", "vignette"),
     ("A large foreground element overlaps the scene behind it, creating layered depth.", "vignette"),
-    ("Everything sits in the lower third beneath a wide, calm sky.", "wide"),
+    ("Everything sits in the lower half beneath a wide, calm sky.", "wide"),
     ("Low eye-level view, the main shape rising tall against the background.", "wide"),
     ("Wide view from a high vantage point with one dominant subject in the foreground.", "wide"),
 ]
 SCALE_TEXT: dict[str, str] = {
-    "object": "ONE object, creature or plant on its own (no surroundings beyond a hint of ground)",
-    "vignette": "a small scene: one main subject with at most two supporting details",
-    "wide": "a wide scene with ONE dominant subject large in the foreground and a simple setting behind it",
+    "vignette": "a medium scene: the main subject in its real setting, with two or three supporting details",
+    "wide": "a wide scene: ONE dominant subject large in the foreground and its real setting stretching behind it",
 }
 # 글자·간판이 생기지 않게 끝에 늘 붙이는 꼬리(긍정형 — FLUX 는 부정을 읽지 않는다)
 TAIL = "Unlettered scene with clean unmarked surfaces."
@@ -105,7 +101,7 @@ BANNED_WORDS: list[str] = [
     "book", "page", "paper", "file", "ledger", "letter", "lettering", "scroll", "calligraphy", "calligrapher", "newspaper",
     "map", "blueprint", "chart", "graph", "calendar", "sign", "signboard", "signage", "banner", "screen", "monitor", "coin",
     "banknote", "money", "stamp", "seal", "label", "ticket", "printing", "flag", "emblem", "office", "meeting", "conference",
-    "desk", "suit", "excavator", "bulldozer", "hard hat", "gear", "cog", "clockwork", "skyline", "skyscraper", "cityscape",
+    "desk", "suit", "excavator", "bulldozer", "hard hat", "gears", "gear wheel", "gearwheel", "cog", "cogwheel", "clockwork", "skyline", "skyscraper", "cityscape",
     "city", "cities", "beam of light", "ray", "glow", "orb", "vortex", "swirl", "maze", "hourglass", "light bulb", "lightbulb",
     "puzzle", "chess", "scales", "door", "doorway", "gate", "gateway", "path", "road", "bridge", "stair", "staircase",
     "compass", "vault", "tower", "station", "bus stop", "podium", "sprout", "seedling", "paper crane", "lantern", "mist",
@@ -114,6 +110,8 @@ BANNED_WORDS: list[str] = [
     "monument", "plaque", "statue",
     # 실사 견본(2026-10-23)에서 글자가 찍혔다 — 손에 든 카드(신분증 같은 글씨), 인쇄기 옆 종이
     "card", "id card", "badge", "printing press", "hand press", "typewriter",
+    # 화면·자판에 글자가 찍힌다(2026-10-23 v8 견본 — 주민센터 장면에 줄지은 컴퓨터)
+    "computer", "laptop", "keyboard",
     # 화폐 이름은 FLUX 가 글자로 그린다(2026-10-23 견본 — 'Euro banknote-shaped chocolate' 에 'EURO' 가 찍혔다)
     "euro", "dollar", "currency", "currencies",
     # 구명조끼·구명튜브는 세월호를 떠올리게 한다(2026-10-23 실사 견본에서 재난연감·나라살림 장면에 나왔다) — 모든 자료에서 막는다
@@ -122,11 +120,11 @@ BANNED_WORDS: list[str] = [
 ]
 _SUFFIX = r"(?:s|es|ies|y|e|d|ed|ing|ings)?"
 _BANNED_RE = re.compile(r"\b(" + "|".join(re.escape(w) for w in BANNED_WORDS) + r")" + _SUFFIX + r"\b", re.I)
-# 재난 자료에서만 더 막는 말 — 배·물에 뜬 물건은 세월호를 떠올리게 한다(2026-10-23 견본에서 '옆으로 누운 여객선'이 나왔다).
-# 합성어(lifeboat·warship·sailboat)도 잡는다
+# 재난 자료에서만 더 막는 말 — 배·물에 뜬 물건은 세월호를, 무너진 건물·잔해는 삼풍·성수대교를 떠올리게 한다(2026-10-23
+# 견본에서 '옆으로 누운 여객선', v8 에서 '무너진 아파트 잔해 속 구조대'가 나왔다). 합성어(lifeboat·warship·sailboat)도 잡는다
 _DISASTER_RE = re.compile(
     r"\b(\w*(?:boat|ship|ferry|ferries|vessel)s?|sink|sinking|sank|sunk|tilt|tilted|tilting|overturn|overturned|"
-    r"floating|flood ?water)\b", re.I)
+    r"floating|flood ?water|collaps\w*|rubble|debris|ruins?)\b", re.I)
 
 # 장면 끝의 의미 풀이('…, representing resilience') — 상징물을 부르고 그림에 쓸모없다.
 # 'reflecting the …'는 물에 비친 모습 같은 실제 묘사일 수 있어 두다(리뷰 지적)
@@ -147,7 +145,7 @@ class ArtDirection:
     own_colour: bool    # 흑백·세피아처럼 색이 정해진 사진 — 색 보정을 붙이지 않는다
     palette: str        # 색 보정
     composition: str
-    scale: str          # object | vignette | wide
+    scale: str          # vignette | wide
 
 
 def _pick(book_id: str, salt: str, n: int) -> int:
