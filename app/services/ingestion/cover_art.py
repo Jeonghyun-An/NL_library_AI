@@ -44,7 +44,7 @@ STYLES: dict[str, list[tuple[str, bool]]] = {
         ("Cinematic still from a Korean historical film, moody dusk light", False),
         ("Cinematic wide still from a Korean period film, candle-lit night interior", False),
         ("Documentary photograph of a preserved Joseon-era site, soft morning light", False),
-        ("Landscape photograph of real Korean mountains and rivers, clear air", False),
+        ("Cinematic still from a Korean historical drama, bright clear midday light, deep focus", False),
         ("Cinematic still from a Korean historical drama, overcast daylight, muted natural colours", True),
     ],
     "modern": [
@@ -58,20 +58,29 @@ STYLES: dict[str, list[tuple[str, bool]]] = {
         ("Medium-format colour film photograph, soft morning light, fine grain", False),
     ],
 }
-# 장르별 색 보정
+# 장르별 색 보정 — 차가운 청백·청록 보정은 뺐다(v8 블라인드 평가 2026-10-23: 보고서는 청백, 문학은 청록 연무로 판이 묶였다)
 PALETTES: dict[str, list[str]] = {
-    "policy": ["natural true-to-life colours", "warm golden film tones", "cool clean blue-grey tones", "soft muted pastel grade",
-               "vivid saturated colours", "faded vintage film colours", "teal and amber cinematic grade", "crisp high-contrast colours"],
+    "policy": ["natural true-to-life colours", "warm golden film tones", "bright clear daylight colours", "soft muted pastel grade",
+               "vivid saturated colours", "faded vintage film colours", "warm sunlit summer greens", "crisp high-contrast colours"],
     "classical": ["warm candlelight tones", "soft natural colours of early morning", "muted earthy tones",
-                  "deep rich colours with dark shadows", "pale cool tones", "warm autumn tones"],
-    "modern": ["cool desaturated tones", "warm tungsten tones", "muted earthy tones", "soft faded colours"],
+                  "deep rich colours with dark shadows", "warm ochre and rust tones", "warm autumn tones"],
+    "modern": ["warm tungsten tones", "muted earthy tones", "soft faded colours", "warm amber film tones"],
+}
+# 장면이 한국으로 보이게 하는 긍정형 한 줄 — FLUX 는 사람·건물·산을 서양·중국풍으로 그리는 쪽으로 기운다(v8 평가: 23장 중
+# 8~9장이 서양인·유럽 거리·장자제 같은 기암 협곡·한푸풍 옷). 문학 근현대는 시대를 못 박지 않는다(1900~1990년대가 섞인다)
+SETTING: dict[str, str] = {
+    "policy": "Photographed in South Korea, with Korean people and Korean surroundings.",
+    "classical": ("Set in Joseon-dynasty Korea: Korean hanbok, Korean hanok houses with grey tiled or thatched roofs, "
+                  "low rounded Korean hills."),
+    "modern": "Set in twentieth-century Korea, with Korean people in clothes of the period and Korean surroundings.",
 }
 # (구도 문구, 장면 크기) — 사물 하나만 두는 구도(object)는 뺐다(위 STYLES 주석). 넓은 장면이 너무 많으면 작은 사람이 많은
-# 파노라마가 되어 검색 결과 썸네일에서 알아보기 어려워, 중간 장면(vignette)을 더 둔다
+# 파노라마가 되어 검색 결과 썸네일에서 알아보기 어려워, 중간 장면(vignette)을 더 둔다. '뒤에서 본 한 사람'·'대칭' 구도는
+# 문학 표지마다 뒷모습 한 명, 보고서마다 가운데로 뻗은 통로가 되어 뺐다(v8 평가)
 COMPOSITIONS: list[tuple[str, str]] = [
     ("Medium shot at eye level, the main subject filling the lower two thirds of the frame.", "vignette"),
-    ("Seen from slightly behind the nearest figure or object, looking past it into the scene.", "vignette"),
-    ("Strictly symmetrical, centred and balanced framing.", "vignette"),
+    ("Seen from the side, the main subject crossing the frame from left to right.", "vignette"),
+    ("Subject placed off-centre to the left, balanced by open space on the right.", "vignette"),
     ("Strong diagonal line running from lower left to upper right.", "vignette"),
     ("Subject placed off-centre to the right, balanced by open space on the left.", "vignette"),
     ("A large foreground element overlaps the scene behind it, creating layered depth.", "vignette"),
@@ -83,8 +92,8 @@ SCALE_TEXT: dict[str, str] = {
     "vignette": "a medium scene: the main subject in its real setting, with two or three supporting details",
     "wide": "a wide scene: ONE dominant subject large in the foreground and its real setting stretching behind it",
 }
-# 글자·간판이 생기지 않게 끝에 늘 붙이는 꼬리(긍정형 — FLUX 는 부정을 읽지 않는다)
-TAIL = "Unlettered scene with clean unmarked surfaces."
+# 끝에 늘 붙이는 꼬리(긍정형 — FLUX 는 부정을 읽지 않는다): 얼굴이 크게 드러나지 않게, 글자·간판이 생기지 않게
+TAIL = "Any people are anonymous, small in the frame or turned away. Unlettered scene with clean unmarked surfaces."
 
 # 고전·근현대 문학을 가르는 단서(제목·키워드·요약) — 많이 걸린 쪽으로, 같으면 근현대. 한글 두 글자 단서는 뜻이 갈려 쓰지 않는다
 # ('시가'=시+가·市街, '고려'=고려하다, '고전'=서양 고전 명작, '한시'=한시적 — 리뷰 지적 2026-10-23). 한자·여러 글자 갈래 이름만 쓴다
@@ -190,9 +199,9 @@ def clean_scene(text: str) -> str:
 
 
 def assemble(ad: ArtDirection, scene: str) -> str:
-    """완성 프롬프트 한 줄 — 사진 종류: 장면 구도 색 보정. 글자 없는 장면."""
+    """완성 프롬프트 한 줄 — 사진 종류: 장면 한국 배경 구도 색 보정. 익명의 사람·글자 없는 장면."""
     grade = "" if ad.own_colour else f" Colour grade: {ad.palette}."
-    return f"{ad.style}: {scene} {ad.composition}{grade} {TAIL}"
+    return f"{ad.style}: {scene} {SETTING[ad.genre]} {ad.composition}{grade} {TAIL}"
 
 
 def key_nouns(scene: str, n: int = 4) -> str:

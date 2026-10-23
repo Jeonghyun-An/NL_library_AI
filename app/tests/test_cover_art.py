@@ -132,8 +132,10 @@ def test_assemble_photo_line_and_own_colour_styles_skip_the_grade():
     ad = cover_art.ArtDirection("policy", "Aerial drone photograph looking straight down", False, "warm golden film tones",
                                 "Viewed from directly overhead.", "vignette")
     assert cover_art.assemble(ad, "A dam in a valley.") == (
-        "Aerial drone photograph looking straight down: A dam in a valley. Viewed from directly overhead. "
-        "Colour grade: warm golden film tones. Unlettered scene with clean unmarked surfaces.")
+        "Aerial drone photograph looking straight down: A dam in a valley. "
+        "Photographed in South Korea, with Korean people and Korean surroundings. Viewed from directly overhead. "
+        "Colour grade: warm golden film tones. Any people are anonymous, small in the frame or turned away. "
+        "Unlettered scene with clean unmarked surfaces.")
     bw = cover_art.ArtDirection("modern", "Black-and-white film photograph", True, "warm tungsten tones",
                                 "Everything sits in the lower half beneath a wide, calm sky.", "wide")
     assert "Colour grade" not in cover_art.assemble(bw, "A streetcar.")
