@@ -263,9 +263,8 @@
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
           <h2 class="skx-chat-title">
-            DeepRead<template v-if="chatPaperTitle"
-              >: {{ chatPaperTitle }}</template
-            >
+            <span class="skx-chat-title__brand">DeepRead</span>
+            <span v-if="chatPaperTitle" class="skx-chat-title__doc">{{ chatPaperTitle }}</span>
           </h2>
         </div>
         <BookChat

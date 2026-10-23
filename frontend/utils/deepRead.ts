@@ -11,7 +11,9 @@ import { citedPdfTarget } from "~/utils/pdfViewer";
 // 책(도서 상세·TopResult)인지 논문(논문 상세·논문 검색·연구 화면 패널)인지 — 기본은 책(지금 문구)
 export type DocKind = "book" | "paper";
 
-// stopLabel 은 답을 받는 동안 보내기 단추가 바뀌는 [멈춤] 단추의 이름(화면낭독기·마우스 툴팁)
+// stopLabel 은 답을 받는 동안 보내기 단추가 바뀌는 [멈춤] 단추의 이름(화면낭독기·마우스 툴팁).
+// greeting 은 빈 대화의 첫 줄 — 무엇을 바탕으로 답하는지만 짧게. 제목은 창 머리에 있어 다시 쓰지 않는다('안녕하세요! …자유롭게
+// 물어보세요!'는 AI 말투로 읽혀 바꿨다 — 사용자 2026-10-23)
 export interface ChatCopy {
   greeting(title?: string): string;
   placeholder: string;
@@ -22,15 +24,15 @@ export interface ChatCopy {
 
 const COPY: Record<DocKind, ChatCopy> = {
   book: {
-    greeting: (title) => `안녕하세요! ${title ? `《${title}》에 대해` : "이 자료에 대해"} 궁금한 것을 자유롭게 물어보세요!`,
-    placeholder: "책에 대해서 자유롭게 질문해보세요!",
+    greeting: () => "이 자료 내용을 바탕으로 답해요.",
+    placeholder: "책에 대해 질문해 주세요",
     inputLabel: "책에 대한 질문 입력",
     sendLabel: "질문 보내기",
     stopLabel: "답 받기 멈추기",
   },
   paper: {
-    greeting: (title) => `안녕하세요! ${title ? `《${title}》 논문에 대해` : "이 논문에 대해"} 궁금한 것을 자유롭게 물어보세요!`,
-    placeholder: "논문에 대해서 자유롭게 질문해보세요!",
+    greeting: () => "이 논문 내용을 바탕으로 답해요.",
+    placeholder: "논문에 대해 질문해 주세요",
     inputLabel: "논문에 대한 질문 입력",
     sendLabel: "질문 보내기",
     stopLabel: "답 받기 멈추기",

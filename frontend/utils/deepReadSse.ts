@@ -14,12 +14,14 @@ export interface DeepReadSource {
   text: string;
 }
 
-// pinnedChip 은 화면이 쥐는 값 — 펼친 출처 칩의 번호(BookChat 의 대목 미리보기)
+// pinnedChip·pinnedPassage 는 화면이 쥐는 값 — 펼친 근거 묶음(같은 쪽 대목 한 줄 — deepReadCitations.groupSources)의 번호와
+// 그 묶음에서 보이는 대목 번호(BookChat 의 근거 목록)
 export interface DeepReadMessage {
   role: "user" | "assistant";
   content: string;
   sources?: DeepReadSource[];
   pinnedChip?: number;
+  pinnedPassage?: number;
 }
 
 // error 의 code 는 서버가 붙인 갈래 — 없거나 글이 아니면 null(LLM 호출 실패 — 옛 서버의 {error} 도 같다).

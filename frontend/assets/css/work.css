@@ -1675,12 +1675,13 @@ button.wk-stepper__step {
   padding: 0.8rem 0.9rem;
   overflow-y: auto;
 }
-/* BookChat 은 논문 상세 옆 칸(머리가 겹쳐 뜨는 모양)에 맞춘 여백이라 패널 안에서는 줄인다. 말풍선은 패널 폭을 따른다 */
+/* BookChat 은 논문 상세 옆 칸(머리가 겹쳐 뜨는 모양)에 맞춘 여백이라 패널 안에서는 줄인다. 질문 말풍선은 패널 폭을 따르고,
+   답 카드는 너비를 다 쓴다(2026-10-23 답 카드 — 여기서 90% 로 줄이면 다른 화면과 모양이 갈렸다) */
 .wk-panel .skx-chat-messages {
   margin-top: 0;
   padding-top: 0.8rem;
 }
-.wk-panel .skx-chat-msg {
+.wk-panel .skx-chat-msg--user {
   max-width: 90%;
 }
 .wk-panel .skx-chat-input-wrap {
