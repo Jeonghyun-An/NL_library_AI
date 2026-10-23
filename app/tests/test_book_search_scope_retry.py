@@ -131,7 +131,7 @@ def test_book_search_zero_books_retries_inside_books_without_date_filter(make_cl
     assert calls[1]["doc_scope"] == "book"
     assert calls[1]["use_metadata_filter"] is False
     # 화면이 고른 나머지 인자는 그대로
-    same = ("mode", "top_k", "use_rewrite", "use_rerank")
+    same = ("mode", "top_k", "use_rewrite", "use_rerank", "include_original")
     assert {k: calls[1][k] for k in same} == {k: calls[0][k] for k in same}
     _assert_real_kwargs_and_same_db(calls)
 
