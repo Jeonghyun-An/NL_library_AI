@@ -465,7 +465,7 @@ describe("오류 화면 모음 페이지(/dev/error-states)", () => {
     expect(tpl).toContain('<p v-if="inlineShown.basic.absent" class="dev-item__absent">{{ inlineShown.basic.absent }}</p>');
     expect(tpl).not.toContain("INLINE_SAMPLES.");
     expect(tpl).toContain('<p class="dev-gallery__note">{{ INLINE_NOTE }}</p>');
-    // 실제 화면 — 받다 끊긴 추천 이유(SKOVIX 추천 1권)와 상황별 추천의 사유 생성 실패가 같은 줄 안내에 [다시 시도]
+    // 실제 화면 — 받다 끊긴 추천 이유(SKOVIX 추천 자료)와 상황별 추천의 사유 생성 실패가 같은 줄 안내에 [다시 시도]
     expect(read("pages/index.vue")).toMatch(/<SkxInlineError\s+v-if="reasonStatus === 'interrupted'"\s+:message="BOOK_REASON_TEXT\.partial"\s+@retry=/);
     expect(read("pages/recommend/[id].vue")).toMatch(/<SkxInlineError\s+v-if="aiFailed && !loading"\s+:message="SCENARIO_TEXT\.aiFailed"\s+@retry=/);
   });

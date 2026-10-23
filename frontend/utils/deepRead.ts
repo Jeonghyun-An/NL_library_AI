@@ -27,8 +27,8 @@ const COPY: Record<DocKind, ChatCopy> = {
   book: {
     introTitle: "자료와의 대화만으로 핵심 내용 파악",
     introBody: "자료를 다 읽지 않아도 묻고 답하며 주요 내용을 파악할 수 있어요.",
-    placeholder: "책에 대해 질문해 주세요",
-    inputLabel: "책에 대한 질문 입력",
+    placeholder: "자료에 대해 질문해 주세요",
+    inputLabel: "자료에 대한 질문 입력",
     sendLabel: "질문 보내기",
     stopLabel: "답 받기 멈추기",
   },

@@ -94,7 +94,7 @@ import { PAPER_STATE_TEXT } from "~/utils/paperErrors";
 import { cardKeywords, cardMeta, type ResultKind } from "~/utils/resultCard";
 import type { BookChunkGroup } from "~/types/search";
 
-// 결과 카드 하나 — 소장자료 목록·논문 목록·'SKOVIX 추천 1권'이 같은 해부도를 쓴다(표지 · 관련도 알약 + #키워드 칩 · 제목 · 저자 · 서지 · 버튼 열).
+// 결과 카드 하나 — 소장자료 목록·논문 목록·'SKOVIX 추천 자료'가 같은 해부도를 쓴다(표지 · 관련도 알약 + #키워드 칩 · 제목 · 저자 · 서지 · 버튼 열).
 // 어디로 가는지(상세·원문·인용·DeepRead)는 부모가 정한다 — 이 컴포넌트는 눌렸다고만 알린다. 이벤트는 원래 MouseEvent 를 그대로 넘긴다
 // (부모가 e.currentTarget 으로 카드 자리를 읽는다)
 const props = withDefaults(

@@ -83,7 +83,7 @@ describe("slimBookResult", () => {
             pub_date: "20200101",
             themes: "경제,무역",
             extracted_keywords: ["k"],
-            // 1위 도서만 싣는다 — 복원 때 '이 책에서 얻을 수 있는 것'을 그리려고
+            // 1위 도서만 싣는다 — 복원 때 '이 자료에서 얻을 수 있는 것'을 그리려고
             read_effect: "효과",
           },
         },

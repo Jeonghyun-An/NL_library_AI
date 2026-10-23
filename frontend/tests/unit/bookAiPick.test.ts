@@ -52,7 +52,7 @@ describe("isRecommendable — 1위 도서를 '추천'으로 내세울 점수", (
   });
 });
 
-describe("readEffectOf — 이 책에서 얻을 수 있는 것", () => {
+describe("readEffectOf — 이 자료에서 얻을 수 있는 것", () => {
   it("book_info.read_effect 를 앞뒤 공백 없이 준다", () => {
     expect(readEffectOf({ book_info: { read_effect: "  읽으면 좋다.\n" } })).toBe("읽으면 좋다.");
   });
