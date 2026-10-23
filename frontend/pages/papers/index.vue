@@ -286,7 +286,7 @@
 </template>
 
 <script setup lang="ts">
-import { marked } from "marked";
+import { renderMarkdown } from "~/utils/markdown";
 import type { ComponentPublicInstance } from "vue";
 import { API_SEARCH_TIMEOUT_MS, apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import { useHistory } from "~/composables/useHistory";
@@ -390,7 +390,7 @@ const aiRefs = ref<
 // 받는 중·끝난 요약·복원한 기록 모두 여기서 다듬어 그린다. 다듬은 글이 비면 받은 글이 있어도 빈 요약으로 본다
 const shownAiText = computed(() => tidySummary(aiText.value, { streaming: aiLoading.value }));
 const renderedAiText = computed(() =>
-  shownAiText.value ? (marked.parse(shownAiText.value) as string) : "",
+  renderMarkdown(shownAiText.value),
 );
 
 // ── 정렬 / 페이지 ─────────────────────────────────────────────

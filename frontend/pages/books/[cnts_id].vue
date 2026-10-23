@@ -322,7 +322,7 @@
 
 <script setup lang="ts">
 import type { ComponentPublicInstance } from "vue";
-import { marked } from "marked";
+import { renderMarkdown } from "~/utils/markdown";
 import { useBookmark } from "~/composables/useBookmark";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { API_SEARCH_TIMEOUT_MS, apiHeaders, apiUrl, useApi } from "~/composables/useApi";
@@ -405,7 +405,7 @@ const reasonError = ref("");
 // 실패 안내(SkxInlineError) — [다시 시도]를 누르면 안내째 빠지므로 초점을 옮길 탭 본문을 이 요소에서 찾는다
 const reasonFailRef = ref<ComponentPublicInstance | null>(null);
 const renderedReason = computed(() =>
-  reasonText.value ? (marked.parse(reasonText.value) as string) : "",
+  renderMarkdown(reasonText.value),
 );
 const plotText = computed(() => book.value?.plot || book.value?.summary || "");
 

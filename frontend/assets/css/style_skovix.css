@@ -3542,10 +3542,17 @@ html.skx-scroll-lock {
     opacity: 0;
   }
 }
-/* 빈 대화의 안내 카드 — 무엇을 바탕으로 답하는지 + 쪽 번호 쓰는 법 한 줄 */
+/* 빈 대화의 안내 카드 — 브로셔와 같은 굵은 머리말 · 한 줄 설명 · 쪽 번호 쓰는 법(흐리게) */
+.skx-chat-intro__title {
+  margin: 0 0 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
 .skx-chat-intro__text {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   line-height: 1.65;
 }
 .skx-chat-intro__hint {

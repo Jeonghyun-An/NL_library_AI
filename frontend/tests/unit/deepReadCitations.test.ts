@@ -200,7 +200,7 @@ describe("BookChat — 근거 목록과 글 속 쪽 번호를 그린다", () => 
     expect(chat).toContain("외 {{ g.passages.length - 1 }}건");
     const template = chat.slice(0, chat.indexOf("<script")).replace(/<!--[\s\S]*?-->/g, "");
     expect(template).not.toMatch(/대목|근거|✦/);
-    expect(chat).toContain('const CITE_HINT = "답변의 쪽 번호를 누르면 해당 원문을 볼 수 있어요.";');
+    expect(chat).toContain('const CITE_HINT = "답변의 출처를 쪽 번호로 보여 드려요. 누르면 해당 원문이 펼쳐져요.";');
   });
 
   it("첫 글을 기다리는 동안 지금 하는 일을 보이고, 화면을 떠나면 타이머를 멈춘다", () => {
