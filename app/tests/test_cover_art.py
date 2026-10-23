@@ -39,25 +39,55 @@ def test_ambiguous_hangul_words_are_not_classical_cues(title, themes):
 
 
 # ── 고르기 ─────────────────────────────────────────────────
+def _all_styles(genre):
+    return {s for s, _ in cover_art.STYLES[genre]} | {s for s, _ in cover_art.PLACE_STYLES[genre]}
+
+
 def test_art_direction_is_stable_per_id_and_spreads_over_the_lists():
     a = cover_art.art_direction("CNTS-1", "policy", "2005 나라살림")
     assert a == cover_art.art_direction("CNTS-1", "policy", "2005 나라살림")  # 다시 만들어도 같은 사진 종류
     picks = [cover_art.art_direction(f"CNTS-{n:05d}", "policy", "2004 재난연감") for n in range(400)]
-    assert {p.style for p in picks} == {s for s, _ in cover_art.STYLES["policy"]}
+    assert {p.style for p in picks} == _all_styles("policy")
     assert {p.palette for p in picks} == set(cover_art.PALETTES["policy"])
     assert {p.composition for p in picks} == {c for c, _ in cover_art.COMPOSITIONS}
 
 
+# 운영 재생성(2026-10-23)에서 문학 표지가 거의 다 한복 입은 인물이었다 — 인물 유무를 자료 id 로 반씩 나눈다
+def test_figures_split_roughly_in_half_and_pick_the_matching_style_list():
+    picks = [cover_art.art_direction(f"L{n}", "literature", "조선조 가정소설 연구", "유교") for n in range(400)]
+    with_people = [p for p in picks if p.figures]
+    assert 150 < len(with_people) < 250
+    assert all(p.style in {s for s, _ in cover_art.STYLES[p.genre]} for p in with_people)
+    assert all(p.style in {s for s, _ in cover_art.PLACE_STYLES[p.genre]} for p in picks if not p.figures)
+
+
+def test_place_covers_never_mention_people_or_hanbok():
+    for genre in ("policy", "classical", "modern"):
+        ad = cover_art.ArtDirection(genre, "Fine-art photograph", False, "muted earthy tones",
+                                    "Medium shot at eye level.", "vignette", figures=False)
+        line = cover_art.assemble(ad, "A ritual table set beside a river.").lower()
+        assert not any(w in line for w in ("people", "hanbok", "person", "anonymous")), line
+    ad = cover_art.ArtDirection("classical", "Cinematic still", False, "muted earthy tones",
+                                "Medium shot at eye level.", "vignette", figures=True)
+    assert "hanbok" in cover_art.assemble(ad, "A ritual.").lower()
+
+
+def test_people_terms():
+    assert cover_art.people_terms("Two women in hanbok and a shaman beside villagers") == ["shaman", "villagers", "women"]
+    assert cover_art.people_terms("A moonlit courtyard with a swing and a ceramic jar") == []
+    assert cover_art.people_terms("A season of snow on the human-made embankment") == []   # season·human 은 사람 말이 아니다
+
+
 def test_every_style_is_a_photograph():
-    for genre, styles in cover_art.STYLES.items():
-        for style, _ in styles:
+    for genre in cover_art.STYLES:
+        for style, _ in cover_art.STYLES[genre] + cover_art.PLACE_STYLES[genre]:
             assert "photograph" in style.lower() or "still from" in style.lower(), (genre, style)
 
 
 # v8(2026-10-23) — 정물·접사·스튜디오 사진 종류와 사물 하나만 두는 구도가 흙 위의 비녀·도랑 속 밸브 같은 표지를 냈다
 def test_styles_and_compositions_always_frame_a_scene():
-    for genre, styles in cover_art.STYLES.items():
-        for style, _ in styles:
+    for genre in cover_art.STYLES:
+        for style, _ in cover_art.STYLES[genre] + cover_art.PLACE_STYLES[genre]:
             low = style.lower()
             assert not any(w in low for w in ("still-life", "still life", "macro", "close-up", "studio", "museum",
                                               "tilt-shift", "high-key")), (genre, style)
@@ -66,7 +96,7 @@ def test_styles_and_compositions_always_frame_a_scene():
 
 def test_classical_styles_come_from_the_classical_list():
     picks = {cover_art.art_direction(f"L{n}", "literature", "朝鮮初期 樓亭記의 硏究").style for n in range(100)}
-    assert picks <= {s for s, _ in cover_art.STYLES["classical"]}
+    assert picks <= _all_styles("classical")
 
 
 # ── 금지어 ─────────────────────────────────────────────────
@@ -200,6 +230,22 @@ def test_failed_retry_call_keeps_the_previous_scene(monkeypatch):
     _fake_chat(monkeypatch, ["A scholar in robes by a pond.", RuntimeError("LLM down")])
     prompt, _ = _compose(title="조선조 가정소설 연구", doc_type="literature")
     assert "A scholar in robes by a pond." in prompt
+
+
+def _no_people_id(doc_type="literature", title="조선조 가정소설 연구"):
+    return next(f"N{n}" for n in range(100) if not cover_art.art_direction(f"N{n}", doc_type, title).figures)
+
+
+def test_place_cover_rewrites_a_scene_with_people_but_still_makes_the_cover(monkeypatch):
+    cid = _no_people_id()
+    calls = _fake_chat(monkeypatch, ["Two women in hanbok on a veranda.", "A moonlit courtyard with a swing."])
+    prompt, scene = _compose(title="조선조 가정소설 연구", doc_type="literature", book_id=cid)
+    assert "PEOPLE: none" in calls[0] and "(women)" in calls[1]
+    assert scene == "A moonlit courtyard with a swing." and "hanbok" not in prompt.lower()
+    # 다시 써도 사람이 남으면 표지는 만든다(금지어와 다르다) — 정책 보고서도
+    pid = _no_people_id("policy", "2005 나라살림")
+    _fake_chat(monkeypatch, ["Workers at a dam.", "Workers on a crest.", "Crews at a dam."])
+    assert _compose(title="2005 나라살림", doc_type="policy", book_id=pid) is not None
 
 
 def test_avoid_list_reaches_the_scene_prompt(monkeypatch):
@@ -389,3 +435,26 @@ def test_policy_falls_back_to_the_other_version(monkeypatch):
     # 목업이 실패하면 그림, 그림이 없으면(금지어·소개 없음) 목업
     assert _store(monkeypatch, "policy", _FakeMinio(fail_prefix="covers/typo/")) == ("covers/X.jpg", "a photo prompt")
     assert _store(monkeypatch, "policy", _FakeMinio(), photo=(None, None)) == ("covers/typo/X.jpg", None)
+
+
+# 소장 문학의 상당수가 영어 원문 고전이다 — v9 까지는 근현대로 가 '20세기 한국' 배경이 붙었다
+@pytest.mark.parametrize("title", ["Dracula", "Robinson Crusoe", "Moby-Dick; Or, The Whale", "The Pilgrim's Progress"])
+def test_english_titled_literature_is_foreign_and_never_set_in_korea(title):
+    assert cover_art.genre_of("literature", title) == "foreign"
+    for n in range(20):
+        ad = cover_art.art_direction(f"F{n}", "literature", title)
+        assert "korea" not in cover_art.assemble(ad, "A castle on a cliff at night.").lower()
+
+
+def test_korean_or_hanja_titles_stay_korean_literature():
+    assert cover_art.genre_of("literature", "素月과 萬海詩의 女性志向 硏究") in {"classical", "modern"}
+    assert cover_art.genre_of("literature", "로빈슨 크루소 연구") in {"classical", "modern"}
+    assert cover_art.genre_of("book", "Corea, the Hermit Nation") == "policy"      # 문학이 아닌 도서는 그대로
+
+
+def test_every_genre_has_every_list():
+    genres = set(cover_art.STYLES)
+    assert genres == {"policy", "classical", "modern", "foreign"}
+    for table in (cover_art.PLACE_STYLES, cover_art.PALETTES, cover_art.SETTING, cover_art.SETTING_PLACE):
+        assert set(table) == genres and all(table.values())
+    assert cover_art.banned_terms("A stone memorial beside a gravestone") == ["gravestone", "memorial"]
