@@ -34,6 +34,15 @@ _SENTENCE_END = ".!?"
 _FULL_STOP = "。"
 # Milvus 표현식에 넣는 cnts_id — 따옴표·역슬래시가 든 값은 표현식을 깨므로 읽지 않는다
 _SAFE_ID = re.compile(r"[A-Za-z0-9_.\-]{1,64}")
+_BR = re.compile(r"<br\s*/?>", re.I)
+# 빈 표 줄에서 떼고 나면 남는 것이 없는 글자 — 칸 '|'·구분 '---'·정렬 ':'·공백
+_TABLE_MARKUP = " \t\r\n|:-"
+_BLANK_RUN = re.compile(r"\n{3,}")
+# 쪽 머리말 — 그 논문 제목(공백·기호를 뺀 글)과 쪽수(1~4자리, 앞이나 뒤)만 있는 줄. 긴 제목은 머리말에서 잘리므로 앞부분
+# _HEAD_PREFIX_MIN 자 이상이 제목의 앞과 같아도 머리말로 본다
+_NON_WORD = re.compile(r"[\W_]+")
+_PAGE_NO = re.compile(r"^\d{1,4}\s+|\s+\d{1,4}$")
+_HEAD_PREFIX_MIN = 12
 # Milvus query 상한(초). 정수로 준다 — pymilvus 는 timeout 이 int 일 때만 RPC 재시도 루프도 그 시간에서 끊는다
 # (아니면 75번 재시도로만 끊겨 UNAVAILABLE 이면 한 편에 약 3.5분, 응답이 없으면 gRPC 기한이 없어 무한정 기다린다).
 # [이 절 쓰기]는 스냅숏에 없는 논문(되살림·담기)마다 최대 6번 차례로 부르므로 한 편이 묶이면 게이트웨이
@@ -77,9 +86,57 @@ def _source(chunk_idx: int, page_start, text: str) -> bool:
     return is_source_passage(SimpleNamespace(chunk_idx=chunk_idx, page_start=page_start or 0, text=text))
 
 
+def _empty_table_line(line: str) -> bool:
+    """칸이 빈 표 줄인가 — 글자 없이 '|'·'---'·':'·<br>·공백뿐이고, <br> 이 있거나 '-' 가 없다. 글자 없는 줄이어도
+    <br> 없는 구분 줄('|---|---|')은 표의 일부라 남긴다."""
+    if "|" not in line or _BR.sub("", line).strip(_TABLE_MARKUP):
+        return False
+    return _BR.search(line) is not None or "-" not in line
+
+
+def drop_empty_table_lines(text: str) -> str:
+    """칸이 빈 표 줄(_empty_table_line)을 뗀 글. 적재가 칸이 빈 표를 이렇게 남긴다. 떼지 않았으면 받은 글 그대로다.
+
+    운영 KCI_FI001089307__0025(06123d9d 이어가기 prior.g1 E5)는 앞 1,200자가 빈 표 줄이고 본문 문장이 그 뒤에 있어
+    EXCERPT_CHARS 로 자른 대목에 글자가 하나도 없었다 — 모델이 대목에 없는 문장을 그 논문 근거로 썼다. 운영 근거 청크
+    912개에 돌려 바뀐 청크의 글자(한글·영숫자)는 하나도 줄지 않았다."""
+    lines = text.splitlines(keepends=True)
+    kept = [line for line in lines if not _empty_table_line(line)]
+    return text if len(kept) == len(lines) else _BLANK_RUN.sub("\n\n", "".join(kept)).strip()
+
+
+def _running_head(line: str, title_key: str) -> bool:
+    """'공공도서관 서비스 고객만족도 평가체계에 관한 연구 13' 처럼 그 논문 제목(title_key — 공백·기호를 뗀 글)과 쪽수만
+    있는 줄인가. 쪽수가 없는 제목 줄(첫 쪽 '# 제목'·본문 속 제목)은 머리말로 보지 않는다."""
+    core, pages = _PAGE_NO.subn("", _BR.sub(" ", line).strip().strip("|#").strip())
+    core = _NON_WORD.sub("", core)
+    return bool(pages and core) and (
+        core == title_key or (len(core) >= _HEAD_PREFIX_MIN and title_key.startswith(core)))
+
+
+def drop_running_heads(passages: list[dict], title: str | None) -> list[dict]:
+    """대목 가운데의 그 논문 쪽 머리말 줄(_running_head)을 뗀 후보. 떼고 나서 빈 대목은 뺀다. 제목을 모르면 그대로다.
+
+    운영 911d9583 이어가기 prior.g1 E1 대목에 '공공도서관 서비스 고객만족도 평가체계에 관한 연구 13'(쪽 머리말)이 끼어
+    모델이 '…에 관한 연구 13에서는' 이라 쓰고, 다른 논문에도 '…의 역할 18에서는'·'…에 관한 연구 19에서는' 처럼
+    없는 숫자를 붙였다. 운영 근거 청크 953개 가운데 이런 줄이 든 청크는 11개, 모두 제 줄에 따로 있다."""
+    key = _NON_WORD.sub("", title or "")
+    if not key:
+        return passages
+    out = []
+    for p in passages:
+        lines = p["text"].splitlines(keepends=True)
+        kept = [line for line in lines if not _running_head(line, key)]
+        if len(kept) == len(lines):
+            out.append(p)
+        elif text := _BLANK_RUN.sub("\n\n", "".join(kept)).strip():
+            out.append({**p, "text": text})
+    return out
+
+
 def _passage(chunk_id: str, text: str, page_start, page_end, score) -> dict:
     start = int(page_start or 0)
-    return {"chunk_id": chunk_id, "text": strip_reference_tail(text), "page_start": start,
+    return {"chunk_id": chunk_id, "text": strip_reference_tail(drop_empty_table_lines(text)), "page_start": start,
             "page_end": int(page_end if page_end is not None else start),
             "score": None if score is None else float(score)}
 
@@ -100,11 +157,12 @@ def snapshot_passages(snapshot: dict | None, cnts_id: str) -> list[dict]:
             chunk_id, text = c.get("chunk_id"), c.get("text")
             if not chunk_id or not text or chunk_id in seen:
                 continue
-            if not _source(_chunk_idx(chunk_id), c.get("page_start"), text):
+            passage = _passage(chunk_id, text, c.get("page_start"), c.get("page_end"), c.get("score"))
+            if not _source(_chunk_idx(chunk_id), c.get("page_start"), text) or not passage["text"]:
                 filtered += 1
                 continue
             seen.add(chunk_id)
-            out.append(_passage(chunk_id, text, c.get("page_start"), c.get("page_end"), c.get("score")))
+            out.append(passage)
     if filtered and not out:
         log.info("[passages] 스냅숏 대목 %d개가 모두 원문 대목이 아니라 Milvus 청크로 넘어간다 cnts=%s", filtered, cnts_id)
     out.sort(key=lambda p: p["score"] if p["score"] is not None else float("-inf"), reverse=True)
@@ -141,7 +199,9 @@ def milvus_passages(cnts_id: str) -> list[dict]:
         text = r.get("text") or ""
         if not text or not _source(r.get("chunk_idx") or 0, r.get("page_start"), text):
             continue
-        out.append(_passage(r.get("chunk_id") or "", text, r.get("page_start"), r.get("page_end"), None))
+        passage = _passage(r.get("chunk_id") or "", text, r.get("page_start"), r.get("page_end"), None)
+        if passage["text"]:
+            out.append(passage)
     return out
 
 

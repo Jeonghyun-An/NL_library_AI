@@ -65,10 +65,7 @@
                 :class="{ pinned: msg.pinnedChip === si }"
                 @click="msg.pinnedChip = msg.pinnedChip === si ? undefined : si"
               >
-                p.{{ src.page_start
-                }}{{
-                  src.page_end !== src.page_start ? `–${src.page_end}` : ""
-                }}
+                {{ sourceLabel(src) }}
               </span>
             </div>
             <div
@@ -95,7 +92,7 @@
         ref="inputEl"
         v-model="inputText"
         class="chat-input"
-        placeholder="질문을 입력하세요..."
+        placeholder="질문을 입력해 주세요..."
         rows="2"
         :disabled="isStreaming"
         @keydown.enter.exact.prevent="send"
@@ -115,7 +112,13 @@
 </template>
 
 <script setup lang="ts">
+// 초안 대화 칸 — 보존 화면(/search-classic)의 TopResult 가 쓴다. 모양·구조는 처음 만든 그대로 두고(사용자 결정 2026-10-18),
+// 지금 서버와 맞지 않는 실패 처리만 고쳤다: 서버는 실패를 {error, code} 이벤트로 끝내는데 옛 읽기는 이를 몰라 빈 말풍선을 남겼다.
+// 실패 문구는 DeepRead(useDeepReadChat)와 같은 규칙(deepReadSse)으로 고른다. 출처 칩 글자도 DeepRead 와 같은 sourceLabel 이다
+// (0부터 센 저장값 +1 — 서버가 LLM 문맥에 싣는 쪽·답 글의 쪽과 같다)
 import { marked } from "marked";
+import { sourceLabel } from "~/utils/deepRead";
+import { chatResponseError, finishedAnswerCode, requestFailure, streamFailure } from "~/utils/deepReadSse";
 
 const props = defineProps<{ cntsId: string }>();
 defineEmits<{ (e: "close"): void }>();
@@ -170,6 +173,10 @@ async function send() {
     .map((m) => ({ role: m.role, content: m.content }));
 
   let pendingSources: Source[] | undefined;
+  // 답을 받지 못한 까닭(화면 문구) — {error, code} 이벤트·오류 응답·네트워크 오류·글 없이 끝난 답
+  let failure: string | null = null;
+  // 옛 서버의 '도서를 찾을 수 없습니다.'처럼 받은 글 자체가 실패 안내였으면 그 글은 남기지 않는다
+  let dropText = false;
 
   try {
     const resp = await fetch(`${apiBase}/books/chat/${props.cntsId}`, {
@@ -178,7 +185,7 @@ async function send() {
       body: JSON.stringify({ message: text, history }),
     });
 
-    if (!resp.ok || !resp.body) throw new Error("응답 오류");
+    if (!resp.ok || !resp.body) throw await chatResponseError(resp);
 
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
@@ -198,7 +205,9 @@ async function send() {
         if (payload === "[DONE]") break;
         try {
           const evt = JSON.parse(payload);
-          if (evt.text) {
+          if (evt.error) {
+            failure = streamFailure(typeof evt.code === "string" ? evt.code : null).message;
+          } else if (evt.text) {
             streamingText.value += evt.text;
             scrollBottom();
           } else if (evt.sources) {
@@ -207,14 +216,24 @@ async function send() {
         } catch {}
       }
     }
+    if (!failure) {
+      const code = finishedAnswerCode(streamingText.value);
+      if (code) {
+        failure = streamFailure(code).message;
+        dropText = true;
+      }
+    }
   } catch (err) {
-    streamingText.value = "오류가 발생했습니다. 다시 시도해주세요.";
+    failure = requestFailure(err).message;
   }
 
+  // 실패 문구는 문장마다 줄을 바꾼다 — 말풍선은 마크다운(marked)이라 줄 끝 공백 두 칸으로 줄을 나눈다. 받던 글이 있으면 그 아래에 둔다
+  const failureText = failure ? failure.replace(/\n/g, "  \n") : null;
+  const partial = dropText ? "" : streamingText.value.trim();
   messages.value.push({
     role: "assistant",
-    content: streamingText.value,
-    sources: pendingSources,
+    content: failureText ? (partial ? `${partial}\n\n${failureText}` : failureText) : streamingText.value,
+    sources: failureText ? undefined : pendingSources,
   });
   streamingText.value = "";
   isStreaming.value = false;

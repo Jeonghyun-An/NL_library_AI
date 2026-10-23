@@ -188,6 +188,21 @@ describe.each(THEMES)("홀로그램 배경 — 가독성 [%s]", (theme: ThemeNam
     },
   );
 
+  // 전역 오류 화면(SkxErrorPage)은 상태 블록을 면 없이 홀로그램 위에 바로 둔다(후배 의견 2026-10-16). 제목은 아래 '큰 제목' 기준,
+  // 설명 글(.skx-error-page .skx-state__msg — --skx-ink)과 보조 버튼 글은 랜딩의 페이지 위 작은 글 선례와 같이 띠 하나가 지나는 자리까지 4.5:1
+  it("전역 오류 화면 — 면 없이 놓인 설명 글(--skx-ink)은 띠 하나가 지나는 자리까지 4.5:1 이상이다", () => {
+    expect(css).toMatch(/\.skx-error-page \.skx-state__msg\s*\{[^}]*color:\s*var\(--skx-ink\)/);
+    const fg = parseColor(t["--skx-ink"]!).rgb;
+    expect(Math.min(...composites(model, 1).map((c) => contrast(fg, c)))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("전역 오류 화면 — 보조 버튼(--skx-frost-bg-soft 면) 글(--skx-ink-strong)은 띠 하나가 지나는 자리까지 4.5:1 이상이다", () => {
+    expect(css).toMatch(/\.skx-error-page \.skx-state__action:not\(:first-child\)[^{]*\{[^}]*color:\s*var\(--skx-ink-strong\)/);
+    const fg = parseColor(t["--skx-ink-strong"]!).rgb;
+    const face = peakStop(t["--skx-frost-bg-soft"]!);
+    expect(Math.min(...composites(model, 1).map((c) => contrast(fg, over(c, face.rgb, face.a))))).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("카드 없이 페이지 위에 놓이는 큰 제목(--skx-ink-strong)이 가장 밝은·어두운 합성 위에서 기준 이상이다(다크 3:1, 핑크 4.5:1)", () => {
     const fg = parseColor(t["--skx-ink-strong"]!).rgb;
     const worst = Math.min(...composites(model).map((c) => contrast(fg, c)));

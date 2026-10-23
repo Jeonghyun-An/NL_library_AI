@@ -6,6 +6,8 @@ import {
   excludedDetailUrl,
   parseAnchor,
   readReturnSpot,
+  referenceAnchor,
+  referenceDetailUrl,
   type Anchor,
   type ReturnSpot,
 } from "~/utils/detailSource";
@@ -288,4 +290,10 @@ export function useDetailLeave(): { leave: (url: string, spot: ReturnSpot) => Pr
 export function stampExcludedLink(e: MouseEvent, job: string, cnts: string): void {
   const link = e.currentTarget as HTMLAnchorElement;
   link.href = excludedDetailUrl(job, cnts, spotOf(link, excludedAnchor(cnts)).y);
+}
+
+// 보고서 끝 참고문헌 줄 — 제외 논문 링크와 같은 방식(새 창, 누르는 순간의 높이를 싣는다)
+export function stampReferenceLink(e: MouseEvent, job: string, cnts: string, eid: string): void {
+  const link = e.currentTarget as HTMLAnchorElement;
+  link.href = referenceDetailUrl(job, cnts, eid, spotOf(link, referenceAnchor(cnts)).y);
 }

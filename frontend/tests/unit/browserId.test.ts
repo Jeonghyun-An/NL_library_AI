@@ -6,6 +6,7 @@ import {
   generateUuidV4,
   isUuidV4,
   readOrCreateBrowserId,
+  resolveBrowserId,
   safeLocalStorage,
   safeSessionStorage,
 } from "~/utils/browserId";
@@ -66,6 +67,36 @@ describe("readOrCreateBrowserId", () => {
       },
     } as unknown as Storage;
     expect(readOrCreateBrowserId(blocked, () => V4)).toBe(V4);
+  });
+});
+
+describe("resolveBrowserId — 저장했는가(persisted)", () => {
+  it("이미 저장된 올바른 값이면 persisted", () => {
+    const s = new MemoryStorage();
+    s.setItem(BROWSER_ID_KEY, V4);
+    expect(resolveBrowserId(s, () => "unused")).toEqual({ id: V4, persisted: true });
+  });
+
+  it("새로 만들어 저장하면 persisted", () => {
+    const s = new MemoryStorage();
+    expect(resolveBrowserId(s, () => V4)).toEqual({ id: V4, persisted: true });
+    expect(s.getItem(BROWSER_ID_KEY)).toBe(V4);
+  });
+
+  it("저장소가 없거나(사이트 데이터 차단으로 접근부터 막힘) 쓰기가 막히면 persisted 가 아니다", () => {
+    expect(resolveBrowserId(null, () => V4)).toEqual({ id: V4, persisted: false });
+    const s = new MemoryStorage();
+    s.failWith = new DOMException("막힘", "SecurityError");
+    expect(resolveBrowserId(s, () => V4)).toEqual({ id: V4, persisted: false });
+  });
+
+  it("쓰기가 예외 없이 지나가도 남지 않으면 persisted 가 아니다", () => {
+    const silent = { getItem: () => null, setItem: () => {} } as unknown as Storage;
+    expect(resolveBrowserId(silent, () => V4)).toEqual({ id: V4, persisted: false });
+  });
+
+  it("readOrCreateBrowserId 는 같은 ID 만 돌려준다", () => {
+    expect(readOrCreateBrowserId(null, () => V4)).toBe(resolveBrowserId(null, () => V4).id);
   });
 });
 

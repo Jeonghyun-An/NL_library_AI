@@ -46,6 +46,8 @@ export const NO_LIMITS = "자동 점검에서 보고할 한계가 발견되지 �
 // 제외한 논문 목록의 제목·설명 — 보고서 화면의 접힌 섹션과 내려받은 문서의 부록이 같은 말을 쓴다
 export const EXCLUDED_TITLE = "관련성이 낮아 제외한 논문";
 export const EXCLUDED_WHY = "자기점검이 하위질문의 핵심 개념과 무관하다고 판단해 근거에서 제외한 논문입니다.";
+// 인용 번호 순 참고문헌 — 보고서 화면 끝의 접힌 섹션과 내려받은 문서(reportDocx)의 제목이 같다
+export const REFERENCES_TITLE = "참고문헌";
 
 // 초안이 놓인 때 — writing: 쓰는 중, finishing: 다 쓰고 최종본을 받는 중(받기에 실패해 다시 시도하는 중 포함),
 // interrupted: 실패·취소로 멈춤
@@ -79,18 +81,20 @@ export function draftBadge(state: DraftState): { label: string; live: boolean } 
 }
 
 // 초안의 서론 자리. 초안에는 trail 이 없고 끝난 절만 있어 reportIntro 로 세면 하위질문 수가 틀린다 —
-// 전체 절 수는 자리를 잡아 둔 슬롯 수로, 쓴 절은 초안에 실린 절로 센다
+// 전체 절 수는 자리를 잡아 둔 슬롯 수로, 쓴 절은 초안에 실린 절로 센다.
+// 화면에만 쓰는 안내다 — 내려받는 초안 문서(reportDocument.docInputFromDraft)는 서론에 reportIntro 를 쓴다. 그래서 문서 말투가 아니라
+// 화면 안내 규칙(해요체·문장마다 줄바꿈 — .rs-report__intro 가 '\n' 을 줄로 그린다)을 따른다
 export function draftIntro(slots: readonly DraftSlot[], state: DraftState, stats?: CountersPayload): string {
   const done = slots.filter((s) => s.sectionIndex !== null).length;
   const head = {
-    writing: `${slots.length}개 절 중 ${done}개를 썼습니다. 다 쓴 절부터 먼저 보여 드립니다.`,
-    finishing: `${slots.length}개 절을 모두 쓴 초안입니다. 서론과 한계 점검은 완성본에 실립니다.`,
-    interrupted: `${slots.length}개 절 중 ${done}개를 쓰고 멈춘 초안입니다. 한계 점검은 보고서가 완성된 뒤에 실립니다.`,
+    writing: `${slots.length}개 절 중 ${done}개를 썼어요.\n다 쓴 절부터 먼저 보여 드려요.`,
+    finishing: `${slots.length}개 절을 모두 쓴 초안이에요.\n서론과 한계 점검은 완성본에 실려요.`,
+    interrupted: `${slots.length}개 절 중 ${done}개를 쓰고 멈춘 초안이에요.\n한계 점검은 보고서가 완성된 뒤에 실려요.`,
   }[state];
   if (!stats) return head;
   // 다 쓴 뒤의 카운터는 최종 집계라 "지금까지"를 붙이지 않는다
   const upTo = state === "finishing" ? "" : "지금까지 ";
-  return `${head} ${upTo}논문 ${stats.papers_reviewed}편을 검토하고 ${stats.evidence_adopted}편을 근거로 삼았습니다${droppedNote(stats, "걸러냈습니다")}.`;
+  return `${head}\n${upTo}논문 ${stats.papers_reviewed}편을 검토하고 ${stats.evidence_adopted}편을 근거로 삼았어요${droppedNote(stats, "걸러냈어요")}.`;
 }
 
 // 끝에서는 제자리에 선다. 버튼을 disabled 로 막으면 초점을 쥔 버튼이 비활성이 되는 순간

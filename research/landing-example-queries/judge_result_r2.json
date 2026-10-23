@@ -1,0 +1,1042 @@
+{
+  "summary": "Blind-judge top-10 search results of landing example query phrasings (6 topics x 5 phrasings x 3 judges)",
+  "agentCount": 15,
+  "logs": [],
+  "result": {
+    "results": [
+      {
+        "topic": "lib_quality",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "The top 3 match the need directly: public library satisfaction frameworks, evaluation indicators and performance evaluation systems. Items 4-10 cover service quality evaluation, but in other library types or only one part of it: general library reviews, quality certification, academic libraries (LibQUAL+, staff service, disability-service indicators), special-library SERVQUAL, and Seoul outcome management. None are fully off-topic."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  0,
+                  1,
+                  0,
+                  1,
+                  2,
+                  0,
+                  1,
+                  1,
+                  0
+                ],
+                "note": "Only 2 items are clearly on target: CEM satisfaction factors and the adolescent public library satisfaction survey. Off-topic: school librarian image (school library), collection development, internet information-literacy instruction, and Suwon reading-program operation, where satisfaction is incidental. Partial: complex cultural space IPA, digital information center satisfaction, quality-of-life impact and senior relationship quality. No list item is about evaluation models or indicators."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "There are no fully off-topic items. Items 1-3 are squarely about public library evaluation: a customer-satisfaction framework, evaluation indicators and a performance evaluation system. Items 4 and 8 cover service quality evaluation for libraries in general, not public libraries. Items 5, 6, 9 and 10 are about university or special libraries; item 9 is narrowed further to disability services. Item 7 is about performance management design for Seoul public libraries, which only partly overlaps with quality evaluation."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  0,
+                  1,
+                  0,
+                  1,
+                  1,
+                  0,
+                  1,
+                  1,
+                  0
+                ],
+                "note": "Only item 1 (CEM-based public library user satisfaction factors) is squarely on topic. Off-topic items: 2 (school librarian image), 4 (collection development), 7 (information literacy instruction for internet users) and 10 (operating a reading program); each mentions satisfaction only in passing. The partial items are narrow: 3 is IPA of the complex cultural space, 5 is the digital information center, 6 is adolescents only, 8 is library impact on quality of life, and 9 is relationship marketing with senior users."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  1,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "Nothing is fully off-topic. Items 1-3 and 7 are clear hits on public library evaluation frameworks, indicators and customer satisfaction. The other six are about service quality evaluation in other kinds of library: a general library information-service review, university libraries (items 5, 6 and 9), quality certification for libraries in general, and special libraries with SERVQUAL. They match the method but not the public library focus."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  0,
+                  1,
+                  0,
+                  1,
+                  2,
+                  0,
+                  1,
+                  1,
+                  0
+                ],
+                "note": "This list is weaker and is only loosely tied to the topic through 'satisfaction'. Clear hits are item 1 (public library user satisfaction factors, CEM) and item 6 (adolescents' satisfaction survey of public libraries). Partly related: complex cultural space importance-satisfaction analysis, digital information center satisfaction, the library-satisfaction-to-quality-of-life study, and senior users' relationship quality. Off-topic: item 2 (school library teacher-librarian image), item 4 (collection development), item 7 (information literacy instruction for internet users) and item 10 (Suwon reading-program operation)."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "lib_reading",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  1,
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1
+                ],
+                "note": "Nothing is off-topic. Rated 1 (partial): the public library youth-program study, because it covers all youth programs and reading is only one part; the homemakers' cultural-program effects study, because its programs are cultural rather than reading; the local-culture strategy paper, where reading promotion is one strategy of many; and the two bibliotherapy papers, which are about the library/information science field in general rather than public library reading programs."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1,
+                  2,
+                  2,
+                  0
+                ],
+                "note": "Off-topic: the last item, on factors driving Korean adults' public library use, which is about library use rather than reading programs. Rated 1 (partial): the youth-program study, the comparison of library and community-institution cultural programs, the local-culture strategy paper, and the teen satisfaction survey, whose only link is a recommendation to plan reading programs."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Nothing is off-topic. Rated 1 (partial): the Gyeonggi vacation reading classes, because they run in school libraries rather than public libraries; the adult literacy program model; the librarians' views on school-public library cultural programs; the analysis of US library program types, where reading is one type among several; and the youth-program study. This list has the most items set in public libraries, including the Busan public library reading-class study."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  0,
+                  2,
+                  1,
+                  1
+                ],
+                "note": "Directly on topic: book delivery and read-aloud program effects, the national children's library reading-promotion evaluation, Suwon reading programs, and the UK SFW case. Partial: general youth programs, a reading-program essay with no abstract, housewives' cultural-program effects, and two bibliotherapy papers. Off-topic: the local cultural development strategy paper, where reading promotion is only one item in a list."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  0,
+                  1,
+                  1,
+                  2,
+                  0
+                ],
+                "note": "Off-topic: the local cultural development strategy paper and the adult library-use factors study, which is about visit frequency and not programs. Partial: the comparison of cultural programs across institutions and the youth satisfaction study, where reading programs appear only in the recommendations."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  1,
+                  2
+                ],
+                "note": "Nothing fully off-topic. Partial: the vacation reading class study is in school libraries, not public ones. The adult literacy model, the librarian cultural-program survey and the US cultural program typology cover only one aspect. Directly on topic: the Busan reading classroom, Suwon reading programs, the national children's library reading-promotion evaluation and the UK SFW case."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  1,
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1
+                ],
+                "note": "No item is off-topic. Six items are partly related: the youth-program item is general (reading is one part). The homemaker cultural-program item covers cultural programs, not reading. The local-culture item mentions reading promotion only as one strategy. The two bibliotherapy items are about bibliotherapy awareness or service, not public library reading programs and their effects."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1,
+                  2,
+                  2,
+                  0
+                ],
+                "note": "Item 10 (factors in adult public library use) is off-topic. Four items are partly related: the youth-program item, the library vs. community-institution cultural-program comparison, the local-culture strategy item, and the youth satisfaction survey. In each, reading programs are only a side point."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "No item is off-topic. Five items are partly related: the school-library vacation reading class is about school libraries, not public ones. The adult literacy model is about literacy rather than reading programs. The librarian-perception and US program-type items cover general cultural programs. The youth-program item covers general programs."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "lib_small",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  1,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "Nothing is off-topic. Only the Jeju operating-status and vitalization study and the evaluation-indicator study (built on survey data and aimed at vitalization) fully match the need. The other eight each cover one aspect: the Bucheon learning community, statistical indicators, itinerant librarians, Masan's social role, collection development, the two ordinance and local-government support studies, and building a library in an apartment complex."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  2,
+                  1
+                ],
+                "note": "These are the same 10 items as R1 in a different order, with the same ratings. Nothing is off-topic. The Jeju study (rank 1) and the evaluation-indicator study (rank 9) are the clear matches, and the rest each cover one aspect: staffing, ordinances, statistics, collection development, the library movement, or building a library."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "Only the Jeju paper covers both operational status and vitalization plans. The other papers each take one narrow angle: the learning community in the Bucheon small-library movement, statistical indicators, the itinerant-librarian program, evaluation indicators, Masan's role history, collection development, two ordinance analyses, and building a library in a rebuilt apartment complex. The apartment-complex paper is the weakest: it is about building a library, not running or reviving one. No list item is fully off-topic."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "These are the same ten papers as R1 in a different order, with the same ratings. Only the Jeju paper is fully on topic. The rest each cover one aspect: learning community, itinerant librarians, local-government support ordinances, statistics, collection development, Masan's role history, ordinance content, and evaluation indicators. The apartment-complex paper on building a small library is the weakest."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  1,
+                  1,
+                  2,
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  1
+                ],
+                "note": "Nothing is fully off-topic; every item is about small libraries. Only the Jeju paper covers both operating conditions and how to revive use (활성화). The itinerant-librarian, evaluation-indicator (survey data used for 활성화) and collection-development papers study operations and propose improvements. The rest cover one side angle each: the Bucheon learning-community movement, statistical indicators, the Masan social-role history, ordinance analysis (twice) and building a library in an apartment complex, which is the weakest item."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  1,
+                  1,
+                  2,
+                  1
+                ],
+                "note": "These are the same 10 items as R1 in a different order, so they get the same ratings. The top three are solid. The two ordinance papers, statistics, Masan history and the apartment-building paper are only partly related."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "lib_school",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  1
+                ],
+                "note": "Mostly on target (library-assisted and collaborative instruction). #3 covers teachers' general perceptions and use of the school library, and #10 is an evaluation of a school-library revitalization policy that only mentions instruction models; both are partial. #9, on perceptions of rural school-library operation, is off-topic."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  0,
+                  1,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Three items are about cooperation between school and public libraries, not classroom instruction: #3 (cooperation systems), #6 (cooperation models) and #8 (cultural programs). All three are off-topic. #7, on how teacher-librarian professionalism affects library revitalization, is only partly related."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  1
+                ],
+                "note": "Off-topic: rural school library perception survey (#9). Partial: secondary teachers' general perceptions and use of school libraries (#3) and the activation-project review, where library-assisted instruction appears only as one recommendation (#10)."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  0,
+                  1,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: school-public library cooperation systems and models (#3, #6) and cultural programs in school vs public libraries (#8). These are about cooperation between libraries, not classroom instruction. Partial: teacher-librarian professionalism and its effect on library operation and services (#7), not on instruction."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  2,
+                  1,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  1
+                ],
+                "note": "Mostly on-target (library-assisted instruction, collaborative lessons, integrated curriculum, effectiveness). Off-topic: #9, a survey of how rural school libraries are seen, with nothing on instruction. Partial: #3 (secondary teachers' general views of the school library) and #10 (results of the national school-library promotion programme, with lesson models mentioned only as a recommendation)."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  0,
+                  2,
+                  2,
+                  0,
+                  1,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Three off-topic hits come from the other sense of 협력: cooperation between school and public libraries (#3, #6) and librarians' views on joint cultural programmes (#8), none about classroom instruction. Partial: #7 (how a teacher-librarian's professional expertise affects library operation and services, not collaborative lessons). The rest (collaborative lesson cases, PBL-LAI link, lesson models, teacher acceptance, effectiveness of information-literacy teaching) are clear hits."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "topic": "book_poetry2",
+        "judges": [
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  0,
+                  2,
+                  0,
+                  0,
+                  0,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: 19th-century classical sijo, early-Joseon prose (누정기), 사시가 and 목은 이색 are all pre-modern rather than post-enlightenment poetry."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0
+                ],
+                "note": "Off-topic: 신소설 and 근대소설론 are about fiction; 19th-century sijo, 목은 이색 and sijo rhythm are pre-modern poetry. The early Christian hymn study is partly related because it covers enlightenment-era poetic song."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Off-topic: 박인로, 사시가 and 백호 임제 are classical Joseon poetry."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0
+                ],
+                "note": "Off-topic: sijo rhythm study (classical), 황순원 fiction, and classical Korean fiction stylistics."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  0,
+                  2,
+                  0,
+                  0,
+                  0,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Four off-topic items are classical Korean poetry rather than modern poetry: 19th-century sijo, early Joseon nujeonggi (pavilion records), sasiga, and Yi Saek (Goryeo). The other six are squarely on modern Korean poetry."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0
+                ],
+                "note": "Sinsoseol and modern novel theory are prose, not poetry. 19th-century sijo, Yi Saek and sijo prosody are classical, not modern. Early Korean Christian hymn verse is only partly related (enlightenment-era verse, but not modern poetry proper)."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Three off-topic items are Joseon or classical poetry: Park In-ro, sasiga and Im Je. The other seven are modern-poetry studies."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0
+                ],
+                "note": "Sijo prosody is classical poetry. The Hwang Sun-won novel study and classical-novel stylistics are prose, not poetry. The top seven are all modern-poetry studies."
+              }
+            ]
+          },
+          {
+            "lists": [
+              {
+                "label": "R1",
+                "ratings": [
+                  2,
+                  0,
+                  2,
+                  0,
+                  0,
+                  0,
+                  2,
+                  2,
+                  2,
+                  2
+                ],
+                "note": "Four classical (pre-modern) items are off-topic: 19th-century sijo, early Joseon 누정기, 사시가 and the poetry of 목은 이색 (Goryeo). The other six are modern poetry studies: Taoist thought in modern poetry, 1920s poetics, 신석정, 1930s poetry, 유치환 and modern women poets."
+              },
+              {
+                "label": "R2",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0
+                ],
+                "note": "Weakest list, with only 4 clear hits, all in the top 4. 신소설 and 근대소설론 are fiction, not poetry. 19th-century sijo, 목은 이색 and the sijo metre study are classical. The early Christian hymn-poetry item (찬송시가) is enlightenment-era verse, so it is rated as partly related."
+              },
+              {
+                "label": "R3",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0,
+                  2,
+                  2
+                ],
+                "note": "Seven modern poetry hits, including 김수영 modernism and 신석정. Three classical items in the middle are off-topic: 박인로, 사시가 and 임제."
+              },
+              {
+                "label": "R4",
+                "ratings": [
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  2,
+                  0,
+                  0,
+                  0
+                ],
+                "note": "Strongest list. The top 7 are all modern poetry studies. The bottom 3 are off-topic: the sijo metre study is classical, 황순원 is fiction, and the last item is classical fiction stylistics."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Judge"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "judge1:lib_quality",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "aebceb8773fc43cbf",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011360,
+      "queuedAt": 1792126011342,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_quality.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792126042058,
+      "tokens": 74874,
+      "toolCalls": 2,
+      "durationMs": 30697,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,1,1,1,1,1,1,1],\"note\":\"The top 3 match the need directly: public library satisfaction frameworks, evaluation indicators and performance evaluation systems. Items 4-10 cover service quality evaluation, but in other library types or only one part of it: general library reviews, quality certification, academic libraries (LibQUAL+, staff service, disability-ser…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "judge2:lib_quality",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "ae5c228f1666cbafc",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011360,
+      "queuedAt": 1792126011342,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_quality.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792126045656,
+      "tokens": 74871,
+      "toolCalls": 2,
+      "durationMs": 34294,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,1,1,1,1,1,1,1],\"note\":\"There are no fully off-topic items. Items 1-3 are squarely about public library evaluation: a customer-satisfaction framework, evaluation indicators and a performance evaluation system. Items 4 and 8 cover service quality evaluation for libraries in general, not public libraries. Items 5, 6, 9 and 10 are about university or special li…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "judge3:lib_quality",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a7df5e1578fa29e11",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011360,
+      "queuedAt": 1792126011342,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_quality.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792126038688,
+      "tokens": 74871,
+      "toolCalls": 2,
+      "durationMs": 27326,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,2,1,1,1,2,1,1,1],\"note\":\"Nothing is fully off-topic. Items 1-3 and 7 are clear hits on public library evaluation frameworks, indicators and customer satisfaction. The other six are about service quality evaluation in other kinds of library: a general library information-service review, university libraries (items 5, 6 and 9), quality certification for librari…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "judge1:lib_reading",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "aaee98ce77a657f2c",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011428,
+      "queuedAt": 1792126011423,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_reading.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792126036438,
+      "tokens": 80884,
+      "toolCalls": 2,
+      "durationMs": 25009,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,1,2,2,1,2,1,2,1,1],\"note\":\"Nothing is off-topic. Rated 1 (partial): the public library youth-program study, because it covers all youth programs and reading is only one part; the homemakers' cultural-program effects study, because its programs are cultural rather than reading; the local-culture strategy paper, where reading promotion is one strategy of many; an…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "judge2:lib_reading",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a688033adfe17cb93",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011428,
+      "queuedAt": 1792126011423,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_reading.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792126043924,
+      "tokens": 80883,
+      "toolCalls": 2,
+      "durationMs": 32495,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,1,2,1,1,2,0,2,1,1],\"note\":\"Directly on topic: book delivery and read-aloud program effects, the national children's library reading-promotion evaluation, Suwon reading programs, and the UK SFW case. Partial: general youth programs, a reading-program essay with no abstract, housewives' cultural-program effects, and two bibliotherapy papers. Off-topic: the local …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "judge3:lib_reading",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "aefb3358e6cfe233c",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011428,
+      "queuedAt": 1792126011423,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_reading.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal …",
+      "promptFramed": true,
+      "lastProgressAt": 1792126035631,
+      "tokens": 80881,
+      "toolCalls": 2,
+      "durationMs": 24202,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,1,2,2,1,2,1,2,1,1],\"note\":\"No item is off-topic. Six items are partly related: the youth-program item is general (reading is one part). The homemaker cultural-program item covers cultural programs, not reading. The local-culture item mentions reading promotion only as one strategy. The two bibliotherapy items are about bibliotherapy awareness or service, not pu…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 7,
+      "label": "judge1:lib_small",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a64a3ddd7c4add0d1",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011490,
+      "queuedAt": 1792126011486,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_small.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal ar…",
+      "promptFramed": true,
+      "lastProgressAt": 1792126032872,
+      "tokens": 74455,
+      "toolCalls": 2,
+      "durationMs": 21381,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,1,1,1,2,1,1,1,1,1],\"note\":\"Nothing is off-topic. Only the Jeju operating-status and vitalization study and the evaluation-indicator study (built on survey data and aimed at vitalization) fully match the need. The other eight each cover one aspect: the Bucheon learning community, statistical indicators, itinerant librarians, Masan's social role, collection devel…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 8,
+      "label": "judge2:lib_small",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a7bc39269bd243c4d",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011490,
+      "queuedAt": 1792126011486,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_small.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal ar…",
+      "promptFramed": true,
+      "lastProgressAt": 1792126032711,
+      "tokens": 74451,
+      "toolCalls": 2,
+      "durationMs": 21220,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,1,1,1,1,1,1,1,1,1],\"note\":\"Only the Jeju paper covers both operational status and vitalization plans. The other papers each take one narrow angle: the learning community in the Bucheon small-library movement, statistical indicators, the itinerant-librarian program, evaluation indicators, Masan's role history, collection development, two ordinance analyses, and …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 9,
+      "label": "judge3:lib_small",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a97621463202606dd",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011491,
+      "queuedAt": 1792126011486,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_small.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal ar…",
+      "promptFramed": true,
+      "lastProgressAt": 1792126040109,
+      "tokens": 74449,
+      "toolCalls": 2,
+      "durationMs": 28617,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,1,1,2,2,1,2,1,1,1],\"note\":\"Nothing is fully off-topic; every item is about small libraries. Only the Jeju paper covers both operating conditions and how to revive use (활성화). The itinerant-librarian, evaluation-indicator (survey data used for 활성화) and collection-development papers study operations and propose improvements. The rest cover one side angle each: the…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 10,
+      "label": "judge1:lib_school",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a012cd07dfc35cd5d",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011550,
+      "queuedAt": 1792126011545,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_school.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal a…",
+      "promptFramed": true,
+      "lastProgressAt": 1792126029591,
+      "tokens": 74926,
+      "toolCalls": 2,
+      "durationMs": 18040,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,1,2,2,2,2,2,0,1],\"note\":\"Mostly on target (library-assisted and collaborative instruction). #3 covers teachers' general perceptions and use of the school library, and #10 is an evaluation of a school-library revitalization policy that only mentions instruction models; both are partial. #9, on perceptions of rural school-library operation, is off-topic.\"},{\"la…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 11,
+      "label": "judge2:lib_school",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a0395e9a1ed2473d1",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011550,
+      "queuedAt": 1792126011545,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_school.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal a…",
+      "promptFramed": true,
+      "lastProgressAt": 1792126035262,
+      "tokens": 74925,
+      "toolCalls": 2,
+      "durationMs": 23711,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,1,2,2,2,2,2,0,1],\"note\":\"Off-topic: rural school library perception survey (#9). Partial: secondary teachers' general perceptions and use of school libraries (#3) and the activation-project review, where library-assisted instruction appears only as one recommendation (#10).\"},{\"label\":\"R2\",\"ratings\":[2,2,0,2,2,0,1,0,2,2],\"note\":\"Off-topic: school-public libra…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 12,
+      "label": "judge3:lib_school",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "a2f4fa5ddd6579b4f",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011550,
+      "queuedAt": 1792126011546,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/lib_school.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal a…",
+      "promptFramed": true,
+      "lastProgressAt": 1792126034745,
+      "tokens": 74923,
+      "toolCalls": 2,
+      "durationMs": 23194,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,2,1,2,2,2,2,2,0,1],\"note\":\"Mostly on-target (library-assisted instruction, collaborative lessons, integrated curriculum, effectiveness). Off-topic: #9, a survey of how rural school libraries are seen, with nothing on instruction. Partial: #3 (secondary teachers' general views of the school library) and #10 (results of the national school-library promotion progr…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 13,
+      "label": "judge1:book_poetry2",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "ad1a57e16b3d024e1",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011623,
+      "queuedAt": 1792126011618,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_poetry2.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal…",
+      "promptFramed": true,
+      "lastProgressAt": 1792126032132,
+      "tokens": 70240,
+      "toolCalls": 2,
+      "durationMs": 20508,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,0,2,0,0,0,2,2,2,2],\"note\":\"Off-topic: 19th-century classical sijo, early-Joseon prose (누정기), 사시가 and 목은 이색 are all pre-modern rather than post-enlightenment poetry.\"},{\"label\":\"R2\",\"ratings\":[2,2,2,2,0,0,0,1,0,0],\"note\":\"Off-topic: 신소설 and 근대소설론 are about fiction; 19th-century sijo, 목은 이색 and sijo rhythm are pre-modern poetry. The early Christian hymn study is …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 14,
+      "label": "judge2:book_poetry2",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "aae4f45523c6e37a3",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011624,
+      "queuedAt": 1792126011618,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_poetry2.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal…",
+      "promptFramed": true,
+      "lastProgressAt": 1792126029270,
+      "tokens": 70235,
+      "toolCalls": 2,
+      "durationMs": 17646,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,0,2,0,0,0,2,2,2,2],\"note\":\"Four off-topic items are classical Korean poetry rather than modern poetry: 19th-century sijo, early Joseon nujeonggi (pavilion records), sasiga, and Yi Saek (Goryeo). The other six are squarely on modern Korean poetry.\"},{\"label\":\"R2\",\"ratings\":[2,2,2,2,0,0,0,1,0,0],\"note\":\"Sinsoseol and modern novel theory are prose, not poetry. 19t…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 15,
+      "label": "judge3:book_poetry2",
+      "phaseIndex": 1,
+      "phaseTitle": "Judge",
+      "agentId": "ab850c8e11755afeb",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792126011624,
+      "queuedAt": 1792126011618,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Read ONLY the UTF-8 JSON file C:/Users/LANDSOFT/mygit/NL_library_AI/.worktrees/fix-live/research/landing-example-queries/judge/book_poetry2.json with the Read tool. Open no other file, run no commands, edit nothing.\n\nIt holds a search need ('intent') for a Korean library search service ('panel' book = the library's own holdings, mostly Korean theses and government reports; 'paper' = Korean journal…",
+      "promptFramed": true,
+      "lastProgressAt": 1792126028965,
+      "tokens": 70233,
+      "toolCalls": 2,
+      "durationMs": 17340,
+      "resultPreview": "{\"lists\":[{\"label\":\"R1\",\"ratings\":[2,0,2,0,0,0,2,2,2,2],\"note\":\"Four classical (pre-modern) items are off-topic: 19th-century sijo, early Joseon 누정기, 사시가 and the poetry of 목은 이색 (Goryeo). The other six are modern poetry studies: Taoist thought in modern poetry, 1920s poetics, 신석정, 1930s poetry, 유치환 and modern women poets.\"},{\"label\":\"R2\",\"ratings\":[2,2,2,2,0,0,0,1,0,0],\"note\":\"Weakest list, with o…"
+    }
+  ],
+  "totalTokens": 1126101,
+  "totalToolCalls": 30
+}

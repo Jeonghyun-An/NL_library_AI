@@ -82,8 +82,8 @@ export function noticeCancelBack(step: NoticeCancelStep): NoticeCancelStep | nul
 }
 
 // 스크린리더에만 들리는 문구 — '취소'가 '정말 취소'로 바뀌고 [그대로 두기]가 새로 서는 것, 취소에 성공해 줄이 사라지는 것은 눈으로만 보인다
-export const NOTICE_CANCEL_CONFIRM_TEXT = "정말 취소할까요? 한 번 더 누르면 멈추고, 그대로 두기 버튼이나 Esc 키로 물러납니다";
-export const NOTICE_CANCEL_DONE_TEXT = `${DEEP_RESEARCH}를 취소했습니다`;
+export const NOTICE_CANCEL_CONFIRM_TEXT = "정말 취소할까요? 한 번 더 누르면 멈추고, 그대로 두기 버튼이나 Esc 키로 물러나요";
+export const NOTICE_CANCEL_DONE_TEXT = `${DEEP_RESEARCH}를 취소했어요`;
 
 interface FocusCandidate {
   isConnected: boolean;

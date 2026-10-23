@@ -320,7 +320,7 @@ class TestOtherDirection:
 
         assert first.status_code == 200 and len(first.json()["topic_ids"]) == 1
         assert _topic(api.engine, first.json()["topic_ids"][0])["seed"]["key"] == "insufficient:1"
-        assert again.status_code == 409 and again.json()["detail"] == "더 쓸 씨앗이 없습니다"
+        assert again.status_code == 409 and again.json()["detail"] == "다른 방향으로 더 받을 카드가 없어요"
         assert len(_rows(api.engine, ResearchTopic)) == len(SEEDS)
         assert api.dispatch.calls == 1
 
@@ -349,7 +349,7 @@ class TestOtherDirection:
     def test_example_work_is_read_only(self, api):
         jid = _work_job(api.engine, is_example=True)
         res = api.client.post(f"/api/research/{jid}/topics/generate", json={"mode": "other"})
-        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용입니다"
+        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용이에요"
         assert _rows(api.engine, ResearchTopic) == []
 
     def test_cards_take_the_current_keywords(self, api):
@@ -376,7 +376,7 @@ class TestOtherDirection:
         res = api.client.post(f"/api/research/{jid}/topics/generate", json={"mode": "other"})
 
         assert res.status_code == 409
-        assert res.json()["detail"] == "키워드를 고르는 중입니다 — 끝난 뒤 다시 만들어 주세요"
+        assert res.json()["detail"] == "키워드를 고르는 중이에요 — 끝난 뒤 다시 만들어 주세요"
         assert _rows(api.engine, ResearchTopic) == []
         assert [g["id"] for g in _rows(api.engine, ResearchGeneration)] == [concepts]
         assert api.dispatch.calls == 0 and api.events == []
@@ -528,7 +528,7 @@ class TestRegenerate:
 
         res = api.client.post(f"/api/research/{jid}/topics/regenerate")
 
-        assert res.status_code == 409 and res.json()["detail"] == "키워드를 2개 이상 고르세요"
+        assert res.status_code == 409 and res.json()["detail"] == "키워드를 2개 이상 골라 주세요"
         assert _rows(api.engine, ResearchGeneration) == [] and api.dispatch.calls == 0
 
     def test_409_while_keywords_are_being_made(self, api):
@@ -539,7 +539,7 @@ class TestRegenerate:
         res = api.client.post(f"/api/research/{jid}/topics/regenerate")
 
         assert res.status_code == 409
-        assert res.json()["detail"] == "키워드를 고르는 중입니다 — 끝난 뒤 다시 만들어 주세요"
+        assert res.json()["detail"] == "키워드를 고르는 중이에요 — 끝난 뒤 다시 만들어 주세요"
         assert [g["id"] for g in _rows(api.engine, ResearchGeneration)] == [concepts]
 
     def test_nothing_to_regenerate_is_409(self, api):
@@ -548,7 +548,7 @@ class TestRegenerate:
 
         res = api.client.post(f"/api/research/{jid}/topics/regenerate")
 
-        assert res.status_code == 409 and res.json()["detail"] == "다시 만들 AI 카드가 없습니다"
+        assert res.status_code == 409 and res.json()["detail"] == "다시 만들 AI 카드가 없어요"
         assert _rows(api.engine, ResearchGeneration) == [] and api.events == []
 
     def test_example_work_is_read_only(self, api):
@@ -557,7 +557,7 @@ class TestRegenerate:
 
         res = api.client.post(f"/api/research/{jid}/topics/regenerate")
 
-        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용입니다"
+        assert res.status_code == 409 and res.json()["detail"] == "예시 연구는 읽기 전용이에요"
         assert _rows(api.engine, ResearchGeneration) == []
 
 
@@ -659,7 +659,7 @@ class TestEditTopic:
 
         res = api.client.patch(f"/api/research/{jid}/topics/{tid}", json={"title": "새 제목입니다"})
 
-        assert res.status_code == 409 and res.json()["detail"] == "카드를 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
+        assert res.status_code == 409 and res.json()["detail"] == "카드를 만드는 중이에요 — 끝난 뒤 고쳐 주세요"
         assert _topic(api.engine, tid)["card"] == CARD
 
     def test_needs_a_field_and_a_known_topic(self, api):
@@ -669,7 +669,7 @@ class TestEditTopic:
 
         assert api.client.patch(f"/api/research/{jid}/topics/{tid}", json={}).status_code == 422
         res = api.client.patch(f"/api/research/{jid}/topics/{other}", json={"title": "새 제목입니다"})
-        assert res.status_code == 404 and res.json()["detail"] == "주제가 없습니다"
+        assert res.status_code == 404 and res.json()["detail"] == "주제를 찾을 수 없어요"
         assert api.client.patch(f"/api/research/{jid}/topics/999", json={"title": "새 제목입니다"}).status_code == 404
 
     def test_example_work_is_read_only(self, api):
@@ -753,7 +753,7 @@ class TestPick:
 
         res = api.client.post(f"/api/research/{jid}/topics/{tid}/pick")
 
-        assert res.status_code == 409 and res.json()["detail"] == "카드가 아직 없습니다"
+        assert res.status_code == 409 and res.json()["detail"] == "카드가 아직 없어요"
         assert _rows(api.engine, ResearchWork)[0]["topic_id"] is None and api.events == []
 
     def test_unknown_topic_and_example_work(self, api):

@@ -2,7 +2,7 @@
 import type { ComputedRef, Ref } from "vue";
 import type { HistoryEntry, HistoryEntryInput, HistoryKind, HistoryPatch } from "~/types/history";
 import { generateUuidV4, safeLocalStorage } from "~/utils/browserId";
-import { createHistoryState, type HistoryState } from "~/utils/historyState";
+import { createHistoryState, type HistoryLookup, type HistoryState } from "~/utils/historyState";
 import {
   HISTORY_PING_KEY,
   createFlushLock,
@@ -88,6 +88,8 @@ export interface UseHistory {
   entries: Ref<HistoryEntry[]>;
   loaded: Ref<boolean>;
   listFailed: Ref<boolean>;
+  /** 목록을 못 읽은 종류 — 사이드바가 묶음마다 '기록 없음' 대신 실패 안내를 보인다(utils/historyState) */
+  failedKinds: Ref<HistoryKind[]>;
   byKind(kind: HistoryKind): ComputedRef<HistoryEntry[]>;
   load(): Promise<void>;
   migrated(): Promise<void>;
@@ -97,6 +99,8 @@ export interface UseHistory {
   remove(id: string): Promise<void>;
   clear(kind: HistoryKind): Promise<void>;
   get(id: string): Promise<HistoryEntry | null>;
+  /** 주소(?h=) 복원용 — 못 읽은 것(failed)과 없는 기록(entry null)을 가른다(utils/historyState) */
+  lookup(id: string): Promise<HistoryLookup>;
   upsertResearch(jobId: string, question: string): Promise<HistoryEntry | null>;
   setResearchStatus(jobId: string, next: { status: string; stage: string }): void;
 }
@@ -107,6 +111,7 @@ export function useHistory(): UseHistory {
     entries: s.entries,
     loaded: s.loaded,
     listFailed: s.listFailed,
+    failedKinds: s.failedKinds,
     byKind: s.byKind,
     load,
     migrated,
@@ -116,6 +121,7 @@ export function useHistory(): UseHistory {
     remove: s.remove,
     clear: s.clear,
     get: s.get,
+    lookup: s.lookup,
     upsertResearch: s.upsertResearch,
     setResearchStatus: s.setResearchStatus,
   };

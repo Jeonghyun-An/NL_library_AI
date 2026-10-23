@@ -78,6 +78,14 @@ class Settings(BaseSettings):
     MILVUS_INDEX_TYPE: str = "IVF_FLAT"
     MILVUS_NLIST: int = 256
     MILVUS_NPROBE: int = 32
+    # 검색 경로(indexer.search_chunks — 소장자료·논문 검색·관련 자료·상황별 추천·DeepRead·딥리서치 탐색)의 Milvus 호출 시간 한도(초).
+    # 꼭 정수여야 한다 — pymilvus 2.4.6 의 retry_on_rpc_failure 는 정수 timeout 일 때만 그것을 재시도 전체 시간 한도로 쓰고(실수·None
+    # 이면 75회 재시도 — Milvus 가 꺼지면 time.sleep 을 섞어 약 3.5분), 같은 값을 grpc 호출 하나의 기한으로도 넘긴다. 넘기면
+    # MilvusException(재시도 끝 — grpc UNAVAILABLE) 이나 grpc DEADLINE_EXCEEDED 로 끝나 지금처럼 503 search_unavailable(DeepRead 는
+    # retrieval_failed)이 된다. 검색은 이벤트 루프에서 동기로 돌아 그동안 fastapi 전체가 멈추므로 화면의 시간 제한(검색 60초)보다
+    # 넉넉히 짧게 둔다. 대량 적재(인덱싱) 쓰기 경로에는 걸지 않는다.
+    # docker-compose.yml 공통 env 에 ${MILVUS_SEARCH_TIMEOUT:-20} 선언이 없으면 Portainer 스택 env 로는 바뀌지 않는다(넣어도 무시된다)
+    MILVUS_SEARCH_TIMEOUT: int = 20
 
     # ── OCR 엔진 선택 (2티어 보완) ────────────────────
     # "vlm"   : 범용 VLM(Qwen3-VL) — /chat/completions HTTP
@@ -204,8 +212,10 @@ class Settings(BaseSettings):
     # 순차 VLM 호출을 유발해 잡 전체 처리량을 끌어내리는 것을 방지.
     # 초과분은 ODL 결과(비어있거나 부실해도)를 그대로 채택하고 VLM은 스킵한다.
     VLM_MAX_PAGES_PER_DOC: int = 60
-    # 문서 하나 안에서 동시에 보내는 OCR 요청 수 (추출 워커 4 × 2 = VLM max-num-seqs 8)
-    VLM_PAGE_CONCURRENCY: int = 2
+    # 문서 하나 안에서 동시에 보내는 OCR 요청 수 (추출 워커 4 × 3 = 12, VLM max-num-seqs 16. 그림 설명이 많아야 8건
+    # (paper_enricher._FIGURE_VLM_CONCURRENCY 2 × celery-llm 4)이라 둘이 함께 몰리면 4건이 vLLM 대기열에 선다 — 실패가 아니라 대기.
+    # 운영 2026-10-19 에 2 → 3, docker-compose.yml x-common-env 기본값과 같아야 한다 — tests/test_ingest_settings.py)
+    VLM_PAGE_CONCURRENCY: int = 3
     # 스캔본 판정(문서 단위만 — 쪽 단위 규칙은 표지·간지를 다시 VLM 으로 보낸다).
     # 머리말·꼬리말·스탬프 = 문서 쪽의 이 비율 이상에 되풀이되는 짧은 줄 — fitz 쪽 길이에서 뺀다
     SCAN_REPEAT_LINE_RATIO: float = 0.6

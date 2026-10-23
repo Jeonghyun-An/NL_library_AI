@@ -135,3 +135,38 @@ describe("useReadingSaves — 저장은 차례로, 다시 읽기는 사슬이 �
     expect(error.value).not.toBeNull();
   });
 });
+
+describe("useReadingSaves — 저장은 됐는데 끝의 다시 읽기가 실패", () => {
+  function run(reloadOk: boolean, putOk: boolean) {
+    const unrefreshed = vi.fn();
+    const afterAction = vi.fn();
+    const error = ref<string | null>(null);
+    const saves = useReadingSaves({
+      put: () => (putOk ? Promise.resolve() : Promise.reject(httpError(500))),
+      reload: () => Promise.resolve(reloadOk),
+      afterAction,
+      error,
+      unrefreshed,
+    });
+    saves.enqueue("A", { state: "in" });
+    return { saves, unrefreshed, afterAction };
+  }
+
+  it("성공한 저장이 있고 다시 읽기가 false 면 unrefreshed 를 부른다 — 표는 저장 전 값이라 화면이 그 사실을 알린다", async () => {
+    const { saves, unrefreshed, afterAction } = run(false, true);
+    await saves.idle();
+    expect(unrefreshed).toHaveBeenCalledTimes(1);
+    expect(afterAction).toHaveBeenCalledTimes(1);
+    expect(saves.pending.value).toBe(0);
+  });
+
+  it("다시 읽기가 됐거나 성공한 저장이 없으면 부르지 않는다", async () => {
+    const fresh = run(true, true);
+    await fresh.saves.idle();
+    expect(fresh.unrefreshed).not.toHaveBeenCalled();
+
+    const failed = run(false, false);
+    await failed.saves.idle();
+    expect(failed.unrefreshed).not.toHaveBeenCalled();
+  });
+});

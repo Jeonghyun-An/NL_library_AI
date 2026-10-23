@@ -100,7 +100,9 @@ async def curate_books(
             return result
     except Exception as e:
         log.error(f"큐레이션 생성 실패: {e}")
+        # 책은 그대로 보이고 사유만 빈다 — ai_failed 로 화면이 '사유를 만들지 못했다'를 알게 한다(api/book.py /curate)
         return {
             "intro": "",
             "items": [{"book_id": b.cnts_id, "reason": ""} for b in target_books],
+            "ai_failed": True,
         }

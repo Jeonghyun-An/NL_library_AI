@@ -15,7 +15,7 @@
       class="rs-cite__chip"
       :aria-expanded="open"
       :aria-controls="popId"
-      :aria-label="`근거 ${eid}: ${title}`"
+      :aria-label="`근거 ${label}: ${title}`"
       :data-anchor="anchor"
       @click="togglePin"
     >
@@ -29,7 +29,7 @@
       class="rs-cite__pop"
       role="dialog"
       tabindex="-1"
-      :aria-label="`${eid} 근거`"
+      :aria-label="`근거 ${label}`"
       :style="shift ? { left: `${shift}px` } : undefined"
     >
       <strong class="rs-cite__title">{{ title }}</strong>
@@ -45,7 +45,7 @@
           </span>
         </span>
       </template>
-      <span v-else class="rs-cite__quote rs-muted">이 절에서 매칭된 대목이 없습니다</span>
+      <span v-else class="rs-cite__quote rs-muted">이 절에서 매칭된 대목이 없어요</span>
       <span v-if="evidence" class="rs-cite__actions">
         <button type="button" class="rs-btn rs-btn--small" @click="openPdf">원문 보기</button>
         <!-- 누르는 순간의 칩 높이를 주소에 실어야 해서 NuxtLink 대신 직접 옮긴다 -->
@@ -72,7 +72,14 @@ import { hideOnPointerLeave, stepChunk } from "~/utils/researchReport";
 import { isPlainClick, spotOf } from "~/utils/restorePosition";
 
 // anchor: 돌아왔을 때 이 칩을 다시 찾는 열쇠(같은 절의 같은 근거는 순번으로 가른다)
-const props = defineProps<{ eid: string; anchor: string; evidence?: ReportEvidence; chunks: ReportChunk[] }>();
+// num: 보고서 인용 번호(reportDocument.reportCiteNumbers — Word·PDF·끝의 참고문헌과 같은 번호). 칩은 이 숫자를 보인다
+const props = defineProps<{
+  eid: string;
+  anchor: string;
+  evidence?: ReportEvidence;
+  chunks: ReportChunk[];
+  num?: number;
+}>();
 const emit = defineEmits<{ "open-pdf": [payload: OpenPdfPayload] }>();
 
 // 포인터가 칩에서 팝오버로 옮겨 가는 사이에 닫히지 않게 조금 기다린다
@@ -93,8 +100,9 @@ let hovering = false;
 const reportJob = inject(REPORT_JOB)!;
 const { leave } = useDetailLeave();
 
-const label = computed(() => citeLabel(props.evidence?.meta, props.eid));
-const title = computed(() => props.evidence?.meta.title || "근거 정보를 찾을 수 없습니다");
+// 칩 글 — 인용 번호. '김 2012'(성 연도)는 보기 어색하다는 의견으로 숫자로 바꿨다(사용자 결정 2026-10-15). 번호를 모르면 전처럼 성 연도
+const label = computed(() => (props.num ? String(props.num) : citeLabel(props.evidence?.meta, props.eid)));
+const title = computed(() => props.evidence?.meta.title || "근거 정보를 찾을 수 없어요");
 const meta = computed(() => metaLine(props.evidence?.meta));
 const current = computed<ReportChunk | undefined>(() => props.chunks[index.value]);
 const canPrev = computed(() => stepChunk(index.value, -1, props.chunks.length) !== index.value);

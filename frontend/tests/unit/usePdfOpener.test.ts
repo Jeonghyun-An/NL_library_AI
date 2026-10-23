@@ -34,7 +34,7 @@ describe("usePdfOpener", () => {
   it("파일이 없으면(404) 안내 문구를 돌려주고 원문은 열지 않는다", async () => {
     stubFetch(404);
     const { pdf, checking, openPdf } = usePdfOpener();
-    await expect(openPdf(target)).resolves.toBe("원문 파일이 없습니다");
+    await expect(openPdf(target)).resolves.toBe("원문 파일이 없어요");
     expect(pdf.value).toBeNull();
     expect(checking.value).toBe(false);
   });
@@ -56,7 +56,7 @@ describe("usePdfOpener", () => {
     expect(pdf.value).toBeNull();
 
     respond({ status: 404 });
-    await expect(first).resolves.toBe("원문 파일이 없습니다");
+    await expect(first).resolves.toBe("원문 파일이 없어요");
     expect(pdf.value).toBeNull();
     expect(checking.value).toBe(false);
   });

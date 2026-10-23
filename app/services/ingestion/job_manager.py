@@ -224,7 +224,7 @@ def _reopen_finished_job(db, job_id) -> None:
 
 
 def retry_items(
-    job_id: str,
+    job_id: uuid.UUID,
     *,
     error_group: str | None = None,
     item_ids: list[int] | None = None,

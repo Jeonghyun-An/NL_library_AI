@@ -36,7 +36,7 @@ from services.research_work.membership import (
 from services.research_work.outline import outline_input
 from services.research_work.paragraph import paragraph_input
 from services.research_work.paragraph_edit import merge_paragraphs, revalidate
-from services.research_work.passages import milvus_passages, pick_excerpt, snapshot_passages
+from services.research_work.passages import drop_running_heads, milvus_passages, pick_excerpt, snapshot_passages
 from services.research_work.progress import refresh_progress
 from services.research_work.proposal_views import paper_ids, proposal_view, section_sources
 from services.research_work.reading_views import book_meta, preselected_count, subquestions_of
@@ -49,17 +49,17 @@ from services.research_work.shapes import (
 
 router = APIRouter(tags=["research-work"])
 
-PICK_TOPIC_FIRST = "주제를 먼저 고르세요"
-NEED_READING = f"담은 논문이 {MIN_READING_FOR_OUTLINE}편 이상이어야 보고서를 만듭니다"
-OUTLINE_BUSY = "목차를 만드는 중입니다"
-NO_OUTLINE = "목차가 없습니다"
+PICK_TOPIC_FIRST = "주제를 먼저 골라 주세요"
+NEED_READING = f"담은 논문이 {MIN_READING_FOR_OUTLINE}편 이상이어야 보고서를 만들 수 있어요"
+OUTLINE_BUSY = "목차를 만드는 중이에요"
+NO_OUTLINE = "목차를 찾을 수 없어요"
 IF_MATCH_REQUIRED = "If-Match 가 필요합니다"
 IF_MATCH_FORMAT = "If-Match 는 보고서 버전 숫자입니다"
-VERSION_CONFLICT = "다른 곳에서 보고서가 바뀌었습니다 — 다시 불러온 뒤 고쳐 주세요"
-GROUP_KEYS_DIFFER = "묶음이 저장된 목차와 다릅니다"
-GROUP_PAPERS_DIFFER = "묶음의 논문이 저장된 목차와 다릅니다"
-PAPER_IN_TWO_GROUPS = "한 논문이 두 묶음에 들어 있습니다"
-EMPTY_GROUP = "빈 묶음이 있습니다"
+VERSION_CONFLICT = "다른 곳에서 보고서가 바뀌었어요 — 다시 불러온 뒤 고쳐 주세요"
+GROUP_KEYS_DIFFER = "묶음이 저장된 목차와 달라요"
+GROUP_PAPERS_DIFFER = "묶음의 논문이 저장된 목차와 달라요"
+PAPER_IN_TWO_GROUPS = "한 논문이 두 묶음에 들어 있어요"
+EMPTY_GROUP = "빈 묶음이 있어요"
 EMPTY_GROUP_NAME = "묶음 이름을 써 주세요"
 APPROVE_NEEDS_QUESTION = "목차를 승인하려면 연구 질문을 2자 이상 써 주세요"
 MAX_GROUP_PAPERS = 500        # 묶음 하나의 논문 수 상한(본문 크기 방어) — 읽기 목록 전체보다 넉넉하다
@@ -297,19 +297,19 @@ async def put_outline(job_id: str, req: OutlinePut, response: Response,
 
 # ── 절 쓰기·고치기 (Task 19) ─────────────────────────────────────────────
 
-SECTION_NOT_WRITABLE = "이 절은 아직 쓸 수 없습니다"
-OUTLINE_NOT_APPROVED = "목차를 먼저 승인하세요"
-NO_GROUP = "묶음이 없습니다"
-SECTION_BUSY = "이 절을 쓰는 중입니다"
-NO_SECTION = "절이 없습니다"
-NO_SECTION_PAPERS = "이 절에 넣을 논문이 없습니다"
+SECTION_NOT_WRITABLE = "이 절은 아직 쓸 수 없어요"
+OUTLINE_NOT_APPROVED = "목차를 먼저 승인해 주세요"
+NO_GROUP = "묶음을 찾을 수 없어요"
+SECTION_BUSY = "이 절을 쓰는 중이에요"
+NO_SECTION = "절을 찾을 수 없어요"
+NO_SECTION_PAPERS = "이 절에 넣을 논문이 없어요"
 # 06e — 근거 없음 409 의 detail code. 화면의 절 연쇄는 문구가 아니라 이 code 로 '그 절만 건너뛰고 다음 키' 를 가른다
 NO_SECTION_PAPERS_CODE = "no_section_papers"
 DUPLICATE_PARAGRAPH = "같은 문단 id 가 두 번 있습니다"
 # 화면 검사(paragraphProblem '문단은 3000자까지입니다')는 보낸 글만 보아 통과시키는데, 서버는 검사(soften_claims 가
 # '최초로' 를 '소장 코퍼스에서 확인한 범위에서 처음으로' 로 늘린다) 뒤 글로 상한을 본다 — 화면이 이 문구를 그대로
 # 보이므로(workErrorMessage) 사용자가 3,000자 안으로 쓰고도 막힌 이유가 문구에 보여야 한다
-PARAGRAPH_TOO_LONG = (f"검사 뒤 글이 {MAX_PARAGRAPH_CHARS}자를 넘습니다 — 단정 표현을 바꾸면서 글이 늘었을 수 있습니다. "
+PARAGRAPH_TOO_LONG = (f"검사 뒤 문단이 {MAX_PARAGRAPH_CHARS}자를 넘어요 — 단정 표현을 고치면서 늘었을 수 있으니 "
                       "조금 줄여 주세요")
 
 # 문단 글자 상한(MAX_PARAGRAPH_CHARS)은 본문이 아니라 put_section 이 고친·새 문단의 검사 뒤 글에서 본다 — 화면은 늘 절
@@ -357,11 +357,14 @@ def _excerpt_query(*, group_name: str | None, research_question: str, seeds: lis
     return " ".join(p.strip() for p in parts if p and p.strip())
 
 
-def _excerpts(query: str, snapshot: dict | None, cnts_ids: list[str]) -> dict[str, dict | None]:
-    """논문마다 원문 대목 하나 — 스냅숏 청크가 먼저, 없으면 Milvus 한 편 청크(passages). 리랭커·Milvus 를 부르는
-    동기 함수라 run_in_threadpool 로 부른다(읽기 트랜잭션을 닫은 뒤 — 함정 18)."""
+def _excerpts(query: str, snapshot: dict | None, cnts_ids: list[str],
+              titles: dict[str, str | None]) -> dict[str, dict | None]:
+    """논문마다 원문 대목 하나 — 스냅숏 청크가 먼저, 없으면 Milvus 한 편 청크(passages). 그 논문 제목(titles)으로
+    쪽 머리말 줄을 뗀 뒤 고른다(drop_running_heads). 리랭커·Milvus 를 부르는 동기 함수라 run_in_threadpool 로
+    부른다(읽기 트랜잭션을 닫은 뒤 — 함정 18)."""
     return {
-        cnts: pick_excerpt(query, snapshot_passages(snapshot, cnts) or milvus_passages(cnts))
+        cnts: pick_excerpt(query, drop_running_heads(snapshot_passages(snapshot, cnts) or milvus_passages(cnts),
+                                                     titles.get(cnts)))
         for cnts in cnts_ids
     }
 
@@ -413,6 +416,7 @@ async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get
         # 구조화한 detail(version_conflict 와 같은 꼴) — 화면 문구는 detailMessage 가 message 를 그대로 읽는다
         raise HTTPException(status_code=409, detail={"code": NO_SECTION_PAPERS_CODE, "message": NO_SECTION_PAPERS})
     books = await BookRepository(db).get_by_cnts_ids(cnts_ids)
+    titles = {cnts: getattr(books.get(cnts), "title", None) for cnts in cnts_ids}
     question = job.question
     snapshot = job.state_snapshot
     topic_of_outline = dict(outline.get("topic") or {})
@@ -421,7 +425,7 @@ async def generate_section(job_id: str, key: str, db: AsyncSession = Depends(get
 
     query = _excerpt_query(group_name=(group or {}).get("name"), research_question=research_question,
                            seeds=seeds)
-    excerpts = await run_in_threadpool(_excerpts, query, snapshot, cnts_ids)
+    excerpts = await run_in_threadpool(_excerpts, query, snapshot, cnts_ids, titles)
     if group is not None:
         inp = prior_input(question=question, topic=topic_of_outline, research_question=research_question,
                           group=group, books=books, excerpts=excerpts)
@@ -493,9 +497,9 @@ async def put_section(job_id: str, key: str, req: SectionPut, response: Response
 
 # ── 문단 다시 쓰기 (Task 20) ─────────────────────────────────────────────
 
-NO_PARAGRAPH = "문단이 없습니다"
-NOT_REGENERABLE = "다시 쓸 수 없는 문단입니다"
-NO_SECTION_SOURCE = "이 절을 쓴 생성 기록이 없어 문단을 다시 쓸 수 없습니다"
+NO_PARAGRAPH = "문단을 찾을 수 없어요"
+NOT_REGENERABLE = "다시 쓸 수 없는 문단이에요"
+NO_SECTION_SOURCE = "이 절을 쓴 작업 기록이 없어 문단을 다시 쓸 수 없어요"
 
 
 @router.post("/api/research/{job_id}/sections/{key}/paragraphs/{pid}/regenerate")
@@ -535,7 +539,7 @@ async def regenerate_paragraph(job_id: str, key: str, pid: str, db: AsyncSession
 
 # ── 인용 근거 조회 (06e — D24 인용 근거 A안) ─────────────────────────────
 
-NO_SECTION_SOURCE_GEN = "이 절의 생성 기록이 아닙니다"
+NO_SECTION_SOURCE_GEN = "이 절의 작업 기록이 아니에요"
 
 
 @router.get("/api/research/{job_id}/sections/{key}/sources")

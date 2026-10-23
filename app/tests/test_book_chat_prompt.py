@@ -186,15 +186,77 @@ def test_a_reference_question_without_references_falls_back_to_the_chunk_search(
     hit = book_chat.SearchHit(chunk_id="c1", book_id="KCI_1", chunk_idx=0, section_idx=0,
                               text="표본은 노인 300명이다.", page_start=3, page_end=4, score=0.9)
     searched = _fake_search(monkeypatch, book_chat, [hit])
-    payloads = _fake_llm(monkeypatch, book_chat, "p.3–4 에 나옵니다.")
+    payloads = _fake_llm(monkeypatch, book_chat, "p.4–5 에 나옵니다.")
 
     chunks = _stream(book_chat, "KCI_1", "이 표본의 출처가 어디야?", [], book=_paper())
 
     assert searched.embedded == ["이 표본의 출처가 어디야?"] and searched.filters == ["KCI_1"]
     assert payloads[0]["messages"][-1]["content"] == (
-        "[참고 내용]\n[p.3–4]\n표본은 노인 300명이다.\n\n[질문]\n이 표본의 출처가 어디야?")
+        "[참고 내용]\n[p.4–5]\n표본은 노인 300명이다.\n\n[질문]\n이 표본의 출처가 어디야?")
     assert _events(chunks) == [
-        {"text": "p.3–4 에 나옵니다."},
+        {"text": "p.4–5 에 나옵니다."},
+        {"sources": [{"page_start": 3, "page_end": 4, "text": "표본은 노인 300명이다."}]},
+    ]
+
+
+def _hit(book_chat, page_start, page_end, chunk_id="c1"):
+    return book_chat.SearchHit(chunk_id=chunk_id, book_id="KCI_1", chunk_idx=0, section_idx=0,
+                               text="표본은 노인 300명이다.", page_start=page_start, page_end=page_end, score=0.9)
+
+
+def test_context_pages_are_one_based_like_the_report(book_chat):
+    # 쪽 규칙 — 저장된 쪽은 0부터 센다(extractor 의 PyMuPDF page.number). 사람이 읽는 쪽은 보고서
+    # (frontend/utils/citations.pageLabel)와 같이 +1 이다. 모델이 문맥의 쪽 표기를 답 글에 옮기므로 문맥도 1부터다.
+    # 운영에서 답 글이 '(p.2–2)'·'(p.24–24)' 로 PDF 3·25쪽을 가리켰다
+    assert book_chat._context_label(_hit(book_chat, 3, 4)) == "[p.4–5]"
+    assert book_chat._context_label(_hit(book_chat, 3, 3)) == "[p.4]"            # 한 쪽은 하나만
+    assert book_chat._context_label(_hit(book_chat, 3, 2)) == "[p.4]"            # 끝이 앞서면 시작 쪽으로
+    # 0 은 '첫 쪽'과 '쪽 정보 없음'(indexer 의 `or 0`)이 겹친다 — 쪽을 대지 않는다(보고서의 '쪽 정보 없음'과 같다)
+    assert book_chat._context_label(_hit(book_chat, 0, 0)) == "[쪽 정보 없음]"
+    assert book_chat._context_label(_hit(book_chat, 0, 2)) == "[쪽 정보 없음]"
+
+
+def test_the_page_rule_points_at_the_context_headers(book_chat):
+    # 쪽 언급 규칙 — 답 글의 쪽은 그 대목 머리(_context_label)의 쪽 번호로만 대고, 머리가 [쪽 정보 없음]인 대목에는 쪽을
+    # 붙이지 않는다. 전에는 '출처(페이지)를 자연스럽게 언급하세요' 뿐이라 운영에서 [쪽 정보 없음] 대목에 '(p.1)' 을 단
+    # 답이 나왔다 — 그 쪽은 출처 칩으로 고를 수 없다(_find_cited_hits). 책·논문 프롬프트 모두 같은 두 줄이다
+    no_page = book_chat._context_label(_hit(book_chat, 0, 0))
+    ranged = book_chat._context_label(_hit(book_chat, 3, 4))
+    assert no_page == "[쪽 정보 없음]" and ranged == "[p.4–5]"
+    for doc_type in ("paper", "book"):
+        system = book_chat.chat_prompt(SimpleNamespace(doc_type=doc_type)).render(**VARS)[0]
+        assert "- 출처(페이지)는 그 내용이 실린 대목 머리([p.N]·[p.N–M])의 쪽 번호로만 자연스럽게 언급하세요.\n" in system
+        assert f"- 머리가 {no_page}인 대목에는 쪽을 붙이지 마세요.\n" in system
+        assert "출처(페이지)를 자연스럽게 언급하세요" not in system
+        # 규칙이 적은 머리 꼴([p.N–M])의 이음표가 문맥의 것과 같은 글자(–)다
+        assert ranged.replace("4", "N").replace("5", "M") in system
+
+
+def test_cited_hits_match_the_one_based_pages(book_chat):
+    stored_3_4 = _hit(book_chat, 3, 4)
+    for answer in ("p.4–5 에 나옵니다.", "p.4-5 참고", "(p.4)", "4–5페이지에", "4페이지에", "4–5쪽에", "4쪽에", "(4 쪽)"):
+        assert book_chat._find_cited_hits(answer, [stored_3_4]) == [stored_3_4], answer
+    # 저장값(0부터) 그대로 쓴 쪽·다른 쪽은 인용으로 보지 않는다
+    for answer in ("p.3–4 에 나옵니다.", "p.3", "3페이지", "p.40", "p.14", "3쪽", "14쪽", "40쪽"):
+        assert book_chat._find_cited_hits(answer, [stored_3_4]) == [], answer
+    # 쪽 정보 없는 대목(page_start 0 이하)은 어떤 쪽 표기로도 고르지 않는다
+    for answer in ("p.1", "p.0", "p.1–3", "1페이지", "1쪽"):
+        assert book_chat._find_cited_hits(answer, [_hit(book_chat, 0, 2)]) == [], answer
+
+
+def test_the_stream_shows_one_based_pages_and_sends_stored_pages(book_chat, monkeypatch):
+    # 문맥 [p.4–5](저장 3–4) → 답 글 'p.4–5' → sources 는 저장값 3·4 그대로(화면 sourceLabel·sourcePdfTarget 이 +1).
+    # 쪽 정보 없는 대목은 문맥에 [쪽 정보 없음] 으로 싣고 출처 칩으로 고르지 않는다
+    hits = [_hit(book_chat, 3, 4), _hit(book_chat, 0, 0, chunk_id="c0")]
+    _fake_search(monkeypatch, book_chat, hits)
+    payloads = _fake_llm(monkeypatch, book_chat, "p.4–5 에 나옵니다.")
+
+    chunks = _stream(book_chat, "KCI_1", "표본은?", [], book=_paper())
+
+    assert payloads[0]["messages"][-1]["content"] == (
+        "[참고 내용]\n[p.4–5]\n표본은 노인 300명이다.\n\n[쪽 정보 없음]\n표본은 노인 300명이다.\n\n[질문]\n표본은?")
+    assert _events(chunks) == [
+        {"text": "p.4–5 에 나옵니다."},
         {"sources": [{"page_start": 3, "page_end": 4, "text": "표본은 노인 300명이다."}]},
     ]
 

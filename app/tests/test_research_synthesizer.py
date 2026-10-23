@@ -693,6 +693,23 @@ class TestBuildSection:
         sec = build_section(st, st.subquestions[0], {"intro": "도입.", "future": ["과제 [E1]."]})
         assert sec["future"] == [{"text": "과제 [E1]."}]
 
+    @pytest.mark.parametrize("lead", ["이 하위질문에 대해, ", "이하위질문에 대해 ", "이 하위 질문에 대하여 ",
+                                      "  이 하위질문에 대한 "])
+    def test_prompt_wording_at_the_head_of_a_future_item_is_dropped(self, lead):
+        """출력 형식의 예시 '이 하위질문에 대해 남은 과제 한 문장 [E#].' 의 머리를 모델이 그대로 옮겼다 — 운영
+        1af7403f 1·2절 '이 하위질문에 대해, 공공도서관…'·'이하위질문에 대해 이용자의…', 911d9583 5절(2026-10-15~16,
+        최근 보고서 15건의 향후 과제 89줄 중 3줄). 화면에 내부 말이 보이므로 머리만 뗀다."""
+        st = _state_three()
+        sec = build_section(st, st.subquestions[0], {"intro": "도입.", "future": [
+            f"{lead}평가 지표를 정교화하는 연구가 필요하다 [E1]."]})
+        assert sec["future"] == [{"text": "평가 지표를 정교화하는 연구가 필요하다 [E1]."}]
+
+    def test_the_word_subquestion_inside_a_future_item_is_kept(self):
+        st = _state_three()
+        text = "각 하위질문에 대해 따로 검증하는 연구가 필요하다 [E1]."
+        sec = build_section(st, st.subquestions[0], {"intro": "도입.", "future": [text]})
+        assert sec["future"] == [{"text": text}]
+
     def test_list_summary_is_joined_not_repr(self):
         """str(list) 를 쓰면 "['문장1', '문장2']" 가 요약으로 화면에 나간다."""
         st = _state_three()

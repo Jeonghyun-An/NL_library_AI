@@ -6,6 +6,7 @@
 {text} 로 흘려 화면이 정상 답처럼 이어 붙이고, 논문 상세 sessionStorage 캐시·논문 검색 기록(ai)에 그대로 저장했다.
 
 글 일부가 이미 나간 뒤 실패해도 {error} 를 보낸다(받은 글은 그대로 둔다). 정상으로 끝난 스트림에는 {error} 가 없다.
+LLM 이 글 조각 없이(공백뿐 포함) [DONE] 으로 끝난 빈 답도 같은 {error} 로 끝낸다.
 오류는 늘 [DONE] 바로 앞, 마지막 이벤트다. 요약 스트림의 출처(sources)는 LLM 이 아니라 넘겨받은 논문으로 만들어 실패해도
 그대로 맞다 — 오류 앞에 보내 화면 오른쪽 참고 논문 칸이 비지 않게 한다(화면은 {error} 에서 읽기를 그만둔다).
 """
@@ -153,3 +154,68 @@ def test_the_failure_log_names_the_exception_type_and_the_text_already_sent(monk
     assert len(messages) == 1
     assert "ReadTimeout" in messages[0]
     assert "보낸 글 7자" in messages[0]
+
+
+# LLM 이 글 조각 없이(공백뿐 포함) [DONE] 으로 끝난 빈 답 — 호출은 성공했지만 정상 답으로 끝내지 않고 그 스트림의 같은
+# {error} 로 끝낸다(DeepRead 대화의 empty_answer 와 같은 판별). 전에는 [DONE] 만 와 화면이 빈 글을 끝까지 받은 답으로 읽었다
+EMPTY_ANSWERS = [
+    pytest.param(["data: [DONE]"], id="no-text"),
+    # vLLM 의 첫 조각은 역할만 싣고 content 가 빈 글이다 — sse_deltas 가 건너뛴다
+    pytest.param(['data: {"choices": [{"delta": {"role": "assistant", "content": ""}}]}', "data: [DONE]"],
+                 id="role-only"),
+    pytest.param([delta(" "), delta("\n\n"), "data: [DONE]"], id="whitespace-only"),
+]
+
+
+@pytest.mark.parametrize("lines", EMPTY_ANSWERS)
+@pytest.mark.parametrize("name, run, const, lead, tail", STREAMS, ids=IDS)
+def test_an_empty_answer_ends_with_the_error_event(monkeypatch, caplog, name, run, const, lead, tail, lines):
+    fake_llm(monkeypatch, paper_summary, lines)
+
+    with caplog.at_level("WARNING", logger=paper_summary.log.name):
+        chunks = _collect(run())
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    got = events(chunks)
+    # 받은 공백 조각은 그대로 두고, 그 밖의 이벤트 차례는 실패 때와 같다 — 오류는 [DONE] 바로 앞, 한 번
+    assert [e for e in got if "text" not in e] == [*lead, *tail, {"error": getattr(paper_summary, const)}]
+    assert "".join(e.get("text", "") for e in got).strip() == ""
+    # 연결·응답 실패(ERROR)가 아니라 빈 답 경고로 남긴다
+    records = [r for r in caplog.records if r.name == paper_summary.log.name]
+    assert [r.levelname for r in records] == ["WARNING"] and "빈 답" in records[0].getMessage()
+
+
+def _paper_without_content():
+    # 초록·요약·해제가 모두 없다 — LLM 에 줄 내용이 없다
+    paper = _paper()
+    paper.abstract = None
+    paper.summary = None
+    paper.introduction = None
+    return paper
+
+
+def test_a_paper_without_content_ends_with_the_error_event_without_calling_the_llm(monkeypatch, caplog):
+    # 전에는 '논문 내용 정보가 부족하여 분석을 생성할 수 없습니다.' 를 {text} + [DONE] 으로 보내 논문 상세가 정상 요약처럼
+    # 그리고 sessionStorage 캐시에 담았다 — 이제 이 스트림의 실패 이벤트로 끝나 화면이 실패로 읽고 담지 않는다
+    payloads = fake_llm(monkeypatch, paper_summary, [delta("불리면 안 된다"), "data: [DONE]"])
+
+    with caplog.at_level("WARNING", logger=paper_summary.log.name):
+        chunks = _collect(paper_summary.stream_paper_reason("노인 우울", _paper_without_content()))
+
+    assert chunks[-1] == DONE and chunks.count(DONE) == 1
+    assert events(chunks) == [{"keywords": ["우울", "노년"]}, {"error": paper_summary.PAPER_REASON_STREAM_ERROR}]
+    # LLM 은 부르지 않는다
+    assert payloads == []
+    # 연결·응답 실패(ERROR)가 아니라 경고로 남긴다
+    records = [r for r in caplog.records if r.name == paper_summary.log.name]
+    assert [r.levelname for r in records] == ["WARNING"]
+
+
+@pytest.mark.parametrize("name, run, const, lead, tail", STREAMS, ids=IDS)
+def test_leading_whitespace_before_the_text_is_not_an_empty_answer(monkeypatch, name, run, const, lead, tail):
+    fake_llm(monkeypatch, paper_summary, [delta("\n"), delta("두 논문은 노인 우울을 다룬다."), delta("\n"), "data: [DONE]"])
+
+    got = events(_collect(run()))
+
+    assert not any("error" in e for e in got)
+    assert [e for e in got if "text" not in e] == [*lead, *tail]

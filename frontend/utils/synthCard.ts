@@ -104,7 +104,7 @@ export function finishedAnnouncement(slots: readonly DraftSlot[], idxs: readonly
     .filter((s): s is DraftSlot => s !== undefined)
     .map((s) =>
       s.status === "failed"
-        ? `절 ${s.idx + 1} 서술 받지 못함, 논문 목록만 싣습니다: ${s.heading}`
+        ? `절 ${s.idx + 1} 서술을 받지 못해 논문 목록만 실어요: ${s.heading}`
         : `절 ${s.idx + 1} 작성 완료: ${s.heading}`,
     )
     .join(". ");

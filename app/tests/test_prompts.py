@@ -157,7 +157,8 @@ def test_nl_library_prompts_exist_and_render():
 def test_book_chat_paper_variant_keeps_the_variables_and_params():
     """딥리드 논문 변형(round06e) — book_chat.paper.yaml 은 기본 book_chat.yaml 과 같은 변수·params·빈 user 로
     렌더되고 글만 '논문'이다(호출부 book_chat.chat_prompt 가 doc_type 으로 고른다). 변형이 없는 종류는 기본으로
-    물러난다. 쪽 언급 규칙은 그대로다 — 출처 칩(_find_cited_hits)이 답 글의 쪽 표기로 대목을 고른다.
+    물러난다. 쪽 언급 규칙은 두 프롬프트가 같다(대목 머리의 쪽 번호만 — test_book_chat_prompt 가 고정한다) — 출처
+    칩(_find_cited_hits)이 답 글의 쪽 표기로 대목을 고른다.
     예시·개수는 넣지 않는다(함정 15)."""
     real_dir = Path(__file__).resolve().parents[1] / "domains" / "nl_library" / "prompts"
     env = Environment()

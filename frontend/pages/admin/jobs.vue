@@ -1,7 +1,15 @@
 <script setup lang="ts">
 // 대량 인덱싱 잡 대시보드 — 잡 목록/생성/제어 + 단계별 진행률 + 실패 그룹 재시도
+// 오류: 읽기(목록·상세·실패 그룹)는 각 함수가 잡아 그 칸에 한 줄로 알리고 마지막으로 읽은 값은 남긴다(서버 장애와 '잡 없음'을 가른다).
+// 제어·재시도·생성 실패도 그 자리에 한 줄. 문구는 utils/apiErrors 의 apiErrorMessage(ofetch 의 영문 e.message 는 보이지 않는다).
+// 운영자용 밝은 화면(Tailwind)이라 다크 테마 토큰을 쓰는 공통 오류 컴포넌트 대신 회색 글 한 줄로 둔다 — 빨간 글은 쓰지 않는다
+import { API_READ_TIMEOUT_MS } from "~/composables/useApi";
+import { apiErrorMessage } from "~/utils/apiErrors";
+
 const config = useRuntimeConfig();
 const api = (config.public.apiBase as string) + "/admin/ingest-jobs";
+// 읽기는 시간 제한을 둔다 — 응답 없이 붙들린 요청이 폴링을 멈춰 세우지 않게(폴링은 앞 요청이 끝나야 다음을 보낸다)
+const READ = { timeout: API_READ_TIMEOUT_MS } as const;
 
 interface Job {
   id: string;
@@ -33,6 +41,30 @@ const failures = ref<FailureGroup[]>([]);
 const loading = ref(false);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
+// 칸별 오류 한 줄 — 빈 문자열이면 없다
+const jobsError = ref("");
+const detailError = ref("");
+const controlError = ref("");
+const retryError = ref("");
+// 처음 목록을 받기 전에는 '잡이 없어요'를 띄우지 않는다
+const jobsLoaded = ref(false);
+// 재시도 중인 그룹(전체 재시도는 ALL) — 그동안 재시도 버튼을 모두 막아 같은 요청이 여러 번 가지 않게
+const ALL_FAILED = "__all__";
+const retrying = ref<string | null>(null);
+// 늦게 온 응답이 새 응답을 덮지 않게 — 마지막으로 보낸 요청의 응답만 쓴다(잡을 바꾼 뒤 도착한 이전 잡의 상세 포함)
+let jobsSeq = 0;
+let detailSeq = 0;
+
+// 오류 한 줄의 모양 — 회색 글 + 왼쪽 호박색 선(빨간 글은 쓰지 않는다). 문구의 '\n'(문장마다 줄바꿈)을 줄로 그린다
+const ERROR_LINE = "text-xs text-gray-700 border-l-2 border-amber-400 pl-2 whitespace-pre-line";
+
+const CONTROL_LABEL: Record<string, string> = {
+  start: "시작",
+  pause: "일시정지",
+  resume: "재개",
+  cancel: "취소",
+};
+
 // 생성 폼
 const form = reactive({
   name: "",
@@ -43,6 +75,7 @@ const form = reactive({
 });
 const creating = ref(false);
 const createMsg = ref("");
+const createError = ref("");
 
 const STAGES = ["pending", "extracted", "summarized", "indexed", "finalized"];
 const STAGE_COLORS: Record<string, string> = {
@@ -53,61 +86,127 @@ const STAGE_COLORS: Record<string, string> = {
   finalized: "bg-emerald-500",
 };
 
-async function loadJobs() {
-  const res = await $fetch<{ jobs: Job[] }>(api);
-  jobs.value = res.jobs;
-  const firstJob = jobs.value[0];
-  if (!selectedId.value && firstJob) selectJob(firstJob.id);
-}
-
-async function loadDetail() {
-  if (!selectedId.value) return;
-  detail.value = await $fetch<JobDetail>(`${api}/${selectedId.value}`);
-  const f = await $fetch<{ groups: FailureGroup[] }>(
-    `${api}/${selectedId.value}/failures`,
-  );
-  failures.value = f.groups;
-}
-
-function selectJob(id: string) {
-  selectedId.value = id;
-  loadDetail();
-}
-
-async function control(action: string) {
-  if (!selectedId.value) return;
-  loading.value = true;
+// 목록 읽기 — 던지지 않는다(폴링·마운트가 await 없이 부른다). 실패하면 마지막 목록을 남기고 한 줄로 알린다
+async function loadJobs(): Promise<void> {
+  const seq = ++jobsSeq;
   try {
-    await $fetch(`${api}/${selectedId.value}/${action}`, { method: "POST" });
-    await Promise.all([loadJobs(), loadDetail()]);
-  } finally {
-    loading.value = false;
+    const res = await $fetch<{ jobs: Job[] }>(api, READ);
+    if (seq !== jobsSeq) return;
+    jobs.value = res.jobs;
+    jobsError.value = "";
+    jobsLoaded.value = true;
+    const firstJob = jobs.value[0];
+    if (!selectedId.value && firstJob) selectJob(firstJob.id);
+  } catch (e) {
+    if (seq !== jobsSeq) return;
+    jobsError.value = apiErrorMessage(e, "잡 목록을 불러오지 못했어요");
   }
 }
 
-async function retryGroup(group: string) {
-  if (!selectedId.value) return;
-  await $fetch(`${api}/${selectedId.value}/retry`, {
-    method: "POST",
-    body: { error_group: group },
-  });
+// 상세·실패 그룹 읽기 — 던지지 않는다. 실패하면 마지막 값을 남기고(잡을 바꾼 직후면 비어 있다) 한 줄로 알린다
+async function loadDetail(): Promise<void> {
+  const id = selectedId.value;
+  if (!id) return;
+  const seq = ++detailSeq;
+  try {
+    const [d, f] = await Promise.all([
+      $fetch<JobDetail>(`${api}/${id}`, READ),
+      $fetch<{ groups: FailureGroup[] }>(`${api}/${id}/failures`, READ),
+    ]);
+    if (seq !== detailSeq) return;
+    detail.value = d;
+    failures.value = f.groups;
+    detailError.value = "";
+  } catch (e) {
+    if (seq !== detailSeq) return;
+    detailError.value = apiErrorMessage(e, "잡 상세를 불러오지 못했어요");
+  }
+}
+
+function selectJob(id: string) {
+  if (selectedId.value !== id) {
+    // 다른 잡의 상세·오류가 새 잡 자리에 남지 않게 비우고 읽는다
+    detail.value = null;
+    failures.value = [];
+    detailError.value = "";
+    controlError.value = "";
+    retryError.value = "";
+  }
+  selectedId.value = id;
+  void loadDetail();
+}
+
+// 앞 폴링이 끝나기 전에는 다음 폴링을 보내지 않는다 — 응답이 느리면 요청이 겹쳐 쌓였다
+let polling = false;
+async function poll(): Promise<void> {
+  if (polling) return;
+  polling = true;
+  try {
+    await Promise.all([loadJobs(), loadDetail()]);
+  } finally {
+    polling = false;
+  }
+}
+
+// 제어·재시도 응답을 기다리는 사이 다른 잡을 고르면(selectJob 이 그 칸을 비운다) 늦게 온 실패는 버린다 — 이전 잡의 오류가
+// 새 잡 자리에 뜨지 않게, 보낼 때의 잡(id)이 아직 골라져 있을 때만 쓴다
+async function control(action: string) {
+  const id = selectedId.value;
+  if (!id || loading.value) return;
+  loading.value = true;
+  controlError.value = "";
+  try {
+    await $fetch(`${api}/${id}/${action}`, { method: "POST" });
+  } catch (e) {
+    if (selectedId.value === id) controlError.value = apiErrorMessage(e, `잡을 ${CONTROL_LABEL[action] ?? action}하지 못했어요`);
+    return;
+  } finally {
+    loading.value = false;
+  }
+  // 제어는 이미 됐다 — 뒤의 다시 읽기가 실패하면 그 칸이 따로 알린다
+  await Promise.all([loadJobs(), loadDetail()]);
+}
+
+async function sendRetry(key: string, body: Record<string, unknown>) {
+  const id = selectedId.value;
+  if (!id || retrying.value) return;
+  retrying.value = key;
+  retryError.value = "";
+  try {
+    await $fetch(`${api}/${id}/retry`, { method: "POST", body });
+  } catch (e) {
+    if (selectedId.value === id) retryError.value = apiErrorMessage(e, "재시도하지 못했어요");
+    return;
+  } finally {
+    retrying.value = null;
+  }
   await loadDetail();
 }
 
-async function retryAllFailed() {
-  if (!selectedId.value) return;
-  await $fetch(`${api}/${selectedId.value}/retry`, {
-    method: "POST",
-    body: { all_failed: true },
-  });
-  await loadDetail();
+function retryGroup(group: string) {
+  return sendRetry(group, { error_group: group });
+}
+
+function retryAllFailed() {
+  return sendRetry(ALL_FAILED, { all_failed: true });
+}
+
+// 생성 실패의 서버 사유('잡 생성 실패: …' — app/api/ingest_jobs.py 가 매니페스트 검증 오류 등을 붙여 400 으로 준다)는 운영자가 고칠 곳을
+// 알아야 해 그 문구(한글이 든 문자열 detail)면 그대로 보인다. 그 밖(네트워크·시간 초과·프레임워크의 영문 'Not Found' 등)은 apiErrorMessage.
+// ofetch 의 영문 e.message 는 쓰지 않는다
+function createErrorMessage(e: unknown): string {
+  const detail = (e as { data?: { detail?: unknown } } | null)?.data?.detail;
+  return typeof detail === "string" && /[가-힣]/.test(detail) ? detail.trim() : apiErrorMessage(e, "잡을 만들지 못했어요");
 }
 
 async function createJob() {
+  if (creating.value) return;
   creating.value = true;
   createMsg.value = "";
+  createError.value = "";
+  let res: { job_id: string; validation_report: Record<string, number> } | null = null;
   try {
-    const res = await $fetch<{
+    res = await $fetch<{
       job_id: string;
       validation_report: Record<string, number>;
     }>(api, {
@@ -122,15 +221,19 @@ async function createJob() {
         },
       },
     });
-    const r = res.validation_report;
-    createMsg.value = `생성됨: 적재 ${r.to_ingest}건 (중복 ${r.duplicates}, 메타없음 ${r.missing_meta}, 파일없음 ${r.missing_object}, 기존완료 ${r.already_embedded})`;
-    await loadJobs();
-    selectJob(res.job_id);
-  } catch (e: any) {
-    createMsg.value = `실패: ${e?.data?.detail || e?.message || e}`;
+  } catch (e) {
+    createError.value = createErrorMessage(e);
+    return;
   } finally {
     creating.value = false;
   }
+  if (!res) return;
+  // 잡은 이미 만들어졌다 — 뒤의 목록 읽기가 실패해도 '생성됨'을 남긴다(실패로 보이면 다시 눌러 같은 잡이 또 생긴다).
+  // 목록 실패는 목록 칸이 따로 알린다
+  const r = res.validation_report;
+  createMsg.value = `생성됨: 적재 ${r.to_ingest}건 (중복 ${r.duplicates}, 메타없음 ${r.missing_meta}, 파일없음 ${r.missing_object}, 기존완료 ${r.already_embedded})`;
+  await loadJobs();
+  selectJob(res.job_id);
 }
 
 function pct(n: number, total: number) {
@@ -147,11 +250,8 @@ const statusBadge: Record<string, string> = {
 };
 
 onMounted(() => {
-  loadJobs();
-  pollTimer = setInterval(() => {
-    loadJobs();
-    if (selectedId.value) loadDetail();
-  }, 5000);
+  void loadJobs();
+  pollTimer = setInterval(() => void poll(), 5000);
 });
 onUnmounted(() => {
   if (pollTimer) clearInterval(pollTimer);
@@ -204,11 +304,13 @@ onUnmounted(() => {
             <p v-if="createMsg" class="text-xs text-gray-600">
               {{ createMsg }}
             </p>
+            <p v-if="createError" role="alert" :class="ERROR_LINE">{{ createError }}</p>
           </div>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-4">
           <h2 class="font-semibold mb-3">잡 목록</h2>
+          <p v-if="jobsError" role="alert" :class="[ERROR_LINE, 'mb-2']">{{ jobsError }}</p>
           <ul class="space-y-1">
             <li
               v-for="j in jobs"
@@ -234,8 +336,9 @@ onUnmounted(() => {
                 {{ j.status }}
               </span>
             </li>
-            <li v-if="!jobs.length" class="text-sm text-gray-400 px-3 py-2">
-              잡 없음
+            <!-- 목록을 받은 뒤에만 — 읽지 못한 때는 위 오류 줄이 말한다(서버 장애를 '잡이 없어요'로 보이지 않게) -->
+            <li v-if="jobsLoaded && !jobs.length && !jobsError" class="text-sm text-gray-400 px-3 py-2">
+              잡이 없어요
             </li>
           </ul>
         </div>
@@ -243,6 +346,7 @@ onUnmounted(() => {
 
       <!-- 우: 상세 -->
       <div class="col-span-8 space-y-4">
+        <p v-if="detailError" role="alert" :class="ERROR_LINE">{{ detailError }}</p>
         <div v-if="detail" class="bg-white rounded-xl shadow-sm p-5">
           <div class="flex justify-between items-start mb-4">
             <div>
@@ -260,33 +364,34 @@ onUnmounted(() => {
               <button
                 @click="control('start')"
                 :disabled="loading"
-                class="px-3 py-1 rounded bg-emerald-500 text-white"
+                class="px-3 py-1 rounded bg-emerald-500 text-white disabled:opacity-40"
               >
                 시작
               </button>
               <button
                 @click="control('pause')"
                 :disabled="loading"
-                class="px-3 py-1 rounded bg-amber-500 text-white"
+                class="px-3 py-1 rounded bg-amber-500 text-white disabled:opacity-40"
               >
                 일시정지
               </button>
               <button
                 @click="control('resume')"
                 :disabled="loading"
-                class="px-3 py-1 rounded bg-sky-500 text-white"
+                class="px-3 py-1 rounded bg-sky-500 text-white disabled:opacity-40"
               >
                 재개
               </button>
               <button
                 @click="control('cancel')"
                 :disabled="loading"
-                class="px-3 py-1 rounded bg-rose-500 text-white"
+                class="px-3 py-1 rounded bg-rose-500 text-white disabled:opacity-40"
               >
                 취소
               </button>
             </div>
           </div>
+          <p v-if="controlError" role="alert" :class="[ERROR_LINE, 'mb-4']">{{ controlError }}</p>
 
           <!-- 진행 지표 -->
           <div class="grid grid-cols-4 gap-3 mb-4 text-center">
@@ -366,11 +471,13 @@ onUnmounted(() => {
             <h3 class="font-semibold">실패 그룹</h3>
             <button
               @click="retryAllFailed"
-              class="text-sm px-3 py-1 rounded bg-violet-600 text-white"
+              :disabled="!!retrying"
+              class="text-sm px-3 py-1 rounded bg-violet-600 text-white disabled:opacity-40"
             >
-              전체 재시도
+              {{ retrying === ALL_FAILED ? "재시도 중…" : "전체 재시도" }}
             </button>
           </div>
+          <p v-if="retryError" role="alert" :class="[ERROR_LINE, 'mb-3']">{{ retryError }}</p>
           <table class="w-full text-sm">
             <thead class="text-gray-400 text-left">
               <tr>
@@ -390,9 +497,10 @@ onUnmounted(() => {
                 <td class="text-right">
                   <button
                     @click="retryGroup(g.error_group)"
-                    class="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+                    :disabled="!!retrying"
+                    class="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-40"
                   >
-                    재시도
+                    {{ retrying === g.error_group ? "재시도 중…" : "재시도" }}
                   </button>
                 </td>
               </tr>
@@ -400,8 +508,12 @@ onUnmounted(() => {
           </table>
         </div>
 
-        <div v-if="!detail" class="text-gray-400 text-sm p-8 text-center">
-          잡을 선택하세요
+        <!-- 고른 잡이 없을 때만 '선택해 주세요'. 고른 잡을 읽는 중이면 '불러오는 중', 읽지 못했으면 위 오류 줄이 말한다 -->
+        <div v-if="!selectedId" class="text-gray-400 text-sm p-8 text-center">
+          잡을 선택해 주세요
+        </div>
+        <div v-else-if="!detail && !detailError" class="text-gray-400 text-sm p-8 text-center">
+          불러오는 중…
         </div>
       </div>
     </div>

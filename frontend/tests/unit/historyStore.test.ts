@@ -4,6 +4,7 @@ import {
   HISTORY_CACHE_KEY,
   HISTORY_FLUSH_LOCK_KEY,
   HISTORY_OUTBOX_KEY,
+  HistoryUnavailableError,
   createFlushLock,
   createHybridStore,
   createLocalStore,
@@ -14,9 +15,12 @@ import {
   isRetryable,
   storageFlushLock,
   toWire,
+  trimOutbox,
   type FlushLock,
   type HistoryFetchOptions,
   type HistoryFetcher,
+  type OutboxOp,
+  type OutboxOpInput,
 } from "~/utils/historyStore";
 import { MemoryStorage } from "./helpers/memoryStorage";
 import {
@@ -63,6 +67,8 @@ function wire(over: Partial<HistoryItemDetail> = {}): HistoryItemDetail {
     ...over,
   };
 }
+
+const pendingOps = (local: ReturnType<typeof createLocalStore>) => local.readOutbox().map((o) => o.op);
 
 function fakeFetcher(respond: (path: string, opts?: HistoryFetchOptions) => unknown) {
   const calls: Array<{ path: string; opts?: HistoryFetchOptions }> = [];
@@ -197,6 +203,62 @@ describe("createServerStore", () => {
   });
 });
 
+describe("trimOutbox — 편지함이 상한을 넘을 때 버릴 편지", () => {
+  let n = 0;
+  const op = <T extends OutboxOpInput>(o: T): OutboxOp => ({ ...o, opId: `op${++n}` }) as OutboxOp;
+  const ops = (list: OutboxOp[]) => list.map((o) => o.opId);
+
+  it("상한 안이면 그대로 둔다", () => {
+    const list = [op({ op: "put", entry: bookEntry(ID1) }), op({ op: "remove", id: ID1 })];
+    expect(trimOutbox(list, 2)).toEqual({ kept: list, dropped: [] });
+  });
+
+  it("뒤따른 remove 로 결과가 같은 저장·수정을 먼저 버린다 — 더 오래된 다른 저장보다 먼저", () => {
+    const other = op({ op: "put", entry: bookEntry(ID2) });
+    const put1 = op({ op: "put", entry: bookEntry(ID1) });
+    const patch1 = op({ op: "patch", id: ID1, partial: { title: "x" } });
+    const remove1 = op({ op: "remove", id: ID1 });
+    const { kept, dropped } = trimOutbox([other, put1, patch1, remove1], 2);
+    expect(ops(dropped)).toEqual(ops([put1, patch1]));
+    expect(ops(kept)).toEqual(ops([other, remove1]));
+  });
+
+  it("remove 뒤에 같은 기록을 다시 put 하면 앞의 저장도 결과에 남는다 — 결과가 같은 편지로 보지 않는다", () => {
+    const put1 = op({ op: "put", entry: researchEntry(ID1) });
+    const remove1 = op({ op: "remove", id: ID1 });
+    const put2 = op({ op: "put", entry: researchEntry(ID1) });
+    const patch2 = op({ op: "patch", id: ID2, partial: { title: "y" } });
+    // 결과가 같은 편지가 없으니 수정 → 저장 순으로 버린다
+    expect(ops(trimOutbox([put1, remove1, put2, patch2], 3).dropped)).toEqual(ops([patch2]));
+    expect(ops(trimOutbox([put1, remove1, put2, patch2], 2).dropped)).toEqual(ops([put1, patch2]));
+  });
+
+  it("뒤따른 clear 가 지우는 종류의 저장은 결과가 같다 — 다른 종류·clear 뒤에 다시 저장한 기록은 아니다", () => {
+    const book1 = op({ op: "put", entry: bookEntry(ID1) });
+    const paper2 = op({ op: "put", entry: paperEntry(ID2) });
+    const book3 = op({ op: "put", entry: bookEntry(ID3) });
+    const clearBook = op({ op: "clear", kind: "book" });
+    const book3again = op({ op: "put", entry: bookEntry(ID3) });
+    const { kept, dropped } = trimOutbox([book1, paper2, book3, clearBook, book3again], 4);
+    expect(ops(dropped)).toEqual(ops([book1]));
+    expect(ops(kept)).toEqual(ops([paper2, book3, clearBook, book3again]));
+  });
+
+  it("그다음은 수정 → 저장 → 지우기 순, 같은 순위면 오래된 것부터 버리고 남는 순서는 지킨다", () => {
+    const remove3 = op({ op: "remove", id: ID3 });
+    const put1 = op({ op: "put", entry: bookEntry(ID1) });
+    const patch1 = op({ op: "patch", id: ID1, partial: { title: "x" } });
+    const put2 = op({ op: "put", entry: bookEntry(ID2) });
+    const clear = op({ op: "clear", kind: "paper" });
+    const list = [remove3, put1, patch1, put2, clear];
+    expect(ops(trimOutbox(list, 4).dropped)).toEqual(ops([patch1]));
+    expect(ops(trimOutbox(list, 3).dropped)).toEqual(ops([put1, patch1]));
+    expect(ops(trimOutbox(list, 2).kept)).toEqual(ops([remove3, clear]));
+    // 지우기 편지뿐이면 그것도 오래된 것부터
+    expect(ops(trimOutbox(list, 1).kept)).toEqual(ops([clear]));
+  });
+});
+
 describe("createLocalStore", () => {
   it("종류별로 최신순 목록을 돌려준다", async () => {
     const local = createLocalStore(new MemoryStorage());
@@ -317,6 +379,57 @@ describe("createLocalStore", () => {
     expect(await local.get(ID3)).toMatchObject({ kind: "paper" });
   });
 
+  it("편지함이 상한(200건)을 넘으면 로그를 남기고, 지우기 편지는 남긴 채 오래된 저장부터 버린다", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const storage = new MemoryStorage();
+      const local = createLocalStore(storage);
+      local.enqueue({ op: "remove", id: ID1 });
+      const ids = Array.from({ length: 200 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`);
+      for (const id of ids) local.enqueue({ op: "put", entry: bookEntry(id) });
+      const ops = local.readOutbox();
+      expect(ops).toHaveLength(200);
+      // 맨 처음 넣은 지우기는 남고, 가장 오래된 저장 하나가 빠졌다 — 남은 편지는 넣은 순서 그대로
+      expect(ops[0]).toMatchObject({ op: "remove", id: ID1 });
+      expect(ops.slice(1).map((o) => (o.op === "put" ? o.entry.id : ""))).toEqual(ids.slice(1));
+      expect(JSON.parse(storage.getItem(HISTORY_OUTBOX_KEY)!)).toHaveLength(200);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]![0]).toContain("1건을 버렸다");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("메모리 모드에서 상한으로 버린 편지가 넘어갈 때 저장소에서 가져온 것이면 저장소에서도 뺀다 — 새로고침 뒤 다시 나가지 않게", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const storage = new MemoryStorage(1200);
+      // v1 백업처럼 지워지지 않고 쿼터를 차지하는 값
+      storage.setItem("skx_search_history_backup_v1", "x".repeat(600));
+      // 새로고침 전 인스턴스가 남긴 편지 — 수정(버릴 순위가 가장 앞)과 지우기
+      const before = createLocalStore(storage);
+      before.enqueue({ op: "patch", id: ID1, partial: { title: "옛 제목" } });
+      before.enqueue({ op: "remove", id: ID2 });
+      // 새로고침한 인스턴스가 긴 저장으로 쿼터에 막혀 메모리로 넘어가며 두 편지를 가져온다
+      const local = createLocalStore(storage);
+      local.enqueue({ op: "put", entry: bookEntry(ID3, { title: "긴 제목".repeat(100) }) });
+      expect(pendingOps(local)).toEqual(["patch", "remove", "put"]);
+      // 메모리에서 계속 쌓여 상한(200)을 넘으면 가져온 수정 편지가 먼저 버려진다
+      for (let i = 0; i < 198; i++) {
+        local.enqueue({ op: "put", entry: bookEntry(`00000000-0000-4000-8000-${String(i).padStart(12, "0")}`) });
+      }
+      const ops = local.readOutbox();
+      expect(ops).toHaveLength(200);
+      expect(ops.some((o) => o.op === "patch")).toBe(false);
+      // 저장소 편지함에서도 빠졌다 — 가져온 지우기는 남는다(아직 보내지 않았다)
+      const stored = JSON.parse(storage.getItem(HISTORY_OUTBOX_KEY)!) as OutboxOp[];
+      expect(stored.map((o) => o.op)).toEqual(["remove"]);
+      expect(createLocalStore(storage).readOutbox().map((o) => o.op)).toEqual(["remove"]);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it("outbox 는 넣은 순서대로 쌓이고 opId 로 뺀다", () => {
     const storage = new MemoryStorage();
     const local = createLocalStore(storage);
@@ -381,14 +494,46 @@ describe("createHybridStore", () => {
     expect(local.readOutbox()).toEqual([]);
   });
 
-  it("보낼 때 4xx 로 거절된 편지는 버리고 다음 편지를 보낸다", async () => {
+  it("보낼 때 4xx 로 거절된 편지는 버리고 다음 편지를 보낸다 — 버린 편지는 로그를 남긴다", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const { server, local, store } = setup();
+      local.enqueue({ op: "patch", id: ID1, partial: { title: "x" } });
+      local.enqueue({ op: "put", entry: bookEntry(ID2) });
+      server.patch.mockRejectedValueOnce(httpError(422));
+      await store.flush();
+      expect(server.rows.has(ID2)).toBe(true);
+      expect(local.readOutbox()).toEqual([]);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]![0]).toContain("서버가 거절한 변경(patch)을 버렸다");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("서버에 닿으면 목록에 사본 표시(fromCache)가 없다", async () => {
+    const { server, store } = setup();
+    server.rows.set(ID1, bookEntry(ID1));
+    const res = await store.list("book");
+    expect(res.items.map((e) => e.id)).toEqual([ID1]);
+    expect(res.fromCache).toBeUndefined();
+    expect(res.cacheEmpty).toBeUndefined();
+  });
+
+  it("서버에 닿지 못해 사본으로 답하면 fromCache, 사본이 통째로 비었으면 cacheEmpty 를 단다", async () => {
     const { server, local, store } = setup();
-    local.enqueue({ op: "patch", id: ID1, partial: { title: "x" } });
-    local.enqueue({ op: "put", entry: bookEntry(ID2) });
-    server.patch.mockRejectedValueOnce(httpError(422));
-    await store.flush();
-    expect(server.rows.has(ID2)).toBe(true);
-    expect(local.readOutbox()).toEqual([]);
+    server.fail(networkError());
+    expect(await store.list("research")).toMatchObject({ items: [], fromCache: true, cacheEmpty: true });
+    // 다른 종류라도 사본에 무엇이 있으면 서버 목록을 받아 둔 사본이다 — 빈 종류는 정말 비었을 가능성이 크다
+    await local.put(bookEntry(ID1));
+    expect(await store.list("research")).toMatchObject({ items: [], fromCache: true, cacheEmpty: false });
+    expect(await store.list("book")).toMatchObject({ items: [{ id: ID1 }], fromCache: true, cacheEmpty: false });
+  });
+
+  it("5xx 도 사본으로 답한다(fromCache)", async () => {
+    const { server, store } = setup();
+    server.fail(httpError(502));
+    expect(await store.list()).toMatchObject({ items: [], fromCache: true, cacheEmpty: true });
   });
 
   it("다시 보낼 만한 실패에서는 멈추고 순서를 지킨다", async () => {
@@ -425,6 +570,47 @@ describe("createHybridStore", () => {
     await local.put(bookEntry(ID1, { snapshot: snap }));
     server.fail(networkError());
     expect(await store.get(ID1)).toMatchObject({ snapshot: snap });
+  });
+
+  it("서버가 없다고 답하면 캐시에 없어도 던지지 않고 null(없는 기록)이다", async () => {
+    const { store } = setup();
+    expect(await store.get(ID1)).toBeNull();
+  });
+
+  it("서버에 닿지 못했는데 캐시에도 없으면 null(없는 기록)이 아니라 HistoryUnavailableError 를 던진다", async () => {
+    const { server, store } = setup();
+    // 서버에는 있다 — 닿지 못했을 뿐이라 '없는 기록'으로 답하면 틀린 이유를 보인다
+    server.rows.set(ID1, bookEntry(ID1));
+    server.fail(networkError());
+    await expect(store.get(ID1)).rejects.toBeInstanceOf(HistoryUnavailableError);
+    server.fail(httpError(503));
+    await expect(store.get(ID1)).rejects.toMatchObject({ name: "HistoryUnavailableError", id: ID1 });
+  });
+
+  it("편지함이 남아 서버에 묻지 못했는데 캐시에도 없으면 HistoryUnavailableError", async () => {
+    const { server, local, store } = setup();
+    local.enqueue({ op: "put", entry: bookEntry(ID2) });
+    server.put.mockRejectedValueOnce(networkError());
+    await expect(store.get(ID1)).rejects.toBeInstanceOf(HistoryUnavailableError);
+    expect(server.get).not.toHaveBeenCalled();
+    expect(pendingOps(local)).toEqual(["put"]);
+  });
+
+  it("이 브라우저에서 지우고 아직 보내지 못한 기록은 서버에 닿지 못해도 null(없는 기록)이다", async () => {
+    const { server, local, store } = setup();
+    await store.put(bookEntry(ID1));
+    server.fail(networkError());
+    await store.remove(ID1);
+    expect(pendingOps(local)).toEqual(["remove"]);
+    expect(await store.get(ID1)).toBeNull();
+  });
+
+  it("다시 보내도 같은 거절(4xx)은 못 닿은 것으로 바꾸지 않고 그대로 던진다", async () => {
+    const { server, store } = setup();
+    server.get.mockRejectedValueOnce(httpError(403));
+    const err = await store.get(ID1).catch((e: unknown) => e);
+    expect(err).toMatchObject({ status: 403 });
+    expect(err).not.toBeInstanceOf(HistoryUnavailableError);
   });
 
   it("put·patch 가 줄 선 뒤 patch 만 다시 보낼 오류로 실패해도 get 은 최근 수정을 돌려준다", async () => {

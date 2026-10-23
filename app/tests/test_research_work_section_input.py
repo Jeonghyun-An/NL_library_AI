@@ -159,6 +159,20 @@ class TestSnapshotPassages:
         (p,) = snapshot_passages(snapshot, "KCI_FI001407641")
         assert p["text"].endswith("실험연구를 수행할 필요를 느낀다.") and "고문희" not in p["text"]
 
+    def test_empty_table_lines_are_dropped_before_the_excerpt_is_cut(self):
+        """운영 KCI_FI001089307__0025(06123d9d 이어가기 prior.g1 E5)는 앞 1,200자가 빈 표 줄이라 자른 대목에 글자가 없었고
+        모델이 대목에 없는 문장을 그 논문 근거로 썼다. 빈 표 줄을 떼면 뒤의 본문 문장이 대목에 든다."""
+        snapshot = {"evidence": {"E7": {"cnts_id": "KCI_C", "meta": {}, "chunks": [
+            {"chunk_id": "KCI_C__0025", "text": EMPTY_TABLE_CHUNK, "page_start": 10, "page_end": 14, "score": 0.6}]}}}
+        (p,) = snapshot_passages(snapshot, "KCI_C")
+        assert p["text"] == "평가지표에 관한 고찰 17\n\n이종권의 평가 모형은 처음으로 모형을 구축했다는 데 의의가 있다."
+
+    def test_a_chunk_of_only_empty_table_lines_is_not_a_passage(self):
+        snapshot = {"evidence": {"E7": {"cnts_id": "KCI_C", "meta": {}, "chunks": [
+            {"chunk_id": "KCI_C__0024", "text": EMPTY_TABLE, "page_start": 10, "page_end": 10, "score": 0.7},
+            {"chunk_id": "KCI_C__0012", "text": "본문 대목", "page_start": 4, "page_end": 4, "score": 0.5}]}}}
+        assert [p["chunk_id"] for p in snapshot_passages(snapshot, "KCI_C")] == ["KCI_C__0012"]
+
     def test_a_paper_with_only_bibliography_chunks_gives_nothing(self):
         """빈 목록이라 _excerpts 의 `or milvus_passages(cnts)` 가 그 논문의 Milvus 청크에서 본문 대목을 고른다."""
         snapshot = {"evidence": {"E3": {"cnts_id": "KCI_FI001613573", "meta": {}, "chunks": [
@@ -175,6 +189,68 @@ class TestSnapshotPassages:
             snapshot_passages(snapshot, "KCI_Z")
         (record,) = caplog.records
         assert record.levelname == "INFO" and "KCI_FI001613573" in record.getMessage()
+
+
+# 적재가 칸이 빈 표를 남긴 꼴 — 머리·구분·빈 칸 행이 공백으로 이어진 한 줄(운영 KCI_FI001089307__0025 의 앞부분)
+EMPTY_TABLE = "||| |---|---| " + "|<br>|<br>| " * 100 + "\n\n|<br>|<br>|<br>| |---|---|---| " + "||<br>|| " * 20
+EMPTY_TABLE_CHUNK = (EMPTY_TABLE + "\n\n평가지표에 관한 고찰 17\n\n"
+                     "이종권의 평가 모형은 처음으로 모형을 구축했다는 데 의의가 있다.")
+
+
+class TestDropEmptyTableLines:
+    def test_lines_without_letters_are_dropped_and_blank_runs_folded(self):
+        assert len(EMPTY_TABLE_CHUNK) > EXCERPT_CHARS
+        assert passages.drop_empty_table_lines(EMPTY_TABLE_CHUNK) == (
+            "평가지표에 관한 고찰 17\n\n이종권의 평가 모형은 처음으로 모형을 구축했다는 데 의의가 있다.")
+
+    def test_table_lines_with_letters_or_digits_and_rule_lines_are_kept(self):
+        text = "|항목|세부내용|\n| --- |:---:|\n|정책개발|10개|\n|  |<br>|\n||||\n본문이다."
+        assert passages.drop_empty_table_lines(text) == "|항목|세부내용|\n| --- |:---:|\n|정책개발|10개|\n본문이다."
+
+    def test_text_without_empty_table_lines_is_returned_as_is(self):
+        text = "  첫 문장이다.\n\n\n\n--- 구분선은 표가 아니다\n"
+        assert passages.drop_empty_table_lines(text) is text
+
+
+TITLE = "공공도서관 서비스 고객만족도 평가체계에 관한 연구"
+
+
+def _cand(text: str, chunk_id: str = "KCI_C__0019") -> dict:
+    return {"chunk_id": chunk_id, "text": text, "page_start": 12, "page_end": 13, "score": 0.5}
+
+
+class TestDropRunningHeads:
+    def test_own_title_with_a_page_number_on_its_own_line_is_dropped(self):
+        """운영 911d9583 prior.g1 E1(KCI_FI001023392__0019) — 쪽 머리말이 대목 가운데 끼어 모델이 '…에 관한 연구 13에서는'
+        이라 썼다. 쪽수는 앞에 와도 되고, 앞뒤 '|'·공백은 본다."""
+        text = f"분류하였다. - 204 -\n\n{TITLE} 13\n\n도서관을 공부방으로 이용한다.\n| 205 {TITLE} |\n끝."
+        (p,) = passages.drop_running_heads([_cand(text)], TITLE)
+        assert p["text"] == "분류하였다. - 204 -\n\n도서관을 공부방으로 이용한다.\n끝."
+        assert p["chunk_id"] == "KCI_C__0019" and p["score"] == 0.5
+
+    def test_a_cut_long_title_is_a_running_head_from_its_first_part(self):
+        title = "지식정보자원 관리를 위한 국내 학술연구정보 평가와 활용방안 연구: 대학 연구소를 중심으로"
+        text = "앞 문장.\n\n지식정보자원 관리를 위한 국내 학술연구정보 평가와 활용방안 연구 323\n\n뒤 문장."
+        (p,) = passages.drop_running_heads([_cand(text)], title)
+        assert p["text"] == "앞 문장.\n\n뒤 문장."
+
+    @pytest.mark.parametrize("line", [
+        TITLE,                                   # 쪽수 없는 제목 줄(첫 쪽 제목·본문 속 제목)
+        f"# {TITLE}",
+        f"{TITLE}에서는 13개 항목을 썼다",          # 제목 뒤에 글이 이어지는 문장
+        "평가체계에 관한 연구 13",                  # 제목의 앞이 아닌 부분
+        "공공도서관 서비스 13",                     # 앞부분이 _HEAD_PREFIX_MIN 자 미만
+        "다른 논문 제목 연구 13",
+    ])
+    def test_other_lines_are_kept(self, line):
+        cand = _cand(f"앞 문장.\n{line}\n뒤 문장.")
+        assert passages.drop_running_heads([cand], TITLE) == [cand]
+
+    def test_a_passage_left_empty_is_dropped_and_unknown_title_keeps_all(self):
+        cands = [_cand(f"{TITLE} 13", "KCI_C__0001"), _cand("본문.", "KCI_C__0002")]
+        assert [p["chunk_id"] for p in passages.drop_running_heads(cands, TITLE)] == ["KCI_C__0002"]
+        assert passages.drop_running_heads(cands, None) is cands
+        assert passages.drop_running_heads(cands, " ") is cands
 
 
 def _snapshot_chunk(chunk_id: str, score: float) -> dict:
@@ -234,6 +310,15 @@ class TestMilvusPassages:
         monkeypatch.setattr(search.indexer, "ensure_collection", lambda: col)
         (p,) = passages.milvus_passages("KCI_FI001061014")
         assert p["text"].endswith("연구의 필요성을 시사한다.") and "강희숙" not in p["text"]
+
+    def test_empty_table_lines_are_dropped_and_an_empty_chunk_is_left_out(self, search, monkeypatch):
+        col = _Collection(rows=[
+            {"chunk_id": "KCI_C__0024", "chunk_idx": 24, "text": EMPTY_TABLE, "page_start": 10, "page_end": 10},
+            {"chunk_id": "KCI_C__0025", "chunk_idx": 25, "text": EMPTY_TABLE_CHUNK, "page_start": 10, "page_end": 14},
+        ])
+        monkeypatch.setattr(search.indexer, "ensure_collection", lambda: col)
+        (p,) = passages.milvus_passages("KCI_C")
+        assert p["chunk_id"] == "KCI_C__0025" and p["text"].startswith("평가지표에 관한 고찰 17")
 
     @pytest.mark.parametrize("error", [RuntimeError("스키마 불일치"), OSError("연결 끊김")])
     def test_known_failures_give_no_passages(self, search, monkeypatch, error):

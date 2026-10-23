@@ -1,14 +1,17 @@
 // frontend/composables/useReadingSaves.ts
 import { type Ref, readonly, ref } from "vue";
 import type { ReadingPut, WorkResource } from "~/types/work";
-import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { workErrorMessage } from "~/utils/researchErrors";
 
 export interface ReadingSavesDeps {
   put: (cnts: string, body: ReadingPut) => Promise<unknown>;
-  // 거절하지 않는다(ReadingStep 은 Promise.allSettled 로 읽는다) — 조회 오류는 useResearchWork 의 error 가 맡는다
-  reload: (kinds: WorkResource[]) => Promise<void>;
+  // 거절하지 않는다 — 조회 오류는 useResearchWork 의 오류 칸이 맡는다. 다시 읽기가 실패했으면 false 를 돌려준다(void 는 성공으로 본다)
+  reload: (kinds: WorkResource[]) => Promise<boolean | void>;
   afterAction: () => void;
   error: Ref<string | null>;
+  // 묶음에 성공한 저장이 있는데 끝의 다시 읽기가 실패했다 — 표는 저장 전 값이다(화면이 그 사실을 알린다)
+  unrefreshed?: () => void;
 }
 
 interface Batch {
@@ -50,14 +53,17 @@ export function useReadingSaves(deps: ReadingSavesDeps) {
       current.saved = true;
       if (body.state !== undefined) current.kinds.add("work");
     } catch (err) {
-      deps.error.value = workErrorMessage(err, "참고문헌 목록을 고치지 못했습니다");
+      deps.error.value = workErrorMessage(err, "참고문헌 목록을 고치지 못했어요");
       if (httpStatus(err) === 409) current.kinds.add("work");
     }
     try {
       // 뒤에 기다리는 저장이 없으면 이 묶음의 마지막이다 — 다시 읽기를 기다리는 동안 들어온 저장은 이 묶음에 붙어 그 뒤에 다시 읽는다
       if (pending.value === 1) {
-        await deps.reload([...current.kinds]);
-        if (current.saved) deps.afterAction();
+        const fresh = await deps.reload([...current.kinds]);
+        if (current.saved) {
+          if (fresh === false) deps.unrefreshed?.();
+          deps.afterAction();
+        }
       }
     } finally {
       pending.value -= 1;

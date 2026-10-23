@@ -10,6 +10,7 @@
           :eid="part.eid"
           :anchor="part.anchor"
           :evidence="evidence[part.eid]"
+          :num="numbers.get(part.eid)"
           :chunks="citeChunks(sec, evidence[part.eid], part.eid)"
           @open-pdf="$emit('open-pdf', $event)"
         />
@@ -30,6 +31,7 @@
             :eid="c.eid"
             :anchor="c.anchor"
             :evidence="evidence[c.eid]"
+            :num="numbers.get(c.eid)"
             :chunks="citeChunks(sec, evidence[c.eid], c.eid)"
             @open-pdf="$emit('open-pdf', $event)"
           />
@@ -48,6 +50,7 @@
               :eid="part.eid"
               :anchor="part.anchor"
               :evidence="evidence[part.eid]"
+              :num="numbers.get(part.eid)"
               :chunks="citeChunks(sec, evidence[part.eid], part.eid)"
               @open-pdf="$emit('open-pdf', $event)"
             />
@@ -67,7 +70,13 @@ import { INTROLESS, NO_SUMMARY, paperByline } from "~/utils/researchReport";
 import CitationChip from "./CitationChip.vue";
 
 // sectionIdx: 보고서에 보이는 절 번호(0부터) — 칩 앵커는 이 번호로 돌아올 자리를 찾는다
-const props = defineProps<{ sec: ReportSection; sectionIdx: number; evidence: Record<string, ReportEvidence> }>();
+// numbers: 보고서 인용 번호(reportDocument.reportCiteNumbers) — 칩이 숫자로 보인다
+const props = defineProps<{
+  sec: ReportSection;
+  sectionIdx: number;
+  evidence: Record<string, ReportEvidence>;
+  numbers: ReadonlyMap<string, number>;
+}>();
 defineEmits<{ "open-pdf": [payload: OpenPdfPayload] }>();
 
 // 칩마다 돌아올 자리의 앵커를 붙인 본문 조각 — 같은 절의 같은 근거는 그리는 순서로 가른다

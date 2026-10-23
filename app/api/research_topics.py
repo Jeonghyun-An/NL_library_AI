@@ -34,15 +34,15 @@ from services.research_work.topic_views import topic_item, topics_view
 
 router = APIRouter(tags=["research-work"])
 
-NO_MORE_SEEDS = "더 쓸 씨앗이 없습니다"
-TOPIC_NOT_FOUND = "주제가 없습니다"
-CARD_BUSY = "카드를 만드는 중입니다 — 끝난 뒤 고쳐 주세요"
-NO_CARD_YET = "카드가 아직 없습니다"
+NO_MORE_SEEDS = "다른 방향으로 더 받을 카드가 없어요"
+TOPIC_NOT_FOUND = "주제를 찾을 수 없어요"
+CARD_BUSY = "카드를 만드는 중이에요 — 끝난 뒤 고쳐 주세요"
+NO_CARD_YET = "카드가 아직 없어요"
 EMPTY_CARD_NEEDS_BOTH = "빈 카드는 제목과 연구 질문을 함께 보내 주세요"
 # 키워드(개념) 생성이 열려 있는 동안의 [다른 방향]·[이 키워드로 다시 만들기] — 그동안 work.concepts 는 비었거나 곧 바뀐다
-KEYWORDS_BUSY = "키워드를 고르는 중입니다 — 끝난 뒤 다시 만들어 주세요"
-KEYWORDS_TOO_FEW = f"키워드를 {MIN_PICKED_KEYWORDS}개 이상 고르세요"
-NOTHING_TO_REGENERATE = "다시 만들 AI 카드가 없습니다"
+KEYWORDS_BUSY = "키워드를 고르는 중이에요 — 끝난 뒤 다시 만들어 주세요"
+KEYWORDS_TOO_FEW = f"키워드를 {MIN_PICKED_KEYWORDS}개 이상 골라 주세요"
+NOTHING_TO_REGENERATE = "다시 만들 AI 카드가 없어요"
 # [다른 방향] 의 연구별 잠금 대상 — 주제 카드 생성의 target(주제 id 숫자 문자열)과 겹치지 않는 이름
 OTHER_LOCK_TARGET = "other-direction"
 # [이 키워드로 다시 만들기] 의 연구별 잠금 대상 — 같은 까닭으로 주제 id 와 겹치지 않는 이름

@@ -15,7 +15,9 @@ import {
   docInputFromDraft,
   docInputFromReport,
   docRunText,
+  reportCiteNumbers,
   reportFileName,
+  reportReferences,
   type DocBlock,
   type ReportDoc,
   type ReportDocInput,
@@ -293,6 +295,15 @@ describe("buildReportDocument — 인용 번호", () => {
 
   it("인용하지 않은 근거는 참고문헌에 싣지 않는다", () => {
     expect(doc.references.some((r) => r.eid === "E9")).toBe(false);
+  });
+
+  // 화면의 인용칩 번호·접힌 참고문헌(ReportView)이 Word·PDF 와 같은 번호·같은 줄을 쓴다(사용자 결정 2026-10-15 — '김 2012' 칩 대신 숫자)
+  it("화면이 쓰는 reportCiteNumbers·reportReferences 는 문서의 번호·참고문헌 줄과 같다", () => {
+    expect([...reportCiteNumbers([secA, secB])]).toEqual(doc.references.map((r) => [r.eid, r.n]));
+    expect(reportReferences([secA, secB], evidence).map((r) => [r.n, r.eid, r.text])).toEqual(
+      doc.references.map((r) => [r.n, r.eid, r.text]),
+    );
+    expect(reportCiteNumbers([])).toEqual(new Map());
   });
 });
 

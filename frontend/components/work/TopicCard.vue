@@ -19,7 +19,7 @@
         <span class="wk-edit__label">연구 질문</span>
         <textarea v-model="draftQuestion" class="wk-edit__input" rows="3" :maxlength="TOPIC_QUESTION_MAX" />
       </label>
-      <p v-if="problem" class="wk-edit__problem" role="alert">{{ problem }}</p>
+      <SkxInlineError v-if="problem" :message="problem" />
       <div class="rs-card__actions">
         <button type="submit" class="rs-btn rs-btn--small" :disabled="busy">저장</button>
         <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="busy" @click="editing = false">
@@ -38,7 +38,7 @@
       </h3>
       <p v-if="kwWarning" class="wk-topic__kwwarn">{{ kwWarning }}</p>
       <p class="wk-topic__question">{{ card.question }}</p>
-      <p v-if="kwChanged" class="wk-topic__kwchanged">키워드가 바뀌었습니다</p>
+      <p v-if="kwChanged" class="wk-topic__kwchanged">키워드가 바뀌었어요</p>
       <p v-if="remakingNote" class="wk-topic__note">{{ remakingNote }}</p>
       <ul v-if="chips.length" class="wk-topic__chips" aria-label="근거 논문">
         <li v-for="chip in chips" :key="chip.cntsId">
@@ -53,7 +53,7 @@
       </p>
       <p v-if="card.latest_year !== null" class="rs-muted">근거 중 최신 {{ card.latest_year }}년</p>
       <p v-if="numbersLine" class="wk-topic__check">
-        <span class="wk-psec__check" title="[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인하세요">{{ numbersLine }}</span>
+        <span class="wk-psec__check" title="[F#] 밖에서 쓴 숫자 — 원문과 맞는지 확인해 주세요">{{ numbersLine }}</span>
       </p>
     </template>
 
@@ -132,13 +132,15 @@ const props = defineProps<{
   busy: boolean;
   concepts: string[];
   conceptsGen: WorkGeneration | null;
+  // [직접 고치기] 쓰기 응답을 받았다는 알림(TopicsStep 이 이 카드의 쓰기마다 올린다) — 0 이면 없음
+  savedSeq?: number;
 }>();
 const emit = defineEmits<{ pick: []; edit: [body: TopicPatch]; retry: [genId: number]; arrived: [el: HTMLElement] }>();
 
 const status = computed(() => cardStatus(props.item, props.conceptsGen));
 const pending = computed(() => status.value === "waiting" || status.value === "making");
 const card = computed(() => (status.value === "ready" ? props.item.card : null));
-const note = computed(() => cardNote(status.value));
+const note = computed(() => cardNote(status.value, props.readOnly));
 const pickable = computed(() => canPick(props.item));
 const chips = computed(() => (card.value ? evidenceChips(card.value, props.papers) : []));
 // 제목·질문에 [F#] 밖 숫자가 있으면 '확인 필요' — 서버가 센 값(card.checks.numbers)을 계획서 문단과 같은 모양으로 보인다
@@ -204,10 +206,34 @@ const draftQuestion = ref("");
 const problem = ref<string | null>(null);
 
 // 열면 제목 칸으로, 닫으면 [직접 고치기]로 포커스를 옮긴다 — 여는 버튼과 칸이 v-if 로 번갈아 사라져 그대로 두면
-// 포커스가 body 로 떨어진다(운영 확인 2026-10-08)
+// 포커스가 body 로 떨어진다(운영 확인 2026-10-08). [저장]으로 닫히면 그때는 쓰기가 아직 돌아(busy) [직접 고치기]가 disabled 라
+// 초점을 받지 못한다 — busy 가 풀린 뒤 옮긴다(focusOpenerLater). 그새 사용자가 카드 밖으로 옮긴 초점은 빼앗지 않는다
+let focusOpenerLater = false;
+
+function focusOpener(): void {
+  const btn = rootEl.value?.querySelector<HTMLButtonElement>("[data-edit-open]");
+  // 단추가 아직 잠겨 있으면 busy 가 풀릴 때 다시 본다. 단추가 없으면(카드가 기다리는 자리로 바뀜) 그만둔다
+  if (btn?.disabled) return;
+  focusOpenerLater = false;
+  const active = document.activeElement;
+  if (!btn || (active && active !== document.body && !rootEl.value?.contains(active))) return;
+  btn.focus();
+}
+
 watch(editing, (now) => {
-  void nextTick(() => rootEl.value?.querySelector<HTMLElement>(now ? "[data-edit-box]" : "[data-edit-open]")?.focus());
+  focusOpenerLater = !now;
+  void nextTick(() => {
+    if (now) rootEl.value?.querySelector<HTMLElement>("[data-edit-box]")?.focus();
+    else focusOpener();
+  });
 });
+
+watch(
+  () => props.busy,
+  (busy) => {
+    if (!busy && focusOpenerLater) void nextTick(focusOpener);
+  },
+);
 
 function startEdit(): void {
   draftTitle.value = props.item.card?.title ?? "";
@@ -239,6 +265,15 @@ watch(
   () => `${props.item.card?.title ?? ""}\u0000${props.item.card?.question ?? ""}`,
   () => {
     editing.value = false;
+  },
+);
+
+// 쓰기 응답을 받았다 — 뒤의 다시 읽기가 실패해 카드 글이 그대로여도 칸을 닫는다(열린 채 '저장 중'처럼 남지 않게).
+// 화면의 카드는 다시 읽을 때까지 옛 글이다 — 그 사실은 단계 위 한 줄(저장은 됐지만 화면을 새로 고치지 못했어요)이 알린다
+watch(
+  () => props.savedSeq ?? 0,
+  (seq) => {
+    if (seq) editing.value = false;
   },
 );
 

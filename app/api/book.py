@@ -9,6 +9,7 @@ import json
 
 from core.config import get_settings
 from core.deps import get_db
+from core.errors import broker_outage_as_503, search_outage_as_503, storage_outage_as_503
 from fastapi.responses import StreamingResponse
 from schemas.book import (
     BookOut,
@@ -47,7 +48,11 @@ def _resolve_original_key(client, cnts_id: str) -> str | None:
     """원본 PDF의 MinIO 키 해석 — 폴더형(originals/{id}/) 우선, 없으면 평탄형(originals/{id}.pdf).
 
     대량 적재는 `mc mirror`로 평탄 키로 올리므로 두 레이아웃을 모두 지원한다.
+    객체가 없을 때(S3Error)만 None 이다 — MinIO 연결 장애는 그대로 올려 호출자가 503(storage_unavailable)으로 낸다.
+    전에는 모든 예외를 '없음'으로 삼켜 저장소가 꺼져도 404 'PDF 없음'이 됐다.
     """
+    from minio.error import S3Error
+
     objects = list(client.list_objects(
         cfg.MINIO_BUCKET, prefix=f"originals/{cnts_id}/", recursive=True
     ))
@@ -57,8 +62,46 @@ def _resolve_original_key(client, cnts_id: str) -> str | None:
     try:
         client.stat_object(cfg.MINIO_BUCKET, flat_key)
         return flat_key
-    except Exception:
+    except S3Error:
         return None
+
+
+def _minio_client():
+    from minio import Minio
+
+    return Minio(
+        cfg.MINIO_ENDPOINT,
+        access_key=cfg.MINIO_ACCESS_KEY,
+        secret_key=cfg.MINIO_SECRET_KEY,
+        secure=cfg.MINIO_SECURE,
+    )
+
+
+def _read_object(client, key: str) -> bytes | None:
+    """MinIO 객체를 통째로 읽는다. 객체가 없으면(S3Error) None, 연결 장애는 그대로 올린다."""
+    from minio.error import S3Error
+
+    try:
+        obj = client.get_object(cfg.MINIO_BUCKET, key)
+    except S3Error:
+        return None
+    try:
+        return obj.read()
+    finally:
+        obj.close()
+        obj.release_conn()
+
+
+def _render_cover(pdf_bytes: bytes) -> bytes:
+    """원본 PDF 첫 쪽을 JPEG 로 그린다(0.6× → A4 기준 약 357×505px)."""
+    import fitz  # PyMuPDF
+
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    try:
+        pix = doc[0].get_pixmap(matrix=fitz.Matrix(0.6, 0.6))
+        return pix.tobytes("jpeg")
+    finally:
+        doc.close()
 
 
 # ── 검색 ─────────────────────────────────────────────────
@@ -74,27 +117,29 @@ async def search_books(
     # 기록의 세션 id — search_history.session_id 는 UUID 칼럼이다. 없거나 uuid 가 아니면('null'·임의 글자) 새로 만든다
     session_id = _history_session_id(session_id) or str(uuid4())
 
-    result = await search(
-        req.query,
-        mode=req.mode,
-        top_k=req.top_k,
-        use_rewrite=req.use_rewrite,
-        use_rerank=req.use_rerank,
-        doc_scope="book",   # 논문 제외, 도서만 검색
-        db=db,
-    )
-
-    # doc_type 스칼라 미지정 구버전 인덱스 대비: 도서 필터 결과가 없으면 전체로 재시도
-    if isinstance(result, BookSearchResponse) and not result.books:
-        log.warning("도서 필터 검색 0건 — doc_scope 없이 재시도")
+    # Milvus·임베딩 연결/조회 장애는 503(search_unavailable) — 화면이 '잠시 뒤 다시'로 안내한다. 코드 버그는 500 그대로
+    with search_outage_as_503("소장자료 검색"):
         result = await search(
             req.query,
             mode=req.mode,
             top_k=req.top_k,
             use_rewrite=req.use_rewrite,
             use_rerank=req.use_rerank,
+            doc_scope="book",   # 논문 제외, 도서만 검색
             db=db,
         )
+
+        # doc_type 스칼라 미지정 구버전 인덱스 대비: 도서 필터 결과가 없으면 전체로 재시도
+        if isinstance(result, BookSearchResponse) and not result.books:
+            log.warning("도서 필터 검색 0건 — doc_scope 없이 재시도")
+            result = await search(
+                req.query,
+                mode=req.mode,
+                top_k=req.top_k,
+                use_rewrite=req.use_rewrite,
+                use_rerank=req.use_rerank,
+                db=db,
+            )
 
     if isinstance(result, BookSearchResponse):
         repo = BookRepository(db)
@@ -137,27 +182,22 @@ async def upload_and_ingest(
     import os
     filename = file.filename or "unknown.pdf"
     book_id = os.path.splitext(filename)[0]
-    from minio import Minio
-
-    client = Minio(
-        cfg.MINIO_ENDPOINT,
-        access_key=cfg.MINIO_ACCESS_KEY,
-        secret_key=cfg.MINIO_SECRET_KEY,
-        secure=cfg.MINIO_SECURE,
-    )
+    client = _minio_client()
 
     content = await file.read()
     minio_key = f"originals/{book_id}/{file.filename}"
-    client.put_object(
-        cfg.MINIO_BUCKET,
-        minio_key,
-        io.BytesIO(content),
-        length=len(content),
-        content_type=file.content_type or "application/pdf",
-    )
+    with storage_outage_as_503(f"업로드 {book_id}"):
+        client.put_object(
+            cfg.MINIO_BUCKET,
+            minio_key,
+            io.BytesIO(content),
+            length=len(content),
+            content_type=file.content_type or "application/pdf",
+        )
 
     from workers.tasks import process_from_minio
-    task = process_from_minio.delay(book_id, minio_key)
+    with broker_outage_as_503(f"업로드 적재 {book_id}"):
+        task = process_from_minio.delay(book_id, minio_key)
 
     return {"task_id": task.id, "book_id": book_id, "minio_key": minio_key}
 
@@ -167,15 +207,9 @@ async def upload_batch(
     files: list[UploadFile] = File(...),
 ):
     """여러 PDF 일괄 업로드 → 파일명에서 cnts_id 추출 → 수집"""
-    from minio import Minio
     import os
 
-    client = Minio(
-        cfg.MINIO_ENDPOINT,
-        access_key=cfg.MINIO_ACCESS_KEY,
-        secret_key=cfg.MINIO_SECRET_KEY,
-        secure=cfg.MINIO_SECURE,
-    )
+    client = _minio_client()
 
     from workers.tasks import process_from_minio
     tasks = []
@@ -186,15 +220,18 @@ async def upload_batch(
 
         content = await file.read()
         minio_key = f"originals/{book_id}/{filename}"
-        client.put_object(
-            cfg.MINIO_BUCKET,
-            minio_key,
-            io.BytesIO(content),
-            length=len(content),
-            content_type=file.content_type or "application/pdf",
-        )
+        # 중간에 끊기면 앞서 넣은 파일은 이미 올라가 적재 큐에 들어가 있다 — 가드가 로그에 남긴다
+        with storage_outage_as_503(f"일괄 업로드 {book_id}(앞서 {len(tasks)}건 보냄)"):
+            client.put_object(
+                cfg.MINIO_BUCKET,
+                minio_key,
+                io.BytesIO(content),
+                length=len(content),
+                content_type=file.content_type or "application/pdf",
+            )
 
-        task = process_from_minio.delay(book_id, minio_key)
+        with broker_outage_as_503(f"일괄 업로드 적재 {book_id}(앞서 {len(tasks)}건 보냄)"):
+            task = process_from_minio.delay(book_id, minio_key)
         tasks.append({"book_id": book_id, "task_id": task.id})
 
     return {"dispatched": len(tasks), "tasks": tasks}
@@ -206,12 +243,13 @@ async def ingest_batch(req: BatchIngestRequest):
 
     tasks = []
     for item in req.files:
-        if item.minio_key:
-            t = process_from_minio.delay(item.book_id, item.minio_key)
-        elif item.file_path:
-            t = process_book_file.delay(item.book_id, item.file_path)
-        else:
-            continue
+        with broker_outage_as_503(f"일괄 적재 {item.book_id}(앞서 {len(tasks)}건 보냄)"):
+            if item.minio_key:
+                t = process_from_minio.delay(item.book_id, item.minio_key)
+            elif item.file_path:
+                t = process_book_file.delay(item.book_id, item.file_path)
+            else:
+                continue
         tasks.append({"book_id": item.book_id, "task_id": t.id})
 
     return {"dispatched": len(tasks), "tasks": tasks}
@@ -234,13 +272,15 @@ async def load_catalog(
         f.write(content)
 
     from workers.tasks import load_catalog_xlsx
-    task = load_catalog_xlsx.delay(save_path)
+    with broker_outage_as_503("서지 적재"):
+        task = load_catalog_xlsx.delay(save_path)
     return {"task_id": task.id, "filename": file.filename}
 
 @router.post("/ingest")
 async def ingest_books(req: IngestionRequest):
     from workers.tasks import ingest_books_batch
-    task = ingest_books_batch.delay(req.cnts_ids, req.force_re_summarize)
+    with broker_outage_as_503("도서 적재"):
+        task = ingest_books_batch.delay(req.cnts_ids, req.force_re_summarize)
     return {"task_id": task.id, "total": len(req.cnts_ids)}
 
 
@@ -248,12 +288,14 @@ async def ingest_books(req: IngestionRequest):
 @router.get("/ingest/{task_id}", response_model=TaskStatusOut)
 async def get_task_status(task_id: str):
     from workers.celery_app import celery_app
-    result = celery_app.AsyncResult(task_id)
-    return TaskStatusOut(
-        task_id=task_id,
-        status=result.status,
-        result=result.result if result.ready() else None,
-    )
+    # 결과 저장소도 브로커와 같은 Redis 다 — 닿지 못하면 같은 503
+    with broker_outage_as_503(f"태스크 상태 {task_id}"):
+        result = celery_app.AsyncResult(task_id)
+        return TaskStatusOut(
+            task_id=task_id,
+            status=result.status,
+            result=result.result if result.ready() else None,
+        )
 
 
 # ── 인덱싱 취소 ──────────────────────────────────────────
@@ -276,7 +318,9 @@ async def cancel_ingest(task_id: str, db: AsyncSession = Depends(get_db)):
     )).first()
     cnts_id = row[0] if row else None
 
-    celery_app.control.revoke(task_id, terminate=True, signal="SIGTERM")
+    # 브로커에 닿지 못하면 취소 신호가 가지 않은 것이다 — 락·상태를 건드리지 않고 503 으로 돌려 다시 누르게 한다
+    with broker_outage_as_503(f"적재 취소 {task_id}"):
+        celery_app.control.revoke(task_id, terminate=True, signal="SIGTERM")
 
     released = False
     if cnts_id:
@@ -326,19 +370,14 @@ async def retry_ingest(cnts_id: str, db: AsyncSession = Depends(get_db)):
 
     # source_key 가 없으면 MinIO 에서 탐색
     if not source_key:
-        from minio import Minio
-        client = Minio(
-            cfg.MINIO_ENDPOINT,
-            access_key=cfg.MINIO_ACCESS_KEY,
-            secret_key=cfg.MINIO_SECRET_KEY,
-            secure=cfg.MINIO_SECURE,
-        )
-        source_key = _resolve_original_key(client, cnts_id)
+        with storage_outage_as_503(f"적재 재시도 {cnts_id}"):
+            source_key = _resolve_original_key(_minio_client(), cnts_id)
         if not source_key:
             raise HTTPException(404, f"원본 PDF 없음: {cnts_id}")
 
     from workers.tasks import process_from_minio
-    task = process_from_minio.delay(cnts_id, source_key)
+    with broker_outage_as_503(f"적재 재시도 {cnts_id}"):
+        task = process_from_minio.delay(cnts_id, source_key)
 
     return {
         "book_id": cnts_id,
@@ -383,71 +422,52 @@ async def get_book_thumbnail(cnts_id: str, db: AsyncSession = Depends(get_db)):
       ① FLUX 자동 생성 표지 (book.cover_image_key)
       ② 캐시된 PDF 1페이지 썸네일
       ③ 원본 PDF 1페이지 즉석 렌더 (+ MinIO 캐싱)
+
+    오류: 원문 저장소(MinIO) 연결 장애는 503(storage_unavailable), 원본이 없거나 깨져 표지를 그리지 못하면 404 — 화면의
+    <img> 는 실패하면 대체 표지로 바꾼다. 전에는 깨진 원본(빈 파일·PDF 아님·쪽 없음)이 렌더 예외로 500 이 났다.
     """
-    from minio import Minio
-    from minio.error import S3Error
-    import fitz  # PyMuPDF
+    client = _minio_client()
+    cache = {"Cache-Control": "public, max-age=86400"}
 
-    client = Minio(
-        cfg.MINIO_ENDPOINT,
-        access_key=cfg.MINIO_ACCESS_KEY,
-        secret_key=cfg.MINIO_SECRET_KEY,
-        secure=cfg.MINIO_SECURE,
-    )
-
-    # ① FLUX 자동 생성 표지 우선
+    # ① FLUX 자동 생성 표지 우선 — DB 조회 실패는 이 순서만 건너뛴다
+    cover_key = None
     try:
         row = (await db.execute(
             text("SELECT cover_image_key FROM library_catalog WHERE cnts_id = :id"),
             {"id": cnts_id},
         )).first()
-        if row and row[0]:
-            try:
-                obj = client.get_object(cfg.MINIO_BUCKET, row[0])
-                data = obj.read()
-                obj.close()
-                return Response(
-                    content=data,
-                    media_type="image/jpeg",
-                    headers={"Cache-Control": "public, max-age=86400"},
-                )
-            except S3Error:
-                log.warning(f"[{cnts_id}] cover_image_key 있으나 MinIO 객체 없음: {row[0]}")
+        cover_key = row[0] if row and row[0] else None
     except Exception as e:
         log.warning(f"[{cnts_id}] cover_image_key 조회 실패: {e}")
 
     thumbnail_key = f"thumbnails/{cnts_id}.jpg"
 
-    # ② 캐시 확인 (이미 생성된 PDF 썸네일)
-    try:
-        obj = client.get_object(cfg.MINIO_BUCKET, thumbnail_key)
-        data = obj.read()
-        obj.close()
-        return Response(
-            content=data,
-            media_type="image/jpeg",
-            headers={"Cache-Control": "public, max-age=86400"},
-        )
-    except S3Error:
-        pass
+    with storage_outage_as_503(f"표지 {cnts_id}"):
+        if cover_key:
+            data = _read_object(client, cover_key)
+            if data is not None:
+                return Response(content=data, media_type="image/jpeg", headers=cache)
+            log.warning(f"[{cnts_id}] cover_image_key 있으나 MinIO 객체 없음: {cover_key}")
 
-    # ② PDF 파일 탐색 (폴더형 originals/{id}/ 우선, 평탄형 originals/{id}.pdf 폴백)
-    obj_name = _resolve_original_key(client, cnts_id)
-    if not obj_name:
-        raise HTTPException(404, f"PDF 없음: {cnts_id}")
-    try:
-        pdf_obj = client.get_object(cfg.MINIO_BUCKET, obj_name)
-        pdf_bytes = pdf_obj.read()
-        pdf_obj.close()
-    except S3Error:
-        raise HTTPException(404, f"PDF 없음: {cnts_id}")
+        # ② 캐시 확인 (이미 생성된 PDF 썸네일)
+        data = _read_object(client, thumbnail_key)
+        if data is not None:
+            return Response(content=data, media_type="image/jpeg", headers=cache)
 
-    # ③ 첫 페이지 렌더링 (0.6× → A4 기준 약 357×505px)
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    page = doc[0]
-    pix = page.get_pixmap(matrix=fitz.Matrix(0.6, 0.6))
-    img_bytes = pix.tobytes("jpeg")
-    doc.close()
+        # ② PDF 파일 탐색 (폴더형 originals/{id}/ 우선, 평탄형 originals/{id}.pdf 폴백)
+        obj_name = _resolve_original_key(client, cnts_id)
+        pdf_bytes = _read_object(client, obj_name) if obj_name else None
+        if pdf_bytes is None:
+            raise HTTPException(404, f"PDF 없음: {cnts_id}")
+
+    # ③ 첫 페이지 렌더링 — 깨진 원본은 PyMuPDF 가 여러 꼴로 실패한다(빈 파일 EmptyFileError, PDF 아님
+    # FzErrorFormat, 쪽 없음 IndexError — 운영 이미지 PyMuPDF 1.24 에서 확인). 어느 것이든 표지를 그릴 수 없다는 뜻이다
+    try:
+        img_bytes = _render_cover(pdf_bytes)
+    except Exception as e:
+        log.warning("[%s] 표지 렌더 실패 — 원본 PDF 를 읽지 못했다(%s): %s: %s",
+                    cnts_id, obj_name, type(e).__name__, e)
+        raise HTTPException(404, f"표지를 그리지 못했습니다: {cnts_id}")
 
     # ④ MinIO에 썸네일 캐싱
     try:
@@ -461,33 +481,29 @@ async def get_book_thumbnail(cnts_id: str, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         log.warning(f"[{cnts_id}] 썸네일 캐싱 실패: {e}")
 
-    return Response(
-        content=img_bytes,
-        media_type="image/jpeg",
-        headers={"Cache-Control": "public, max-age=86400"},
-    )
+    return Response(content=img_bytes, media_type="image/jpeg", headers=cache)
 
 # ── PDF 원문 스트리밍 ──────────────────────────────────────
 @router.get("/{cnts_id}/pdf")
 async def get_book_pdf(cnts_id: str):
-    """MinIO originals/{cnts_id}/ 하위 PDF를 스트리밍 반환"""
-    from minio import Minio
+    """MinIO originals/{cnts_id}/ 하위 PDF를 스트리밍 반환.
+
+    원본이 없으면 404 'PDF 없음', 원문 저장소(MinIO) 연결 장애는 503(storage_unavailable). 보내기 시작한 뒤 끊기는
+    것은 응답 머리가 이미 나가 고칠 수 없다(뷰어가 읽기 실패로 본다)."""
     from minio.error import S3Error
 
-    client = Minio(
-        cfg.MINIO_ENDPOINT,
-        access_key=cfg.MINIO_ACCESS_KEY,
-        secret_key=cfg.MINIO_SECRET_KEY,
-        secure=cfg.MINIO_SECURE,
-    )
-    obj_name = _resolve_original_key(client, cnts_id)
-    if not obj_name:
-        raise HTTPException(404, detail="PDF 없음")
-    try:
-        obj_stat = client.stat_object(cfg.MINIO_BUCKET, obj_name)
-        obj = client.get_object(cfg.MINIO_BUCKET, obj_name)
-    except S3Error as e:
-        raise HTTPException(404, detail=f"PDF 없음: {e}")
+    client = _minio_client()
+    with storage_outage_as_503(f"원문 {cnts_id}"):
+        obj_name = _resolve_original_key(client, cnts_id)
+        if not obj_name:
+            raise HTTPException(404, detail="PDF 없음")
+        try:
+            obj_stat = client.stat_object(cfg.MINIO_BUCKET, obj_name)
+            obj = client.get_object(cfg.MINIO_BUCKET, obj_name)
+        except S3Error as e:
+            # S3 오류 글(영문)은 화면에 내지 않는다 — 로그에만
+            log.warning(f"[{cnts_id}] 원문 객체를 읽지 못함({obj_name}): {e}")
+            raise HTTPException(404, detail="PDF 없음")
 
     def _stream():
         try:
@@ -618,7 +634,9 @@ async def curate_books_api(
         for item in result.get("items", [])
     ]
 
-    return CurationResponse(intro=result.get("intro", ""), items=items)
+    # ai_failed: LLM 사유 생성이 실패해 빈 사유로 채운 응답 — 화면이 빈 칸 대신 '사유를 만들지 못했다'를 보인다
+    return CurationResponse(intro=result.get("intro", ""), items=items,
+                            ai_failed=bool(result.get("ai_failed")))
 
 
 @router.post("/reason/stream")
@@ -730,7 +748,8 @@ async def get_related_books(
     if not title:
         return BookSearchResponse(query="", books=[], elapsed_ms=0.0)
 
-    result = await search_related_books(title, cnts_id, fetch_top_k=cfg.BOOK_RELATED_FETCH_TOP_K)
+    with search_outage_as_503(f"소장자료 관련 자료 {cnts_id}"):
+        result = await search_related_books(title, cnts_id, fetch_top_k=cfg.BOOK_RELATED_FETCH_TOP_K)
     book_map = await repo.get_by_cnts_ids([bg.book_id for bg in result.books])
     for bg in result.books:
         bg.book_info = book_map.get(bg.book_id)

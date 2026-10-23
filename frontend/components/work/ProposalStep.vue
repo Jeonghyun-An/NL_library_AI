@@ -8,47 +8,94 @@
       <h2 id="wk-proposal-title" class="wk-proposal__title" tabindex="-1">{{ FINAL_STEP_NAME }}</h2>
       <CorpusScopeNote :corpus="corpus" />
     </header>
-    <p v-if="notice" class="rs-alert" :role="noticeIsError ? 'alert' : 'status'">{{ notice }}</p>
+    <!-- 쓰기 실패는 공통 줄 안내로, 성공 안내는 조용한 알림 줄로 -->
+    <SkxInlineError v-if="notice && noticeIsError" :message="notice" />
+    <p v-else-if="notice" class="rs-alert" role="status">{{ notice }}</p>
+    <!-- 다시 읽기 실패(이미 읽어 둔 보고서가 옛 값일 수 있다 — [다시 시도]) · 쓰기가 오래 걸림 -->
+    <SkxInlineError v-if="staleLine" :message="staleLine" :busy="staleRetrying" @retry="retryStale" />
+    <SkxInlineError v-if="slow" :message="WORK_SLOW_MESSAGE" />
 
-    <div v-if="!proposal && work.errorOf('proposal')" class="rs-card rs-card--error">
-      <p>{{ work.errorOf("proposal") }}</p>
-      <div class="rs-card__actions">
-        <button type="button" class="rs-btn" @click="work.reload('proposal')">다시 불러오기</button>
-      </div>
-    </div>
+    <SkxErrorState
+      v-if="!proposal && loadFailure"
+      :kind="loadFailure.kind"
+      title="보고서를 불러오지 못했어요"
+      :message="loadFailure.reason"
+      :busy="work.reloading('proposal')"
+      @retry="work.reload('proposal')"
+    />
     <div v-else-if="!proposal" class="rs-card rs-card--wait" role="status">
       <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
-      <p>보고서를 불러오는 중입니다</p>
+      <p>보고서를 불러오는 중이에요</p>
     </div>
 
-    <div v-else-if="!proposal.outline" class="rs-card">
-      <template v-if="outlineGen">
-        <p class="rs-card__title">목차를 만드는 중입니다</p>
-        <p v-if="genQueueLine(outlineGen)" class="rs-muted" role="status">{{ genQueueLine(outlineGen) }}</p>
-      </template>
-      <template v-else>
-        <p class="rs-card__title">아직 목차가 없습니다</p>
-        <p class="rs-muted">
-          참고문헌에 담은 논문이 {{ MIN_READING_FOR_OUTLINE }}편 이상이면 보고서를 만들 수 있습니다. 선행연구 묶음의 수와 배정은
-          담은 논문의 키워드 소속으로 서버가 정합니다.
-        </p>
-        <div v-if="!readOnly" class="rs-card__actions">
-          <button type="button" class="rs-btn" :disabled="busy" @click="makeOutline">{{ MAKE_REPORT }}</button>
-          <button type="button" class="rs-btn rs-btn--ghost" @click="emit('go', 'reading')">참고문헌 선택하기로</button>
-        </div>
-      </template>
+    <div v-else-if="!proposal.outline && outlineGen" class="rs-card">
+      <p class="rs-card__title">목차를 만드는 중이에요</p>
+      <p v-if="genQueueLine(outlineGen)" class="rs-muted" role="status">{{ genQueueLine(outlineGen) }}</p>
     </div>
+    <!-- 목차가 없음 — 공통 빈 상태(버튼은 슬롯의 .skx-state__action — 첫 버튼이 주 버튼) -->
+    <SkxErrorState
+      v-else-if="!proposal.outline"
+      kind="empty"
+      title="아직 목차가 없어요"
+      :message="NO_OUTLINE_MESSAGE"
+    >
+      <!-- 예시 연구는 슬롯을 두지 않는다(빈 버튼 줄이 그려지지 않게) -->
+      <template v-if="!readOnly" #default>
+        <!-- 만드는 동안은 disabled 가 아니라 aria-disabled·aria-busy(누른 단추가 초점을 잃지 않게) — 누름은 makeOutline 이 무시한다 -->
+        <button
+          type="button"
+          class="skx-state__action"
+          :aria-disabled="busy ? 'true' : undefined"
+          :aria-busy="busy ? 'true' : undefined"
+          @click="makeOutline"
+        >
+          {{ MAKE_REPORT }}
+        </button>
+        <button type="button" class="skx-state__action" @click="emit('go', 'reading')">참고문헌 선택하기로</button>
+      </template>
+    </SkxErrorState>
 
     <template v-else>
       <p v-if="outlineGen" class="rs-muted" role="status">
-        목차를 다시 만드는 중입니다{{ genQueueLine(outlineGen) ? ` · ${genQueueLine(outlineGen)}` : "" }}
+        목차를 다시 만드는 중이에요{{ genQueueLine(outlineGen) ? ` · ${genQueueLine(outlineGen)}` : "" }}
       </p>
-      <div v-else-if="canRemake" class="wk-proposal__remake">
-        <p class="rs-muted">{{ remakeWhy }}</p>
-        <button type="button" class="rs-btn rs-btn--small rs-btn--ghost" :disabled="busy" @click="makeOutline">
+      <div v-else-if="canRemake && proposal.stale.outline" class="wk-proposal__remake">
+        <p class="rs-muted">
+          주제나 참고문헌이 바뀌었어요.<br />
+          [{{ REMAKE_REPORT }}]를 누르면 지금 담은 논문으로 묶음을 새로 나눠요 — 지금 목차는 새 목차로 바뀌어요.
+        </p>
+        <button
+          id="wk-proposal-remake"
+          type="button"
+          class="rs-btn rs-btn--small rs-btn--ghost"
+          :disabled="busy"
+          :aria-expanded="remakeAsking"
+          @click="makeOutline"
+        >
           {{ REMAKE_REPORT }}
         </button>
       </div>
+      <!-- 모델이 목차 초안을 만들지 못해 대체 목차를 썼다 — 실패라 공통 줄 안내로, [보고서 다시 만들기] 는 그 안에 -->
+      <SkxInlineError
+        v-else-if="canRemake"
+        id="wk-proposal-fallback"
+        message="모델이 목차 초안을 만들지 못했어요 — 다시 만들어 볼 수 있어요"
+        :retry-label="REMAKE_REPORT"
+        :busy="busy"
+        @retry="makeOutline"
+      />
+      <!-- [보고서 다시 만들기] 확인 — 위 두 줄(다시 맞춤 줄·대체 목차 줄)은 함께 보이지 않아 늘 누른 버튼 바로 아래에 선다 -->
+      <SkxConfirm
+        v-if="remakeAsking"
+        :message="REMAKE_CONFIRM"
+        :confirm-label="REMAKE_CONFIRM_OK"
+        :label="`${REMAKE_REPORT} 확인`"
+        :busy="remakeSent"
+        initial-focus="confirm"
+        :return-focus="remakeReturn"
+        @confirm="confirmRemake"
+        @cancel="remakeAsking = false"
+      />
 
       <template v-if="approved">
         <!-- 큰 진행 막대(06e 정함 28) — 절을 차례로 쓰는 동안만 서고 다 쓰면 걷힌다. 글줄·퍼센트는 valuetext 로 읽힌다.
@@ -70,10 +117,13 @@
           </div>
         </div>
         <!-- 연쇄가 멈춘 줄 — 남은 절이 있을 때만(멈춘 뒤 남은 절을 손으로 다 쓰면 이어서 쓸 것이 없어 걷는다) -->
-        <div v-if="autoStopped && autoLeft.length" class="rs-alert wk-doc__resume" role="alert">
-          <p>{{ autoStopped }} — [이어서 쓰기]를 누르면 남은 절부터 다시 씁니다.</p>
-          <button type="button" class="rs-btn rs-btn--small" :disabled="autoRunning" @click="resumeAuto">이어서 쓰기</button>
-        </div>
+        <SkxInlineError
+          v-if="autoStopped && autoLeft.length"
+          :message="autoResumeLine(autoStopped)"
+          retry-label="이어서 쓰기"
+          :busy="autoRunning"
+          @retry="resumeAuto"
+        />
         <nav class="rs-card wk-doc__toc" aria-labelledby="wk-doc-toc-title">
           <div class="wk-doc__toc-head">
             <!-- tabindex="-1" — [이어서 쓰기]를 누르면 그 줄이 사라져 초점을 여기로 옮긴다(resumeAuto) -->
@@ -102,7 +152,7 @@
           <button type="button" class="wk-review__jump" @click="jumpToReview">
             {{ reviewText }}<span class="rs-sr-only"> — 첫 자리로 가기</span>
           </button>
-          <span class="rs-muted">코드 검사가 표시한 곳입니다. 원문과 맞는지 확인하세요.</span>
+          <span class="rs-muted">코드 검사가 표시한 곳이에요.<br />원문과 맞는지 확인해 주세요.</span>
         </p>
       </template>
       <!-- [목차 고치기] — 승인 목차는 접어 두고, 초안 목차(06b·질문이 없어 자동 승인하지 못한 목차)는 승인하러 늘 편다.
@@ -122,11 +172,12 @@
           <AiFootprintMeter :proposal="proposal" />
           <!-- 절을 차례로 쓰는 것은 [보고서 만들기]가 자동 승인한 목차(auto)뿐 — 06b 때 승인했거나 초안을 손으로 승인한 목차는 손으로 쓴다 -->
           <p v-if="proposal.outline.auto" class="rs-muted">
-            [{{ MAKE_REPORT }}]로 목차가 서면 선행연구 묶음·연구 공백 절을 차례로 씁니다. 다 쓴 문단은 그대로 두어도 되고,
-            [수락]·[다시]·[고치기]로 다듬을 수 있습니다.
+            [{{ MAKE_REPORT }}]로 목차가 서면 선행연구 묶음·연구 공백 절을 차례로 써요.<br />
+            다 쓴 문단은 그대로 두어도 되고, [수락]·[다시]·[고치기]로 다듬을 수 있어요.
           </p>
           <p v-else class="rs-muted">
-            절마다 [이 절 쓰기]를 누르면 씁니다. 다 쓴 문단은 [수락]·[다시]·[고치기]로 다듬을 수 있습니다.
+            절마다 [이 절 쓰기]를 누르면 써요.<br />
+            다 쓴 문단은 [수락]·[다시]·[고치기]로 다듬을 수 있어요.
           </p>
         </div>
         <div class="wk-doc">
@@ -141,9 +192,10 @@
               label="연구 배경"
               :value="background"
               :max="OUTLINE_BACKGROUND_MAX"
-              placeholder="이 연구가 왜 필요한지 — 연구 대상과 문제 상황, 이 주제를 보게 된 맥락을 적습니다. AI 는 이 칸을 쓰지 않습니다."
+              :placeholder="BACKGROUND_PLACEHOLDER"
               :read-only="readOnly"
               :busy="busy || !!outlineGen"
+              :saved-seq="savedSeq.background ?? 0"
               @save="saveField('background', $event)"
             />
           </section>
@@ -161,6 +213,7 @@
             @cite="onCite"
             :skipped="autoSkipped.has(key)"
             :auto-next="autoNext.has(key)"
+            :saved-seq="savedSeq[`section:${key}`] ?? 0"
             @write="write(key)"
             @save="saveSection(key, $event)"
             @regenerate="regenerate(key, $event)"
@@ -169,7 +222,7 @@
           <section id="wk-doc-question" class="rs-card wk-doc__part" aria-labelledby="wk-doc-question-title">
             <h3 id="wk-doc-question-title" class="wk-doc__part-title" tabindex="-1">5. {{ SECTION_LABELS.question }}</h3>
             <p v-if="proposal.outline.question" class="wk-doc__text">{{ proposal.outline.question }}</p>
-            <p v-else class="rs-muted">연구 질문을 아직 정하지 않았습니다 — [목차 고치기]에서 고르세요.</p>
+            <p v-else class="rs-muted">연구 질문을 아직 정하지 않았어요 — [목차 고치기]에서 골라 주세요.</p>
           </section>
           <section id="wk-doc-method" class="rs-card wk-doc__part" aria-labelledby="wk-doc-method-title">
             <h3 id="wk-doc-method-title" class="wk-doc__part-title" tabindex="-1">6. {{ SECTION_LABELS.method }}</h3>
@@ -178,9 +231,10 @@
               label="방법"
               :value="proposal.outline?.method ?? ''"
               :max="OUTLINE_METHOD_MAX"
-              placeholder="연구 설계·대상·자료 수집과 분석 방법을 적습니다. AI 는 이 칸을 쓰지 않습니다."
+              :placeholder="METHOD_PLACEHOLDER"
               :read-only="readOnly"
               :busy="busy || !!outlineGen"
+              :saved-seq="savedSeq.method ?? 0"
               @save="saveField('method', $event)"
             />
           </section>
@@ -191,9 +245,9 @@
           <label class="wk-proposal__toggle">
             <!-- 켠 채 검토 전 문단이 0 이 되어도(다 [수락]) 끌 수 있게 켜져 있으면 막지 않는다 — 그때 문서는 모든 문단과 같다(exportProposal) -->
             <input v-model="acceptedOnly" type="checkbox" :disabled="!printedProposed && !acceptedOnly" />
-            수락한 문단만 싣기 — 검토 전 AI 작성 {{ printedProposed }}문단을 뺍니다
+            수락한 문단만 싣기 — 검토 전 AI 작성 {{ printedProposed }}문단을 빼요
           </label>
-          <p class="rs-muted">기본은 모든 문단을 싣습니다. 끝에 참고문헌과 AI 사용 공개 부록(문단 상태별 개수)이 붙습니다.</p>
+          <p class="rs-muted">기본은 모든 문단을 실어요.<br />끝에 참고문헌과 AI 사용 공개 부록(문단 상태별 개수)이 붙어요.</p>
           <div class="rs-card__actions">
             <button type="button" class="rs-btn" :disabled="exporting" @click="exportProposal('docx')">
               {{ exportingAs === "docx" ? "만드는 중…" : "Word 로 내려받기" }}
@@ -202,10 +256,10 @@
               {{ exportingAs === "pdf" ? "인쇄 창을 여는 중…" : "PDF 로 내려받기" }}
             </button>
           </div>
-          <p class="rs-muted">PDF 는 인쇄 창에서 대상을 ‘PDF로 저장’으로 고릅니다. Word 와 같은 문서·같은 기본값입니다.</p>
+          <p class="rs-muted">PDF 는 인쇄 창에서 대상을 ‘PDF로 저장’으로 골라 주세요.<br />Word 와 같은 문서·같은 기본값이에요.</p>
         </div>
       </template>
-      <p v-else class="rs-muted">목차를 승인하면 선행연구 검토(묶음마다)와 연구 공백 절을 쓸 수 있습니다.</p>
+      <p v-else class="rs-muted">목차를 승인하면 선행연구 검토(묶음마다)와 연구 공백 절을 쓸 수 있어요.</p>
     </template>
   </section>
   <DeepReadPanel
@@ -230,6 +284,7 @@
         :error="sourcesError"
         @open-pdf="emit('open-pdf', $event)"
         @chat="openChat"
+        @retry="retrySources"
       />
     </template>
   </DeepReadPanel>
@@ -249,11 +304,11 @@ import DocField from "~/components/work/DocField.vue";
 import OutlineEditor from "~/components/work/OutlineEditor.vue";
 import ProposalSection from "~/components/work/ProposalSection.vue";
 import { useAutoReport } from "~/composables/useAutoReport";
-import { useReportExport } from "~/composables/useReportExport";
-import { useWorkApi, type ResearchWorkHandle } from "~/composables/useResearchWork";
+import { REPORT_EXPORT_FAILED, useReportExport } from "~/composables/useReportExport";
+import { useSlowWrite, useWorkApi, useWorkStale, type ResearchWorkHandle } from "~/composables/useResearchWork";
 import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
-import type { CitePick, OutlinePut, PaperMeta, SectionPut, SectionSources, WorkStep } from "~/types/work";
+import type { CitePick, OutlinePut, PaperMeta, SectionPut, SectionSources, WorkResource, WorkStep } from "~/types/work";
 import { activeCiteOf, type ActiveCite } from "~/utils/citationEvidence";
 import { panelTabs, type PanelPaper, type PanelTab } from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
@@ -278,10 +333,20 @@ import {
 import { genQueueLine } from "~/utils/queueLine";
 import { MIN_READING_FOR_OUTLINE } from "~/utils/readingList";
 import type { ReportExportFormat } from "~/utils/reportDocument";
-import { httpStatus, versionConflict, workErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { versionConflict, workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick, spotOf } from "~/utils/restorePosition";
 import { openGeneration } from "~/utils/workEvents";
-import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_REPORT } from "~/utils/workPhase";
+import {
+  WORK_CONFLICT,
+  WORK_SAVED_STALE,
+  WORK_SLOW_MESSAGE,
+  WORK_SOURCES_FAILED,
+  autoResumeLine,
+  workFailure,
+  type WorkFailure,
+} from "~/utils/workErrors";
+import { FINAL_STEP_NAME, MAKE_REPORT, REMAKE_CONFIRM, REMAKE_CONFIRM_OK, REMAKE_REPORT } from "~/utils/workPhase";
 
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
 const emit = defineEmits<{
@@ -292,11 +357,12 @@ const emit = defineEmits<{
   panel: [open: boolean];
 }>();
 
-const CONFLICT = "다른 곳에서 보고서가 바뀌어 다시 불러왔습니다 — 바뀐 내용을 확인한 뒤 다시 해 주세요";
-// 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 덮는다(계약 보강 4) — 다시 만들기 전에 묻는다. 새 반영은 다시
-// 자동 승인하지만 절 연쇄는 절도 생성 기록도 없는 키만 쓴다 — 이미 쓴 절은 다시 쓰지 않는다(06e 정함 4)
-const REMAKE_CONFIRM =
-  "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다 — 연구 배경은 그대로 둡니다. 이미 쓴 절은 지우지 않고(주제·묶음·연구 질문이 바뀐 절에는 '다시 맞춤 필요'가 붙습니다) 아직 쓰지 않은 절만 자동으로 씁니다. 계속할까요?";
+// 목차가 없는 보고서의 빈 상태 설명 — 두 문장이라 줄을 바꾼다(공통 상태 블록은 '\n' 을 줄로 그린다)
+const NO_OUTLINE_MESSAGE = `참고문헌에 담은 논문이 ${MIN_READING_FOR_OUTLINE}편 이상이면 보고서를 만들 수 있어요.\n선행연구 묶음의 수와 배정은 담은 논문의 키워드 소속으로 서버가 정해요.`;
+// 연구 배경·방법 칸의 자리 글 — 두 문장이라 줄을 바꾼다(textarea 의 placeholder 는 '\n' 을 줄로 그린다)
+const BACKGROUND_PLACEHOLDER =
+  "이 연구가 왜 필요한지 — 연구 대상과 문제 상황, 이 주제를 보게 된 맥락을 적어 주세요.\nAI 는 이 칸을 쓰지 않아요.";
+const METHOD_PLACEHOLDER = "연구 설계·대상·자료 수집과 분석 방법을 적어 주세요.\nAI 는 이 칸을 쓰지 않아요.";
 
 const api = useWorkApi();
 // PDF 는 딥리서치 보고서와 같은 인쇄 경로다 — printDoc 이 차면 템플릿 끝의 ReportPrint 가 body 에 붙고 인쇄 창이 열린다
@@ -319,11 +385,6 @@ const canRemake = computed(() => {
   const p = proposal.value;
   return !readOnly.value && !!p?.outline && (p.stale.outline || isFallbackOutline(p.outline));
 });
-const remakeWhy = computed(() =>
-  proposal.value?.stale.outline
-    ? "주제나 참고문헌이 바뀌었습니다 — 목차를 다시 만들면 지금 담은 논문으로 묶음을 새로 나눕니다(지금 목차를 바꿉니다)."
-    : "모델이 목차 초안을 만들지 못했습니다 — 다시 만들어 볼 수 있습니다.",
-);
 
 // ── 보고서 자동 산출(06e D20) ─────────────────────────────
 // [보고서 만들기]의 반영이 자동 승인한 목차에서 남은 절을 문서 순서대로 하나씩 넣는다 — 이 화면이 열려 있는 동안만 돌고,
@@ -434,6 +495,38 @@ onMounted(() => {
 const busy = ref(false);
 const notice = ref("");
 const noticeIsError = ref(false);
+// 보고서 조회가 낸 오류(값이 없을 때 본문 자리의 오류 블록)
+const loadFailure = computed(() => props.work.failureOf("proposal"));
+// 보고서를 읽어 둔 뒤의 다시 읽기 실패(이 단계에 들어올 때마다·절이 끝날 때마다·쓰기 뒤 다시 읽는다)는 위 한 줄로
+const {
+  line: staleLine,
+  retrying: staleRetrying,
+  retry: retryStale,
+  markSaved,
+} = useWorkStale(props.work, ["proposal", "work"], "proposal");
+// 쓰기·자동 작성의 절 넣기가 오래 걸리면(응답 없음) 안내만 — 잠금은 그대로
+const slow = useSlowWrite(() => busy.value || autoRunning.value);
+// 쓰기 응답을 받은 자리 — 열어 둔 칸(연구 배경·방법, 절의 문단 고치기·직접 쓰기)이 다시 읽기 결과와 상관없이 닫힌다
+const savedSeq = ref<Record<string, number>>({});
+// 이 화면의 쓰기 뒤 보고서 다시 읽기가 실패해 화면의 version 이 옛 값이다 — 다음 고치기의 409 는 다른 곳의 변경이 아닐 수
+// 있어 충돌 안내를 사실대로 바꾼다. 보고서를 새로 읽으면(값이 바뀌면) 풀린다
+let staleVersion = false;
+watch(proposal, () => {
+  staleVersion = false;
+});
+
+function markWritten(target: string): void {
+  savedSeq.value = { ...savedSeq.value, [target]: (savedSeq.value[target] ?? 0) + 1 };
+}
+
+// 쓰기 뒤 다시 읽기 — 모두 읽었으면 true. 하나라도 실패하면 화면은 쓰기 전 값이라 위 한 줄의 머리를 그 사실(head)로 바꾼다
+async function refresh(kinds: WorkResource[], head: string): Promise<boolean> {
+  const results = await Promise.all(kinds.map((kind) => props.work.reload(kind)));
+  if (results.every(Boolean)) return true;
+  if (kinds.some((kind, i) => kind === "proposal" && !results[i])) staleVersion = true;
+  markSaved(head);
+  return false;
+}
 
 function say(message: string, error = false): void {
   notice.value = message;
@@ -451,8 +544,10 @@ async function act(run: () => Promise<void>, fallback: string): Promise<void> {
     props.work.afterAction();
   } catch (e) {
     if (versionConflict(e) !== null) {
-      await props.work.reload("proposal");
-      say(CONFLICT, true);
+      // 다시 읽은 뒤 알린다 — 다시 읽기마저 실패하면 화면은 옛 값이라 '다시 불러왔어요'라고 하지 않는다
+      const ours = staleVersion;
+      const fresh = await props.work.reload("proposal");
+      say(!fresh ? WORK_CONFLICT.unloaded : ours ? WORK_CONFLICT.stale : WORK_CONFLICT.reloaded, true);
     } else {
       // 그 밖의 409(다른 곳에서 고쳐 저장해 승인이 풀린 목차의 절 쓰기·다시 쓸 수 없는 문단 등)와 404(다른 곳에서 지우거나
       // 다시 만든 문단·묶음)도 그 사이 서버 상태가 바뀐 것이다 — 계획서·생성 목록을 다시 읽어 눌러도 막히는 버튼을 걷은 뒤
@@ -469,12 +564,60 @@ async function act(run: () => Promise<void>, fallback: string): Promise<void> {
 }
 
 function makeOutline(): void {
-  if (proposal.value?.outline && !window.confirm(REMAKE_CONFIRM)) return;
-  void act(async () => {
+  // 쓰는 중(aria-disabled 단추의 누름)은 무시한다 — 확인 칸도 펴지 않는다
+  if (busy.value) return;
+  // 목차가 이미 있으면 서버가 지금 목차를 통째로 덮는다(계약 보강 4) — 누른 버튼 곁에 확인 칸을 펴고(다시 누르면 접는다)
+  // [다시 만들기]를 누르면 confirmRemake 가 만든다
+  if (proposal.value?.outline) {
+    remakeAsking.value = !remakeAsking.value;
+    return;
+  }
+  void runOutline();
+}
+
+function runOutline(): Promise<void> {
+  return act(async () => {
     await api.createOutline(props.jobId);
     // 대기 순번은 이벤트를 기다리지 않고 바로 그린다. 계획서 행이 없던 연구는 이 요청이 만든다
-    await Promise.all([props.work.reload("work"), props.work.reload("proposal")]);
-  }, "보고서를 만들지 못했습니다");
+    await refresh(["work", "proposal"], WORK_SAVED_STALE.started);
+  }, "보고서를 만들지 못했어요");
+}
+
+// ── [보고서 다시 만들기] 확인 칸 ──────────────────────────
+// 브라우저 확인 창 대신 누른 버튼 바로 아래에 편다. 만드는 동안은 칸이 일하는 중(remakeSent → busy)으로 남고, 끝나면(성공·실패) 걷힌다
+const remakeAsking = ref(false);
+const remakeSent = ref(false);
+
+async function confirmRemake(): Promise<void> {
+  if (busy.value || remakeSent.value) return;
+  remakeSent.value = true;
+  try {
+    await runOutline();
+  } finally {
+    remakeSent.value = false;
+    remakeAsking.value = false;
+  }
+}
+
+// 묻던 일이 더는 맞지 않으면 칸을 걷는다 — 보내기 전에 다른 쓰기가 시작돼 버튼이 잠겼거나, 목차를 (다른 탭·이 칸에서) 다시 만들기
+// 시작했거나, 다시 맞춤·대체 목차가 풀려 [보고서 다시 만들기]가 사라졌다
+watch(busy, (now) => {
+  if (now && !remakeSent.value) remakeAsking.value = false;
+});
+watch(
+  () => canRemake.value && !outlineGen.value,
+  (ok) => {
+    if (!ok) remakeAsking.value = false;
+  },
+);
+
+// 칸이 접히면 초점을 [보고서 다시 만들기]로(다시 맞춤 줄의 버튼 또는 대체 목차 줄의 버튼) — 둘 다 사라졌으면(목차를 다시 만드는 중)
+// 보고서 제목(tabindex="-1")으로
+function remakeReturn(): HTMLElement | null {
+  const btn =
+    document.querySelector<HTMLButtonElement>("#wk-proposal-remake") ??
+    document.querySelector<HTMLButtonElement>("#wk-proposal-fallback button");
+  return btn && !btn.disabled ? btn : document.getElementById("wk-proposal-title");
 }
 
 function saveOutline(body: OutlinePut): void {
@@ -485,17 +628,19 @@ function saveOutline(body: OutlinePut): void {
   if (body.approve) outlineOpen.value = true;
   void act(async () => {
     await api.putOutline(props.jobId, p.version, body);
-    await props.work.reload("proposal");
-    say(body.approve ? "목차를 승인했습니다 — 이제 절을 쓸 수 있습니다" : "목차를 저장했습니다");
-  }, "목차를 저장하지 못했습니다");
+    // 성공 안내는 다시 읽기까지 됐을 때만 — 아니면 화면은 옛 목차라 위 한 줄이 '승인했지만 화면을 새로 고치지 못했어요'를 알린다
+    if (await refresh(["proposal"], body.approve ? WORK_SAVED_STALE.approved : WORK_SAVED_STALE.saved)) {
+      say(body.approve ? "목차를 승인했어요 — 이제 절을 쓸 수 있어요." : "목차를 저장했어요.");
+    }
+  }, "목차를 저장하지 못했어요");
 }
 
 // 문서의 연구 배경(2절)·방법(6절) 칸 — 승인 상태를 지킨 채(fieldPut) PUT /outline. 보고서를 자동으로 쓰는 동안에는 절이
 // 반영될 때마다 version 이 올라 409 version_conflict 가 난다 — 계획서를 다시 읽어 목차가 그대로면 다시 읽은 version·목차로
 // 본문을 다시 만들어 한 번만 보낸다(putOnceMore). 다시 읽기는 work.reload 가 아니라 GET 을 바로 부른다(proposalReread —
 // 절의 generation 이벤트가 그 사이 reload('proposal') 를 부르면 reload 는 제 응답을 버린다). 목차가 바뀐 충돌(work 이벤트는
-// 계획서를 다시 읽지 않아 다른 탭의 [목차 고치기]를 이 탭은 모른다)이나 두 번째 409 면 act 가 보고서를 다시 읽고 CONFLICT 를
-// 알린다(칸은 열린 채 글이 남아 다시 저장할 수 있다)
+// 계획서를 다시 읽지 않아 다른 탭의 [목차 고치기]를 이 탭은 모른다)이나 두 번째 409 면 act 가 보고서를 다시 읽고 충돌
+// 안내(WORK_CONFLICT)를 알린다(칸은 열린 채 글이 남아 다시 저장할 수 있다)
 function saveField(field: "background" | "method", text: string): void {
   const p = proposal.value;
   const outline = p?.outline;
@@ -508,10 +653,13 @@ function saveField(field: "background" | "method", text: string): void {
         { version: p.version, outline },
         proposalReread(() => api.getProposal(props.jobId)),
       );
-      await props.work.reload("proposal");
-      say(field === "background" ? "연구 배경을 저장했습니다" : "방법을 저장했습니다");
+      // 저장은 됐다 — 다시 읽기가 실패해도 칸을 닫는다(DocField 의 savedSeq). 성공 안내는 다시 읽기까지 됐을 때만
+      markWritten(field);
+      if (await refresh(["proposal"], WORK_SAVED_STALE.saved)) {
+        say(field === "background" ? "연구 배경을 저장했어요." : "방법을 저장했어요.");
+      }
     },
-    field === "background" ? "연구 배경을 저장하지 못했습니다" : "방법을 저장하지 못했습니다",
+    field === "background" ? "연구 배경을 저장하지 못했어요" : "방법을 저장하지 못했어요",
   );
 }
 
@@ -519,8 +667,8 @@ function write(key: string): void {
   void act(async () => {
     await api.generateSection(props.jobId, key);
     // 스트리밍 글의 칩을 그릴 근거 지도(drafts)는 열린 생성에서 만들어진다 — 생성을 넣은 뒤 계획서를 다시 읽어야 생긴다
-    await Promise.all([props.work.reload("work"), props.work.reload("proposal")]);
-  }, "이 절을 쓰기 시작하지 못했습니다");
+    await refresh(["work", "proposal"], WORK_SAVED_STALE.started);
+  }, "이 절을 쓰기 시작하지 못했어요");
 }
 
 function saveSection(key: string, body: SectionPut): void {
@@ -528,22 +676,24 @@ function saveSection(key: string, body: SectionPut): void {
   if (!p) return;
   void act(async () => {
     await api.putSection(props.jobId, key, p.version, body);
-    await props.work.reload("proposal");
-  }, "문단을 저장하지 못했습니다");
+    // 저장은 됐다 — 다시 읽기가 실패해도 열어 둔 칸을 닫는다(ProposalSection 의 savedSeq)
+    markWritten(`section:${key}`);
+    await refresh(["proposal"], WORK_SAVED_STALE.saved);
+  }, "문단을 저장하지 못했어요");
 }
 
 function regenerate(key: string, pid: string): void {
   void act(async () => {
     await api.regenerateParagraph(props.jobId, key, pid);
-    await props.work.reload("work");
-  }, "문단을 다시 쓰지 못했습니다");
+    await refresh(["work"], WORK_SAVED_STALE.started);
+  }, "문단을 다시 쓰지 못했어요");
 }
 
 function retry(genId: number): void {
   void act(async () => {
     await api.retryGeneration(props.jobId, genId);
-    await Promise.all([props.work.reload("work"), props.work.reload("proposal")]);
-  }, "다시 시도하지 못했습니다");
+    await refresh(["work", "proposal"], WORK_SAVED_STALE.started);
+  }, "다시 시도하지 못했어요");
 }
 
 // ── 내려받기(Word·PDF) ────────────────────────────────────
@@ -572,29 +722,31 @@ async function exportProposal(format: ReportExportFormat): Promise<void> {
     new Date(),
   );
   exportingAs.value = format;
+  // PDF 는 인쇄 창이 열렸는가(printPdf) — 열리지 않았으면(정책 차단·인앱 브라우저) 실패로 알리고 완료 처리를 하지 않는다
+  let printed = true;
   try {
     if (format === "docx") await exportDocx(doc);
-    else await printPdf(doc);
+    else printed = await printPdf(doc);
   } catch (e) {
     console.warn("[research] 보고서 내보내기 실패", e);
     // 배포 뒤 옛 화면에서 누르면 docx 조각 파일이 사라져 동적 import 가 실패한다 — 새로고침이 답이다
-    say(
-      format === "docx"
-        ? "Word 문서를 만들지 못했습니다. 새로고침한 뒤 다시 시도해 주세요."
-        : "인쇄 창을 열지 못했습니다. 다시 시도해 주세요.",
-      true,
-    );
+    say(REPORT_EXPORT_FAILED[format], true);
     return;
   } finally {
     exportingAs.value = null;
   }
+  if (!printed) {
+    say(REPORT_EXPORT_FAILED.pdf, true);
+    return;
+  }
   // PDF 는 인쇄 창 자체가 결과다 — 딥리서치 보고서의 PDF 도 안내를 띄우지 않는다
-  if (format === "docx") say("Word 문서를 내려받았습니다");
+  if (format === "docx") say("Word 문서를 내려받았어요.");
   await markDone();
 }
 
 // 처음 내려받으면 연구를 마친 것으로 둔다(phase done) — 단계는 앞으로만 가므로 이미 done 이면 보내지 않는다.
-// PDF 는 인쇄 창을 취소했는지 브라우저가 알려 주지 않아, 창이 닫히고 오류 없이 돌아오면 내려받은 것으로 본다
+// PDF 는 인쇄 창을 취소했는지 브라우저가 알려 주지 않아, 인쇄 창이 열렸다 닫히면(printPdf 가 true) 내려받은 것으로 본다 —
+// 인쇄 창이 아예 열리지 않았으면 부르지 않는다
 async function markDone(): Promise<void> {
   const w = workView.value;
   if (!w || w.phase !== "proposal" || readOnly.value) return;
@@ -628,7 +780,7 @@ const chatStore = new Map<string, DeepReadMessage[]>();
 const sourceCache = new Map<string, SectionSources>();
 const sources = shallowRef<SectionSources | null>(null);
 const sourcesLoading = ref(false);
-const sourcesError = ref<string | null>(null);
+const sourcesError = shallowRef<WorkFailure | null>(null);
 let sourcesSeq = 0;
 const { leave } = useDetailLeave();
 
@@ -701,10 +853,16 @@ async function loadSources(pick: CitePick): Promise<void> {
     sourceCache.set(cacheKey, got);
     if (seq === sourcesSeq) sources.value = got;
   } catch (e) {
-    if (seq === sourcesSeq) sourcesError.value = workErrorMessage(e, "원문 대목을 불러오지 못했습니다");
+    if (seq === sourcesSeq) sourcesError.value = workFailure(e, WORK_SOURCES_FAILED, workErrorMessage);
   } finally {
     if (seq === sourcesSeq) sourcesLoading.value = false;
   }
+}
+
+// 원문 대목 조회 실패의 [다시 시도] — 패널에 열린 인용을 다시 읽는다(실패한 응답은 캐시에 남지 않는다)
+function retrySources(): void {
+  const pick = panel.value?.pick;
+  if (pick) void loadSources(pick);
 }
 
 function setTab(tab: PanelTab): void {

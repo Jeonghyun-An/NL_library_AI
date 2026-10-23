@@ -1737,6 +1737,9 @@ html.skx-scroll-lock {
   grid-area: send;
   display: flex;
   justify-content: flex-end;
+  /* 한도 가까이에서 보내기 왼쪽에 서는 글자 수(SkxCharCount)를 보내기와 세로 가운데로 맞추고 띄운다 — 보내기만 있을 때 모양은 그대로 */
+  align-items: center;
+  gap: 0.5rem;
 }
 /* 보내기 — 시안 크기(40 → 2rem)의 원. 색은 지금 포인트색 그대로 */
 .skx-send {
@@ -2114,9 +2117,19 @@ html.skx-scroll-lock {
   align-items: center;
   gap: 2rem;
   width: 100%;
+  position: relative;
 }
 .skx-panel[hidden] {
   display: none;
+}
+/* DeepResearch 예시 연구 — 패널 바로 아래(패널 안 간격과 같은 2rem)에 띄운다. 높이에 넣지 않아 랜딩의 세로 가운데 정렬이 예시 없는
+   높이로 정해진다(모드를 켜고 꺼도 로고·입력창이 제자리). 화면 아래를 넘는 만큼은 index.vue 가 재어 .skx-app 아래 여백으로 페이지를 늘린다 */
+.skx-panel__float {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 2rem;
 }
 
 /* 메뉴는 다른 내용 위에 겹쳐 뜨므로 불투명 면(--skx-white)에 테두리. 이 드롭다운은 랜딩의 맨 아래 줄이라 아래에는
@@ -3058,25 +3071,6 @@ html.skx-scroll-lock {
 
 /* 제목 버튼 — 키보드로 상세를 여는 길. 모양은 제목 글자 그대로 */
 
-/* [다시 시도] — 안내 글 끝의 글자 버튼. 추천 1권 밖(논문 AI 요약·상세 AI 큐레이션·DeepRead 대화)의 실패 안내는 .skx-retry */
-.skx-pick__retry,
-.skx-retry {
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  font-weight: 600;
-  color: var(--skx-primary);
-  text-decoration: underline;
-  cursor: pointer;
-}
-.skx-pick__retry:focus-visible,
-.skx-retry:focus-visible {
-  outline: 2px solid var(--skx-accent);
-  outline-offset: 2px;
-  border-radius: var(--skx-radius-sm);
-}
-
 /* [E] SKOVIX 추천 1권 */
 
 /* [S] 도서 결과 목록 */
@@ -3431,10 +3425,6 @@ html.skx-scroll-lock {
   background: var(--skx-chat-ai-bg);
   color: var(--skx-ink-on-light);
 }
-/* 답을 받지 못한 안내의 [다시 시도] — 밝은 말풍선 위라 강조색(어두운 테마에서는 밝아 묻힌다) 대신 말풍선 글자색 */
-.skx-chat-msg--ai .skx-retry {
-  color: inherit;
-}
 /* 실패 전까지 받던 글 — 대화에 남지 않는 끊긴 글이라 흐리게(새 색값 없이 투명도). 안내는 그 아래 한 줄 띄워 */
 .skx-chat-msg__partial {
   opacity: 0.6;
@@ -3527,6 +3517,20 @@ html.skx-scroll-lock {
   height: 1rem;
   display: block;
   filter: var(--skx-ico-on-accent-filter);
+}
+/* 답을 받는 동안의 [멈춤](.skx-chat-send--stop) — 보내기 아이콘 자리에 네모. 아이콘 파일 없이 그려 글자색(채움 위 글자색)을 따른다 */
+.skx-chat-send svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  display: block;
+  color: var(--skx-on-accent);
+}
+/* 글자 수(SkxCharCount) — 입력창 아래 여백 줄, 보내기 단추 왼쪽에 단추 가운데 높이로 */
+.skx-chat-count {
+  position: absolute;
+  left: 0.9rem;
+  right: 3rem;
+  bottom: 1.25rem;
 }
 /* 출처 칩 */
 .skx-chat-sources {
@@ -4265,13 +4269,12 @@ html.skx-scroll-lock {
   line-height: 1.5;
   margin: 0;
 }
-/* 요약을 만들지 못한 안내 — 추천 1권의 실패 안내(.skx-pick__text--muted)와 같은 색. 접히는 칸(.skx-clamp__clip) 밖 #after 자리라
+/* 요약을 만들지 못한 안내(공통 줄 안내 SkxInlineError — 모양은 공통 구역, 여기서는 자리만). 접히는 칸(.skx-clamp__clip) 밖 #after 자리라
    요약 칸 안쪽 여백(.skx-pai-main__scroll)을 따로 준다: 받은 글 아래면 위는 글 칸의 아래 여백이 맡고, 글 없이 혼자면(.is-alone) 위도 같은 여백 */
-.skx-pai-section__text.skx-pai-main__failed {
+.skx-pai-main__failed {
   padding: 0.4rem 1.2rem 1.2rem;
-  color: var(--skx-gray-1);
 }
-.skx-pai-section__text.skx-pai-main__failed.is-alone {
+.skx-pai-main__failed.is-alone {
   padding-top: 1.2rem;
 }
 
@@ -5058,3 +5061,538 @@ html.skx-scroll-lock {
 
 /* ── 도서 상세 표지 컬럼 (표지 + AI 코멘트) ── */
 
+/* [S] 공통 오류·빈 상태 — SkxErrorState(섹션·화면 단위)·SkxInlineError(줄 단위)·SkxErrorPage(전역 오류 화면 — error.vue)·
+   SkxConnectionBanner(실시간 연결 끊김 띠)·SkxCharCount(글자 수)·SkxConfirm(누른 버튼 곁의 확인 칸).
+   오류·빈 상태 디자인은 이 구역에만 입힌다 — 화면마다 따로 꾸미지 않아야 한 번 바꾸면 전체 오류 화면에 반영된다.
+   모든 표시를 한 페이지에서 보며 고치려면 개발용 오류 화면 모음 /dev/error-states(pages/dev/error-states.vue — 실제 컴포넌트만 쓴다).
+   모양은 후배 시안 'DR/상태 안내'(피그마 component set 2772:9176, 2026-10-16 — 다크 1920 프레임 픽셀값을 1px = 0.05rem 으로 옮김)를 따른다.
+   색은 아이콘에만 쓴다 — 글자를 빨갛게 칠하지 않는다(사용자 지적 2026-10-16). 제목은 --skx-ink-strong, 설명은 --skx-gray-1, 줄 안내·띠의 글은 --skx-ink.
+   색은 --skx-* 토큰만 쓴다(다크·핑크·밝은 읽는 면 모두 토큰으로 따라온다).
+   아이콘 색(--state-ico): 실패 갈래 [data-tone="error"] 는 위험색, 빈 결과 청록(--skx-teal-ink), 찾을 수 없음 회색(--skx-gray-1), 취소 포인트색.
+   kind 별로 더 꾸미려면 .skx-state--{kind} */
+.skx-state {
+  /* 아이콘 색 — 갈래·kind 규칙은 이 값만 바꾼다. 원의 채움(12%)·테두리(50%)·선 아이콘이 모두 이 색에서 나온다 */
+  --state-ico: var(--skx-gray-1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  /* 시안 카드 폭 640px — 좁은 자리에서는 부모 폭 */
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
+  padding: 2.4rem 2.4rem 2.2rem;
+  color: var(--skx-ink);
+  text-align: center;
+  border-radius: 1.2rem;
+}
+/* 좁은 화면 — 시안의 48px 안쪽 여백은 글 폭을 너무 줄인다 */
+@media (max-width: 640px) {
+  .skx-state {
+    padding: 1.6rem 0.8rem 1.4rem;
+  }
+}
+.skx-state[data-tone="error"] {
+  --state-ico: var(--skx-danger);
+}
+.skx-state--empty {
+  --state-ico: var(--skx-teal-ink);
+}
+.skx-state--notFound {
+  --state-ico: var(--skx-gray-1);
+}
+.skx-state--canceled {
+  --state-ico: var(--skx-primary);
+}
+/* 아이콘 원 — 70px 원, 아이콘색 12% 채움 + 50% 테두리, 안에 32px 선 아이콘(색은 svg 의 currentColor 가 이 color 를 따른다) */
+.skx-state__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  color: var(--state-ico);
+  background: color-mix(in srgb, var(--state-ico) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--state-ico) 50%, transparent);
+  border-radius: 50%;
+}
+.skx-state__icon svg {
+  display: block;
+  width: 1.6rem;
+  height: 1.6rem;
+}
+.skx-state__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--skx-ink-strong);
+  /* 줄이 넘치면 낱말 사이에서만 바꾸고('다시 / 시도'처럼 낱말을 가르지 않게), 두 줄이 되면 길이를 고르게 */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.skx-state__msg {
+  max-width: 27.2rem;
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.15rem;
+  color: var(--skx-gray-1);
+  /* 문장마다 줄을 바꾼다 — 문구는 문장 사이를 '\n' 으로 잇는다(사용자 요청 2026-10-16). 넘치는 줄은 낱말 사이에서만 바꾸고,
+     한 낱말이 칸보다 길 때만 낱말 안에서 끊는다 */
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.skx-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+/* 버튼 — 시안 높이 43px(안쪽 12/20)·둥글기 8·글자 14px/700 */
+.skx-state__retry,
+.skx-state__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 2.15rem;
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-decoration: none;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+/* 보조 버튼(슬롯의 덧붙인 버튼·링크) — 시안의 흰 5% 채움 + 흰 12% 테두리(다크 토큰 값이 그대로 그 값이다) */
+.skx-state__action {
+  color: var(--skx-ink);
+  background: var(--skx-frost-bg-soft);
+  border: 1px solid var(--skx-chip-line);
+}
+.skx-state__action:hover {
+  background: var(--skx-frost-bg-hover);
+}
+/* 링크(<a>·NuxtLink)로 써도 같은 글색 — 공통 리셋의 a:visited·a:hover(color: inherit, 특이도 0,1,1)가 한 클래스(0,1,0)를 이겨
+   지나간 링크·마우스를 올린 링크만 본문색으로 바뀌던 것을 같은 상태로 다시 적어 막는다 */
+.skx-state__action:visited,
+.skx-state__action:hover {
+  color: var(--skx-ink);
+}
+/* 주 버튼 — 버튼 줄의 첫 버튼: [다시 시도], 없으면 슬롯의 첫 버튼·링크. 시안의 산호 채움(--skx-primary) + 그 위 글자(--skx-on-accent) */
+.skx-state__retry,
+.skx-state__actions > .skx-state__action:first-child {
+  color: var(--skx-on-accent);
+  background: var(--skx-primary);
+  border: 1px solid var(--skx-primary);
+}
+.skx-state__actions > .skx-state__action:first-child:visited,
+.skx-state__actions > .skx-state__action:first-child:hover {
+  color: var(--skx-on-accent);
+}
+.skx-state__retry:hover,
+.skx-state__actions > .skx-state__action:first-child:hover {
+  background: var(--skx-accent-strong);
+  border-color: var(--skx-accent-strong);
+}
+/* 재시도 중·슬롯 버튼이 일하는 중(딥리서치의 [같은 질문으로 다시 시작]) — disabled 가 아니라 aria-disabled 로 알린다(초점 유지) */
+.skx-state__retry[aria-disabled="true"],
+.skx-state__action[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: progress;
+}
+.skx-state__retry:focus-visible,
+.skx-state__action:focus-visible,
+.skx-inline-error__retry:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+/* 이미 틀 안에 있는 칸·옆 칸 — 아이콘 원 48px·제목 17px 로 줄이고 틀의 폭을 그대로 쓴다 */
+.skx-state--compact {
+  gap: 0.5rem;
+  max-width: none;
+  padding: 0.8rem 0.4rem;
+  border-radius: 0;
+}
+.skx-state--compact .skx-state__icon {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+.skx-state--compact .skx-state__icon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.skx-state--compact .skx-state__title {
+  font-size: 0.85rem;
+}
+.skx-state--compact .skx-state__msg {
+  font-size: 0.65rem;
+  line-height: 1.6;
+}
+.skx-state--compact .skx-state__actions {
+  gap: 0.4rem;
+  margin-top: 0.1rem;
+}
+.skx-state--compact .skx-state__retry,
+.skx-state--compact .skx-state__action {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.65rem;
+}
+/* 손가락으로 누르는 화면에서는 버튼을 44px 로 — 좁은 화면은 뿌리 글자(rem)가 14.4px 로 줄어 rem 으로는 모자라 px 로 둔다 */
+@media (pointer: coarse) {
+  .skx-state__retry,
+  .skx-state__action {
+    min-height: 44px;
+  }
+}
+
+/* 줄 단위 안내 — 글은 본문색, 앞의 작은 경고 삼각형(16px)만 위험색. 글 뒤에 [다시 시도] 글자 버튼(포인트색 밑줄 글자), 좁으면 버튼이 다음 줄로.
+   뿌리는 첫 줄 기준선으로 맞춘다 — 아이콘(글자가 없어 아래 끝이 기준선)을 글의 가운데로 조금 내린다 */
+.skx-inline-error {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.65rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+}
+.skx-inline-error__icon {
+  position: relative;
+  top: 0.18rem;
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--skx-danger);
+}
+.skx-inline-error__icon svg {
+  display: block;
+  width: 0.8rem;
+  height: 0.8rem;
+}
+.skx-inline-error__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  min-width: 0;
+}
+.skx-inline-error__msg {
+  min-width: 0;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.skx-inline-error__retry {
+  display: inline-flex;
+  align-items: center;
+  /* 글자 버튼이라도 누를 자리는 24px 이상(WCAG 2.5.8) — 좁은 화면에서 rem 이 줄어도 모자라지 않게 px */
+  min-height: 24px;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--skx-primary);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.skx-inline-error__retry[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: progress;
+}
+/* 밝은 AI 말풍선 위(DeepRead 대화 — 답을 받지 못한 말풍선) — 말풍선은 테마와 상관없이 옅은 면이라 위험색·포인트색(어두운 테마에서는
+   밝아진다)이 묻히므로 아이콘·버튼도 말풍선 글자색을 따른다 */
+.skx-chat-msg--ai .skx-inline-error,
+.skx-chat-msg--ai .skx-inline-error__icon,
+.skx-chat-msg--ai .skx-inline-error__retry {
+  color: inherit;
+}
+
+/* 전역 오류 화면(error.vue) — app.vue 가 그려지지 않으므로 글꼴·바탕을 여기서 다시 잡고, 로고와 상태 블록을 가운데에 */
+.skx-error-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 2rem 0.8rem;
+  font-family:
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Noto Sans KR",
+    sans-serif;
+  color: var(--skx-ink);
+}
+.skx-error-page__main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6rem;
+  width: 100%;
+  max-width: 32rem;
+}
+.skx-error-page__logo {
+  width: min(12rem, 60%);
+}
+/* 움직이는 홀로그램 위에 바로 놓이는 이 화면도 상태 블록을 면·테두리 없이 둔다(시안대로 — 후배 의견 2026-10-16 '빼는 게 깔끔').
+   대신 설명 글을 회색(--skx-gray-1)에서 본문색(--skx-ink)으로 한 단계 진하게 — 랜딩의 페이지 위 작은 글 선례와 같이 띠 하나가
+   지나는 자리까지 4.5:1. 제목은 큰 글이라 '카드 없이 페이지 위에 놓이는 큰 제목' 기준을 따른다(둘 다 themeHolo.test.ts) */
+.skx-error-page .skx-state__msg {
+  color: var(--skx-ink);
+}
+/* 치명 오류 화면의 보조 버튼([처음 화면으로] — [다시 시도] 다음)은 옅은 면(흰 5%)만 깔려 다크에서 본문색 글이 4.5:1 에 못 미친다 —
+   이 화면에서만 글을 가장 진한 톤으로(themeHolo.test.ts) */
+.skx-error-page .skx-state__action:not(:first-child),
+.skx-error-page .skx-state__action:not(:first-child):visited,
+.skx-error-page .skx-state__action:not(:first-child):hover {
+  color: var(--skx-ink-strong);
+}
+/* 오류 화면 모음의 액자 안(preview) — 화면 높이(100vh) 대신 액자 높이를 채운다. 홀로그램(position: fixed)을 가두는 transform·overflow 는 액자 쪽이 둔다 */
+.skx-error-page--preview {
+  min-height: 0;
+  height: 100%;
+}
+
+/* 실시간 연결 끊김 띠(SkxConnectionBanner) — 화면 위쪽에 얇게. 두 상태 모두 글은 본문색이고 앞의 아이콘으로만 가른다:
+   다시 연결하는 중은 포인트색 점이 천천히 깜빡이고, 연결하지 못함은 위험색 경고 삼각형. 바탕은 메뉴 면(거의 불투명)이라
+   홀로그램·본문 위에 떠도 글이 읽힌다. 자리(sticky 등)는 쓰는 화면이 정한다 */
+.skx-conn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+  min-height: 1.6rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.65rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  background: var(--skx-frost-menu-bg);
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-sm);
+  box-shadow: var(--skx-shadow-banner);
+}
+/* 붙어 있음 — 보이는 것 없이 알림 영역만 남긴다(display: none 이면 낭독기가 영역을 잃어 다음에 끊길 때 새 글을 놓친다).
+   흐름에서도 빼 쓰는 화면의 간격을 차지하지 않는다 */
+.skx-conn--connected {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  box-shadow: none;
+}
+/* [다시 연결] 이 사라질 때 초점을 받는 띠(tabindex="-1") — 마우스로 누른 뒤에는 테두리를 그리지 않고, 키보드로 왔을 때만 */
+.skx-conn:focus {
+  outline: none;
+}
+.skx-conn:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.skx-conn__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 0.8rem;
+  height: 0.8rem;
+  color: var(--skx-accent);
+}
+.skx-conn__icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.skx-conn--lost .skx-conn__icon {
+  color: var(--skx-danger);
+}
+/* 다시 연결하는 중의 점 — 포인트색이 천천히 깜빡인다 */
+.skx-conn--reconnecting .skx-conn__icon::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--skx-accent);
+  animation: skx-conn-pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes skx-conn-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skx-conn--reconnecting .skx-conn__icon::before {
+    animation: none;
+  }
+}
+.skx-conn__msg {
+  min-width: 0;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+/* [다시 연결] — 줄 안내의 [다시 시도] 와 같은 글자 버튼. 누를 자리는 24px 이상(WCAG 2.5.8, 좁은 화면에서도 모자라지 않게 px) */
+.skx-conn__retry {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--skx-primary);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.skx-conn__retry:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+
+/* 글자 수(SkxCharCount) — 입력창 아래 오른쪽 끝. 평소는 흐린 글, 한도 가까이(--near)는 포인트색, 한도(--limit)는 포인트색 굵게 + 안내 글
+   (위험색으로 칠하지 않는다 — 한도는 실패가 아니라 안내다). 숫자가 바뀌어도 폭이 흔들리지 않게 고정폭 숫자.
+   안내 칸(__msg)은 비어 있어도 그려 둔다(live 영역 — display: none 으로 숨기면 낭독기가 놓친다) */
+.skx-charcount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.1rem 0.5rem;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  color: var(--skx-gray-1);
+}
+.skx-charcount__num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.skx-charcount__msg {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.skx-charcount--near {
+  font-weight: 600;
+  color: var(--skx-primary);
+}
+.skx-charcount--limit {
+  font-weight: 700;
+  color: var(--skx-primary);
+}
+/* quiet — 평소(normal)에는 화면에서만 숨긴다(검색창·질문 칸에 숫자가 늘 붙어 어수선하지 않게, 사용자 결정 2026-10-16).
+   display: none 이 아니라 화면 밖으로 접어 둬서 live 영역과 aria-describedby 가 그대로 살아 있다 — 한도에 닿으면 낭독기가 읽는다 */
+.skx-charcount--quiet[data-state="normal"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 확인 칸(SkxConfirm) — 덮어쓰거나 지우기 전에 누른 버튼 바로 곁(흐름 안)에 펴는 확인. 브라우저 확인 창·모달 대신이다.
+   사이드바 기록 지우기 확인(AppSidebar.vue 의 .skx-history__confirm)처럼 조용한 면 하나: 불투명 면(--skx-white) + 옅은 테두리, 묻는 글은 본문색
+   (빨갛게 칠하지 않는다), 버튼은 오른쪽 끝에 [확인 동사] [취소]. 확인은 포인트색 채움(상태 블록의 주 버튼과 같은 토큰), 취소는 선만.
+   자리(위·아래 여백·폭)는 쓰는 화면의 흐름이 정한다 — 세로 묶음(.rs-card·.wk-proposal 등) 안에서는 그 폭을 다 쓴다 */
+.skx-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem 0.7rem;
+  color: var(--skx-ink);
+  background: var(--skx-white);
+  border: 1px solid var(--skx-glass-border);
+  border-radius: var(--skx-radius-md);
+}
+/* 묻는 글 — 문장마다 줄을 바꾼다(문구는 문장 사이를 '\n' 으로 잇는다). 넘치는 줄은 낱말 사이에서만 바꾼다 */
+.skx-confirm__msg {
+  margin: 0;
+  font-size: 0.65rem;
+  line-height: 1.5;
+  color: var(--skx-ink);
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.skx-confirm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+.skx-confirm__ok,
+.skx-confirm__cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 누를 자리는 24px 이상(WCAG 2.5.8) — 좁은 화면에서 rem 이 줄어도 모자라지 않게 px */
+  min-height: 24px;
+  padding: 0.25rem 0.7rem;
+  font: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  border-radius: var(--skx-radius-sm);
+  cursor: pointer;
+}
+.skx-confirm__ok {
+  color: var(--skx-on-accent);
+  background: var(--skx-primary);
+  border: 1px solid var(--skx-primary);
+}
+.skx-confirm__ok:hover {
+  background: var(--skx-accent-strong);
+  border-color: var(--skx-accent-strong);
+}
+.skx-confirm__cancel {
+  color: var(--skx-ink);
+  background: none;
+  border: 1px solid var(--skx-line);
+}
+.skx-confirm__cancel:hover {
+  background: var(--skx-glass-teal);
+}
+/* 확인한 일이 도는 중 — disabled 가 아니라 aria-disabled 로 알린다(초점 유지). 재시도 중(.skx-state__retry)과 같은 모양 */
+.skx-confirm__ok[aria-disabled="true"],
+.skx-confirm__cancel[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: progress;
+}
+.skx-confirm__ok:focus-visible,
+.skx-confirm__cancel:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+/* 손가락으로 누르는 화면에서는 버튼을 44px 로(상태 블록 버튼과 같다) */
+@media (pointer: coarse) {
+  .skx-confirm__ok,
+  .skx-confirm__cancel {
+    min-height: 44px;
+  }
+}
+/* [E] 공통 오류·빈 상태 */

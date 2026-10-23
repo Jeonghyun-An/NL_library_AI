@@ -54,7 +54,11 @@
       :disabled="disabled || busy"
       @update:model-value="pickMode"
     />
-    <p v-if="error" class="rs-plus__error" role="alert">{{ error }}</p>
+    <!-- 질문 글자 수는 따로 그리지 않는다 — 이 메뉴를 품은 입력창(메인·/papers 랜딩, 결과 검색바)이 검색어 한도(SEARCH_QUERY_MAX 500 —
+         DeepResearch 질문 한도 QUESTION_MAX 와 같다)의 maxlength 와 제 글자 수(SkxCharCount)를 이미 가진다. 여기서 또 그리면 한 입력에
+         글자 수가 둘(낭독기도 두 번)이었다 -->
+    <!-- 시작 전 질문 길이 오류·시작 요청 실패·입력창 줄의 [취소] 실패 — 입력 상자 아래 왼쪽의 줄 안내 -->
+    <SkxInlineError v-if="error" class="rs-plus__error" :message="error" />
     <!-- DeepResearch 모드일 때 이 브라우저에 끝나지 않은 연구가 있으면 한 줄(사용자 결정 2026-10-13 — 판단은 useResearchStarter·
          utils/researchStart). [보기]는 그 연구 화면, [취소]는 한 번 더 눌러('정말 취소') 기존 취소 API 로 멈춘다. 보내기는 막지
          않는다 — 서버의 승인 429 browser_active 가 마지막 안전망이다. 랜딩 입력 상자에서는 칩 줄 아래, 결과 검색바에서는 바 아래에 선다 -->
@@ -129,7 +133,8 @@ import { useResearchStarter } from "~/composables/useResearch";
 import { DEEP_RESEARCH } from "~/utils/brand";
 import { safeLocalStorage } from "~/utils/browserId";
 import { menuStep } from "~/utils/menuNav";
-import { researchErrorMessage } from "~/utils/researchErrors";
+import { httpStatus } from "~/utils/apiErrors";
+import { CANCEL_ENDED_MESSAGE, researchErrorMessage } from "~/utils/researchErrors";
 import {
   DEFAULT_RESEARCH_MODE,
   modeParams,
@@ -371,7 +376,10 @@ async function onNoticeCancel(): Promise<void> {
     await cancelResearch(target.jobId);
     noticeLive.value = NOTICE_CANCEL_DONE_TEXT;
   } catch (e) {
-    error.value = researchErrorMessage(e, `${DEEP_RESEARCH}를 취소하지 못했습니다`);
+    // 409 — 그 사이 끝났거나 이미 취소된 연구다. 서버 문구(합쇼체) 대신 화면 문구로 알리고, 낡은 줄은 cancelResearch 가 기록을
+    // 다시 읽어 걷는다
+    error.value =
+      httpStatus(e) === 409 ? CANCEL_ENDED_MESSAGE : researchErrorMessage(e, `${DEEP_RESEARCH}를 취소하지 못했어요`);
   } finally {
     cancelStep.value = "idle";
     await restoreNoticeFocus();
@@ -512,7 +520,7 @@ async function submit(): Promise<void> {
     await navigateTo(`/research/${jobId}`);
   } catch (e) {
     // 입력은 지우지 않는다 — 사용자가 고쳐서 다시 보낼 수 있어야 한다
-    error.value = researchErrorMessage(e, `${DEEP_RESEARCH}를 시작하지 못했습니다`);
+    error.value = researchErrorMessage(e, `${DEEP_RESEARCH}를 시작하지 못했어요`);
   } finally {
     busy.value = false;
   }

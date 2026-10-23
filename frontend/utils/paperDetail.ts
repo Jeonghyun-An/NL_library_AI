@@ -2,6 +2,7 @@
 import type { ReportChunk, ResearchJob } from "~/types/research";
 import { citeLabel, pdfPage } from "./citations";
 import type { DetailSource } from "./detailSource";
+import { reportCiteNumbers } from "./reportDocument";
 
 type JobText = Pick<ResearchJob, "question" | "report">;
 
@@ -22,9 +23,11 @@ export function citeContext(job: JobText, eid: string | null, cntsId: string): C
   if (!eid || !job.report) return null;
   const evidence = job.report.evidence[eid];
   if (!evidence || evidence.cnts_id !== cntsId) return null;
+  // 보고서 인용칩과 같은 번호('N번 근거')로 — 칩이 숫자다(2026-10-15). 본문에서 번호를 찾지 못하면 전처럼 '성 연도'
+  const n = reportCiteNumbers(job.report.sections).get(eid);
   return {
     question: job.report.question || job.question,
-    label: citeLabel(evidence.meta, eid),
+    label: n ? `${n}번 근거` : citeLabel(evidence.meta, eid),
     chunks: [...evidence.chunks].sort((a, b) => (pdfPage(a) ?? NO_PAGE) - (pdfPage(b) ?? NO_PAGE)),
   };
 }

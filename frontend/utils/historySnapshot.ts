@@ -1,7 +1,11 @@
 // frontend/utils/historySnapshot.ts
 import type { BookSnapshot, PaperSnapshot, SnapshotBookInfo, SnapshotItem } from "~/types/history";
+import { SUMMARY_PAPER_LIMIT, pickSummaryExcerpt } from "./summaryExcerpt";
 
 export const SNAPSHOT_MAX_REFERENCES = 30;
+// 논문 AI 요약이 읽는 앞쪽 논문의 발췌(초록·색인 요약 본문 각각)를 담는 길이(코드 포인트) — 서버가 자르는 1000자
+// (paper_summary._MAX_EXCERPT_CHARS)보다 넉넉히 두어, 서버가 앞머리 표지를 걷고 문장 경계에서 잘라도 새 검색 때와 같은 글이 남는다
+export const SNAPSHOT_EXCERPT_MAX_CHARS = 1200;
 // 논문·소장자료 모두 건수로 자르지 않고 바이트로 맞춘다 — 검색이 top_k 의 몇 배(논문은 지금 최대 60편, 소장자료는 20 이면 수십 권)를
 // 돌려주고 화면은 그 전부를 쪽으로 나눠 보이므로, 복원할 때 둘째 쪽 이후의 카드도 목록에 있어야 한다(상세에서 돌아와 카드 자리를 찾을 때도).
 // 서버 상한(app/api/history.py 의 200KB)은 파이썬 구분자(", "·": ")까지 세어 여유를 둔다
@@ -44,6 +48,13 @@ export const PAPER_INFO_FIELDS: readonly (keyof SnapshotBookInfo)[] = [
 ];
 
 type Loose = Record<string, unknown>;
+
+// 코드 포인트 단위로 자른다 — UTF-16 코드 단위로 자르면 BMP 밖 글자(PDF 초록의 수학 이탤릭 𝑝·𝛽, 확장 한자, 이모지)의 서로게이트 쌍이
+// 갈라져 짝 없는 서로게이트가 남는다. 그 스냅샷을 담은 기록 저장은 서버(app/api/history.py _json_bytes 의 UTF-8 인코딩)에서 500 으로 끝나고,
+// 편지함(utils/historyStore)은 5xx 를 다시 보낼 실패로 보아 그 편지에 막혀 이 브라우저의 기록 동기화가 멈춘다
+function sliceCodePoints(text: string, max: number): string {
+  return text.length <= max ? text : Array.from(text).slice(0, max).join("");
+}
 
 function isObject(v: unknown): v is Loose {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -140,6 +151,19 @@ export function slimPaperResult(result: unknown): PaperSnapshot | null {
   const books = slimItems(result, PAPER_INFO_FIELDS, true);
   if (!books) return null;
   const r = result as Loose;
+  // AI 요약이 읽는 앞 SUMMARY_PAPER_LIMIT 편에만 발췌(초록, 없거나 짧으면 색인 요약 본문)를 쓴 필드 이름 그대로 잘라 싣는다 — 요약을 끝내기 전에
+  // 떠났거나 실패한 기록을 다시 열어(applyPaperEntry·[다시 시도]) 요약을 다시 만들 때도 새 검색 때와 같은 글을 읽게. 카드는 그리지 않는
+  // 필드라 나머지 논문에는 싣지 않는다(편마다 수백~수천 자다). slimItems 와 같은 거르기로 순서를 맞춘다
+  const served = (r.books as unknown[]).filter(isObject).filter((b) => typeof b.book_id === "string");
+  books.slice(0, SUMMARY_PAPER_LIMIT).forEach((item, i) => {
+    const info = served[i]?.book_info;
+    const parts = pickSummaryExcerpt(isObject(info) ? info : null);
+    if (!parts) return;
+    const kept: Pick<SnapshotBookInfo, "abstract" | "summary"> = {};
+    if (parts.abstract) kept.abstract = sliceCodePoints(parts.abstract, SNAPSHOT_EXCERPT_MAX_CHARS);
+    if (parts.summary) kept.summary = sliceCodePoints(parts.summary, SNAPSHOT_EXCERPT_MAX_CHARS);
+    item.book_info = { ...item.book_info, ...kept };
+  });
   const snap: PaperSnapshot = { query: typeof r.query === "string" ? r.query : "", books };
   shedReferences(snap);
   return snap;

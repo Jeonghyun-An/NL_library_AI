@@ -13,7 +13,7 @@ function httpError(status: number, detail?: unknown): Error & { status: number }
   return Object.assign(new Error(`HTTP ${status}`), { status, statusCode: status }, detail === undefined ? {} : { data: { detail } });
 }
 
-const NO_PAPERS = { code: "no_section_papers", message: "이 절에 넣을 논문이 없습니다" };
+const NO_PAPERS = { code: "no_section_papers", message: "이 절에 넣을 논문이 없어요" };
 
 // 묶음 둘(prior.g1·prior.g2) + 연구 공백 — [보고서 만들기]의 반영이 자동 승인한 목차
 function outline(over: Partial<Outline> = {}): Outline {
@@ -125,9 +125,9 @@ describe("useAutoReport — 남은 절을 하나씩 넣는다", () => {
 
   it("409 절 쓰는 중·500·네트워크 오류면 다음 키를 넣지 않고 멈춘 까닭을 남긴다", async () => {
     const cases: [unknown, string][] = [
-      [httpError(409, "이 절을 쓰는 중입니다"), "이 절을 쓰는 중입니다"],
-      [httpError(500), "보고서를 이어 쓰지 못했습니다"],
-      [new TypeError("Failed to fetch"), "보고서를 이어 쓰지 못했습니다 — 네트워크 연결을 확인하세요"],
+      [httpError(409, "이 절을 쓰는 중이에요"), "이 절을 쓰는 중이에요"],
+      [httpError(500), "보고서를 이어 쓰지 못했어요"],
+      [new TypeError("Failed to fetch"), "보고서를 이어 쓰지 못했어요 — 네트워크 연결을 확인해 주세요"],
     ];
     for (const [err, message] of cases) {
       const { auto, log, posts, reloads } = setup();
@@ -246,7 +246,7 @@ describe("useAutoReport — 남은 절을 하나씩 넣는다", () => {
     reloads[0]!.resolve();
     await flush();
     expect([...auto.skipped.value]).toEqual(["prior.g1"]);
-    expect(auto.stopped.value).toBe("보고서를 이어 쓰지 못했습니다");
+    expect(auto.stopped.value).toBe("보고서를 이어 쓰지 못했어요");
     // [보고서 다시 만들기] — 새 반영이 묶음을 다시 나눈 목차(gen_id 42)를 다시 읽었다
     proposalRef.value = proposal({ outline: outline({ gen_id: 42 }) });
     await flush();

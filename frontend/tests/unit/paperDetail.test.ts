@@ -20,7 +20,9 @@ function job(over: Partial<Pick<ResearchJob, "question" | "report">> = {}): Pick
     report: {
       question: "AI 윤리 교육의 효과는?",
       range: null,
-      sections: [],
+      sections: [
+        { heading: "가", intro: "효과가 있다 [E3].", papers: [], future: [], evidence_chunks: {}, chunk_scores: {} },
+      ],
       evidence: { E3: evidence },
       trail: [],
       limitations: [],
@@ -31,11 +33,17 @@ function job(over: Partial<Pick<ResearchJob, "question" | "report">> = {}): Pick
 
 describe("citeContext", () => {
   it("보고서 질문·인용 표기와 쪽 순 인용 대목을 만든다 — 쪽 정보가 없는 대목은 빼지 않고 뒤에 둔다", () => {
+    // 보고서 인용칩이 숫자라(2026-10-15) 배너도 칩과 같은 번호로 — 'N번 근거로 인용됨'
     expect(citeContext(job(), "E3", "CNTS-1")).toEqual({
       question: "AI 윤리 교육의 효과는?",
-      label: "김 2019",
+      label: "1번 근거",
       chunks: [chunk("c3", 2), chunk("c1", 7), chunk("c2", 0)],
     });
+  });
+
+  it("본문에서 번호를 찾지 못한 근거(절이 아직 없는 등)는 전처럼 '성 연도'로 적는다", () => {
+    const base = job().report!;
+    expect(citeContext(job({ report: { ...base, sections: [] } }), "E3", "CNTS-1")?.label).toBe("김 2019");
   });
 
   it("근거 번호가 없거나 다른 논문의 것이거나 보고서가 아직 없으면 배너를 내지 않는다", () => {

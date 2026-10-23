@@ -1,5 +1,5 @@
 // frontend/utils/sidebarGroups.ts
-import type { BookEntry, HistoryEntry, PaperEntry, ResearchEntry } from "~/types/history";
+import type { BookEntry, HistoryEntry, HistoryKind, PaperEntry, ResearchEntry } from "~/types/history";
 
 // 이 상태의 딥리서치가 있으면 배지가 바뀔 수 있다 — 사이드바 폴링 조건. 승인 대기는 사용자가 움직여야 바뀌므로 뺀다
 export const LIVE_STATUSES = new Set(["created", "planning", "approved", "queued", "running"]);
@@ -96,4 +96,38 @@ export function groupSidebarHistory(items: readonly HistoryEntry[], opts: Sideba
     researchTotal: sorted.length,
     recent: newestFirst(recent, (r) => r.entry),
   };
+}
+
+/** 사이드바의 두 묶음 — DeepResearch(딥리서치)와 최근 검색(소장자료·논문) */
+export type SidebarGroupKey = "research" | "recent";
+
+const GROUP_KINDS: Record<SidebarGroupKey, readonly HistoryKind[]> = {
+  research: ["research"],
+  recent: ["book", "paper"],
+};
+
+/**
+ * 사이드바 안의 줄 안내 문구(SkxInlineError). 오류 문구 규칙대로 해요체, 문장마다 줄을 바꾼다.
+ *  loadFailed : 묶음의 목록을 못 읽었고 보이는 줄도 없음 — '기록 없음'으로 보이지 않게(옛 문구의 '잠시 뒤 다시 열어 주세요'는
+ *               [다시 시도] 버튼이 생겨 '다시 시도해 주세요'로)
+ *  loadPartial: 못 읽은 종류가 있는데 보이는 줄은 있음 — 앞서 읽은 줄이 낡았거나 같은 묶음의 다른 종류만 읽혔다
+ *  storageBlocked: 브라우저 ID 를 저장하지 못함(사이트 데이터 차단) — 새로 고칠 때마다 새 ID 라 서버 기록이 이어지지 않는다
+ */
+export const SIDEBAR_NOTICE = {
+  loadFailed: "기록을 불러오지 못했어요.\n잠시 뒤 다시 시도해 주세요.",
+  loadPartial: "기록을 다 불러오지 못했어요.\n잠시 뒤 다시 시도해 주세요.",
+  storageBlocked: "이 브라우저는 사이트 데이터 저장이 막혀 있어 새로 고치면 기록이 사라져요.",
+} as const;
+
+/** 두 묶음 모두 진짜 비었을 때(실패 없음)의 한 줄 — 사이드바 모양을 지키려 공통 빈 상태 블록이 아닌 .skx-history__empty 로 그린다 */
+export const SIDEBAR_EMPTY = "아직 검색 기록이 없어요.";
+
+/** 묶음의 목록 실패 안내 — 그 묶음의 종류 중 못 읽은 것이 없으면 null. rowCount 는 그 묶음에 보이는(자르기 전) 줄 수 */
+export function groupLoadError(
+  group: SidebarGroupKey,
+  failedKinds: readonly HistoryKind[],
+  rowCount: number,
+): string | null {
+  if (!GROUP_KINDS[group].some((k) => failedKinds.includes(k))) return null;
+  return rowCount > 0 ? SIDEBAR_NOTICE.loadPartial : SIDEBAR_NOTICE.loadFailed;
 }

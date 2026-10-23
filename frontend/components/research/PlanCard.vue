@@ -4,7 +4,7 @@
     <header class="rs-card__head">
       <h2 class="rs-card__title">{{ editable ? "연구 계획 확인" : "연구 계획" }}</h2>
       <p v-if="questionUsed" class="rs-muted rs-plan__understood">{{ understoodLine(questionUsed) }}</p>
-      <p v-if="editable" class="rs-muted">하위질문을 고치거나 지우고 더할 수 있습니다. 최대 {{ max }}개까지입니다.</p>
+      <p v-if="editable" class="rs-muted">하위질문을 고치거나 지우고 더할 수 있어요.<br />최대 {{ max }}개까지예요.</p>
     </header>
 
     <ol v-if="editable" ref="list" class="rs-plan__list">
@@ -41,7 +41,8 @@
       <button type="button" class="rs-btn rs-btn--ghost rs-plan__add" :disabled="busy || items.length >= max" @click="add">
         + 하위질문 추가
       </button>
-      <p v-if="problem" class="rs-plan__problem" role="alert">{{ problem }}</p>
+      <!-- 서버가 422 로 거절하기 전에 화면이 먼저 막는 계획 편집값 오류 — [승인하고 시작]이 잠긴 까닭을 줄 안내로 -->
+      <SkxInlineError v-if="problem" :message="problem" />
       <div class="rs-card__actions">
         <button type="button" class="rs-btn" :disabled="busy || !!problem" @click="approve">승인하고 시작</button>
         <!-- 취소는 화면 안 한 번 확인('정말 취소' + [그대로 두기]) — 메인 입력창의 연구 줄과 같다 -->

@@ -10,24 +10,33 @@
           <!-- 소개와 다음 단계 버튼은 읽기 목록을 불러온 뒤에만 — 소개는 미리 담은 수(preselected)를, 버튼은 주제·담은 수를 알아야
                맞는 말·맞는 상태가 된다. 버튼은 표 아래와 같은 묶음(ReadingNextActions) — 넓으면 소개 옆, 좁으면 소개 아래 -->
           <p v-if="intro" class="rs-muted wk-screen__intro">{{ intro }}</p>
-          <ReadingNextActions class="wk-screen__lead-actions" where="top" v-bind="nextActions" @go="emit('go', $event)" @make="makeOutline" />
+          <ReadingNextActions class="wk-screen__lead-actions" where="top" v-bind="nextActions" :remake-open="remakeAt === 'top'" @go="emit('go', $event)" @make="makeOutline" />
         </div>
+        <!-- [보고서 다시 만들기] 확인 — 누른 묶음 바로 아래(위 묶음이면 소개 줄 아래, 아래 묶음이면 표 밑 묶음 아래). 한 번에 하나 -->
+        <SkxConfirm v-if="reading && remakeAt === 'top'" v-bind="remakeConfirm" :return-focus="() => remakeReturn('top')" @confirm="confirmRemake" @cancel="remakeAt = null" />
         <p v-if="topicTitle" class="wk-screen__picked">고른 주제 <strong>{{ topicTitle }}</strong></p>
-        <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었습니다 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]로 맞추세요.</p>
+        <p v-if="reading?.stale" class="rs-muted"><span class="rs-badge">다시 맞춤 필요</span> 목차를 만든 뒤 고른 주제가 바뀌었어요 — 담은 논문을 다시 보고 [{{ REMAKE_REPORT }}]를 눌러 맞춰 주세요.</p>
         <!-- 읽기 전용으로 꺼진 [보고서 만들기]·[보고서 다시 만들기](위·아래 두 묶음)가 이 줄을 까닭으로 가리킨다(aria-describedby) -->
-        <p v-if="readOnly" :id="READ_ONLY_ID" class="rs-muted">예시 연구는 읽기 전용입니다 — 미리 돌린 실제 기록을 그대로 보여 줍니다.</p>
+        <p v-if="readOnly" :id="READ_ONLY_ID" class="rs-muted">예시 연구는 읽기 전용이에요 — 미리 돌린 실제 기록을 그대로 보여 드려요.</p>
       </header>
 
       <CorpusScopeNote :corpus="corpus" />
-      <p v-if="error" class="rs-alert" role="alert">{{ error }}</p>
+      <!-- 쓰기 실패 · 다시 읽기 실패(이미 읽어 둔 목록이 옛 값일 수 있다 — [다시 시도]) · 쓰기가 오래 걸림 -->
+      <SkxInlineError v-if="error" :message="error" />
+      <SkxInlineError v-if="staleLine" :message="staleLine" :busy="staleRetrying" @retry="retryStale" />
+      <SkxInlineError v-if="slow" :message="WORK_SLOW_MESSAGE" />
 
-      <div v-if="!reading && loadError" class="rs-card rs-state">
-        <p>{{ loadError }}</p>
-        <button type="button" class="rs-btn" @click="reloadAll(['reading'])">다시 불러오기</button>
-      </div>
+      <SkxErrorState
+        v-if="!reading && loadFailure"
+        :kind="loadFailure.kind"
+        title="참고문헌 후보를 불러오지 못했어요"
+        :message="loadFailure.reason"
+        :busy="work.reloading('reading')"
+        @retry="reloadAll(['reading'])"
+      />
       <div v-else-if="!reading" class="rs-card rs-card--wait">
         <img :src="SPINNER_SRC" alt="" class="rs-spinner" />
-        <p>참고문헌 후보를 불러오는 중입니다</p>
+        <p>참고문헌 후보를 불러오는 중이에요</p>
       </div>
       <template v-else>
         <FunnelCounter :funnel="reading.funnel" />
@@ -36,6 +45,7 @@
           :read-only="readOnly"
           :busy="busy"
           :reordering="saves.reordering.value"
+          :pending="saves.pending.value"
           :job-id="jobId"
           :active-id="panelPaper?.cntsId ?? null"
           :panel-id="PANEL_ID"
@@ -50,7 +60,8 @@
           :busy="busy"
           @revive="(cnts) => update(cnts, { state: 'candidate' })"
         />
-        <ReadingNextActions class="wk-screen__next" where="bottom" v-bind="nextActions" @go="emit('go', $event)" @make="makeOutline" />
+        <ReadingNextActions class="wk-screen__next" where="bottom" v-bind="nextActions" :remake-open="remakeAt === 'bottom'" @go="emit('go', $event)" @make="makeOutline" />
+        <SkxConfirm v-if="remakeAt === 'bottom'" v-bind="remakeConfirm" :return-focus="() => remakeReturn('bottom')" @confirm="confirmRemake" @cancel="remakeAt = null" />
       </template>
     </section>
 
@@ -78,8 +89,8 @@
           >
             담음
           </button>
-          <span v-if="readOnly" class="rs-muted">예시 연구는 담을 수 없습니다 — 대화는 할 수 있습니다.</span>
-          <span v-else-if="panelItem.state === 'out'" class="rs-muted">뺀 논문입니다 — 표에서 [되돌리기]를 누르면 담을 수 있습니다.</span>
+          <span v-if="readOnly" class="rs-muted">예시 연구는 담을 수 없어요 — 대화는 할 수 있어요.</span>
+          <span v-else-if="panelItem.state === 'out'" class="rs-muted">뺀 논문이에요 — 표에서 [되돌리기]를 누르면 담을 수 있어요.</span>
         </div>
         <details v-if="panelPath" class="wk-panel__path">
           <summary>들어온 경로 — {{ panelPath.label }}</summary>
@@ -100,7 +111,7 @@ import FunnelCounter from "~/components/work/FunnelCounter.vue";
 import ReadingNextActions from "~/components/work/ReadingNextActions.vue";
 import ReadingTable from "~/components/work/ReadingTable.vue";
 import { useReadingSaves } from "~/composables/useReadingSaves";
-import { type ResearchWorkHandle, useWorkApi } from "~/composables/useResearchWork";
+import { type ResearchWorkHandle, useSlowWrite, useWorkApi, useWorkStale } from "~/composables/useResearchWork";
 import { useDetailLeave } from "~/composables/useRestorePosition";
 import type { OpenPdfPayload } from "~/types/research";
 import type { ReadingPut, WorkResource, WorkStep } from "~/types/work";
@@ -108,21 +119,26 @@ import { type PanelPaper, panelTabs } from "~/utils/deepRead";
 import type { DeepReadMessage } from "~/utils/deepReadSse";
 import { detailUrl, readingAnchor } from "~/utils/detailSource";
 import { passageText } from "~/utils/passageText";
-import { canMakeOutline, firstPathChunk, outlineHint, pathPdfTarget, readingIntro } from "~/utils/readingList";
-import { httpStatus, workErrorMessage } from "~/utils/researchErrors";
+import {
+  type NextActionsWhere,
+  canMakeOutline,
+  firstPathChunk,
+  outlineHint,
+  pathPdfTarget,
+  readingIntro,
+  remakeButtonId,
+} from "~/utils/readingList";
+import { httpStatus } from "~/utils/apiErrors";
+import { workErrorMessage } from "~/utils/researchErrors";
 import { isPlainClick } from "~/utils/restorePosition";
-import { REMAKE_REPORT } from "~/utils/workPhase";
+import { WORK_SAVED_STALE, WORK_SLOW_MESSAGE } from "~/utils/workErrors";
+import { REMAKE_CONFIRM, REMAKE_CONFIRM_OK, REMAKE_REPORT } from "~/utils/workPhase";
 
 // 읽기 목록 단계 화면(?s=reading, spec §4 S4). 표·서랍의 의도를 받아 PUT .../reading/{cnts_id} 로 저장하고 다시 읽는다.
 // 담은 논문이 MIN_READING_FOR_OUTLINE 편 이상이면 [보고서 만들기] → POST .../outline 뒤 마지막 단계로 간다(반영이 목차를 자동 확정하고 그 화면이 절을 차례로
 // 넣는다 — 06e D20)
 const props = defineProps<{ jobId: string; work: ResearchWorkHandle; question: string }>();
 const emit = defineEmits<{ go: [step: WorkStep]; "open-pdf": [payload: OpenPdfPayload]; panel: [open: boolean] }>();
-
-// 목차가 이미 있으면 서버 outline 생성이 지금 목차를 통째로 바꾼다 — 다시 만들기 전에 묻는다. 새 반영은 다시 자동 승인하지만
-// 절 연쇄는 절도 생성 기록도 없는 키만 쓴다 — 이미 쓴 절은 다시 쓰지 않는다(06e 정함 4)
-const REMAKE_CONFIRM =
-  "보고서를 다시 만들면 지금 목차(묶음 이름·연구 질문·방법·승인)가 새로 만든 목차로 바뀝니다 — 연구 배경은 그대로 둡니다. 이미 쓴 절은 지우지 않고(주제·묶음·연구 질문이 바뀐 절에는 '다시 맞춤 필요'가 붙습니다) 아직 쓰지 않은 절만 자동으로 씁니다. 계속할까요?";
 
 const api = useWorkApi();
 const busy = ref(false);
@@ -133,7 +149,14 @@ const view = computed(() => state.value.work);
 const reading = computed(() => state.value.reading);
 const readOnly = computed(() => view.value?.is_example ?? true);
 // 읽기 목록 조회가 낸 오류만 — 다른 조회의 오류는 이 화면의 '불러오는 중'을 가리지 않는다
-const loadError = computed(() => props.work.errorOf("reading"));
+const loadFailure = computed(() => props.work.failureOf("reading"));
+// 목록을 읽어 둔 뒤의 다시 읽기 실패(이 단계에 들어올 때마다 다시 읽는다)와 연구 요약·고른 주제의 실패는 위 한 줄로
+const {
+  line: staleLine,
+  retrying: staleRetrying,
+  retry: retryStale,
+  markSaved,
+} = useWorkStale(props.work, ["reading", "work", "topics"], "reading");
 const hint = computed(() => (reading.value ? outlineHint(reading.value) : null));
 // 머리 소개 — 이어가기가 미리 담은 수에 따라 승인 문구(사용자 결정 2026-10-13) 또는 옛 소개, 읽기 전용이면 첫 문장만
 const intro = computed(() => readingIntro(reading.value, props.question, readOnly.value));
@@ -166,8 +189,10 @@ onMounted(() => {
   void props.work.ensure("topics");
 });
 
-async function reloadAll(kinds: WorkResource[]): Promise<void> {
-  await Promise.allSettled(kinds.map((kind) => props.work.reload(kind)));
+// 모두 다시 읽었으면 true — 하나라도 실패하면 false(그 실패는 위 한 줄이 알린다)
+async function reloadAll(kinds: WorkResource[]): Promise<boolean> {
+  const results = await Promise.all(kinds.map((kind) => props.work.reload(kind)));
+  return results.every(Boolean);
 }
 
 // 행 고침(담음·뺌·메모·묶음·순서·되살리기)은 차례로 보내고, 사슬이 빌 때 한 번만 다시 읽어 표를 서버 값으로 맞춘다
@@ -177,7 +202,10 @@ const saves = useReadingSaves({
   reload: reloadAll,
   afterAction: () => props.work.afterAction(),
   error,
+  unrefreshed: () => markSaved(WORK_SAVED_STALE.saved),
 });
+// 쓰기([보고서 만들기]·행 저장 사슬)가 오래 걸리면(응답 없음) 안내만 — 잠금은 그대로
+const slow = useSlowWrite(() => busy.value || saves.pending.value > 0);
 
 function update(cnts: string, body: ReadingPut): void {
   if (readOnly.value) return;
@@ -260,9 +288,18 @@ watch(
 );
 onBeforeUnmount(() => emit("panel", false));
 
-async function makeOutline(again: boolean): Promise<void> {
+// where — 누른 묶음(머리·표 아래). [보고서 다시 만들기](again)는 목차가 이미 있어 지금 목차를 덮으므로 바로 만들지 않고 그 묶음 아래에
+// 확인 칸을 편다(다시 누르면 접는다) — [다시 만들기]를 누르면 confirmRemake 가 만든다
+async function makeOutline(again: boolean, where: NextActionsWhere): Promise<void> {
   if (busy.value || readOnly.value || !canOutline.value) return;
-  if (again && !window.confirm(REMAKE_CONFIRM)) return;
+  if (again) {
+    remakeAt.value = remakeAt.value === where ? null : where;
+    return;
+  }
+  await runOutline();
+}
+
+async function runOutline(): Promise<void> {
   busy.value = true;
   error.value = null;
   try {
@@ -273,10 +310,44 @@ async function makeOutline(again: boolean): Promise<void> {
     props.work.afterAction();
     emit("go", "proposal");
   } catch (err) {
-    error.value = workErrorMessage(err, "보고서를 만들지 못했습니다");
+    error.value = workErrorMessage(err, "보고서를 만들지 못했어요");
     if (httpStatus(err) === 409) await reloadAll(["reading", "work"]);
   } finally {
     busy.value = false;
   }
+}
+
+// ── [보고서 다시 만들기] 확인 칸 ──────────────────────────
+// 브라우저 확인 창 대신 누른 묶음 아래에 편다 — 위·아래 묶음 중 한 곳에만(remakeAt). 만드는 동안 칸은 일하는 중(busy — 이 화면의 busy 는
+// 목차 만들기만 쥔다)으로 남고, 끝나면 걷힌다(성공이면 마지막 단계로 넘어가 이 화면째 내려간다)
+const remakeAt = ref<NextActionsWhere | null>(null);
+// 두 자리의 칸이 같이 받는 값 — 사용자가 다시 만들기를 골라 누른 자리라 엔터 한 번 더면 진행되게 확인 버튼에 초점을 둔다
+const remakeConfirm = computed(() => ({
+  message: REMAKE_CONFIRM,
+  confirmLabel: REMAKE_CONFIRM_OK,
+  label: `${REMAKE_REPORT} 확인`,
+  busy: busy.value,
+  initialFocus: "confirm" as const,
+}));
+
+async function confirmRemake(): Promise<void> {
+  if (busy.value || readOnly.value || !canOutline.value) return;
+  await runOutline();
+  remakeAt.value = null;
+}
+
+// 묻던 일을 더는 할 수 없으면 칸을 걷는다 — [보고서 다시 만들기]가 사라졌거나(주제가 없어짐·목차를 만든 단계가 아님) 꺼졌다(담은 논문이
+// 모자라짐 — 표의 저장 사슬이 다시 읽은 값). 만드는 중(busy)에는 그대로 둔다
+const remakeAllowed = computed(
+  () => outlineMade.value && reading.value?.topic_id !== null && !readOnly.value && canOutline.value,
+);
+watch(remakeAllowed, (ok) => {
+  if (!ok && !busy.value) remakeAt.value = null;
+});
+
+// 칸이 접히면 초점을 그 묶음의 [보고서 다시 만들기]로 — 꺼졌거나 사라졌으면 이 단계 제목(tabindex="-1")으로
+function remakeReturn(where: NextActionsWhere): HTMLElement | null {
+  const btn = document.getElementById(remakeButtonId(where)) as HTMLButtonElement | null;
+  return btn && !btn.disabled ? btn : document.getElementById("wk-reading-title");
 }
 </script>

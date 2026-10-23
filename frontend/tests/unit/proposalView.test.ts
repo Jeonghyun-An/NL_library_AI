@@ -24,6 +24,7 @@ import {
   editParagraph,
   failedParagraphGens,
   footprint,
+  FOOTPRINT_EMPTY,
   footprintLine,
   isNoSectionPapers,
   nextAutoSection,
@@ -310,7 +311,9 @@ describe("footprint · footprintLine", () => {
       "AI 작성 9문단 중 수락 5·수정 2·검토 전 2 · 직접 쓴 문단 1",
     );
     expect(footprintLine({ proposed: 0, accepted: 0, edited: 0, authored: 3 })).toBe("직접 쓴 문단 3");
-    expect(footprintLine({ proposed: 0, accepted: 0, edited: 0, authored: 0 })).toBe("아직 쓴 문단이 없습니다");
+    // 화면(AI 기여 막대)은 해요체, 내려받은 문서의 AI 사용 공개 부록은 문서 말투(합쇼체)
+    expect(footprintLine({ proposed: 0, accepted: 0, edited: 0, authored: 0 })).toBe("아직 쓴 문단이 없어요");
+    expect(footprintLine({ proposed: 0, accepted: 0, edited: 0, authored: 0 }, FOOTPRINT_EMPTY.doc)).toBe("아직 쓴 문단이 없습니다");
   });
 });
 
@@ -323,9 +326,9 @@ describe("checkLine · paragraphProblem", () => {
   });
 
   it("빈 문단·상한을 넘는 문단은 저장 전에 막는다", () => {
-    expect(paragraphProblem("  ")).toBe("빈 문단은 저장할 수 없습니다 — 지우려면 [지우기]를 누르세요");
+    expect(paragraphProblem("  ")).toBe("빈 문단은 저장할 수 없어요 — 지우려면 [지우기]를 눌러 주세요");
     expect(paragraphProblem("가".repeat(MAX_PARAGRAPH_CHARS))).toBeNull();
-    expect(paragraphProblem("가".repeat(MAX_PARAGRAPH_CHARS + 1))).toBe(`문단은 ${MAX_PARAGRAPH_CHARS}자까지입니다`);
+    expect(paragraphProblem("가".repeat(MAX_PARAGRAPH_CHARS + 1))).toBe(`문단은 ${MAX_PARAGRAPH_CHARS}자까지 쓸 수 있어요`);
   });
 });
 
@@ -366,7 +369,7 @@ describe("절 PUT 본문", () => {
 describe("putOnceMore — 버전 충돌 한 번 재전송", () => {
   const conflict = (version: number) => ({
     status: 409,
-    data: { detail: { code: "version_conflict", version, message: "다른 곳에서 보고서가 바뀌었습니다" } },
+    data: { detail: { code: "version_conflict", version, message: "다른 곳에서 보고서가 바뀌었어요 — 다시 불러온 뒤 고쳐 주세요" } },
   });
   // 묶음 둘 — 논문 배정이 바뀐 충돌을 만들 수 있게. 부를 때마다 새 객체(값만 같다)
   function saved(over: Partial<Outline> = {}): Outline {
@@ -466,7 +469,7 @@ describe("putOnceMore — 버전 충돌 한 번 재전송", () => {
   });
 
   it("버전 충돌이 아닌 오류는 다시 읽지도 보내지도 않고 곧바로 던진다", async () => {
-    for (const err of [{ status: 500 }, { status: 409, data: { detail: "목차를 만드는 중입니다" } }, new TypeError("fetch failed")]) {
+    for (const err of [{ status: 500 }, { status: 409, data: { detail: "목차를 만드는 중이에요" } }, new TypeError("fetch failed")]) {
       const { seen, put } = recorder([err]);
       let reads = 0;
       const reread = async () => {
@@ -703,14 +706,14 @@ describe("isNoSectionPapers — 근거 없음 409", () => {
     Object.assign(new Error(`HTTP ${status}`), { status, statusCode: status, data: { detail } });
 
   it("409 이고 detail code 가 no_section_papers 일 때만 참", () => {
-    expect(isNoSectionPapers(fetchError(409, { code: "no_section_papers", message: "이 절에 넣을 논문이 없습니다" }))).toBe(true);
+    expect(isNoSectionPapers(fetchError(409, { code: "no_section_papers", message: "이 절에 넣을 논문이 없어요" }))).toBe(true);
   });
 
   it("문자열 detail(06e 전 서버)·다른 code·404·네트워크 오류는 거짓", () => {
-    expect(isNoSectionPapers(fetchError(409, "이 절에 넣을 논문이 없습니다"))).toBe(false);
-    expect(isNoSectionPapers(fetchError(409, "이 절을 쓰는 중입니다"))).toBe(false);
+    expect(isNoSectionPapers(fetchError(409, "이 절에 넣을 논문이 없어요"))).toBe(false);
+    expect(isNoSectionPapers(fetchError(409, "이 절을 쓰는 중이에요"))).toBe(false);
     expect(isNoSectionPapers(fetchError(409, { code: "version_conflict", version: 3, message: "다른 곳에서 바뀌었습니다" }))).toBe(false);
-    expect(isNoSectionPapers(fetchError(404, { code: "no_section_papers", message: "이 절에 넣을 논문이 없습니다" }))).toBe(false);
+    expect(isNoSectionPapers(fetchError(404, { code: "no_section_papers", message: "이 절에 넣을 논문이 없어요" }))).toBe(false);
     expect(isNoSectionPapers(new TypeError("Failed to fetch"))).toBe(false);
     expect(isNoSectionPapers(null)).toBe(false);
   });

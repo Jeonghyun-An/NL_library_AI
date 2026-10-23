@@ -64,15 +64,15 @@ export function outlineProblems(d: OutlineDraft, approve: boolean): string[] {
   d.groups.forEach((g, i) => {
     const name = g.name.trim();
     if (!name) out.push(`${i + 1}번째 묶음의 이름을 적어 주세요`);
-    else if (chars(name) > GROUP_LABEL_MAX) out.push(`${i + 1}번째 묶음 이름은 ${GROUP_LABEL_MAX}자까지입니다`);
+    else if (chars(name) > GROUP_LABEL_MAX) out.push(`${i + 1}번째 묶음 이름은 ${GROUP_LABEL_MAX}자까지 쓸 수 있어요`);
     if (!g.papers.length) {
-      out.push(`${name ? `「${name}」` : `${i + 1}번째`} 묶음이 비었습니다 — 논문을 하나 이상 옮겨 두세요`);
+      out.push(`${name ? `「${name}」` : `${i + 1}번째`} 묶음이 비었어요 — 논문을 하나 이상 옮겨 주세요`);
     }
   });
   const question = chars(d.question.trim());
-  if (question > OUTLINE_QUESTION_MAX) out.push(`연구 질문은 ${OUTLINE_QUESTION_MAX}자까지입니다`);
+  if (question > OUTLINE_QUESTION_MAX) out.push(`연구 질문은 ${OUTLINE_QUESTION_MAX}자까지 쓸 수 있어요`);
   else if (approve && question < QUESTION_MIN) out.push("승인하려면 연구 질문을 고르거나 적어 주세요");
-  if (chars(d.method.trim()) > OUTLINE_METHOD_MAX) out.push(`방법은 ${OUTLINE_METHOD_MAX}자까지입니다`);
+  if (chars(d.method.trim()) > OUTLINE_METHOD_MAX) out.push(`방법은 ${OUTLINE_METHOD_MAX}자까지 쓸 수 있어요`);
   return out;
 }
 

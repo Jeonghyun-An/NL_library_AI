@@ -15,17 +15,17 @@ export function liveRunning(subqs: readonly SubqView[]): SubqView | null {
 export function liveNowLine(subqs: readonly SubqView[]): string {
   const running = liveRunning(subqs);
   if (!running) {
-    return subqs.some((s) => s.status === "pending") ? "다음 하위질문을 준비하고 있습니다" : "탐색을 마무리하고 있습니다";
+    return subqs.some((s) => s.status === "pending") ? "다음 하위질문을 준비하고 있어요" : "탐색을 마무리하고 있어요";
   }
   const head = `하위질문 ${running.idx + 1}/${subqs.length}`;
   const last = running.rounds[running.rounds.length - 1];
-  if (!last) return `${head} — 검색어를 정해 논문을 찾고 있습니다`;
+  if (!last) return `${head} — 검색어를 정해 논문을 찾고 있어요`;
   if (last.verdict === null) {
     const found = last.foundChunks !== null ? `찾은 대목 ${last.foundChunks}개를` : "찾은 논문을";
-    return `${head} — ${found} 질문에 맞는지 스스로 점검하고 있습니다`;
+    return `${head} — ${found} 질문에 맞는지 스스로 점검하고 있어요`;
   }
-  if (last.nextQuery) return `${head} — 근거가 부족해 ‘${last.nextQuery}’(으)로 다시 찾고 있습니다`;
-  return `${head} — 근거를 확인했습니다`;
+  if (last.nextQuery) return `${head} — 근거가 부족해 ‘${last.nextQuery}’(으)로 다시 찾고 있어요`;
+  return `${head} — 근거를 확인했어요`;
 }
 
 export type LiveStepKind = "search" | "check" | "recheck";
