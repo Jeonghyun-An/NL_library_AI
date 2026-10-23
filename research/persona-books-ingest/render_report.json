@@ -1,0 +1,193 @@
+{
+ "PSN-SONAGI": {
+  "source_chars": 8158,
+  "headings": 0,
+  "pua_replaced": 0,
+  "pages": 8,
+  "pdf_chars": 8097,
+  "ligatures": 0,
+  "empty_pages": 1,
+  "size_kb": 245,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-CHUNHYANG": {
+  "source_chars": 61770,
+  "headings": 6,
+  "pua_replaced": 13,
+  "pages": 46,
+  "pdf_chars": 61671,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 397,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-STUDY-SCARLET": {
+  "source_chars": 239349,
+  "headings": 7,
+  "pua_replaced": 0,
+  "pages": 78,
+  "pdf_chars": 238500,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 398,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-GEUMDOKKI": {
+  "pages": 1,
+  "pdf_chars": 836,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 262
+ },
+ "PSN-MANSEJEON": {
+  "source_chars": 111618,
+  "headings": 9,
+  "pua_replaced": 0,
+  "pages": 75,
+  "pdf_chars": 111317,
+  "ligatures": 0,
+  "control_chars": 0,
+  "empty_pages": 0,
+  "size_kb": 623,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-JEOKBIN": {
+  "source_chars": 12551,
+  "headings": 4,
+  "pua_replaced": 0,
+  "pages": 12,
+  "pdf_chars": 12394,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 268,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-HEOSAENG": {
+  "source_chars": 14352,
+  "headings": 0,
+  "pua_replaced": 0,
+  "pages": 11,
+  "pdf_chars": 14368,
+  "ligatures": 0,
+  "control_chars": 0,
+  "empty_pages": 0,
+  "size_kb": 330,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-BEAUTY-BEAST": {
+  "source_chars": 28911,
+  "headings": 1,
+  "pua_replaced": 0,
+  "pages": 9,
+  "pdf_chars": 28783,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 161,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-RED-CAP": {
+  "source_chars": 7415,
+  "headings": 1,
+  "pua_replaced": 0,
+  "pages": 4,
+  "pdf_chars": 7386,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 138,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-DOG-FLANDERS": {
+  "source_chars": 76716,
+  "headings": 1,
+  "pua_replaced": 0,
+  "pages": 24,
+  "pdf_chars": 76544,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 212,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-ROBIN-HOOD": {
+  "source_chars": 589877,
+  "headings": 12,
+  "pua_replaced": 0,
+  "pages": 182,
+  "pdf_chars": 584988,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 756,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-BULFINCH": {
+  "source_chars": 1856986,
+  "headings": 339,
+  "pua_replaced": 0,
+  "pages": 568,
+  "pdf_chars": 1840734,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 2110,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-ANDERSEN": {
+  "source_chars": 299233,
+  "headings": 22,
+  "pua_replaced": 0,
+  "pages": 96,
+  "pdf_chars": 297768,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 455,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-DADDY-LONG-LEGS": {
+  "source_chars": 215781,
+  "headings": 7,
+  "pua_replaced": 0,
+  "pages": 74,
+  "pdf_chars": 201357,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 366,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-PERRAULT": {
+  "source_chars": 153920,
+  "headings": 9,
+  "pua_replaced": 0,
+  "pages": 50,
+  "pdf_chars": 151709,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 297,
+  "coverage": 1.0,
+  "length_ratio": 1.0
+ },
+ "PSN-ONDAL": {
+  "pages": 3,
+  "pdf_chars": 3054,
+  "ligatures": 0,
+  "empty_pages": 0,
+  "size_kb": 537
+ },
+ "PSN-GRIFFIS-COREA": {
+  "pages": 344,
+  "pdf_chars": 336738,
+  "ligatures": 0,
+  "empty_pages": 21,
+  "size_kb": 9477
+ }
+}
