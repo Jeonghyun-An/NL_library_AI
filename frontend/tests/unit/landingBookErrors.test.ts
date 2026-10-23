@@ -1,5 +1,5 @@
 // frontend/tests/unit/landingBookErrors.test.ts
-// 랜딩·소장자료 검색·SKOVIX 추천 1권·도서 상세·상황별 추천·보존 화면(/search-classic)의 오류·빈 상태(에러 처리 2단계, 2026-10-16).
+// 랜딩·소장자료 검색·SKOVIX 추천 자료·도서 상세·상황별 추천·보존 화면(/search-classic)의 오류·빈 상태(에러 처리 2단계, 2026-10-16).
 // 문구·판정은 utils/bookErrors.ts 의 순수 함수로 돌려 보고, 화면은 Nuxt 없이 돌지 않아 소스 글로 고정한다(aiStreamConsumers.test 와 같은 방식)
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -277,7 +277,7 @@ describe("랜딩·결과 — pages/index.vue", () => {
     );
   });
 
-  it("추천 이유 실패·끊김 [다시 시도]는 초점을 '왜 이 책인가' 칸(tabindex=-1)으로 옮긴 뒤 다시 받는다", () => {
+  it("추천 이유 실패·끊김 [다시 시도]는 초점을 '왜 이 자료인가' 칸(tabindex=-1)으로 옮긴 뒤 다시 받는다", () => {
     expect(src).toMatch(/<section\s+ref="pickWhyRef"\s+class="skx-pick__block"\s+aria-labelledby="skx-pick-why"\s+:aria-busy="reasonPending"\s+tabindex="-1"\s*>/);
     expect(src).toMatch(/function retryTopReason\(\) \{\s*focusRegion\(pickWhyRef\.value\);\s*const signal = beginRun\(\);/);
   });

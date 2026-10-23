@@ -1,5 +1,5 @@
 // frontend/utils/bookErrors.ts
-// 랜딩 소장자료 검색·SKOVIX 추천 1권·도서 상세·상황별 추천의 오류·빈 상태 — 화면이 SkxErrorState·SkxInlineError 에 넘길 문구와 판정
+// 랜딩 소장자료 검색·SKOVIX 추천 자료·도서 상세·상황별 추천의 오류·빈 상태 — 화면이 SkxErrorState·SkxInlineError 에 넘길 문구와 판정
 // (순수 함수 — Vue 의존 없음). 문구는 해요체(사용자 결정 2026-10-16)이고, 두 문장이면 문장 사이를 '\n' 으로 잇는다.
 // 상태 블록의 제목은 '무엇을 못 했는지', 설명 줄은 이유만(논문 화면과 같은 규칙 paperErrors.shownError — 이유가 없으면 빈 글,
 // 영문 err.message·서버 영문 detail 은 쓰지 않는다)
@@ -25,7 +25,7 @@ export const BOOK_HISTORY_TEXT = {
 } as const;
 
 /**
- * 추천 이유 스트림(/books/reason/stream — 결과의 SKOVIX 추천 1권·도서 상세의 [추천 이유] 탭·보존 화면)이 끝까지 오지 않았을 때.
+ * 추천 이유 스트림(/books/reason/stream — 결과의 SKOVIX 추천 자료·도서 상세의 [추천 이유] 탭·보존 화면)이 끝까지 오지 않았을 때.
  * 서버가 보낸 {error} 글(합쇼체)은 보이지 않는다 — 말투는 프런트가 가진다. 글 없이 실패(HTTP 오류·네트워크·{error}, 또는 끝까지 왔는데
  * 글이 없음 — 새 서버는 LLM 빈 답을 {error} 로 보내고 옛 서버는 빈 채로 [DONE] 을 보낸다)면 failed, 글 일부를 받은 뒤 실패(연결 끊김·{error})면
  * partial. 둘 다 [다시 시도]가 처음부터 다시 받는다

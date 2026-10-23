@@ -1,9 +1,9 @@
 // frontend/utils/bookAiPick.ts
-// 소장자료 검색 결과의 AI 영역: 1위 도서 한 권 + 왜 이 책인가 + 이 책에서 얻을 수 있는 것.
+// 소장자료 검색 결과의 AI 영역: 1위 도서 한 권 + 왜 이 자료인가 + 이 자료에서 얻을 수 있는 것.
 // 화면 상태 없이 순수하게 도는 부분만 여기 둔다
 import type { BookAiPick } from "~/types/history";
 
-/** 1위 도서 점수(best_score)가 이 미만이면 'SKOVIX 추천 1권'으로 내세우지 않는다 — 옛 AI 컬렉션의 포함 기준(0.4)과 같다 */
+/** 1위 도서 점수(best_score)가 이 미만이면 'SKOVIX 추천 자료'로 내세우지 않는다 — 옛 AI 컬렉션의 포함 기준(0.4)과 같다 */
 export const MIN_PICK_SCORE = 0.4;
 
 /** 서버(app/core/config.py REASON_CHUNKS_DISPLAY_LIMIT)가 어차피 15 개에서 자른다 — 보내는 양도 맞춘다 */
@@ -41,7 +41,7 @@ export function isRecommendable(book: { best_score?: unknown } | null | undefine
 }
 
 /**
- * 결과 목록에 보일 도서. 'SKOVIX 추천 1권'을 내세울 때는 그 책이 위 AI 패널에 이미 있으므로 목록에서 뺀다(같은 책이 두 번 나오지 않게).
+ * 결과 목록에 보일 도서. 'SKOVIX 추천 자료'를 내세울 때는 그 책이 위 AI 패널에 이미 있으므로 목록에서 뺀다(같은 책이 두 번 나오지 않게).
  * 추천을 내세우지 않을 때(안내만 둘 때)는 모두 남긴다 — 목록이 유일한 곳이다. 순서는 검색이 준 그대로
  */
 export function listWithoutPick<T extends BookLike>(
@@ -54,7 +54,7 @@ export function listWithoutPick<T extends BookLike>(
   return books.filter((b) => b.book_id !== top.book_id);
 }
 
-/** '이 책에서 얻을 수 있는 것' — 검색 응답의 book_info.read_effect. 비면 빈 문자열(화면이 블록을 숨긴다) */
+/** '이 자료에서 얻을 수 있는 것' — 검색 응답의 book_info.read_effect. 비면 빈 문자열(화면이 블록을 숨긴다) */
 export function readEffectOf(book: BookLike | null | undefined): string {
   const v = book?.book_info?.read_effect;
   return typeof v === "string" ? v.trim() : "";

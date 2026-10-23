@@ -255,7 +255,7 @@
       </div>
 
       <div v-else class="skx-rframe">
-        <!-- AI 검색 결과 — SKOVIX 추천 1권 + 왜 이 책인가 + 이 책에서 얻을 수 있는 것. 틀은 논문 결과와 같은 AiResultPanel -->
+        <!-- AI 검색 결과 — SKOVIX 추천 자료 + 왜 이 자료인가 + 이 자료에서 얻을 수 있는 것. 틀은 논문 결과와 같은 AiResultPanel -->
         <AiResultPanel v-if="topBook && topRecommended" :loading="reasonPending" hint>
             <!-- 왼쪽 글은 일정 높이(16rem)까지만 보이고 넘치면 아래가 흐려지며 [더보기]/[접기] — 스트리밍 중에도 같다 -->
             <ClampedPanel
@@ -275,7 +275,7 @@
                 >
                   <h3 id="skx-pick-why" class="skx-pick__heading">
                     <span class="skx-ai-dot" aria-hidden="true"></span>
-                    왜 이 책인가
+                    왜 이 자료인가
                   </h3>
                   <p v-if="reasonText" class="skx-pick__text">
                     {{ reasonText
@@ -305,7 +305,7 @@
                   aria-labelledby="skx-pick-effect"
                 >
                   <h3 id="skx-pick-effect" class="skx-pick__heading">
-                    이 책에서 얻을 수 있는 것
+                    이 자료에서 얻을 수 있는 것
                   </h3>
                   <p class="skx-pick__text">{{ topReadEffect }}</p>
                 </section>
@@ -319,8 +319,8 @@
                 />
               </template>
             </ClampedPanel>
-          <aside class="skx-pick__book" aria-label="SKOVIX 추천 1권">
-            <span class="skx-pick__label">SKOVIX 추천 1권</span>
+          <aside class="skx-pick__book" aria-label="SKOVIX 추천 자료">
+            <span class="skx-pick__label">SKOVIX 추천 자료</span>
             <!-- 아래 목록 카드와 같은 해부도. 키워드 칩은 이 책 자신의 키워드가 먼저이고, 없을 때만 추천 이유 스트림이 준 키워드 -->
             <ResultCard
               :item="topBook"
@@ -503,7 +503,7 @@ const books = ref<BookChunkGroup[]>([]);
 const papers = ref<BookChunkGroup[]>([]);
 const keywordChips = ref<string[]>([]);
 
-// ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
+// ── SKOVIX 추천 자료 (도서 AI 영역) ──────────────────────────
 // 1위 도서 한 권과, 그 책이 이 검색어에 왜 맞는지(/books/reason/stream 스트리밍)·읽으면 얻는 것(검색 응답의 read_effect).
 // 이유 스트림은 검색·복원·랜딩 복귀·페이지 이탈이 공유하는 묶음 signal 로 끊는다.
 // 상태: idle(아직 없음) · loading(받는 중) · done(끝까지 받음) · error(글 없이 실패) · interrupted(받다가 끊겨 글이 일부만 있음)
@@ -979,10 +979,10 @@ watch(
 );
 
 // ── 결과 목록 ─────────────────────────────────────────────
-// 'SKOVIX 추천 1권'을 내세울 때는 그 책이 위 AI 패널에 있으므로 목록에서 뺀다(listWithoutPick) — 머리의 건수는 '그 외 총 N 건'.
+// 'SKOVIX 추천 자료'를 내세울 때는 그 책이 위 AI 패널에 있으므로 목록에서 뺀다(listWithoutPick) — 머리의 건수는 '그 외 총 N 건'.
 // 정렬(관련도순·이름순·최신순)·한 쪽 개수·쪽 이동은 이 나머지 목록에만 적용한다 — 추천 1권은 늘 검색이 준 1위다(topBook)
 
-// ── SKOVIX 추천 1권 (도서 AI 영역) ──────────────────────────
+// ── SKOVIX 추천 자료 (도서 AI 영역) ──────────────────────────
 const topBook = computed(() => pickTopBook(books.value));
 // 1위가 추천할 만큼 맞을 때만 추천 패널을 낸다(MIN_PICK_SCORE) — 아니면 안내만
 const topRecommended = computed(() => isRecommendable(topBook.value));
@@ -1051,7 +1051,7 @@ function settleReason() {
 }
 
 // [다시 시도] — 지금 결과의 1위 도서로 추천 이유를 처음부터 다시 받는다. 줄 안내는 받는 동안 버튼째 빠지므로 초점을
-// '왜 이 책인가' 칸으로 먼저 옮긴다(끊김 안내는 접히는 칸 밖에 있지만 다시 받는 글은 이 칸에 찬다)
+// '왜 이 자료인가' 칸으로 먼저 옮긴다(끊김 안내는 접히는 칸 밖에 있지만 다시 받는 글은 이 칸에 찬다)
 const pickWhyRef = ref<HTMLElement | null>(null);
 function retryTopReason() {
   focusRegion(pickWhyRef.value);
