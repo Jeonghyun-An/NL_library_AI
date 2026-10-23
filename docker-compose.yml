@@ -517,8 +517,12 @@ services:
   #     NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
   #     FLUX_MODEL_ID: ${FLUX_MODEL_ID:-black-forest-labs/FLUX.1-dev}
   #     FLUX_DTYPE: "bfloat16"
-  #     FLUX_CPU_OFFLOAD: "false"
-  #     FLUX_LORA_ID: ${FLUX_LORA_ID:-prithivMLmods/EBook-Creative-Cover-Flux-LoRA}
+  #     # GPU 를 vLLM 둘(gemma·Qwen)과 나눠 쓴다 — 통째로 올리면 34GB+ 라 남은 자리(약 39GB)에 빠듯하다. 부품을 하나씩
+  #     # 올리면(offload) 가장 많이 쓸 때 28GB 안팎, 한 장 약 15초(2026-10-23 운영 실측)
+  #     FLUX_CPU_OFFLOAD: "true"
+  #     # e북 표지 LoRA 는 끈다 — 모든 표지를 같은 영화 포스터풍으로 끌었다(2026-10-23). 스택 env 로는 못 끈다:
+  #     # '${FLUX_LORA_ID:-기본값}' 꼴은 빈 값이면 기본값으로 돌아간다. 다시 켜려면 아래 값을 LoRA id 로 바꾼다
+  #     FLUX_LORA_ID: ""
   #     FLUX_LORA_SCALE: ${FLUX_LORA_SCALE:-0.85}
   #     FLUX_LORA_TRIGGER: ${FLUX_LORA_TRIGGER:-BOOK}
   #   volumes:
