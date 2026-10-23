@@ -51,7 +51,7 @@ async def recommend_books(concern: str, books: list) -> dict:
     target_books = books[: cfg.CURATION_TOP_K]
     books_lines = []
     for i, book in enumerate(target_books, 1):
-        lines = [f"[도서 {i}]", f"book_id: {book.cnts_id}"]
+        lines = [f"[자료 {i}]", f"book_id: {book.cnts_id}"]
         if book.title:
             lines.append(f"제목: {book.title}")
         author = getattr(book, "personal_author", None) or getattr(book, "corporate_author", None)
