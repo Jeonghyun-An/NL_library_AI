@@ -1,0 +1,496 @@
+{
+ "kind": "title_kr",
+ "query": "해파리의 노래",
+ "targets": [
+  "WS_039"
+ ],
+ "res": {
+  "elapsed_ms": 1601.0,
+  "wall_s": 1.94,
+  "books": [
+   {
+    "book_id": "WS_039",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "해파리의 노래",
+    "best": 1.0,
+    "rrf": [
+     0.0281746,
+     0.0296703,
+     0.0308862,
+     0.0299575,
+     0.0303309,
+     0.0281914,
+     0.025974,
+     0.0284045,
+     0.0264912,
+     0.031498,
+     0.0264912,
+     0.0313188,
+     0.0322581,
+     0.0292735,
+     0.0085143,
+     0.0290099,
+     0.028665,
+     0.0095285
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mysteries of Udolpho",
+    "best": 0.5865,
+    "rrf": [
+     0.0076923,
+     0.0126582,
+     0.0088496,
+     0.0151363,
+     0.0114755,
+     0.0144134,
+     0.0097087,
+     0.0077519,
+     0.010989,
+     0.0106752,
+     0.0098039,
+     0.0096154,
+     0.0046512,
+     0.0046729,
+     0.0182259,
+     0.0052632,
+     0.0066667,
+     0.0053191,
+     0.0068027,
+     0.0103144,
+     0.0060606,
+     0.009434,
+     0.0107527,
+     0.0076336,
+     0.0096154,
+     0.0065359,
+     0.0087719,
+     0.0091743,
+     0.0083333,
+     0.0048077
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-164",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Twenty Thousand Leagues under the Sea",
+    "best": 0.4908,
+    "rrf": [
+     0.0088664,
+     0.0190296,
+     0.0127773,
+     0.0103133,
+     0.0066938,
+     0.0074173
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Alice's Adventures in Wonderland",
+    "best": 0.489,
+    "rrf": [
+     0.0045662,
+     0.0086957,
+     0.0084034,
+     0.0119048,
+     0.0114943,
+     0.0066225,
+     0.0130943,
+     0.0061728,
+     0.0120482,
+     0.0071429,
+     0.0050761
+    ]
+   },
+   {
+    "book_id": "WS_021",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "정지용 시집",
+    "best": 0.4889,
+    "rrf": [
+     0.0150601,
+     0.0059172,
+     0.0068493,
+     0.0053191,
+     0.0058824,
+     0.0123457,
+     0.0055556,
+     0.0064516,
+     0.0050505
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-120",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Treasure Island",
+    "best": 0.4707,
+    "rrf": [
+     0.011236,
+     0.0138634,
+     0.0108696,
+     0.0142463,
+     0.0054054,
+     0.0141509,
+     0.0083412,
+     0.0125,
+     0.0100784,
+     0.005,
+     0.0117647,
+     0.0066667,
+     0.0078605,
+     0.0071327,
+     0.0130505,
+     0.0081301,
+     0.0155955,
+     0.0107527,
+     0.0093458
+    ]
+   },
+   {
+    "book_id": "WS_002",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "진달래꽃",
+    "best": 0.4683,
+    "rrf": [
+     0.0108696,
+     0.0060976,
+     0.0087322,
+     0.0109965,
+     0.0135766,
+     0.0060976,
+     0.0082645,
+     0.0047847
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063398",
+    "doc_type": "literature",
+    "pub_date": "1988",
+    "title": "辛夕汀 硏究",
+    "best": 0.4567,
+    "rrf": [
+     0.0047619,
+     0.0105263,
+     0.0045045,
+     0.008547,
+     0.0045872
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-409",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Catriona",
+    "best": 0.4024,
+    "rrf": [
+     0.0150238,
+     0.0162657,
+     0.0067568,
+     0.0056818,
+     0.0148577
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Canterbury Tales",
+    "best": 0.3975,
+    "rrf": [
+     0.0073529,
+     0.0099706,
+     0.0119526,
+     0.0065359,
+     0.0099232,
+     0.0075758,
+     0.0059524,
+     0.0080645
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063908",
+    "doc_type": "literature",
+    "pub_date": "1993",
+    "title": "민요에 반영된 삶의 의식 연구",
+    "best": 0.3882,
+    "rrf": [
+     0.009901,
+     0.0104167,
+     0.0116279,
+     0.0126582,
+     0.0089286,
+     0.0114943,
+     0.0092593,
+     0.0117647,
+     0.0120482,
+     0.0128205,
+     0.0053763
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1448",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Heidi",
+    "best": 0.3739,
+    "rrf": [
+     0.005102,
+     0.0046729,
+     0.0050251,
+     0.0095238,
+     0.0047393,
+     0.0070423,
+     0.0074627,
+     0.005618,
+     0.0090909,
+     0.0063291,
+     0.01,
+     0.0052083,
+     0.006993,
+     0.0092593
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-550",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Silas Marner",
+    "best": 0.3658,
+    "rrf": [
+     0.0093727,
+     0.0108841,
+     0.0093904,
+     0.008857
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2153",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Mary Barton",
+    "best": 0.3481,
+    "rrf": [
+     0.0087719,
+     0.0049261,
+     0.0062893,
+     0.0049751,
+     0.0088496,
+     0.0047847,
+     0.0058824,
+     0.0079365
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1337",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Black Arrow",
+    "best": 0.3461,
+    "rrf": [
+     0.0097843,
+     0.0091123,
+     0.0059172,
+     0.0068966,
+     0.0066225,
+     0.0074074,
+     0.0069444
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Women",
+    "best": 0.3395,
+    "rrf": [
+     0.005848,
+     0.0046083,
+     0.0047393,
+     0.009009
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-159",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Island of Doctor Moreau",
+    "best": 0.3273,
+    "rrf": [
+     0.0070922,
+     0.0084034,
+     0.0081967,
+     0.0102041,
+     0.01,
+     0.0086207
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-236",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Jungle Book",
+    "best": 0.2983,
+    "rrf": [
+     0.0068027,
+     0.0099793
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-41537",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Divine Comedy",
+    "best": 0.2892,
+    "rrf": [
+     0.0097087,
+     0.0071429,
+     0.0070922,
+     0.0072464,
+     0.0068493
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2610",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Hunchback of Notre-Dame",
+    "best": 0.2756,
+    "rrf": [
+     0.0045455,
+     0.0121951,
+     0.0125,
+     0.0123457,
+     0.0053476
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Old Curiosity Shop",
+    "best": 0.2732,
+    "rrf": [
+     0.0111111,
+     0.0113636
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3285",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Deerslayer",
+    "best": 0.2731,
+    "rrf": [
+     0.0150401,
+     0.0164773,
+     0.0140162
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1298",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Master of Ballantrae",
+    "best": 0.2722,
+    "rrf": [
+     0.0106383,
+     0.00625,
+     0.0075758,
+     0.008,
+     0.0082645
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Decameron",
+    "best": 0.2713,
+    "rrf": [
+     0.0084746,
+     0.0103093,
+     0.010989
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Innocents Abroad",
+    "best": 0.2606,
+    "rrf": [
+     0.0091743,
+     0.0065789,
+     0.006135
+    ]
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "doc_type": "literature",
+    "pub_date": "1988",
+    "title": "韓國 女性文學 硏究",
+    "best": 0.2526,
+    "rrf": [
+     0.005988,
+     0.0098039
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1342",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Pride and Prejudice",
+    "best": 0.2374,
+    "rrf": [
+     0.0090909,
+     0.007874,
+     0.0056818
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Coral Island",
+    "best": 0.2096,
+    "rrf": [
+     0.0074627,
+     0.0105263,
+     0.0075188
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-768",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Wuthering Heights",
+    "best": 0.1391,
+    "rrf": [
+     0.0119048,
+     0.0049505
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1056",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Martin Eden",
+    "best": 0.1173,
+    "rrf": [
+     0.0095238,
+     0.0067114
+    ]
+   }
+  ]
+ }
+}

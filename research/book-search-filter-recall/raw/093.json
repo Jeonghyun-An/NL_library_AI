@@ -1,0 +1,21 @@
+{
+ "kind": "probe",
+ "query": "1984",
+ "targets": [],
+ "res": {
+  "elapsed_ms": 1251.2,
+  "wall_s": 1.33,
+  "books": [
+   {
+    "book_id": "CNTS-00052063987",
+    "doc_type": "literature",
+    "pub_date": "1984",
+    "title": "李光洙小說의 批評的 硏究",
+    "best": 0.4612,
+    "rrf": [
+     0.016129
+    ]
+   }
+  ]
+ }
+}

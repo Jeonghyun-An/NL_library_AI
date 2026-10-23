@@ -105,7 +105,7 @@ export function slimBookResult(result: unknown): BookSnapshot | null {
   const books = slimItems(result, BOOK_INFO_FIELDS, true);
   if (!books) return null;
   const r = result as Loose;
-  // 1위 도서의 '이 책에서 얻을 수 있는 것'(read_effect)만 싣는다 — 소장자료 AI 영역이 복원 때 다시 받지 않고 그린다.
+  // 1위 도서의 '이 자료에서 얻을 수 있는 것'(read_effect)만 싣는다 — 소장자료 AI 영역이 복원 때 다시 받지 않고 그린다.
   // 목록 카드는 그리지 않는 필드라 나머지 도서에는 싣지 않는다(수백 자씩 곱해 저장량만 는다)
   const top = (r.books as unknown[]).filter(isObject).find((b) => typeof b.book_id === "string");
   const effect = isObject(top?.book_info) ? top.book_info.read_effect : undefined;
@@ -124,7 +124,7 @@ function utf8Bytes(value: unknown): number {
   return utf8.encode(JSON.stringify(value)).length;
 }
 
-// 상한을 넘으면 관련도가 낮은 뒤쪽 도서부터 뺀다 — 1위(SKOVIX 추천 1권)와 앞쪽 쪽의 카드는 그대로 둔다. 소장자료 카드는 필드가 적어
+// 상한을 넘으면 관련도가 낮은 뒤쪽 도서부터 뺀다 — 1위(SKOVIX 추천 자료)와 앞쪽 쪽의 카드는 그대로 둔다. 소장자료 카드는 필드가 적어
 // (참고문헌 없음) 수십 권도 상한 한참 아래라 보통은 닿지 않는 안전장치다. 넘긴 채 보내면 413 이라 기록이 결과 없이 남는다
 function shedBooks(snap: BookSnapshot): void {
   let excess = utf8Bytes(snap) - BOOK_SNAPSHOT_MAX_BYTES;

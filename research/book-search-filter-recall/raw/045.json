@@ -1,0 +1,566 @@
+{
+ "kind": "title_en_kr",
+ "query": "크리스마스 캐럴",
+ "targets": [
+  "LIT-GUTENBERG-46"
+ ],
+ "res": {
+  "elapsed_ms": 779.1,
+  "wall_s": 1.77,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-46",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "A Christmas Carol",
+    "best": 0.7718,
+    "rrf": [
+     0.015625,
+     0.0250627,
+     0.0280063,
+     0.0272222,
+     0.0187406,
+     0.0186707,
+     0.0193387,
+     0.022888,
+     0.0053191,
+     0.0119203,
+     0.0212719,
+     0.0073805,
+     0.0154587,
+     0.0044248,
+     0.0136096,
+     0.0046296,
+     0.0148761,
+     0.0116705,
+     0.0072993,
+     0.0142186,
+     0.0074074,
+     0.005618,
+     0.0115283,
+     0.0114737,
+     0.0045045,
+     0.026334,
+     0.0105553,
+     0.0178253,
+     0.0138678,
+     0.0157328,
+     0.0054348,
+     0.0052632,
+     0.0121328,
+     0.010211,
+     0.0220075,
+     0.010852,
+     0.0165526,
+     0.0127145,
+     0.0093608,
+     0.0187311,
+     0.009734,
+     0.0155076,
+     0.0093104,
+     0.0074213,
+     0.0102263,
+     0.004878,
+     0.0096504,
+     0.0120248,
+     0.0125964,
+     0.0103744,
+     0.0165143,
+     0.0317781,
+     0.0287904,
+     0.0084151,
+     0.0074074,
+     0.013876,
+     0.0092066,
+     0.0085587,
+     0.0105683,
+     0.0048309,
+     0.0206735,
+     0.0132838,
+     0.0097553,
+     0.0178204,
+     0.0178149,
+     0.0081967,
+     0.0095479,
+     0.0204707,
+     0.0065359,
+     0.005988,
+     0.0074181,
+     0.031746,
+     0.0071903,
+     0.0153846,
+     0.0076336,
+     0.0322581,
+     0.007629,
+     0.0104832,
+     0.0151515
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Women",
+    "best": 0.4864,
+    "rrf": [
+     0.0045662,
+     0.0096154,
+     0.006135,
+     0.0066225,
+     0.0084034,
+     0.0064665,
+     0.008547,
+     0.0047619,
+     0.0098039,
+     0.012982,
+     0.0083274,
+     0.004329,
+     0.0056497,
+     0.007901,
+     0.0080512,
+     0.008268,
+     0.0101472,
+     0.0087917,
+     0.0107251,
+     0.0044643,
+     0.0043478,
+     0.0056818,
+     0.0080478,
+     0.0142201,
+     0.0074627,
+     0.0090789,
+     0.0093321,
+     0.0083115,
+     0.0069427,
+     0.0072016
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-233",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Sister Carrie",
+    "best": 0.4783,
+    "rrf": [
+     0.0068027,
+     0.0080645,
+     0.0054054,
+     0.0046083,
+     0.0077519,
+     0.0042918,
+     0.0046948,
+     0.0066667,
+     0.008547,
+     0.0051813,
+     0.0046729,
+     0.0046512,
+     0.0059524,
+     0.0071429,
+     0.004902,
+     0.0075758,
+     0.0051282,
+     0.0125,
+     0.0049261,
+     0.00625,
+     0.0048077,
+     0.009009,
+     0.0047393,
+     0.0045872,
+     0.0050251,
+     0.0086207,
+     0.0049751,
+     0.0062893,
+     0.0047619,
+     0.0088496,
+     0.0092593,
+     0.0083333,
+     0.005814,
+     0.0048544,
+     0.0067114,
+     0.0057143,
+     0.0060241,
+     0.0055866,
+     0.0060606,
+     0.0111111,
+     0.0072464,
+     0.0060976,
+     0.0069444,
+     0.0045455,
+     0.0076923,
+     0.0054348,
+     0.0106383,
+     0.0043478,
+     0.0047847,
+     0.0089286,
+     0.0050761,
+     0.0075188,
+     0.0044248,
+     0.0086957,
+     0.0070922,
+     0.0053476,
+     0.0056497
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Pickwick Papers",
+    "best": 0.4202,
+    "rrf": [
+     0.0089286,
+     0.0097087,
+     0.009434,
+     0.0055556,
+     0.0196097,
+     0.0188828,
+     0.0055249,
+     0.0191756,
+     0.0053476,
+     0.0077519,
+     0.0043668,
+     0.0064625,
+     0.004386,
+     0.0049261,
+     0.0054945,
+     0.0074747,
+     0.0179912,
+     0.0051546,
+     0.005102,
+     0.0054054
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Star Rover",
+    "best": 0.3949,
+    "rrf": [
+     0.008,
+     0.0103093,
+     0.0059524,
+     0.0120482,
+     0.0075188,
+     0.0086957,
+     0.0045662,
+     0.0117647,
+     0.0064103,
+     0.0052632,
+     0.0060976,
+     0.010989,
+     0.0119048,
+     0.004717,
+     0.0051546,
+     0.0113636,
+     0.0049505,
+     0.0070922,
+     0.0114943,
+     0.0047847,
+     0.0044444
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-550",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Silas Marner",
+    "best": 0.3826,
+    "rrf": [
+     0.0297095,
+     0.0230749,
+     0.0281746,
+     0.0266856,
+     0.0068027,
+     0.0121951,
+     0.0284045,
+     0.0294372,
+     0.005848,
+     0.0128289
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-768",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Wuthering Heights",
+    "best": 0.3679,
+    "rrf": [
+     0.0223668,
+     0.0081301,
+     0.0057143,
+     0.0082645,
+     0.0192157
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mill on the Floss",
+    "best": 0.3407,
+    "rrf": [
+     0.010101,
+     0.0096154,
+     0.01,
+     0.0093458
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Anne of Green Gables",
+    "best": 0.3217,
+    "rrf": [
+     0.0100051,
+     0.0126187,
+     0.0073529,
+     0.0084746,
+     0.0148359,
+     0.0078021,
+     0.0088335,
+     0.0147825
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-941",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Riddle of the Sands",
+    "best": 0.2916,
+    "rrf": [
+     0.005814,
+     0.0091743,
+     0.0108696,
+     0.0045455,
+     0.0102041
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-175",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Phantom of the Opera",
+    "best": 0.2867,
+    "rrf": [
+     0.008,
+     0.0055556,
+     0.0070423,
+     0.0072993,
+     0.0048309,
+     0.0044053
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-289",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Wind in the Willows",
+    "best": 0.283,
+    "rrf": [
+     0.0313188,
+     0.0105263,
+     0.0116279
+    ]
+   },
+   {
+    "book_id": "WS_037",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "개척자",
+    "best": 0.2649,
+    "rrf": [
+     0.0071429,
+     0.0052356,
+     0.0051813,
+     0.0048077,
+     0.0062112
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-67979",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Blue Castle",
+    "best": 0.2269,
+    "rrf": [
+     0.0123457,
+     0.0107527,
+     0.0128205
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-245",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Life on the Mississippi",
+    "best": 0.2227,
+    "rrf": [
+     0.0090909,
+     0.0095238,
+     0.009009,
+     0.0104167
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1251",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Le Morte d'Arthur",
+    "best": 0.2038,
+    "rrf": [
+     0.0069444,
+     0.0076923,
+     0.0050251
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-307",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Fathers and Sons",
+    "best": 0.2011,
+    "rrf": [
+     0.0100092,
+     0.0094203,
+     0.0148561
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-370",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Moll Flanders",
+    "best": 0.1997,
+    "rrf": [
+     0.0117866,
+     0.0047393
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Alice's Adventures in Wonderland",
+    "best": 0.1866,
+    "rrf": [
+     0.0079365,
+     0.0067568
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Adventures of Sherlock Holmes",
+    "best": 0.1825,
+    "rrf": [
+     0.0066667,
+     0.0062112
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Blithedale Romance",
+    "best": 0.1518,
+    "rrf": [
+     0.0061728,
+     0.0063694
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2864",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Trumpet-Major",
+    "best": 0.1466,
+    "rrf": [
+     0.0057803
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Villette",
+    "best": 0.1373,
+    "rrf": [
+     0.0071942
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-12",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Through the Looking-Glass",
+    "best": 0.0808,
+    "rrf": [
+     0.0081967
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Roughing It",
+    "best": 0.0704,
+    "rrf": [
+     0.011236
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-903",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The White Company",
+    "best": 0.0702,
+    "rrf": [
+     0.005848
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2788",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Men",
+    "best": 0.0679,
+    "rrf": [
+     0.0088128
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Country of the Blind",
+    "best": 0.0602,
+    "rrf": [
+     0.0063291
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-105",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Persuasion",
+    "best": 0.0528,
+    "rrf": [
+     0.0068966
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-202",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Nostromo",
+    "best": 0.0322,
+    "rrf": [
+     0.0063694
+    ]
+   }
+  ]
+ }
+}

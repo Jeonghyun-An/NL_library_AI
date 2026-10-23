@@ -9,7 +9,7 @@
 //    캐시·검색 기록에 저장한다(실패는 저장하지 않아 다시 열면 다시 만든다)
 //  - 소장자료 상세는 받은 글이 있는지로 문구를 가르는 utils/bookErrors 의 reasonFailureText(BOOK_REASON_TEXT)를 쓰고, 추천 이유를
 //    저장하지 않는다(열 때마다 다시 만든다). 그래서 소장자료 문구 상수는 이 파일에 두지 않는다
-// DeepRead 대화는 조각 단위로 읽는 utils/deepReadSse.ts, 결과의 SKOVIX 추천 1권·보존 화면(/search-classic)의 추천 이유는 효과(effect)에서
+// DeepRead 대화는 조각 단위로 읽는 utils/deepReadSse.ts, 결과의 SKOVIX 추천 자료·보존 화면(/search-classic)의 추천 이유는 효과(effect)에서
 // 끊는 utils/bookAiPick.ts 의 readReasonStream 이 읽는다
 
 // 끝까지 받았는지 — 실패의 error 는 서버가 보낸 문구, [DONE] 없이 끊겼거나 응답이 4xx·5xx 면 null

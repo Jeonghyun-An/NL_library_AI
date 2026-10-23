@@ -258,7 +258,7 @@ describe("대목 글을 보여 주는 화면이 같은 정리 함수를 쓴다",
     ["components/research/CitationChip.vue", "{{ passageText(current.text) }}"],
     ["components/work/PathPopover.vue", "{{ passageText(line.chunk.text) }}"],
     ["components/work/ReadingStep.vue", "{{ passageText(panelPath.chunk.text) }}"],
-    ["components/BookChat.vue", "passageText(msg.sources[msg.pinnedChip]?.text)"],
+    ["components/BookChat.vue", "{{ passageText(g.passages[passageIndex(msg, g)]?.text) }}"],
   ];
 
   it.each(uses)("%s", (path, call) => {

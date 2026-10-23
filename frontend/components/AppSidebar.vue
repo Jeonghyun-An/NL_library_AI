@@ -447,7 +447,8 @@ import {
 } from "~/utils/sidebarGroups";
 import { olderToggle, stageProgress, statusStageLine, type StageRange } from "~/utils/sidebarResearch";
 
-const props = defineProps<{ collapsed?: boolean }>();
+// collapsed — 페이지가 정하는 접힘(채팅·작업대가 열린 동안). foldOnEnter — 이 화면에 들어올 때 띠로 접힌 채 연다(상세 화면)
+const props = defineProps<{ collapsed?: boolean; foldOnEnter?: boolean }>();
 const emit = defineEmits<{ cart: []; save: [] }>();
 
 // DeepResearch 묶음이 처음 보이는 행 수 — 넘치는 만큼은 구분선 아래 '이전 연구 [n]' 한 줄로 이 자리에서 펼친다
@@ -474,7 +475,17 @@ const history = useHistory();
 // open 에는 사용자가 누른 상태만 둔다 — 채팅 때문에 접힌 상태를 여기 쓰면, 채팅을 연 채 페이지를 떠날 때
 // 되돌릴 기회가 없어 다음 페이지들까지 접힌 채로 남는다. 넓은 화면(>768px)의 펼침·접힘(띠)만 이 값이 정한다
 const open = useState<boolean>("skx:lnb-open", () => true);
-const isCollapsed = computed(() => !open.value || !!props.collapsed);
+// 상세 화면(foldOnEnter)의 접힘 — 상세에서는 검색 기록을 거의 쓰지 않아 그 폭을 DeepRead 창에 준다(요청 2026-10-23).
+// 상세 화면은 이 값만 읽고 쓴다 — open 은 읽지도 쓰지도 않아, 상세에서 펼치고 접어도 다른 화면은 사용자가 고른 그대로다.
+// 띠의 [사이드바 열기]·현미경이 풀고, [사이드바 접기]가 다시 접는다
+const folded = ref(!!props.foldOnEnter);
+const isCollapsed = computed(() => !!props.collapsed || (props.foldOnEnter ? folded.value : !open.value));
+
+/** 넓은 화면에서 펼친다 — 상세 화면은 그 화면의 접힘만 푼다 */
+function unfold() {
+  if (props.foldOnEnter) folded.value = false;
+  else open.value = true;
+}
 
 // ── 좁은 화면(≤768px)의 서랍 ─────────────────────────────
 // 좁은 화면에서는 위 open 값과 상관없이 늘 닫힌 채 시작한다(데스크톱에서 펼쳐 둔 상태가 휴대폰에 그대로 열려 나오지 않게) —
@@ -501,9 +512,10 @@ function closeDrawer(restoreFocus: boolean) {
   if (restoreFocus) void nextTick(() => openerBtn.value?.focus({ preventScroll: true }));
 }
 
-/** 서랍 안의 [사이드바 접기] — 좁은 화면에서는 서랍을 닫고, 넓은 화면에서는 띠로 접는다 */
+/** 서랍 안의 [사이드바 접기] — 좁은 화면에서는 서랍을 닫고, 넓은 화면에서는 띠로 접는다(상세 화면은 그 화면 안에서만 접는다) */
 function collapse() {
   if (narrow.value) closeDrawer(true);
+  else if (props.foldOnEnter) folded.value = true;
   else open.value = false;
 }
 
@@ -707,13 +719,13 @@ watch(railTip, (now, before) => {
 
 function expandFromRail() {
   railTip.value = null;
-  open.value = true;
+  unfold();
 }
 
 // 현미경 — 사이드바를 펼치고 DeepResearch 묶음 머리로 초점을 옮긴다(펼침 폭 전환이 끝나기 전에도 머리는 이미 그려져 있다)
 async function openResearchFromRail() {
   railTip.value = null;
-  open.value = true;
+  unfold();
   await nextTick();
   const head = document.getElementById("skx-history-research");
   head?.focus({ preventScroll: true });

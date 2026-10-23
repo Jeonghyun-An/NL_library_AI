@@ -1,46 +1,79 @@
 <template>
   <div ref="rootEl" class="skx-chat-body">
     <div class="skx-chat-messages" ref="messagesEl">
-      <!-- 빈 상태 -->
-      <div v-if="messages.length === 0 && !isStreaming" class="skx-chat-msg skx-chat-msg--ai">
-        {{ copy.greeting(bookTitle) }}
+      <!-- 빈 상태 — 브로셔 DeepRead 소개와 같은 머리말 · 한 줄 설명 · 쪽 번호 쓰는 법 -->
+      <div v-if="messages.length === 0 && !isStreaming" class="skx-chat-msg skx-chat-msg--ai skx-chat-msg--intro">
+        <p class="skx-chat-intro__title">{{ copy.introTitle }}</p>
+        <p class="skx-chat-intro__text">{{ copy.introBody }}</p>
+        <p class="skx-chat-intro__hint">{{ CITE_HINT }}</p>
       </div>
 
-      <!-- 메시지 목록 -->
+      <!-- 메시지 목록 — 질문은 오른쪽 말풍선, 답은 너비를 다 쓰는 답 카드(글 · 출처 목록) -->
       <div
         v-for="(msg, i) in messages"
         :key="i"
         :class="['skx-chat-msg', msg.role === 'user' ? 'skx-chat-msg--user' : 'skx-chat-msg--ai']"
       >
-        <div v-html="formatText(msg.content)" />
-        <!-- 출처 칩 — 누르면 그 대목을 아래에 펼치고 다시 누르면 접는다(키보드로도 누른다). 원문 열기는 펼친 대목 아래
-             [원문 보기]이고 pdfLinks 인 곳(연구 화면 오른쪽 패널)에만 둔다 — 기존 네 화면은 지금처럼 미리보기만 -->
-        <div v-if="msg.sources?.length" class="skx-chat-sources">
-          <div class="skx-chat-source-chips">
-            <button
-              v-for="(src, si) in msg.sources"
-              :key="si"
-              type="button"
-              class="skx-chat-source-chip"
-              :class="{ 'is-active': msg.pinnedChip === si }"
-              :aria-pressed="msg.pinnedChip === si"
-              @click="msg.pinnedChip = msg.pinnedChip === si ? undefined : si"
-            >
-              {{ sourceLabel(src) }}<span class="skx-sr-only"> 대목 보기</span>
-            </button>
+        <div v-if="msg.role === 'user'" v-html="formatText(msg.content)" />
+        <template v-else>
+          <!-- 글 속 쪽 번호(.skx-chat-cite 단추)는 v-html 이라 누름을 여기서 받는다(onCiteClick) — 그 쪽의 원문을 아래 출처 목록에서 펼친다 -->
+          <div class="skx-chat-answer__text" v-html="formatAnswer(msg, i)" @click="onCiteClick" />
+          <!-- 출처 목록 — 같은 쪽 원문 조각은 한 줄로 묶어('외 n건') 첫 조각의 머리 글을 보인다. 줄을 누르면 그 아래 원문이 펼쳐지고 다시
+               누르면 접는다. 같은 쪽 조각이 여럿이면 ‹ › 로 넘긴다(끝에서도 disabled 로 막지 않는다 — 누른 단추가 막히면 키보드 초점이 사라진다). 원문 열기는 펼친 대목 아래 [원문 보기]이고 pdfLinks 인 곳(연구 화면 오른쪽 패널)에만 둔다 -->
+          <div v-if="groupsByMsg[i]?.length" class="skx-chat-sources">
+            <p class="skx-chat-sources__head">출처 {{ groupsByMsg[i]!.length }}건</p>
+            <ul class="skx-chat-source-list">
+              <li v-for="(g, gi) in groupsByMsg[i]" :key="g.label" class="skx-chat-source">
+                <button
+                  :id="rowId(i, gi)"
+                  type="button"
+                  class="skx-chat-source-row"
+                  :class="{ 'is-active': msg.pinnedChip === gi }"
+                  :aria-expanded="msg.pinnedChip === gi"
+                  :aria-controls="msg.pinnedChip === gi ? previewId(i, gi) : undefined"
+                  @click="toggleGroup(msg, gi)"
+                  @keydown.enter="onRepeatEnter"
+                >
+                  <span class="skx-chat-source-row__page">{{ g.label }}</span>
+                  <span class="skx-chat-source-row__snippet">{{ g.snippet }}</span>
+                  <span v-if="g.passages.length > 1" class="skx-chat-source-row__count">외 {{ g.passages.length - 1 }}건</span>
+                </button>
+                <div v-if="msg.pinnedChip === gi" :id="previewId(i, gi)" class="skx-chat-source-preview">
+                  <div v-if="g.passages.length > 1" class="skx-chat-source-pager">
+                    <button
+                      type="button"
+                      class="skx-chat-source-pager__btn"
+                      aria-label="이전 원문"
+                      :aria-disabled="passageIndex(msg, g) === 0"
+                      @click="movePassage(msg, g, -1)"
+                    >
+                      ‹
+                    </button>
+                    <span>{{ passageIndex(msg, g) + 1 }} / {{ g.passages.length }}</span>
+                    <button
+                      type="button"
+                      class="skx-chat-source-pager__btn"
+                      aria-label="다음 원문"
+                      :aria-disabled="passageIndex(msg, g) === g.passages.length - 1"
+                      @click="movePassage(msg, g, 1)"
+                    >
+                      ›
+                    </button>
+                  </div>
+                  <p class="skx-chat-source-preview__text">{{ passageText(g.passages[passageIndex(msg, g)]?.text) }}</p>
+                  <button
+                    v-if="pdfLinks"
+                    type="button"
+                    class="rs-btn rs-btn--small rs-btn--ghost skx-chat-source-open"
+                    @click="openSource(msg)"
+                  >
+                    원문 보기
+                  </button>
+                </div>
+              </li>
+            </ul>
           </div>
-          <div v-if="msg.pinnedChip !== undefined" class="skx-chat-source-preview">
-            {{ passageText(msg.sources[msg.pinnedChip]?.text) }}
-          </div>
-          <button
-            v-if="pdfLinks && pinnedSource(msg)"
-            type="button"
-            class="rs-btn rs-btn--small rs-btn--ghost skx-chat-source-open"
-            @click="openSource(msg)"
-          >
-            원문 보기
-          </button>
-        </div>
+        </template>
       </div>
 
       <!-- 답을 받지 못한 질문 — 대화에는 남기지 않고(오류가 답처럼 굳거나 다음 질문의 history 로 가지 않게) 여기에만 보인다.
@@ -52,7 +85,7 @@
           <div v-html="formatText(failure.question)" />
         </div>
         <div class="skx-chat-msg skx-chat-msg--ai">
-          <div v-if="failure.partial" class="skx-chat-msg__partial" v-html="formatText(failure.partial)" />
+          <div v-if="failure.partial" class="skx-chat-msg__partial" v-html="formatStatic(failure.partial)" />
           <SkxInlineError
             class="skx-chat-msg__failed"
             :message="failure.message"
@@ -61,15 +94,19 @@
         </div>
       </template>
 
-      <!-- 스트리밍 중 -->
+      <!-- 스트리밍 중 — 첫 글이 오기 전에는 지금 하는 일(원문 찾기 → 답변 작성)을 보이고, 글이 흐르는 동안은 끝에 커서가 깜박인다.
+           쪽 번호는 근거(sources)가 답 끝에 오므로 받는 동안은 모양만 같은 글자다 -->
       <template v-if="isStreaming">
-        <div v-if="streamingText" class="skx-chat-msg skx-chat-msg--ai">
-          <div v-html="formatText(streamingText)" />
+        <div v-if="streamingText" class="skx-chat-msg skx-chat-msg--ai is-streaming">
+          <div class="skx-chat-answer__text" v-html="formatStatic(streamingText)" />
         </div>
         <div v-else class="skx-chat-typing">
-          <span class="skx-chat-typing__dot"></span>
-          <span class="skx-chat-typing__dot"></span>
-          <span class="skx-chat-typing__dot"></span>
+          <span class="skx-chat-typing__dots" aria-hidden="true">
+            <span class="skx-chat-typing__dot"></span>
+            <span class="skx-chat-typing__dot"></span>
+            <span class="skx-chat-typing__dot"></span>
+          </span>
+          <span class="skx-chat-typing__text">{{ WAIT_STEPS[waitStep] }}</span>
         </div>
       </template>
     </div>
@@ -115,13 +152,21 @@
 </template>
 
 <script setup lang="ts">
-import { marked } from "marked";
-import { computed, nextTick, ref, useId, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from "vue";
 import { useDeepReadChat } from "~/composables/useDeepReadChat";
 import type { OpenPdfPayload } from "~/types/research";
-import { type DocKind, chatCopy, sourceLabel, sourcePdfTarget } from "~/utils/deepRead";
+import { type DocKind, chatCopy, sourcePdfTarget } from "~/utils/deepRead";
+import { type SourceGroup, groupSources, renderAnswer } from "~/utils/deepReadCitations";
 import { CHAT_MAX_CHARS, type DeepReadMessage, type DeepReadSource } from "~/utils/deepReadSse";
+import { renderMarkdown } from "~/utils/markdown";
 import { passageText } from "~/utils/passageText";
+
+// 빈 대화의 쓰는 법 한 줄 — 답의 쪽 번호가 이 화면의 핵심이라 처음부터 알린다. 화면 말은 사서가 쓰는 말(출처·원문·쪽)로 —
+// '대목'·'근거'·'자유롭게 물어보세요!' 같은 말은 AI 말투로 읽혀 걷었다(사용자 2026-10-23)
+const CITE_HINT = "답변의 출처를 쪽 번호로 보여 드려요. 누르면 해당 원문이 펼쳐져요.";
+// 첫 글이 오기 전의 안내 — 서버는 먼저 이 자료의 원문에서 찾고(1초 안팎) 찾은 내용으로 답을 쓴다. 단계 신호는 없어 시간으로 넘긴다
+const WAIT_STEPS = ["원문에서 찾고 있어요", "답변을 작성하고 있어요"] as const;
+const WAIT_STEP_MS = 1800;
 
 // 딥리드 대화 칸 — 논문 상세·논문 검색 결과 채팅·도서 상세·TopResult 와 연구 화면의 오른쪽 패널(06e)이 함께 쓴다.
 // 대화 흐름(보내기·스트림 읽기·끊기·논문별 대화)은 useDeepReadChat 이 맡고 여기서는 그리기·입력·스크롤만 한다.
@@ -163,10 +208,88 @@ const countId = `skx-chat-count-${useId()}`;
 // 화면낭독기가 읽을 끝난 답(HTML) — 방금 보낸 질문의 답만 싣는다(논문을 바꿔 다른 대화를 펼칠 때 옛 답을 다시 읽지 않게)
 const liveHtml = ref("");
 
+// 질문 글 — 물결표는 글자로('2006~2010' 이 취소선이 되지 않게 — utils/markdown)
 function formatText(text: string) {
-  if (!text) return "";
-  return marked.parse(text) as string;
+  return renderMarkdown(text);
 }
+
+// 답마다 근거 묶음(같은 쪽 대목 한 줄) — 글과 sources 로만 정해져 펼침이 바뀌어도 다시 묶지 않는다
+const groupsByMsg = computed<SourceGroup[][]>(() =>
+  messages.value.map((m) => (m.role === "assistant" ? groupSources(m.sources, m.content) : [])),
+);
+
+/** 받기를 마친 답 — 글 속 쪽 표기를 그 근거 묶음을 펼치는 단추로 */
+function formatAnswer(msg: DeepReadMessage, i: number): string {
+  return renderAnswer(msg.content, { msg: i, groups: groupsByMsg.value[i] ?? [], active: msg.pinnedChip });
+}
+
+/** 받는 중·받지 못한 글·낭독용 — 쪽 표기는 모양만 같은 글자('[쪽 정보 없음]'은 걷는다) */
+function formatStatic(text: string): string {
+  return renderAnswer(text, null);
+}
+
+const domId = useId();
+const rowId = (i: number, gi: number) => `skx-chat-src-${domId}-${i}-${gi}`;
+const previewId = (i: number, gi: number) => `skx-chat-src-${domId}-${i}-${gi}-text`;
+
+/** 근거 줄 누름 — 펼치고(첫 대목부터) 다시 누르면 접는다 */
+function toggleGroup(msg: DeepReadMessage, gi: number): void {
+  const opening = msg.pinnedChip !== gi;
+  msg.pinnedChip = opening ? gi : undefined;
+  msg.pinnedPassage = 0;
+}
+
+/** 펼친 묶음에서 보이는 대목 번호 — 범위를 벗어나면 첫 대목 */
+function passageIndex(msg: DeepReadMessage, g: SourceGroup): number {
+  const pi = msg.pinnedPassage ?? 0;
+  return pi >= 0 && pi < g.passages.length ? pi : 0;
+}
+
+function movePassage(msg: DeepReadMessage, g: SourceGroup, step: number): void {
+  msg.pinnedPassage = Math.min(g.passages.length - 1, Math.max(0, passageIndex(msg, g) + step));
+}
+
+// 글 속 쪽 번호 누름 — 그 근거 묶음을 펼치고(이미 펼쳤으면 그대로) 목록 줄로 초점을 옮겨 보이게 한다(낭독기는 펼침 상태를 읽는다)
+function onCiteClick(e: MouseEvent): void {
+  const btn = (e.target as HTMLElement | null)?.closest<HTMLButtonElement>("button.skx-chat-cite[data-cite]");
+  if (!btn) return;
+  const i = Number(btn.dataset.msg);
+  const gi = Number(btn.dataset.cite);
+  const msg = messages.value[i];
+  if (!msg || !groupsByMsg.value[i]?.[gi]) return;
+  if (msg.pinnedChip !== gi) {
+    msg.pinnedChip = gi;
+    msg.pinnedPassage = 0;
+  }
+  nextTick(() => {
+    const row = document.getElementById(rowId(i, gi));
+    row?.focus({ preventScroll: true });
+    const preview = document.getElementById(previewId(i, gi));
+    (preview ?? row)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
+}
+
+// 첫 글을 기다리는 동안의 안내 단계 — 보낼 때 0, WAIT_STEP_MS 뒤 1. 글이 오거나 끝나면 멈춘다
+const waitStep = ref(0);
+let waitTimer: ReturnType<typeof setTimeout> | null = null;
+function clearWait() {
+  if (waitTimer) clearTimeout(waitTimer);
+  waitTimer = null;
+}
+watch(
+  () => isStreaming.value && !streamingText.value,
+  (waiting) => {
+    clearWait();
+    if (!waiting) return;
+    waitStep.value = 0;
+    waitTimer = setTimeout(() => {
+      waitStep.value = 1;
+      waitTimer = null;
+    }, WAIT_STEP_MS);
+  },
+  { immediate: true },
+);
+onBeforeUnmount(clearWait);
 
 function scrollBottom() {
   nextTick(() => {
@@ -190,6 +313,12 @@ async function send() {
 function onSendButton(e: MouseEvent) {
   if (!isStreaming.value) void send();
   else if (e.detail < 2) stopChat();
+}
+
+// 근거 줄의 Enter — 글 속 쪽 번호를 Enter 로 누르면 초점이 이 줄로 옮겨 오는데, 누른 채 있으면 반복 keydown 이 줄의 click 이 되어
+// 방금 펼친 대목을 도로 접었다. 반복이면 기본 동작(click)을 막는다
+function onRepeatEnter(e: KeyboardEvent) {
+  if (e.repeat) e.preventDefault();
 }
 
 // Enter 를 누른 채 있으면 자동 반복 keydown(e.repeat)이 이어진다 — 한 번 누른 것의 꼬리라 어디서든 누름으로 치지 않는다.
@@ -245,7 +374,7 @@ async function ask(request: () => Promise<void>) {
   }
   const last = messages.value.at(-1);
   // 답을 받지 못했으면 앞 답을 다시 읽히지 않는다 — 실패 안내는 role=alert 가 읽는다
-  if (!failure.value && last?.role === "assistant") liveHtml.value = formatText(last.content);
+  if (!failure.value && last?.role === "assistant") liveHtml.value = formatStatic(last.content);
   // 초점이 갈 곳 없이 떨어졌거나(보내는 동안 막힌 버튼 — body) 대화 안에 있을 때만 질문 칸으로 — 연구 화면 2단에서는 답을
   // 기다리는 사이 본문 칸(메모·연구 배경·문단 고치기)에 쓸 수 있어, 그 글을 끊지 않는다
   nextTick(() => {
@@ -254,9 +383,11 @@ async function ask(request: () => Promise<void>) {
   });
 }
 
-// 펼친 출처 대목 — 없으면 null
+// 펼친 근거 대목(펼친 묶음의 보이는 대목) — 없으면 null
 function pinnedSource(msg: DeepReadMessage): DeepReadSource | null {
-  return msg.pinnedChip === undefined ? null : (msg.sources?.[msg.pinnedChip] ?? null);
+  if (msg.pinnedChip === undefined) return null;
+  const g = groupsByMsg.value[messages.value.indexOf(msg)]?.[msg.pinnedChip];
+  return g ? (g.passages[passageIndex(msg, g)] ?? null) : null;
 }
 
 function openSource(msg: DeepReadMessage): void {

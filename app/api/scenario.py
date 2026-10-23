@@ -34,15 +34,17 @@ async def scenario_recommend(
             db=db,
         )
 
-        # doc_type 스칼라 미지정 구버전 인덱스 대비: 도서 필터 결과가 없으면 전체로 재시도
+        # 도서가 0권이면 날짜 조건(발행 연도·정렬)을 빼고 도서 안에서 다시 찾는다 — 범위를 풀면 논문을 도서로 추천한다(api/book.py 와 같다)
         if not result.books:
-            log.warning("도서 필터 검색 0건 — doc_scope 없이 재시도")
+            log.warning("도서 필터 검색 0건 — 날짜 조건 없이 도서 안에서 재시도")
             result = await search(
                 req.concern,
                 mode="book",
                 top_k=req.top_k,
                 use_rewrite=True,
                 use_rerank=True,
+                doc_scope="book",
+                use_metadata_filter=False,
                 db=db,
             )
 

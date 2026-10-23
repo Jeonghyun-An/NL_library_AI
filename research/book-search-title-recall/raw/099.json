@@ -1,0 +1,523 @@
+{
+ "kind": "judged",
+ "query": "정부 예산 편성 과정에 관한 보고서",
+ "targets": [],
+ "on": {
+  "rewritten": "정부 예산 편성, 예산 과정, 재정 정책, 정책 결정, 예산 심의, 예산 배분",
+  "elapsed_ms": 1292.0,
+  "wall_s": 2.32,
+  "books": [
+   {
+    "book_id": "CNTS-00049655670",
+    "best": 0.6615,
+    "content": 0.6530747508211772,
+    "title_score": 0.0606,
+    "title": "주요 재정개혁과제의 추진방향",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655693",
+    "best": 0.6561,
+    "content": 0.6475418559246153,
+    "title_score": 0.0606,
+    "title": "일본 - 재정건전화 및 중기재정계획",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655312",
+    "best": 0.6223,
+    "content": 0.6136811932228486,
+    "title_score": 0.0556,
+    "title": "2006~2010년 국가재정운용계획",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655448",
+    "best": 0.5862,
+    "content": 0.5767734180928571,
+    "title_score": 0.0556,
+    "title": "더 나은 미래를 위한 재정의 역할과 과제",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655713",
+    "best": 0.5652,
+    "content": 0.5422743600016049,
+    "title_score": 0.125,
+    "title": "개혁과 도약의 길",
+    "title_remainder": "기획예산처 5년의 성과와 과제",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655891",
+    "best": 0.5635,
+    "content": 0.549660932797392,
+    "title_score": 0.0769,
+    "title": "2002년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655631",
+    "best": 0.5568,
+    "content": 0.5196241700615277,
+    "title_score": 0.1935,
+    "title": "(참여정부 100일)기획예산처의 역할과 성과",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655658",
+    "best": 0.525,
+    "content": 0.4836877671181329,
+    "title_score": 0.2,
+    "title": "거시경제적 관점에서 본 한국의 예산편성 및 집행",
+    "title_remainder": "A Macroeconomic Perspective",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655679",
+    "best": 0.5077,
+    "content": 0.5076932935784683,
+    "title_score": 0.0,
+    "title": "그린스펀 연준리 총재 상원은행위원회 증언",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655741",
+    "best": 0.5074,
+    "content": 0.4973617447499331,
+    "title_score": 0.05,
+    "title": "2003년 나라살림",
+    "title_remainder": "균형재정으로 복귀합니다",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655779",
+    "best": 0.5019,
+    "content": 0.5019030704671942,
+    "title_score": 0.0,
+    "title": "경제백서 1999",
+    "title_remainder": "외환위기 극복과 새천년 대비",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655671",
+    "best": 0.4944,
+    "content": 0.494384765625,
+    "title_score": 0.0,
+    "title": "2002년 공기업 및 산하기관 경영혁신과제 이행점검 결과",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655048",
+    "best": 0.4901,
+    "content": 0.4591346153846154,
+    "title_score": 0.1429,
+    "title": "2001년도 예산안편성지침 및 기준",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655466",
+    "best": 0.4699,
+    "content": 0.46987095910361454,
+    "title_score": 0.0,
+    "title": "2005 나라살림",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655484",
+    "best": 0.4557,
+    "content": 0.44025213068181823,
+    "title_score": 0.069,
+    "title": "변화 선도를 위한 기획예산처 혁신 핸드북",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655651",
+    "best": 0.4547,
+    "content": 0.4373430524553571,
+    "title_score": 0.0769,
+    "title": "2003년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655488",
+    "best": 0.4427,
+    "content": 0.4279261997767857,
+    "title_score": 0.0645,
+    "title": "2005년도 세입세출예산안사항별설명서",
+    "title_remainder": "환경노동·건설교통·정보·여성",
+    "doc_type": "book"
+   },
+   {
+    "book_id": "CNTS-00049655768",
+    "best": 0.4206,
+    "content": 0.3910435267857143,
+    "title_score": 0.1212,
+    "title": "재정연방주의와 연방예산의 삭감",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655360",
+    "best": 0.3926,
+    "content": 0.373309795673077,
+    "title_score": 0.0769,
+    "title": "2006년도 세출예산 집행지침",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655725",
+    "best": 0.3501,
+    "content": 0.35009765625,
+    "title_score": 0.0,
+    "title": "2003년 기금운용계획 이렇게 만들었습니다",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049202839",
+    "best": 0.3089,
+    "content": 0.3088966482715696,
+    "title_score": 0.0,
+    "title": "Diversity in Development",
+    "title_remainder": "Reconsidering the Washington Consensus",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655745",
+    "best": 0.2894,
+    "content": 0.2736816406250001,
+    "title_score": 0.0541,
+    "title": "최근 경제동향과 2003년도 재정운영",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655319",
+    "best": 0.2449,
+    "content": 0.22907049005681823,
+    "title_score": 0.0513,
+    "title": "2007년도 기금운용계획안 심의참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655792",
+    "best": 0.2377,
+    "content": 0.2203369140625,
+    "title_score": 0.0556,
+    "title": "재정집행특별점검단 제8차 회의 개최",
+    "title_remainder": null,
+    "doc_type": "book"
+   },
+   {
+    "book_id": "CNTS-00049655723",
+    "best": 0.1946,
+    "content": 0.1571044921875,
+    "title_score": 0.1111,
+    "title": "새 정부 개혁관련 정책토론회 발표자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655314",
+    "best": 0.115,
+    "content": 0.114990234375,
+    "title_score": 0.0,
+    "title": "2007년 나라살림 함께가는 활기찬 미래에 투자합니다",
+    "title_remainder": null,
+    "doc_type": "policy"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 2142.5,
+  "wall_s": 2.33,
+  "books": [
+   {
+    "book_id": "CNTS-00049655891",
+    "best": 0.6305,
+    "content": 0.6187611854140367,
+    "title_score": 0.0769,
+    "title": "2002년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655651",
+    "best": 0.6214,
+    "content": 0.6093386441699014,
+    "title_score": 0.0769,
+    "title": "2003년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655670",
+    "best": 0.6111,
+    "content": 0.6111494046209344,
+    "title_score": 0.0,
+    "title": "주요 재정개혁과제의 추진방향",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655693",
+    "best": 0.5971,
+    "content": 0.5970650451345086,
+    "title_score": 0.0,
+    "title": "일본 - 재정건전화 및 중기재정계획",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655658",
+    "best": 0.5967,
+    "content": 0.563963710175793,
+    "title_score": 0.1875,
+    "title": "거시경제적 관점에서 본 한국의 예산편성 및 집행",
+    "title_remainder": "A Macroeconomic Perspective",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655448",
+    "best": 0.5761,
+    "content": 0.5761232776065627,
+    "title_score": 0.0,
+    "title": "더 나은 미래를 위한 재정의 역할과 과제",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655312",
+    "best": 0.5712,
+    "content": 0.5711844308035714,
+    "title_score": 0.0,
+    "title": "2006~2010년 국가재정운용계획",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655048",
+    "best": 0.5608,
+    "content": 0.5341888755253966,
+    "title_score": 0.1429,
+    "title": "2001년도 예산안편성지침 및 기준",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655779",
+    "best": 0.5524,
+    "content": 0.552377769335096,
+    "title_score": 0.0,
+    "title": "경제백서 1999",
+    "title_remainder": "외환위기 극복과 새천년 대비",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655713",
+    "best": 0.5011,
+    "content": 0.474853515625,
+    "title_score": 0.125,
+    "title": "개혁과 도약의 길",
+    "title_remainder": "기획예산처 5년의 성과와 과제",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655903",
+    "best": 0.4987,
+    "content": 0.49872588599062706,
+    "title_score": 0.0,
+    "title": "2002년도 공공기금운용계획서",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655488",
+    "best": 0.4948,
+    "content": 0.4814414816709489,
+    "title_score": 0.0645,
+    "title": "2005년도 세입세출예산안사항별설명서",
+    "title_remainder": "환경노동·건설교통·정보·여성",
+    "doc_type": "book"
+   },
+   {
+    "book_id": "CNTS-00049655360",
+    "best": 0.478,
+    "content": 0.46148344461262536,
+    "title_score": 0.0769,
+    "title": "2006년도 세출예산 집행지침",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655631",
+    "best": 0.4358,
+    "content": 0.388427734375,
+    "title_score": 0.1935,
+    "title": "(참여정부 100일)기획예산처의 역할과 성과",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655326",
+    "best": 0.4213,
+    "content": 0.42131612681939423,
+    "title_score": 0.0,
+    "title": "2006年度 基金現況",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655741",
+    "best": 0.4184,
+    "content": 0.41835968397993983,
+    "title_score": 0.0,
+    "title": "2003년 나라살림",
+    "title_remainder": "균형재정으로 복귀합니다",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655484",
+    "best": 0.4053,
+    "content": 0.38843415682136784,
+    "title_score": 0.069,
+    "title": "변화 선도를 위한 기획예산처 혁신 핸드북",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655489",
+    "best": 0.3666,
+    "content": 0.35333251953125,
+    "title_score": 0.0513,
+    "title": "2005년도 세입세출예산안사항별설명서(산업자원·보건복지)",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655768",
+    "best": 0.2978,
+    "content": 0.2746355189344032,
+    "title_score": 0.08,
+    "title": "재정연방주의와 연방예산의 삭감",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655466",
+    "best": 0.2874,
+    "content": 0.287353515625,
+    "title_score": 0.0,
+    "title": "2005 나라살림",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655314",
+    "best": 0.2792,
+    "content": 0.2791748046875,
+    "title_score": 0.0,
+    "title": "2007년 나라살림 함께가는 활기찬 미래에 투자합니다",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655723",
+    "best": 0.2779,
+    "content": 0.25670276988636365,
+    "title_score": 0.0714,
+    "title": "새 정부 개혁관련 정책토론회 발표자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655792",
+    "best": 0.2617,
+    "content": 0.26171875,
+    "title_score": 0.0,
+    "title": "재정집행특별점검단 제8차 회의 개최",
+    "title_remainder": null,
+    "doc_type": "book"
+   },
+   {
+    "book_id": "CNTS-00049655798",
+    "best": 0.1496,
+    "content": 0.1236572265625,
+    "title_score": 0.0741,
+    "title": "신기술(6T) 개발 예산의 효율화 방안",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655645",
+    "best": 0.1476,
+    "content": 0.1475830078125,
+    "title_score": 0.0,
+    "title": "한국의 장기적 경제성장",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655319",
+    "best": 0.1359,
+    "content": 0.1358642578125,
+    "title_score": 0.0,
+    "title": "2007년도 기금운용계획안 심의참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-86",
+    "best": 0.1125,
+    "content": 0.11247946999289782,
+    "title_score": 0.0,
+    "title": "A Connecticut Yankee in King Arthur's Court",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-394",
+    "best": 0.1124,
+    "content": 0.11241011186079553,
+    "title_score": 0.0,
+    "title": "Cranford",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655724",
+    "best": 0.0739,
+    "content": 0.00671140942722559,
+    "title_score": 0.0714,
+    "title": "2003년도 예산배정계획 및 자금계획",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655487",
+    "best": 0.0631,
+    "content": 0.01149425283074379,
+    "title_score": 0.0588,
+    "title": "2005년도 예산안 독립기관의 예산감액내역 및 의견",
+    "title_remainder": null,
+    "doc_type": "policy"
+   }
+  ]
+ }
+}

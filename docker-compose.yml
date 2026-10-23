@@ -430,7 +430,10 @@ services:
   # ── vLLM Gemma (텍스트 LLM — 요약·소개·쿼리재작성·대화) ──
   # 기존 외부 스택(host.docker.internal:18080)에서 본 스택으로 이식.
   gemma:
-    image: vllm/vllm-openai:latest-cu130
+    # 2026-10-23 gemma-3-12b → Gemma 4 26B-A4B FP8(RedHatAI FP8-dynamic — Google 공식 FP8 은 없고 vLLM 레시피의 Hopper 용
+    # FP8 이 이 판). 블라인드 비교에서 근거와 맞는 문장 비율 종합 76 → 92%·연구 공백 절 52 → 84%(research/llm-model-ab).
+    # vLLM 은 Gemma 4 지원 판으로 버전을 고정한다 — latest-cu130 은 v0.20.0 에 멈춰 있었다(함정 27)
+    image: vllm/vllm-openai:v0.31.0
     container_name: nl-lib-gemma
     <<: *nl-lib-net
     deploy:
@@ -452,7 +455,9 @@ services:
     volumes:
       - /data/models/.hf-cache:/models:rw
     command:
-      - google/gemma-3-12b-it
+      - RedHatAI/gemma-4-26B-A4B-it-FP8-dynamic
+      # served-model-name 은 앱의 LLM_MODEL(gemma-3-12b)과 맞추려 그대로 둔다 — 로그·생성 기록의 모델 이름이 실제 모델과
+      # 다르다(Qwen 과 같은 방식). 이름까지 바꾸려면 스택 env LLM_MODEL 을 함께 바꾼다(앱 컨테이너 전부 다시 뜬다)
       - --served-model-name
       - gemma-3-12b
       - --download-dir
@@ -467,6 +472,14 @@ services:
       # 섹션 요약과 논문 보강(표 해석 등)의 LLM 호출이 세마포어 하나를 나눠 쓴다
       - --max-num-seqs
       - "16"
+      # 텍스트만 쓴다 — 비전 인코더를 올리지 않는다(--limit-mm-per-prompt 로 image·audio 만 0 이면 video 가 남아 올라간다)
+      - --language-model-only
+      # thinking 을 끈다. 꺼도 26B 는 빈 사고 블록 태그를 낼 수 있어 parser 로 content 에서 떼고, 서버 기본값으로 꺼 두어
+      # 요청마다 chat_template_kwargs 를 싣지 않아도 된다(앱의 LLM_THINK 는 Ollama 용이라 None 그대로)
+      - --reasoning-parser
+      - gemma4
+      - --default-chat-template-kwargs
+      - '{"enable_thinking": false}'
       - --host
       - "0.0.0.0"
       - --port
@@ -504,8 +517,12 @@ services:
   #     NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
   #     FLUX_MODEL_ID: ${FLUX_MODEL_ID:-black-forest-labs/FLUX.1-dev}
   #     FLUX_DTYPE: "bfloat16"
-  #     FLUX_CPU_OFFLOAD: "false"
-  #     FLUX_LORA_ID: ${FLUX_LORA_ID:-prithivMLmods/EBook-Creative-Cover-Flux-LoRA}
+  #     # GPU 를 vLLM 둘(gemma·Qwen)과 나눠 쓴다 — 통째로 올리면 34GB+ 라 남은 자리(약 39GB)에 빠듯하다. 부품을 하나씩
+  #     # 올리면(offload) 가장 많이 쓸 때 28GB 안팎, 한 장 약 15초(2026-10-23 운영 실측)
+  #     FLUX_CPU_OFFLOAD: "true"
+  #     # e북 표지 LoRA 는 끈다 — 모든 표지를 같은 영화 포스터풍으로 끌었다(2026-10-23). 스택 env 로는 못 끈다:
+  #     # '${FLUX_LORA_ID:-기본값}' 꼴은 빈 값이면 기본값으로 돌아간다. 다시 켜려면 아래 값을 LoRA id 로 바꾼다
+  #     FLUX_LORA_ID: ""
   #     FLUX_LORA_SCALE: ${FLUX_LORA_SCALE:-0.85}
   #     FLUX_LORA_TRIGGER: ${FLUX_LORA_TRIGGER:-BOOK}
   #   volumes:

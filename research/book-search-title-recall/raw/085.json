@@ -1,0 +1,496 @@
+{
+ "kind": "judged",
+ "query": "국가 재정 운용 계획은 어떻게 세워지나요?",
+ "targets": [],
+ "on": {
+  "rewritten": "국가 재정 수립 과정, 예산 편성 절차, 재정 정책 결정 요인, 재정 지출 우선순위 결정, 재정 건전성 확보 방안",
+  "elapsed_ms": 2554.9,
+  "wall_s": 2.77,
+  "books": [
+   {
+    "book_id": "CNTS-00049655312",
+    "best": 0.7266,
+    "content": 0.6662986574543964,
+    "title_score": 0.4516,
+    "title": "2006~2010년 국가재정운용계획",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655693",
+    "best": 0.6274,
+    "content": 0.6048431651344555,
+    "title_score": 0.1429,
+    "title": "일본 - 재정건전화 및 중기재정계획",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655671",
+    "best": 0.6095,
+    "content": 0.6094681879609718,
+    "title_score": 0.0,
+    "title": "2002년 공기업 및 산하기관 경영혁신과제 이행점검 결과",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655670",
+    "best": 0.5991,
+    "content": 0.5873536403223845,
+    "title_score": 0.0714,
+    "title": "주요 재정개혁과제의 추진방향",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655466",
+    "best": 0.5728,
+    "content": 0.57275390625,
+    "title_score": 0.0,
+    "title": "2005 나라살림",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655448",
+    "best": 0.5697,
+    "content": 0.5582880916345594,
+    "title_score": 0.0645,
+    "title": "더 나은 미래를 위한 재정의 역할과 과제",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655679",
+    "best": 0.5411,
+    "content": 0.5410791174392137,
+    "title_score": 0.0,
+    "title": "그린스펀 연준리 총재 상원은행위원회 증언",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655658",
+    "best": 0.525,
+    "content": 0.5032737140081147,
+    "title_score": 0.1091,
+    "title": "거시경제적 관점에서 본 한국의 예산편성 및 집행",
+    "title_remainder": "A Macroeconomic Perspective",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655713",
+    "best": 0.5016,
+    "content": 0.4942578419772581,
+    "title_score": 0.0364,
+    "title": "개혁과 도약의 길",
+    "title_remainder": "기획예산처 5년의 성과와 과제",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655048",
+    "best": 0.4836,
+    "content": 0.46683443509615385,
+    "title_score": 0.0784,
+    "title": "2001년도 예산안편성지침 및 기준",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655631",
+    "best": 0.4732,
+    "content": 0.46529595119943856,
+    "title_score": 0.037,
+    "title": "(참여정부 100일)기획예산처의 역할과 성과",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655779",
+    "best": 0.4595,
+    "content": 0.45951021634615385,
+    "title_score": 0.0,
+    "title": "경제백서 1999",
+    "title_remainder": "외환위기 극복과 새천년 대비",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655748",
+    "best": 0.4292,
+    "content": 0.404052734375,
+    "title_score": 0.1053,
+    "title": "(경제위기 이후 5년간의)재정운영·공공개혁 성과와 과제",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655484",
+    "best": 0.4185,
+    "content": 0.4094016335227273,
+    "title_score": 0.0385,
+    "title": "변화 선도를 위한 기획예산처 혁신 핸드북",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655299",
+    "best": 0.3916,
+    "content": 0.3736950015596934,
+    "title_score": 0.0714,
+    "title": "재정사업 성과지표개발 매뉴얼",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655360",
+    "best": 0.3814,
+    "content": 0.37111924547626285,
+    "title_score": 0.0408,
+    "title": "2006년도 세출예산 집행지침",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655768",
+    "best": 0.3272,
+    "content": 0.3039983017084418,
+    "title_score": 0.0833,
+    "title": "재정연방주의와 연방예산의 삭감",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049202839",
+    "best": 0.3269,
+    "content": 0.32694106145503954,
+    "title_score": 0.0,
+    "title": "Diversity in Development",
+    "title_remainder": "Reconsidering the Washington Consensus",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655651",
+    "best": 0.3252,
+    "content": 0.31398709603528685,
+    "title_score": 0.0408,
+    "title": "2003년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655745",
+    "best": 0.3081,
+    "content": 0.2716841264204546,
+    "title_score": 0.125,
+    "title": "최근 경제동향과 2003년도 재정운영",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655741",
+    "best": 0.3077,
+    "content": 0.29148356119791663,
+    "title_score": 0.0571,
+    "title": "2003년 나라살림",
+    "title_remainder": "균형재정으로 복귀합니다",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655326",
+    "best": 0.2951,
+    "content": 0.29511518843056117,
+    "title_score": 0.0,
+    "title": "2006年度 基金現況",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655488",
+    "best": 0.291,
+    "content": 0.28034002130681823,
+    "title_score": 0.037,
+    "title": "2005년도 세입세출예산안사항별설명서",
+    "title_remainder": "환경노동·건설교통·정보·여성",
+    "doc_type": "book"
+   },
+   {
+    "book_id": "CNTS-00049655786",
+    "best": 0.2855,
+    "content": 0.26183064778645826,
+    "title_score": 0.08,
+    "title": "기금의 운용 및 조성규모",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655903",
+    "best": 0.2225,
+    "content": 0.0703125,
+    "title_score": 0.2,
+    "title": "2002년도 공공기금운용계획서",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655324",
+    "best": 0.1118,
+    "content": 0.11181640625,
+    "title_score": 0.0,
+    "title": "함께가는 희망한국 VISION2030",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655891",
+    "best": 0.1018,
+    "content": 0.0869140625,
+    "title_score": 0.0408,
+    "title": "2002년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 2336.2,
+  "wall_s": 2.53,
+  "books": [
+   {
+    "book_id": "CNTS-00049655312",
+    "best": 0.8267,
+    "content": 0.7885348083719046,
+    "title_score": 0.4516,
+    "title": "2006~2010년 국가재정운용계획",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655631",
+    "best": 0.6516,
+    "content": 0.651586913767225,
+    "title_score": 0.0,
+    "title": "(참여정부 100일)기획예산처의 역할과 성과",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655466",
+    "best": 0.6511,
+    "content": 0.6510667067307692,
+    "title_score": 0.0,
+    "title": "2005 나라살림",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655448",
+    "best": 0.5614,
+    "content": 0.5497950748887118,
+    "title_score": 0.0645,
+    "title": "더 나은 미래를 위한 재정의 역할과 과제",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655903",
+    "best": 0.5538,
+    "content": 0.5149739583333333,
+    "title_score": 0.2,
+    "title": "2002년도 공공기금운용계획서",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655206",
+    "best": 0.5072,
+    "content": 0.46976984223174423,
+    "title_score": 0.1765,
+    "title": "2008년도 기금운용계획안 심의참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655670",
+    "best": 0.4902,
+    "content": 0.4752004427419926,
+    "title_score": 0.0714,
+    "title": "주요 재정개혁과제의 추진방향",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655314",
+    "best": 0.4877,
+    "content": 0.48771158854166663,
+    "title_score": 0.0,
+    "title": "2007년 나라살림 함께가는 활기찬 미래에 투자합니다",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655326",
+    "best": 0.4181,
+    "content": 0.41808971043844523,
+    "title_score": 0.0,
+    "title": "2006年度 基金現況",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655786",
+    "best": 0.3925,
+    "content": 0.3724681207062994,
+    "title_score": 0.08,
+    "title": "기금의 운용 및 조성규모",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655319",
+    "best": 0.382,
+    "content": 0.33509885125976535,
+    "title_score": 0.1765,
+    "title": "2007년도 기금운용계획안 심의참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655713",
+    "best": 0.3787,
+    "content": 0.378662109375,
+    "title_score": 0.0,
+    "title": "개혁과 도약의 길",
+    "title_remainder": "기획예산처 5년의 성과와 과제",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655725",
+    "best": 0.3697,
+    "content": 0.3232865767045455,
+    "title_score": 0.1714,
+    "title": "2003년 기금운용계획 이렇게 만들었습니다",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655299",
+    "best": 0.3106,
+    "content": 0.29037919901488196,
+    "title_score": 0.0714,
+    "title": "재정사업 성과지표개발 매뉴얼",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655779",
+    "best": 0.2667,
+    "content": 0.26669034090909094,
+    "title_score": 0.0,
+    "title": "경제백서 1999",
+    "title_remainder": "외환위기 극복과 새천년 대비",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655693",
+    "best": 0.2428,
+    "content": 0.19688831676136365,
+    "title_score": 0.1429,
+    "title": "일본 - 재정건전화 및 중기재정계획",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655792",
+    "best": 0.24,
+    "content": 0.2198486328125,
+    "title_score": 0.0645,
+    "title": "재정집행특별점검단 제8차 회의 개최",
+    "title_remainder": null,
+    "doc_type": "book"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-141",
+    "best": 0.2074,
+    "content": 0.20744728319404326,
+    "title_score": 0.0,
+    "title": "Mansfield Park",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655671",
+    "best": 0.1978,
+    "content": 0.19775390625,
+    "title_score": 0.0,
+    "title": "2002년 공기업 및 산하기관 경영혁신과제 이행점검 결과",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-967",
+    "best": 0.1923,
+    "content": 0.19232686360677076,
+    "title_score": 0.0,
+    "title": "Nicholas Nickleby",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049662543",
+    "best": 0.1856,
+    "content": 0.18556906960227282,
+    "title_score": 0.0,
+    "title": "2004 재난연감",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655891",
+    "best": 0.1346,
+    "content": 0.1346435546875,
+    "title_score": 0.0,
+    "title": "2002년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655679",
+    "best": 0.1174,
+    "content": 0.11737060546875,
+    "title_score": 0.0,
+    "title": "그린스펀 연준리 총재 상원은행위원회 증언",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655324",
+    "best": 0.113,
+    "content": 0.11297607421875,
+    "title_score": 0.0,
+    "title": "함께가는 희망한국 VISION2030",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-155",
+    "best": 0.1128,
+    "content": 0.11281238902698876,
+    "title_score": 0.0,
+    "title": "The Moonstone",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655651",
+    "best": 0.1013,
+    "content": 0.10125732421875,
+    "title_score": 0.0,
+    "title": "2003년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   }
+  ]
+ }
+}

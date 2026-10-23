@@ -48,7 +48,7 @@ import { INITIAL_POPOVER, popoverReduce, type PopoverEvent } from "~/utils/relev
 import { popoverPlacement, relevancePct, relevanceRings } from "~/utils/relevance";
 
 // 결과 카드의 '관련도 N%' 알약 하나. 제목·내용 일치율은 알약을 올리거나(마우스) 초점을 주거나(키보드) 누르면(탭)
-// 뜨는 작은 유리 팝오버에 링 두 개로 보인다. 소장자료·'SKOVIX 추천 1권'·논문 카드가 같이 쓴다.
+// 뜨는 작은 유리 팝오버에 링 두 개로 보인다. 소장자료·'SKOVIX 추천 자료'·논문 카드가 같이 쓴다.
 // 열기·닫기 규칙(호버·초점·누름·Esc·바깥 누름이 얽힌 전환)은 utils/relevancePopover.ts 의 리듀서가 정하고, 여기서는 이벤트를 넘긴다
 const props = defineProps<{
   /** 종합 점수(best_score, 0~1) */

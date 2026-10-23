@@ -178,6 +178,7 @@
 - **원인**: lifespan 의 `ALTER TABLE library_catalog ADD COLUMN IF NOT EXISTS …`(14번의 두 번째 경로)는 컬럼이 이미 있어도 먼저 ACCESS EXCLUSIVE 잠금을 잡으려 한다. `library_catalog` 를 읽은 트랜잭션이 하나라도 열려 있으면 그게 끝날 때까지 기다리고, PostgreSQL 은 대기 중인 배타 요청 뒤로 새 조회를 줄 세운다. 딥리서치 워커는 `explore()` 가 서지를 조회한 트랜잭션을 연 채 critic LLM 응답(수십 초)을 기다렸다 — SQLAlchemy 세션은 첫 쿼리에서 트랜잭션을 열고 `commit`/`rollback` 전까지 닫지 않는다.
 - **해결**: 러너가 `explore()` 직후 `db.commit()` 으로 읽기 트랜잭션을 닫는다(`runner.explore_subquestion`). 워커의 취소 확인(`_current_status`)도 읽고 바로 닫고, 계획 태스크는 LLM 을 부르기 전에 닫는다.
 - **재발 방지**: DB 세션을 쥔 채 LLM·외부 HTTP·긴 CPU 연산을 기다리지 않는다 — 기다리기 전에 커밋한다. 의심되면 `select pid, state, xact_start, left(query, 80) from pg_stat_activity where state = 'idle in transaction'` 으로 찾는다. lifespan 의 `ALTER` 블록을 없애는 것은 14번의 스키마 경로 정리와 같은 일이다.
+- **재발(2026-10-23, 이번엔 교착으로 터졌다)**: '자료' 표현 백필(`backfill_summary`) 중 08:33 UTC 에 fastapi 가 다시 떴고, 백필이 `DeadlockDetected` 로 죽었다. 백필은 책마다 만료된 서지 행을 다시 읽어 `library_catalog` 를 잡고 `book_sections` 를 기다렸다. lifespan 은 `book_sections` 를 먼저 배타로 잡고 `library_catalog` 를 기다렸다 — 잠금 순서가 반대라 줄서기가 아니라 교착이 됐다. `workers/tasks.py` 의 백필 셋(`backfill_plot`·`backfill_read_effect`·`backfill_summary`)이 LLM 을 기다리는 동안 트랜잭션을 연다(아직 안 고침 — `00_status.md` 다음 할 일). 섹션 조회가 `try` 밖이라 책 하나가 아니라 태스크 전체가 죽는다. 책마다 커밋해서 앞서 쓴 책은 남는다. 백필·긴 생성이 도는 동안에는 fastapi 를 다시 띄우지 않는다.
 
 ## 19. Celery 소프트 리밋은 asyncio 코루틴 안에서 믿을 수 없다
 
@@ -351,3 +352,13 @@
 - **원인**: `su` 는 비밀번호를 터미널에서 직접 읽는다. 비밀번호를 물으며 터미널 에코를 끌 때 이미 들어와 있던 입력을 비우거나(PAM 의 비밀번호 입력은 `TCSAFLUSH` 로 터미널 설정을 바꾼다) 그 입력을 비밀번호로 읽는다. 어느 쪽이든 root 셸이 열린 뒤에는 붙여 넣은 뒤 줄이 남아 있지 않다(동작 원리로 본 설명이다 — 관찰한 것은 뒤 줄이 사라진 것이다).
 - **해결**: root 셸을 여는 줄 — 이 서버는 `su - root`(`bulk_ingest_runbook.md` §9) — 은 혼자 먼저 넣고, 비밀번호를 친 뒤 프롬프트가 `#` 로 바뀐 것을 보고 나머지를 붙여 넣는다. 셸을 바꾸면 앞 셸의 변수(`JOB`·`PGU`·`PGD` 등)도 없으니 root 셸에서 다시 넣는다.
 - **재발 방지**: 서버에 붙여 넣을 명령 묶음(런북·배포 절차)은 root 전환 줄을 따로 떼어 적고 '이 줄만 먼저' 를 붙인다. 비밀번호를 묻는 명령(`su`·`sudo`) 뒤 줄은 한 번에 붙여 넣지 않는다.
+
+## 31. LLM 날짜 필터가 질의에 없는 연도를 지어낸다 — '올리버 트위스트' 소장자료 검색이 2026년 논문 30편을 보였다
+
+- **날짜**: 2026-10-23 (`fix/book-search-filter-recall`, `research/book-search-filter-recall`)
+- **증상**: 소장자료 검색(`POST /api/books/search`)에 `올리버 트위스트`·`올빼미`·`올림픽`을 넣으면 도서가 아니라 그해(2026) 논문 30편이, `82년생 김지영` 은 1982년 논문이, `1930년대 소설` 은 빈 결과가 나왔다. 재작성을 꺼도 같다. 논문 검색도 `올리버 트위스트`·`올바른 양육 태도`·`올레길 관광` 이 2026년 논문만 보였다. 결과 연도가 한 해로 몰리는 것 말고는 응답에 날짜 조건이 걸렸다는 표시가 없어, Milvus 필터·인덱스(IVF nprobe) 문제처럼 보였다.
+- **원인**:
+  - `search()` 는 db 가 있으면 재작성과 상관없이 gemma 로 날짜·정렬 조건을 뽑는다(`metadata_filter.extract_metadata_filter`). 프롬프트 규칙 `"올해" → 현재연도` 를 모델이 '올'로 시작하는 낱말에도 적용했고, '82년생'을 1982년으로 읽었다. 구조화 출력(25번)은 JSON 모양만 지킬 뿐 값이 질의에 근거가 있는지는 모른다.
+  - 소장자료 검색·상황별 추천은 도서가 0권이면 doc_scope 를 풀고 다시 찾았다(doc_type 이 없던 옛 인덱스 대비). 날짜 조건은 그대로라 그해 논문이 소장자료 결과로 나왔다.
+- **해결**: LLM 이 낸 연도 가운데 질의 글자에 근거가 없는 것을 코드가 버린다 — 숫자로 쓴 연도·연대, 올해(금년)·작년(지난해)·재작년·최근(지난) N년만 근거로 친다(`_year_grounded`). 0권 재시도는 doc_scope 를 유지하고 날짜 조건만 끈다(`use_metadata_filter=False`).
+- **재발 방지**: LLM 이 뽑은 구조화 값(연도·id·수치)으로 검색 조건을 걸 때는 그 값이 입력에 근거가 있는지 코드로 확인한다. 검색 결과가 이상하면 인덱스를 의심하기 전에 결과의 발행 연도 분포를 본다 — 한 해로 몰리면 날짜 필터다. 범위(도서/논문)를 푸는 폴백은 화면의 약속(소장자료 = 도서)을 깨므로 두지 않는다.

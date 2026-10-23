@@ -1,0 +1,561 @@
+{
+ "kind": "title_en",
+ "query": "Great Expectations",
+ "targets": [
+  "LIT-GUTENBERG-1400"
+ ],
+ "on": {
+  "rewritten": "성장과 자아실현의 갈망, 계급 사회의 모순, 덧없는 사랑과 환상, 도덕적 성숙과 깨달음, 사회 부조리에 대한 비판",
+  "elapsed_ms": 1309.0,
+  "wall_s": 1.97,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-1938",
+    "best": 0.5239,
+    "content": 0.21109286221590917,
+    "title_score": 0.48,
+    "title": "Resurrection",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063929",
+    "best": 0.4789,
+    "content": 0.4788851337927914,
+    "title_score": 0.0,
+    "title": "이기영 소설의 여성의식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.47,
+    "content": 0.4699649672887277,
+    "title_score": 0.0,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1056",
+    "best": 0.4522,
+    "content": 0.43329764007445437,
+    "title_score": 0.0833,
+    "title": "Martin Eden",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065025",
+    "best": 0.4447,
+    "content": 0.44467699289768314,
+    "title_score": 0.0,
+    "title": "李泰俊文學硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-44747",
+    "best": 0.4367,
+    "content": 0.42070809110494234,
+    "title_score": 0.069,
+    "title": "The Red and the Black",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-600",
+    "best": 0.4333,
+    "content": 0.4053267882910131,
+    "title_score": 0.1176,
+    "title": "Notes from the Underground",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.3928,
+    "content": 0.37357584635416663,
+    "title_score": 0.0769,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065041",
+    "best": 0.3784,
+    "content": 0.37838040865384615,
+    "title_score": 0.0,
+    "title": "韓國 戰後小說의 휴머니즘 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "best": 0.3714,
+    "content": 0.35943603515625,
+    "title_score": 0.0465,
+    "title": "The History of Tom Jones, a Foundling",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-145",
+    "best": 0.3706,
+    "content": 0.37058671587848635,
+    "title_score": 0.0,
+    "title": "Middlemarch",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "best": 0.37,
+    "content": 0.35855909263437047,
+    "title_score": 0.0444,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-28054",
+    "best": 0.3655,
+    "content": 0.36552016502309514,
+    "title_score": 0.0,
+    "title": "The Brothers Karamazov",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-689",
+    "best": 0.3542,
+    "content": 0.3213122593622698,
+    "title_score": 0.1212,
+    "title": "The Death of Ivan Ilyich",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_001",
+    "best": 0.3437,
+    "content": 0.34366861979166663,
+    "title_score": 0.0,
+    "title": "무정",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064069",
+    "best": 0.3397,
+    "content": 0.33969506637589353,
+    "title_score": 0.0,
+    "title": "牧隱 李穡의 詩文學 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "best": 0.338,
+    "content": 0.2843295242014042,
+    "title_score": 0.1875,
+    "title": "The Canterbury Tales",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1688",
+    "best": 0.3319,
+    "content": 0.29425010706300914,
+    "title_score": 0.1333,
+    "title": "The People of the Abyss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2638",
+    "best": 0.3205,
+    "content": 0.2948774857954546,
+    "title_score": 0.0909,
+    "title": "The Idiot",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065073",
+    "best": 0.3112,
+    "content": 0.31117537242751214,
+    "title_score": 0.0,
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-974",
+    "best": 0.2799,
+    "content": 0.20876242897727282,
+    "title_score": 0.2143,
+    "title": "The Secret Agent",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-143",
+    "best": 0.278,
+    "content": 0.261627197265625,
+    "title_score": 0.0556,
+    "title": "The Mayor of Casterbridge",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-8117",
+    "best": 0.2659,
+    "content": 0.20203584905436311,
+    "title_score": 0.2,
+    "title": "Demons",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1335",
+    "best": 0.2352,
+    "content": 0.23517400568181823,
+    "title_score": 0.0,
+    "title": "Armadale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.225,
+    "content": 0.22495374194102313,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16389",
+    "best": 0.2043,
+    "content": 0.18323863636363646,
+    "title_score": 0.0645,
+    "title": "The Enchanted April",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-601",
+    "best": 0.2002,
+    "content": 0.16853471235795459,
+    "title_score": 0.0952,
+    "title": "The Monk",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3179",
+    "best": 0.1997,
+    "content": 0.19971771736008026,
+    "title_score": 0.0,
+    "title": "The Gilded Age",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "best": 0.1408,
+    "content": 0.14081920276988646,
+    "title_score": 0.0,
+    "title": "Lord Jim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_009",
+    "best": 0.0581,
+    "content": 0.058135986328125,
+    "title_score": 0.0,
+    "title": "인간문제",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 890.0,
+  "wall_s": 1.79,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "best": 1.0,
+    "content": 0.7017045454545454,
+    "title_score": 1.0,
+    "title": "Great Expectations",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7469",
+    "best": 0.5048,
+    "content": 0.4891291583368733,
+    "title_score": 0.0769,
+    "title": "Daniel Deronda",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-158",
+    "best": 0.4839,
+    "content": 0.48388504307794666,
+    "title_score": 0.0,
+    "title": "Emma",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "best": 0.4692,
+    "content": 0.459621793851712,
+    "title_score": 0.0444,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1342",
+    "best": 0.4658,
+    "content": 0.43568133861558944,
+    "title_score": 0.1333,
+    "title": "Pride and Prejudice",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-161",
+    "best": 0.4344,
+    "content": 0.40134006896036667,
+    "title_score": 0.1379,
+    "title": "Sense and Sensibility",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655891",
+    "best": 0.4261,
+    "content": 0.4261385239222186,
+    "title_score": 0.0,
+    "title": "2002년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655651",
+    "best": 0.4126,
+    "content": 0.41258452297332926,
+    "title_score": 0.0,
+    "title": "2003년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.3783,
+    "content": 0.37831922744232704,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-105",
+    "best": 0.3433,
+    "content": 0.27037556966145826,
+    "title_score": 0.25,
+    "title": "Persuasion",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-64317",
+    "best": 0.3428,
+    "content": 0.1651611328125,
+    "title_score": 0.2963,
+    "title": "The Great Gatsby",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-143",
+    "best": 0.3122,
+    "content": 0.2965524004076229,
+    "title_score": 0.0556,
+    "title": "The Mayor of Casterbridge",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-176",
+    "best": 0.2824,
+    "content": 0.167724609375,
+    "title_score": 0.2308,
+    "title": "The Europeans",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-227",
+    "best": 0.2804,
+    "content": 0.23675889208577472,
+    "title_score": 0.1429,
+    "title": "The Secret Sharer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.2772,
+    "content": 0.2580344460227273,
+    "title_score": 0.0645,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-26",
+    "best": 0.2646,
+    "content": 0.2646484375,
+    "title_score": 0.0,
+    "title": "Paradise Lost",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "best": 0.2194,
+    "content": 0.18690074573863646,
+    "title_score": 0.1,
+    "title": "No Name",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-940",
+    "best": 0.2039,
+    "content": 0.20393510298295459,
+    "title_score": 0.0,
+    "title": "The Spy",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.2002,
+    "content": 0.038970947265625,
+    "title_score": 0.1875,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-4517",
+    "best": 0.1862,
+    "content": 0.18623490767045459,
+    "title_score": 0.0,
+    "title": "Ethan Frome",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "best": 0.1838,
+    "content": 0.1529541015625,
+    "title_score": 0.0909,
+    "title": "Villette",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "best": 0.1789,
+    "content": 0.15478515625,
+    "title_score": 0.0714,
+    "title": "The Mill on the Floss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049656308",
+    "best": 0.1756,
+    "content": 0.10650634765625,
+    "title_score": 0.1389,
+    "title": "Appendix C-School Standard Forms",
+    "title_remainder": "Public Private Partnerships Programme",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-730",
+    "best": 0.1746,
+    "content": 0.17458274147727282,
+    "title_score": 0.0,
+    "title": "Oliver Twist",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-107",
+    "best": 0.1698,
+    "content": 0.16981090198863646,
+    "title_score": 0.0,
+    "title": "Far from the Madding Crowd",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-965",
+    "best": 0.1664,
+    "content": 0.1663818359375,
+    "title_score": 0.0,
+    "title": "The Black Tulip",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6130",
+    "best": 0.1604,
+    "content": 0.160400390625,
+    "title_score": 0.0,
+    "title": "The Iliad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16328",
+    "best": 0.1603,
+    "content": 0.1602783203125,
+    "title_score": 0.0,
+    "title": "Beowulf",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.1434,
+    "content": 0.1434326171875,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049204004",
+    "best": 0.1168,
+    "content": 0.11676025390625,
+    "title_score": 0.0,
+    "title": "세계화와 개방정책",
+    "title_remainder": "평가와 과제",
+    "doc_type": "policy"
+   }
+  ]
+ }
+}

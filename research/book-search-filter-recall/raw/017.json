@@ -1,0 +1,440 @@
+{
+ "kind": "title_kr",
+ "query": "감자",
+ "targets": [
+  "WS_018"
+ ],
+ "res": {
+  "elapsed_ms": 1378.9,
+  "wall_s": 1.52,
+  "books": [
+   {
+    "book_id": "WS_018",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "감자",
+    "best": 1.0,
+    "rrf": [
+     0.016129
+    ]
+   },
+   {
+    "book_id": "GM_001",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "동백꽃",
+    "best": 0.5316,
+    "rrf": [
+     0.0306792,
+     0.0273897,
+     0.0153846,
+     0.0144675,
+     0.0096154,
+     0.0298277,
+     0.0078125,
+     0.0286935
+    ]
+   },
+   {
+    "book_id": "WS_037",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "개척자",
+    "best": 0.4103,
+    "rrf": [
+     0.01,
+     0.0107527,
+     0.0131579,
+     0.0047619,
+     0.0140845,
+     0.0126582
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5230",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Invisible Man",
+    "best": 0.4046,
+    "rrf": [
+     0.0082645,
+     0.008547,
+     0.0073529,
+     0.0106383,
+     0.009009,
+     0.0084034
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Swiss Family Robinson",
+    "best": 0.4045,
+    "rrf": [
+     0.0089286,
+     0.0116279,
+     0.0119048,
+     0.0135135,
+     0.0059524,
+     0.0083333,
+     0.0059172,
+     0.009901,
+     0.0049261,
+     0.0052632,
+     0.005848,
+     0.005102,
+     0.010989
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3669",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Pathfinder",
+    "best": 0.3912,
+    "rrf": [
+     0.0068027,
+     0.009901,
+     0.0105263,
+     0.0053476,
+     0.0103093,
+     0.0135135,
+     0.0138889,
+     0.0108696,
+     0.0061728,
+     0.0093458,
+     0.0096154
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Adventures of Huckleberry Finn",
+    "best": 0.357,
+    "rrf": [
+     0.0108696,
+     0.0060606,
+     0.0056497,
+     0.0086207,
+     0.0142857,
+     0.012987,
+     0.0055249,
+     0.0067114,
+     0.0091743,
+     0.0103093,
+     0.0062112
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18727",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Railway Children",
+    "best": 0.3453,
+    "rrf": [
+     0.015625,
+     0.015873,
+     0.0053763,
+     0.0086207,
+     0.009434,
+     0.0060606,
+     0.0153846,
+     0.0098039
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-245",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Life on the Mississippi",
+    "best": 0.3443,
+    "rrf": [
+     0.0107527,
+     0.0074074,
+     0.0064516,
+     0.0065789,
+     0.0060241,
+     0.0089286,
+     0.0053191
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-4276",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "North and South",
+    "best": 0.3402,
+    "rrf": [
+     0.0073529,
+     0.0069444,
+     0.0053476,
+     0.0149254,
+     0.0063694,
+     0.0147059,
+     0.0105263
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-110",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Tess of the d'Urbervilles",
+    "best": 0.3384,
+    "rrf": [
+     0.0060241,
+     0.0053763,
+     0.0128205,
+     0.0075188
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-145",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Middlemarch",
+    "best": 0.3261,
+    "rrf": [
+     0.005848,
+     0.0080645,
+     0.0078125,
+     0.010989,
+     0.0111111,
+     0.0065359,
+     0.0066667,
+     0.01
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-146",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "A Little Princess",
+    "best": 0.3211,
+    "rrf": [
+     0.006135,
+     0.0097087,
+     0.0106383,
+     0.004902,
+     0.0066225,
+     0.0090909,
+     0.0117647
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-175",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Phantom of the Opera",
+    "best": 0.3081,
+    "rrf": [
+     0.0051813,
+     0.0126582,
+     0.0049751,
+     0.0063291,
+     0.0047393,
+     0.0048309
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Count of Monte Cristo",
+    "best": 0.3027,
+    "rrf": [
+     0.004717,
+     0.0054054,
+     0.0104167
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1342",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Pride and Prejudice",
+    "best": 0.2974,
+    "rrf": [
+     0.0133333,
+     0.0103954,
+     0.0133793,
+     0.0144928,
+     0.0070552,
+     0.0120482,
+     0.0087622
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Mill on the Floss",
+    "best": 0.2963,
+    "rrf": [
+     0.0077519,
+     0.008,
+     0.0113636,
+     0.0093458,
+     0.011236
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "No Name",
+    "best": 0.2948,
+    "rrf": [
+     0.0054945,
+     0.0114943,
+     0.0098039,
+     0.011236,
+     0.0140845
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1259",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Three Musketeers",
+    "best": 0.2899,
+    "rrf": [
+     0.0087719,
+     0.0121951,
+     0.0091743,
+     0.005814,
+     0.0068966,
+     0.0113636,
+     0.0068493,
+     0.0095238
+    ]
+   },
+   {
+    "book_id": "CNTS-00049655779",
+    "doc_type": "policy",
+    "pub_date": "1999",
+    "title": "경제백서 1999",
+    "best": 0.2791,
+    "rrf": [
+     0.0104167
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-35",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Time Machine",
+    "best": 0.2648,
+    "rrf": [
+     0.0121951,
+     0.0125,
+     0.0120482,
+     0.0114943
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-41537",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Divine Comedy",
+    "best": 0.2533,
+    "rrf": [
+     0.0123457,
+     0.0050505,
+     0.012987,
+     0.0125
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-8117",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Demons",
+    "best": 0.2402,
+    "rrf": [
+     0.0119048,
+     0.0102041,
+     0.010101,
+     0.0092593
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2788",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Little Men",
+    "best": 0.239,
+    "rrf": [
+     0.0136986,
+     0.0062893,
+     0.0133333
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "A Tale of Two Cities",
+    "best": 0.2194,
+    "rrf": [
+     0.0151515,
+     0.0149254,
+     0.0147059
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-77",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "Five Children and It",
+    "best": 0.1891,
+    "rrf": [
+     0.0123457,
+     0.0111111
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Coral Island",
+    "best": 0.1857,
+    "rrf": [
+     0.0070423,
+     0.0131579
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-46",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "A Christmas Carol",
+    "best": 0.1464,
+    "rrf": [
+     0.0144928
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Old Curiosity Shop",
+    "best": 0.113,
+    "rrf": [
+     0.0151515
+    ]
+   },
+   {
+    "book_id": "LIT-GUTENBERG-122",
+    "doc_type": "literature",
+    "pub_date": null,
+    "title": "The Return of the Native",
+    "best": 0.0891,
+    "rrf": [
+     0.0116279
+    ]
+   }
+  ]
+ }
+}

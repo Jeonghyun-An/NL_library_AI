@@ -1,6 +1,8 @@
 <template>
   <div class="skx-app">
+    <!-- 상세 화면은 사이드바를 띠로 접은 채 열고, 그 폭을 넓은 DeepRead 창(.skx-chat-panel--wide)에 준다 -->
     <AppSidebar
+      fold-on-enter
       @cart="showToast('대출 장바구니 기능은 준비 중이에요.')"
       @save="showToast('저장목록 기능은 준비 중이에요.')"
     />
@@ -218,7 +220,7 @@
     </main>
 
     <!-- 채팅 사이드 패널 — 도서를 불러온 뒤에만 연다(못 불러오면 안쪽의 닫기 버튼도 없는 빈 패널이 화면을 덮는다) -->
-    <aside id="dt-chat" :class="['skx-chat-panel', chatPanelOpen && book && 'is-open']">
+    <aside id="dt-chat" :class="['skx-chat-panel', 'skx-chat-panel--wide', chatPanelOpen && book && 'is-open']">
       <div class="skx-chat-panel__inner" v-if="book">
         <div class="skx-chat-header">
           <button
@@ -230,7 +232,8 @@
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
           <h2 class="skx-chat-title">
-            DeepRead<template v-if="book?.title">: {{ book.title }}</template>
+            <span class="skx-chat-title__brand">DeepRead</span>
+            <span v-if="book?.title" class="skx-chat-title__doc">{{ book.title }}</span>
           </h2>
         </div>
         <BookChat
@@ -319,7 +322,7 @@
 
 <script setup lang="ts">
 import type { ComponentPublicInstance } from "vue";
-import { marked } from "marked";
+import { renderMarkdown } from "~/utils/markdown";
 import { useBookmark } from "~/composables/useBookmark";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { API_SEARCH_TIMEOUT_MS, apiHeaders, apiUrl, useApi } from "~/composables/useApi";
@@ -402,7 +405,7 @@ const reasonError = ref("");
 // 실패 안내(SkxInlineError) — [다시 시도]를 누르면 안내째 빠지므로 초점을 옮길 탭 본문을 이 요소에서 찾는다
 const reasonFailRef = ref<ComponentPublicInstance | null>(null);
 const renderedReason = computed(() =>
-  reasonText.value ? (marked.parse(reasonText.value) as string) : "",
+  renderMarkdown(reasonText.value),
 );
 const plotText = computed(() => book.value?.plot || book.value?.summary || "");
 

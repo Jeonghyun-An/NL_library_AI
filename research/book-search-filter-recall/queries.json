@@ -1,0 +1,59 @@
+{
+ "_note": "소장자료 검색 제목 회수 비교 질의 (2026-10-23). title_* 는 target 이 1위인지, author 는 targets 중 하나가 5위 안인지 자동으로 보고, judged 는 판정자가 상위 결과의 관련도를 매긴다. 대상 id 는 운영 GET /api/books/{id} 로 확인했다.",
+ "title_kr": [
+  ["무정", "WS_001"], ["진달래꽃", "WS_002"], ["님의 침묵", "WS_003"], ["운수 좋은 날", "WS_004"], ["메밀꽃 필 무렵", "WS_005"],
+  ["봄봄", "WS_006"], ["태평천하", "WS_007"], ["상록수", "WS_008"], ["인간문제", "WS_009"], ["하늘과 바람과 별과 시", "WS_010"],
+  ["날개", "WS_011"], ["홍길동전", "WS_012"], ["흥부전", "WS_013"], ["구운몽", "WS_014"], ["벙어리 삼룡이", "WS_015"],
+  ["탈출기", "WS_016"], ["광야", "WS_017"], ["감자", "WS_018"], ["배따라기", "WS_019"], ["붉은 산", "WS_020"],
+  ["정지용 시집", "WS_021"], ["금수회의록", "WS_022"], ["혈의 누", "WS_023"], ["빈처", "WS_024"], ["고향", "WS_025"],
+  ["물레방아", "WS_026"], ["심청전", "WS_027"], ["토끼전", "WS_030"], ["박씨전", "WS_031"], ["숙영낭자전", "WS_032"],
+  ["유충렬전", "WS_033"], ["귀의 성", "WS_034"], ["자유종", "WS_035"], ["개척자", "WS_037"], ["영랑시집", "WS_038"],
+  ["해파리의 노래", "WS_039"], ["동백꽃", "GM_001"], ["산골 나그네", "GM_002"], ["레디메이드 인생", "GM_003"], ["미스터 방", "GM_004"],
+  ["발가락이 닮았다", "GM_005"]
+ ],
+ "title_en_kr": [
+  ["돈키호테", "LIT-GUTENBERG-996"], ["드라큘라", "LIT-GUTENBERG-345"], ["작은 아씨들", "LIT-GUTENBERG-514"], ["피터 팬", "LIT-GUTENBERG-16"],
+  ["크리스마스 캐럴", "LIT-GUTENBERG-46"], ["오즈의 마법사", "LIT-GUTENBERG-55"], ["레 미제라블", "LIT-GUTENBERG-135"], ["프랑켄슈타인", "LIT-GUTENBERG-84"],
+  ["위대한 유산", "LIT-GUTENBERG-1400"], ["올리버 트위스트", "LIT-GUTENBERG-730"], ["허클베리 핀의 모험", "LIT-GUTENBERG-76"], ["비밀의 화원", "LIT-GUTENBERG-17396"],
+  ["정글북", "LIT-GUTENBERG-236"], ["하이디", "LIT-GUTENBERG-1448"], ["로빈슨 크루소", "LIT-GUTENBERG-521"], ["피노키오", "LIT-GUTENBERG-500"],
+  ["톰 소여의 모험", "LIT-GUTENBERG-74"], ["이상한 나라의 앨리스", "LIT-GUTENBERG-11"], ["두 도시 이야기", "LIT-GUTENBERG-98"], ["오페라의 유령", "LIT-GUTENBERG-175"]
+ ],
+ "title_en": [
+  ["Dracula", "LIT-GUTENBERG-345"], ["Little Women", "LIT-GUTENBERG-514"], ["Heidi", "LIT-GUTENBERG-1448"], ["The Jungle Book", "LIT-GUTENBERG-236"],
+  ["Frankenstein", "LIT-GUTENBERG-84"], ["The Adventures of Pinocchio", "LIT-GUTENBERG-500"], ["Great Expectations", "LIT-GUTENBERG-1400"],
+  ["Oliver Twist", "LIT-GUTENBERG-730"], ["The Secret Garden", "LIT-GUTENBERG-17396"], ["A Tale of Two Cities", "LIT-GUTENBERG-98"]
+ ],
+ "title_in_question": [
+  ["구운몽 줄거리가 궁금해", "WS_014"], ["김유정의 동백꽃", "GM_001"], ["현진건의 운수 좋은 날 읽고 싶어", "WS_004"], ["채만식 태평천하", "WS_007"],
+  ["이상의 소설 날개", "WS_011"], ["심훈 상록수 찾아줘", "WS_008"], ["드라큘라 원작 소설", "LIT-GUTENBERG-345"], ["윤동주 하늘과 바람과 별과 시", "WS_010"]
+ ],
+ "author": [
+  ["김유정 소설", ["GM_001", "WS_006", "GM_002"]],
+  ["현진건 단편소설", ["WS_004", "WS_024", "WS_025"]],
+  ["김동인 소설", ["WS_018", "WS_019", "WS_020", "GM_005"]],
+  ["찰스 디킨스 소설", ["LIT-GUTENBERG-46", "LIT-GUTENBERG-98", "LIT-GUTENBERG-1023", "LIT-GUTENBERG-766", "LIT-GUTENBERG-821", "LIT-GUTENBERG-1400", "LIT-GUTENBERG-786", "LIT-GUTENBERG-963", "LIT-GUTENBERG-967", "LIT-GUTENBERG-730", "LIT-GUTENBERG-883", "LIT-GUTENBERG-700", "LIT-GUTENBERG-580"]],
+  ["코난 도일 셜록 홈즈", ["LIT-GUTENBERG-1661", "LIT-GUTENBERG-834", "LIT-GUTENBERG-2852", "LIT-GUTENBERG-2097", "LIT-GUTENBERG-2350"]]
+ ],
+ "judged": [
+  "조선시대 고전소설을 연구한 자료 찾아줘",
+  "국가 재정 운용 계획은 어떻게 세워지나요?",
+  "김소월과 한용운의 시를 연구한 자료",
+  "마음이 지칠 때 읽을 책",
+  "가난한 시대를 그린 한국 소설",
+  "일제강점기 농촌 계몽 소설",
+  "고딕 공포 소설",
+  "소녀의 성장 이야기",
+  "바다 모험 소설",
+  "조선시대 사랑 이야기",
+  "탐정 추리 소설",
+  "판소리계 소설",
+  "근대 시인의 시집",
+  "식민지 지식인의 고뇌를 다룬 소설",
+  "아이와 함께 읽을 동화",
+  "정부 예산 편성 과정에 관한 보고서",
+  "동백꽃 같은 소설",
+  "채식주의자 같은 책",
+  "레 미제라블 같은 소설",
+  "셜록 홈즈 같은 추리소설"
+ ]
+}

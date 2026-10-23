@@ -126,25 +126,34 @@ async def search_books(
             use_rewrite=req.use_rewrite,
             use_rerank=req.use_rerank,
             doc_scope="book",   # 논문 제외, 도서만 검색
+            # 재작성이 제목만 넣은 질의를 주제어로 바꿔('구운몽' → '요몽, 이상향…') 그 책을 놓치던 것 — 원래 질의로도 찾는다
+            include_original=True,
             db=db,
         )
 
-        # doc_type 스칼라 미지정 구버전 인덱스 대비: 도서 필터 결과가 없으면 전체로 재시도
+        # 도서가 0권이면 날짜 조건(LLM 이 질의에서 뽑은 발행 연도·정렬)을 빼고 도서 안에서 다시 찾는다. 예전에는 doc_scope 를
+        # 풀었다(doc_type 스칼라가 없던 옛 인덱스 대비) — 지금은 doc_type 이 컬렉션 필수 필드이고 빈 값도 도서 조건을
+        # 통과해 그 대비는 할 일이 없는데, 날짜 조건이 도서를 다 걸러 낸 질의('올리버 트위스트' → 2026년)에서 그해 논문을
+        # 소장자료 결과로 보였다(운영 2026-10-23, research/book-search-filter-recall)
         if isinstance(result, BookSearchResponse) and not result.books:
-            log.warning("도서 필터 검색 0건 — doc_scope 없이 재시도")
+            log.warning("도서 필터 검색 0건 — 날짜 조건 없이 도서 안에서 재시도")
             result = await search(
                 req.query,
                 mode=req.mode,
                 top_k=req.top_k,
                 use_rewrite=req.use_rewrite,
                 use_rerank=req.use_rerank,
+                doc_scope="book",
+                use_metadata_filter=False,
+                include_original=True,
                 db=db,
             )
 
     if isinstance(result, BookSearchResponse):
-        repo = BookRepository(db)
+        # 서지는 한 번에 읽는다 — 원래 질의 갈래까지 합치면 후보가 40~50권이라 책마다 부르면 그만큼 순차 쿼리가 는다
+        book_map = await BookRepository(db).get_by_cnts_ids([bg.book_id for bg in result.books])
         for bg in result.books:
-            book = await repo.get_by_cnts_id(bg.book_id)
+            book = book_map.get(bg.book_id)
             if book:
                 bg.book_info = BookOut.model_validate(book)
         # 제목 일치율 반영: 연관도 = max(제목, 내용), 재정렬 포함

@@ -20,7 +20,7 @@
             내 상황에 맞는 도서 추천받기
           </div>
           <div class="skx-recommend-main__txt">
-            지금 나에게 필요한 책을 AI가 딱 맞게 추천해드려요.
+            지금 나에게 필요한 자료를 AI가 딱 맞게 추천해드려요.
           </div>
         </div>
 

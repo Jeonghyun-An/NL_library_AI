@@ -1,0 +1,452 @@
+{
+ "kind": "title_en_kr",
+ "query": "올리버 트위스트",
+ "targets": [
+  "LIT-GUTENBERG-730"
+ ],
+ "res": {
+  "elapsed_ms": 884.3,
+  "wall_s": 3.18,
+  "books": [
+   {
+    "book_id": "KCI_FI003301225",
+    "doc_type": "paper",
+    "pub_date": "2026.01",
+    "title": "횡스크롤 퍼즐 플랫폼 게임 Meowment의 구현 및 평가",
+    "best": 0.4973,
+    "rrf": [
+     0.012987,
+     0.0136986,
+     0.016129,
+     0.015873,
+     0.0142857,
+     0.0135135,
+     0.0163934,
+     0.0149254,
+     0.0153846,
+     0.0144928,
+     0.015625,
+     0.0138889,
+     0.0140845,
+     0.0054054
+    ]
+   },
+   {
+    "book_id": "KCI_FI003305232",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "진정성과 성실성 리더십 성공 사례 연구: 장진호 전투를 중심으로 한 올리버 스미스 장군의 리더십",
+    "best": 0.4548,
+    "rrf": [
+     0.0126582,
+     0.0144928,
+     0.0068966,
+     0.0076923,
+     0.0051813,
+     0.012987,
+     0.0138889,
+     0.0106373,
+     0.0048544,
+     0.0078125,
+     0.0052632,
+     0.0142857,
+     0.008547,
+     0.0059524,
+     0.0058824,
+     0.0086207,
+     0.005102,
+     0.0064103,
+     0.004902,
+     0.0057143,
+     0.0131579,
+     0.0128205,
+     0.005848,
+     0.0136986
+    ]
+   },
+   {
+    "book_id": "KCI_FI003307669",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "헨리 제임스의 『보스턴 사람들』에 나타난 사회적 장의 불협화음과 아비투스 번역 실패",
+    "best": 0.3859,
+    "rrf": [
+     0.0147059,
+     0.007874,
+     0.0075758,
+     0.0117647,
+     0.0125,
+     0.0128205,
+     0.0126582,
+     0.0131579,
+     0.0123457,
+     0.0133333
+    ]
+   },
+   {
+    "book_id": "KCI_FI003325144",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "뷰티 옴니채널 올리브영의 구조적 특성이 소비자 인게이지먼트 및 지속사용의도에 미치는 영향",
+    "best": 0.3755,
+    "rrf": [
+     0.0105263,
+     0.0057143,
+     0.0064103,
+     0.0055866,
+     0.0055249,
+     0.0082645,
+     0.0054348,
+     0.0091931,
+     0.0093458,
+     0.0089286
+    ]
+   },
+   {
+    "book_id": "KCI_FI003301199",
+    "doc_type": "paper",
+    "pub_date": "2026.01",
+    "title": "선택과 결과의 영화적 재구성 : 유튜브 기반 인터랙티브 콘텐츠 <아오르비>의 서사 구조",
+    "best": 0.3753,
+    "rrf": [
+     0.0096154,
+     0.0086957,
+     0.0062893,
+     0.0064935,
+     0.0114943,
+     0.0073529,
+     0.0077519,
+     0.0090909,
+     0.0076923,
+     0.011236,
+     0.0080645,
+     0.0068027,
+     0.0097087,
+     0.0119048,
+     0.004878,
+     0.0054945,
+     0.0084746,
+     0.0074627,
+     0.0111111,
+     0.005291,
+     0.0113636,
+     0.0095238,
+     0.0098039
+    ]
+   },
+   {
+    "book_id": "KCI_FI003322549",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "Design of Adaptive On-Time GaN DC-DC Converter with Active Gate Driving for Automotive System",
+    "best": 0.3016,
+    "rrf": [
+     0.0103093,
+     0.0117647,
+     0.007874,
+     0.0062893,
+     0.005291,
+     0.0071429,
+     0.0097087,
+     0.0087719
+    ]
+   },
+   {
+    "book_id": "KCI_FI003280844",
+    "doc_type": "paper",
+    "pub_date": "2026.01",
+    "title": "A High-Efficiency Hybrid Buck-Boost Photovoltaic Energy Harvester with Adaptive Fractional Open-Circuit Voltage Maximum-Power-Point-Tracking Control",
+    "best": 0.3004,
+    "rrf": [
+     0.015625,
+     0.0063694,
+     0.015873,
+     0.016129,
+     0.0151515
+    ]
+   },
+   {
+    "book_id": "KCI_FI003309858",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "퍼포먼스 복합체의 재연: 재설정된 상황의 유동성과 불화",
+    "best": 0.2818,
+    "rrf": [
+     0.0083333,
+     0.0076336,
+     0.008547,
+     0.005988,
+     0.0081301,
+     0.0104167,
+     0.0070423
+    ]
+   },
+   {
+    "book_id": "KCI_FI003304758",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "The effect of implant-abutment connection fit and proximal contact tightness on screw loosening",
+    "best": 0.2816,
+    "rrf": [
+     0.0070922,
+     0.0053191,
+     0.0066225,
+     0.0068493,
+     0.0054645,
+     0.010101
+    ]
+   },
+   {
+    "book_id": "KCI_FI003280843",
+    "doc_type": "paper",
+    "pub_date": "2026.01",
+    "title": "A Multi-Path Hybrid DC-DC Converter with Reduced Inductor Current and Wide Voltage Conversion Ratio",
+    "best": 0.2814,
+    "rrf": [
+     0.0095238,
+     0.0086957,
+     0.005988,
+     0.0120482,
+     0.0125,
+     0.0093458,
+     0.011236
+    ]
+   },
+   {
+    "book_id": "KCI_FI003336062",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "IoT 보안 강화를 위한 제도적 개선 방안 연구",
+    "best": 0.2461,
+    "rrf": [
+     0.0107527,
+     0.0105263,
+     0.0123457,
+     0.0108696,
+     0.0096154
+    ]
+   },
+   {
+    "book_id": "KCI_FI003308103",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "‘강제된 주의’와 ‘허용된 산만함’:넷플릭스의 이중적 시각 전략 연구",
+    "best": 0.245,
+    "rrf": [
+     0.0068966,
+     0.0050251,
+     0.005102,
+     0.009901
+    ]
+   },
+   {
+    "book_id": "KCI_FI003320149",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "사이버안보 위협 대응체계의 법적 정비 방안 — 일본의 ｢사이버 대처능력 강화법｣에 대한 비교법적 검토를 중심으로 —",
+    "best": 0.2419,
+    "rrf": [
+     0.0102041,
+     0.0098039,
+     0.0051282,
+     0.009009,
+     0.0089286
+    ]
+   },
+   {
+    "book_id": "KCI_FI003301095",
+    "doc_type": "paper",
+    "pub_date": "2026.01",
+    "title": "사이버기반범죄에 대한 국제형사재판소의 적극적 역할 고찰",
+    "best": 0.2375,
+    "rrf": [
+     0.0054348,
+     0.0106383,
+     0.01,
+     0.0121951
+    ]
+   },
+   {
+    "book_id": "KCI_FI003335878",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "『차라투스트라는 이렇게 말했다』에 대한 건강철학적 해명 - 이 저서의 「2부」에 제기된 선한 인간과 평등에 대한 차라투스트라의 심리학적 비판을 중심으로",
+    "best": 0.2258,
+    "rrf": [
+     0.010101,
+     0.0090909,
+     0.0081301,
+     0.0054945
+    ]
+   },
+   {
+    "book_id": "KCI_FI003318056",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "플라스틱 컵 슬리브 실시간 탐지 분거수거함 설계-YOLO v5 활용을 중심으로",
+    "best": 0.2196,
+    "rrf": [
+     0.0108696,
+     0.0121951,
+     0.0072993
+    ]
+   },
+   {
+    "book_id": "KCI_FI003307185",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "외래어 선호 현상의 인지의미론적 해명",
+    "best": 0.2189,
+    "rrf": [
+     0.0073529,
+     0.0119048,
+     0.0070922,
+     0.009434
+    ]
+   },
+   {
+    "book_id": "KCI_FI003321039",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "디지털플랫폼 환경에서 딥페이크 성범죄에 대응한 수사법제의 개선 방안",
+    "best": 0.2029,
+    "rrf": [
+     0.0113636,
+     0.0147059,
+     0.0114943
+    ]
+   },
+   {
+    "book_id": "KCI_FI003326647",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "플랫폼 혐오표현 규제에 대한 미디어사회학적 연구 - 인정이론을 중심으로 -",
+    "best": 0.1877,
+    "rrf": [
+     0.0064516,
+     0.0104167,
+     0.0067114
+    ]
+   },
+   {
+    "book_id": "KCI_FI003311617",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "최중도 지적장애인의 행동 특성 분석과 보호자의 관리 편의성을 고려한 여름 활동복 디자인 개발",
+    "best": 0.1737,
+    "rrf": [
+     0.0153846,
+     0.0163934
+    ]
+   },
+   {
+    "book_id": "KCI_FI003302501",
+    "doc_type": "paper",
+    "pub_date": "2026.01",
+    "title": "Pricing Power Options Under Hybrid Stochastic and Local Volatility",
+    "best": 0.1719,
+    "rrf": [
+     0.0092593,
+     0.0120482,
+     0.005848
+    ]
+   },
+   {
+    "book_id": "KCI_FI003334399",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "Ultrasonic Nanocrystal Surface Modification of 3D Interconnected Heterostructured Complex Concentrated Alloys Produced by Liquid Metal Dealloying: Microstructural Evolution and Wear Behavior",
+    "best": 0.171,
+    "rrf": [
+     0.0106383,
+     0.0116279,
+     0.004902
+    ]
+   },
+   {
+    "book_id": "KCI_FI003330187",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "마르틴 부버의 관계 철학과 그의 연극관 - 인간과 인간 사이 공간에서 비인간과의 대화 가능성까지",
+    "best": 0.1614,
+    "rrf": [
+     0.0149254,
+     0.0140845
+    ]
+   },
+   {
+    "book_id": "KCI_FI003301339",
+    "doc_type": "paper",
+    "pub_date": "2026.01",
+    "title": "T. S. Eliot and Virginia Woolf: 1926-1929",
+    "best": 0.1371,
+    "rrf": [
+     0.0067114,
+     0.01
+    ]
+   },
+   {
+    "book_id": "KCI_FI003332326",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "이승만 정권하의 자유당 연구",
+    "best": 0.1368,
+    "rrf": [
+     0.010989,
+     0.0111111
+    ]
+   },
+   {
+    "book_id": "KCI_FI003303629",
+    "doc_type": "paper",
+    "pub_date": "2026.02",
+    "title": "노자와 장자의 무위(無爲) 개념 비교연구 ― 성인(聖人)과 진인(眞人)의 주체 형식과 무위적 행동 양식을 중심으로 ―",
+    "best": 0.1149,
+    "rrf": [
+     0.0133333,
+     0.0135135
+    ]
+   },
+   {
+    "book_id": "KCI_FI003330250",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "Informativeness-Aware Layer Freezing and Sample Replay for Efficient Online Continual Object Detection",
+    "best": 0.0821,
+    "rrf": [
+     0.0103093
+    ]
+   },
+   {
+    "book_id": "KCI_FI003334662",
+    "doc_type": "paper",
+    "pub_date": "2026.04",
+    "title": "제3자에 의한 업무상 재해와 근로복지공단의 대위권 행사 가능성 — 대법원 2026. 1. 22. 선고 2022다214040 전원합의체 판결을 중심으로 —",
+    "best": 0.0692,
+    "rrf": [
+     0.0116279
+    ]
+   },
+   {
+    "book_id": "KCI_FI003318068",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "The Multiverse as Ideological Closure: Formal Excess, Algorithmic Variation, and the Crisis of Futurity in Everything Everywhere All at Once",
+    "best": 0.0488,
+    "rrf": [
+     0.0102041
+    ]
+   },
+   {
+    "book_id": "KCI_FI003335071",
+    "doc_type": "paper",
+    "pub_date": "2026.03",
+    "title": "Bilingual effects on /ɨ/ epenthesis in English loanwords in Korean",
+    "best": 0.0476,
+    "rrf": [
+     0.010989
+    ]
+   }
+  ]
+ }
+}
