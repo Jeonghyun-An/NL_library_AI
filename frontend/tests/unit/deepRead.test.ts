@@ -29,8 +29,8 @@ describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
     const book = chatCopy("book");
     expect(book.introTitle).toBe("자료와의 대화만으로 핵심 내용 파악");
     expect(book.introBody).toBe("자료를 다 읽지 않아도 묻고 답하며 주요 내용을 파악할 수 있어요.");
-    expect(book.placeholder).toBe("책에 대해 질문해 주세요");
-    expect(book.inputLabel).toBe("책에 대한 질문 입력");
+    expect(book.placeholder).toBe("자료에 대해 질문해 주세요");
+    expect(book.inputLabel).toBe("자료에 대한 질문 입력");
     expect(book.sendLabel).toBe("질문 보내기");
 
     const paper = chatCopy("paper");

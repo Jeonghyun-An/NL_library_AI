@@ -170,7 +170,7 @@
         <!-- 신작도서 카운트업 -->
         <section v-if="SHOW_MOCKS" class="skx-newbooks">
           <h2 class="skx-newbooks__title">
-            지금도 새로운 책이 업데이트 되고 있어요!
+            지금도 새로운 자료가 업데이트 되고 있어요!
           </h2>
           <div class="skx-newbooks__row">
             <div class="skx-newbooks__count">
@@ -535,8 +535,8 @@ const detailTabs = computed(() =>
     : [
         { key: "reason", label: "추천하는 이유" },
         { key: "plot", label: "줄거리" },
-        { key: "intro", label: "책 소개" },
-        { key: "effect", label: "책을 읽고 난 후" },
+        { key: "intro", label: "자료 소개" },
+        { key: "effect", label: "자료를 읽고 난 후" },
       ],
 );
 
