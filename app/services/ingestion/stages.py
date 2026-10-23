@@ -1063,7 +1063,7 @@ def run_finalize(ctx: StageContext) -> dict:
             cover_key, cover_prompt = run_async(generate_and_store_cover(
                 book_id=book_id, title=title, author=author, kdc=kdc,
                 themes=book_themes or "", introduction=book_introduction or "",
-                summary=book_summary or "", minio_client=minio_client(), doc_type=doc_type,
+                summary=book_summary or "", minio_client=minio_client(), doc_type=doc_type, publisher=publisher,
             ))
         except Exception as e:
             log.warning(f"[{book_id}] 표지 생성 단계 실패: {e}")

@@ -7,6 +7,9 @@
      그래도 남은 문학 아닌 자료는 표지를 만들지 않는다(재난 자료의 배·물에 뜬 물건 같은 아픈 그림을 내보내지 않는다)
   ③ 코드가 '사진 종류: 장면 구도 색 보정. 글자 없는 장면' 한 줄로 조립해 FLUX.1-dev 서버에 보내 표지 이미지(JPEG) 생성
   ④ MinIO 업로드 후 key 반환
+  ⑤ 정책 보고서는 그림 표지와 함께 목업 표지(cover_typo — 제목·발행처 조판)도 만들고, POLICY_COVER 쪽 키를 돌려준다
+     (사용자 결정 2026-10-23: 보고서는 목업, 문학·도서는 그림. 둘 다 두어 다시 그리지 않고 바꿀 수 있다 —
+     scripts.regenerate_covers --switch)
 2026-10-23 전에는 LLM 이 화풍까지 한 번에 썼다 — 재정 보고서 표지가 톱니·도시·빛줄기로 모였다(cover_art 머리말)
 
 외부 의존:
@@ -151,10 +154,20 @@ async def render_cover_image(
 
 
 # ── MinIO 업로드 + 동기 래퍼 ────────────────────────────────
-def upload_cover_to_minio(book_id: str, image_bytes: bytes, minio_client) -> str:
-    """MinIO에 표지 업로드. covers/{book_id}.jpg 키 반환."""
+# 표지 판 — photo: FLUX 그림(covers/{id}.jpg — 예전부터 쓰던 자리), typo: 목업(covers/typo/{id}.jpg)
+PHOTO, TYPO = "photo", "typo"
+# 정책 보고서가 보일 표지 판(사용자 결정 2026-10-23). 이미 만든 표지를 바꿀 때는 scripts.regenerate_covers --switch
+POLICY_COVER = TYPO
+
+
+def cover_key(book_id: str, version: str = PHOTO) -> str:
+    return f"covers/typo/{book_id}.jpg" if version == TYPO else f"covers/{book_id}.jpg"
+
+
+def upload_cover_to_minio(book_id: str, image_bytes: bytes, minio_client, version: str = PHOTO) -> str:
+    """MinIO에 표지 업로드 → 키(cover_key). 그림은 covers/{book_id}.jpg, 목업은 covers/typo/{book_id}.jpg."""
     cfg = get_settings()
-    key = f"covers/{book_id}.jpg"
+    key = cover_key(book_id, version)
     minio_client.put_object(
         cfg.MINIO_BUCKET,
         key,
@@ -163,6 +176,17 @@ def upload_cover_to_minio(book_id: str, image_bytes: bytes, minio_client) -> str
         content_type="image/jpeg",
     )
     return key
+
+
+def store_typo_cover(book_id: str, title: str, publisher: str, minio_client) -> str | None:
+    """목업 표지를 그려 올린다 → 키. 실패하면 None(그림 표지로 넘어간다)."""
+    from services.ingestion.cover_typo import render_typo_cover
+
+    try:
+        return upload_cover_to_minio(book_id, render_typo_cover(book_id, title, publisher), minio_client, TYPO)
+    except Exception as e:
+        log.warning(f"[{book_id}] 목업 표지 생성 실패: {e}")
+        return None
 
 
 async def generate_and_store_cover(
@@ -176,11 +200,34 @@ async def generate_and_store_cover(
     minio_client,
     doc_type: str | None = "book",
     avoid: list[str] | None = None,
+    publisher: str = "",
 ) -> tuple[str | None, str | None]:
     """
-    표지 프롬프트 생성 → 이미지 생성 → MinIO 업로드 일괄 수행.
-    returns (minio_key, prompt). 실패 시 (None, prompt or None).
+    표지를 만들어 MinIO 에 올린다 → (화면에 보일 표지 키, 그림 프롬프트). 실패 시 (None, prompt or None).
+    정책 보고서는 목업·그림을 둘 다 만들고 POLICY_COVER 쪽 키를 돌려준다(한쪽이 실패하면 다른 쪽). 프롬프트는 늘 그림 것이다.
     """
+    photo_key, prompt = await _generate_photo_cover(
+        book_id, title, author, kdc, themes, introduction, summary, minio_client, doc_type, avoid)
+    if (doc_type or "") != "policy":
+        return photo_key, prompt
+    typo_key = store_typo_cover(book_id, title, publisher, minio_client)
+    shown = typo_key if POLICY_COVER == TYPO else photo_key
+    return shown or typo_key or photo_key, prompt
+
+
+async def _generate_photo_cover(
+    book_id: str,
+    title: str,
+    author: str,
+    kdc: str,
+    themes: str,
+    introduction: str,
+    summary: str,
+    minio_client,
+    doc_type: str | None,
+    avoid: list[str] | None,
+) -> tuple[str | None, str | None]:
+    """그림 표지 — 프롬프트 생성 → FLUX → MinIO(covers/{id}.jpg). returns (key, prompt), 실패 시 (None, prompt or None)."""
     if not (introduction or summary or themes):
         log.info(f"[{book_id}] 표지 생성 스킵: 소개/요약/테마 모두 없음")
         return None, None

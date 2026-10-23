@@ -215,23 +215,95 @@ def test_empty_answer_gives_no_cover_and_generate_cover_prompt_returns_the_line(
 
 
 # ── 다시 만들기 스크립트의 순수 부분 ─────────────────────────
-def test_done_ids_reads_only_finished_rows(tmp_path):
+def test_done_parts_reads_only_finished_rows_and_old_rows_are_photo(tmp_path):
     log = tmp_path / "run.jsonl"
-    log.write_text('{"cnts_id": "A", "status": "ok"}\n{"cnts_id": "B", "status": "fail"}\nnot json\n'
-                   '{"cnts_id": "C", "status": "dry"}\n{"cnts_id": "D", "status": "kept_old"}\n', encoding="utf-8")
-    assert regen.done_ids(str(log)) == {"A"}
-    assert regen.done_ids(str(tmp_path / "none.jsonl")) == set()
-    assert regen.done_ids("") == set()
+    log.write_text('{"cnts_id": "A", "status": "ok"}\n{"cnts_id": "B", "status": "fail", "made": ["typo"]}\nnot json\n'
+                   '{"cnts_id": "C", "status": "dry", "made": ["photo"]}\n{"cnts_id": "D", "status": "kept_old"}\n'
+                   '{"cnts_id": "P", "status": "ok", "made": ["typo"]}\n{"cnts_id": "P", "status": "ok", "made": ["photo"]}\n',
+                   encoding="utf-8")
+    assert regen.done_parts(str(log)) == {"A": {"photo"}, "P": {"typo", "photo"}}
+    assert regen.done_parts(str(tmp_path / "none.jsonl")) == {}
+    assert regen.done_parts("") == {}
 
 
 # 리뷰 지적 — limit 을 끝낸 자료를 빼기 전에 걸어, 같은 기록으로 나눠 돌리면 첫 묶음만 되풀이했다
 def test_pending_skips_done_before_limit():
-    targets = [{"cnts_id": c} for c in "ABCDE"]
-    assert [t["cnts_id"] for t in regen.pending(targets, {"A", "B"}, 2)] == ["C", "D"]
-    assert [t["cnts_id"] for t in regen.pending(targets, set(), 0)] == list("ABCDE")
+    targets = [{"cnts_id": c, "doc_type": "literature"} for c in "ABCDE"]
+    done = {"A": {"photo"}, "B": {"photo"}}
+    assert [t["cnts_id"] for t in regen.pending(targets, done, 2)] == ["C", "D"]
+    assert [t["cnts_id"] for t in regen.pending(targets, {}, 0)] == list("ABCDE")
+
+
+# 정책 보고서는 목업·그림 두 판 — 목업만 먼저 돌린 자료도 그림 판을 돌릴 때는 다시 대상이 된다
+def test_policy_needs_the_requested_parts_and_others_only_the_photo():
+    assert regen.needed_parts("policy", {"typo", "photo"}) == {"typo", "photo"}
+    assert regen.needed_parts("literature", {"typo"}) == {"photo"}
+    targets = [{"cnts_id": "P", "doc_type": "policy"}, {"cnts_id": "L", "doc_type": "literature"}]
+    done = {"P": {"typo"}, "L": {"photo"}}
+    assert [t["cnts_id"] for t in regen.pending(targets, done, 0, {"typo"})] == []
+    assert [t["cnts_id"] for t in regen.pending(targets, done, 0, {"typo", "photo"})] == ["P"]
+
+
+def test_shown_key_prefers_the_show_version_then_the_other():
+    both = lambda v: True                       # noqa: E731
+    only_photo = lambda v: v == "photo"         # noqa: E731
+    assert regen.shown_key("P", "policy", "typo", both) == "covers/typo/P.jpg"
+    assert regen.shown_key("P", "policy", "typo", only_photo) == "covers/P.jpg"
+    assert regen.shown_key("P", "policy", "photo", both) == "covers/P.jpg"
+    assert regen.shown_key("L", "literature", "typo", both) == "covers/L.jpg"   # 문학·도서는 늘 그림
+    assert regen.shown_key("L", "literature", "photo", lambda v: False) is None
 
 
 def test_args_default_to_a_dry_run_with_backups_and_a_failure_stop():
     args = regen.parse_args([])
     assert not args.apply and not args.no_backup and args.max_fails == 5
     assert args.doc_types.split(",") == ["policy", "literature", "book"]
+    assert args.parts == {"typo", "photo"} and args.show == "typo" and not args.switch
+    assert regen.parse_args(["--parts", "typo"]).parts == {"typo"}
+    with pytest.raises(SystemExit):
+        regen.parse_args(["--parts", "abstract"])
+
+
+# ── generate_and_store_cover — 정책 보고서는 목업·그림 둘 다(그림 쪽은 가짜) ──────────
+class _FakeMinio:
+    def __init__(self, fail_prefix: str = ""):
+        self.keys: list[str] = []
+        self.fail_prefix = fail_prefix
+
+    def put_object(self, bucket, key, data, length, content_type):
+        if self.fail_prefix and key.startswith(self.fail_prefix):
+            raise RuntimeError("MinIO down")
+        self.keys.append(key)
+
+
+def _store(monkeypatch, doc_type, client, photo=("covers/X.jpg", "a photo prompt")):
+    from services.ingestion import cover_generator
+
+    async def fake_photo(*a, **kw):
+        if photo[0]:
+            client.keys.append(photo[0])
+        return photo
+
+    monkeypatch.setattr(cover_generator, "_generate_photo_cover", fake_photo)
+    return asyncio.run(cover_generator.generate_and_store_cover(
+        book_id="X", title="2005 나라살림", author="", kdc="329", themes="", introduction="", summary="요약",
+        minio_client=client, doc_type=doc_type, publisher="기획예산처"))
+
+
+def test_policy_makes_both_versions_and_shows_the_typo(monkeypatch):
+    client = _FakeMinio()
+    assert _store(monkeypatch, "policy", client) == ("covers/typo/X.jpg", "a photo prompt")
+    assert sorted(client.keys) == ["covers/X.jpg", "covers/typo/X.jpg"]
+
+
+def test_literature_and_books_make_only_the_photo(monkeypatch):
+    for doc_type in ("literature", "book", None):
+        client = _FakeMinio()
+        assert _store(monkeypatch, doc_type, client) == ("covers/X.jpg", "a photo prompt")
+        assert client.keys == ["covers/X.jpg"]
+
+
+def test_policy_falls_back_to_the_other_version(monkeypatch):
+    # 목업이 실패하면 그림, 그림이 없으면(금지어·소개 없음) 목업
+    assert _store(monkeypatch, "policy", _FakeMinio(fail_prefix="covers/typo/")) == ("covers/X.jpg", "a photo prompt")
+    assert _store(monkeypatch, "policy", _FakeMinio(), photo=(None, None)) == ("covers/typo/X.jpg", None)
