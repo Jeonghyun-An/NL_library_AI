@@ -112,6 +112,8 @@ BANNED_WORDS: list[str] = [
     "scholar", "marketplace", "shipping container", "cargo", "harbour crane", "harbor crane", "sack", "tea bowl", "fan",
     "lacquer box", "plum branch", "bamboo grove", "robe", "pine tree", "peach", "fruit bowl", "barrel", "crate", "dial",
     "monument", "plaque", "statue",
+    # 실사 견본(2026-10-23)에서 글자가 찍혔다 — 손에 든 카드(신분증 같은 글씨), 인쇄기 옆 종이
+    "card", "id card", "badge", "printing press", "hand press", "typewriter",
     # 화폐 이름은 FLUX 가 글자로 그린다(2026-10-23 견본 — 'Euro banknote-shaped chocolate' 에 'EURO' 가 찍혔다)
     "euro", "dollar", "currency", "currencies",
     # 구명조끼·구명튜브는 세월호를 떠올리게 한다(2026-10-23 실사 견본에서 재난연감·나라살림 장면에 나왔다) — 모든 자료에서 막는다
