@@ -59,3 +59,31 @@
   '불을 준 이야기'로 바꿔 물으면 한국어로도 찾는다. 키다리 아저씨 '왜 키다리 아저씨라 부르나'는 한·영 모두 못 찾았다 — 답은
   원문 3·6쪽에 있으나 'Daddy-Long-Legs' 가 거의 모든 편지 머리에 나와 그 쪽이 검색에서 두드러지지 않는다. 적재 문제가 아니라
   이미 있던 구텐베르크 영어책과 같은 검색 성질이다.
+
+## v2 — 표지 쪽 내부 문구 빼고 다시 적재 (2026-10-23 저녁, 사용자 결정)
+
+부스 시연 질문을 운영에서 확인하다 txt 렌더본 14권의 1쪽(표지)에 넣은 출처 메모('SKOVIX 소장자료 원문 — 페르소나 에이전트
+원문 보관본(2026-10-20)에서 옮김')가 원문 뷰어 1쪽과 검색 대목(청크)에 그대로 보이는 것을 찾았다. 표지에서 그 줄만 빼고(제목·
+원제·저자·연도만) 다시 적재한다. 쪽 수는 같고 2쪽부터 글은 옛 판과 바이트까지 같다 — 답 글의 쪽 번호가 바뀌지 않는다.
+금도끼·우온달·Griffis 는 PDF 를 그대로 옮겨 문구가 없어 다시 하지 않는다(Griffis 는 스캔본이라 Qwen 이 꺼진 지금 다시 하면
+OCR 쪽 본문을 잃는다).
+
+- `render_pdfs.py <14권>` → `bundle_v2.py`(out/v2/ — pdf 14·sha256s.txt·서버 스크립트, out/persona_books_v2.tar.gz).
+- 서버 `/data/nl-lib/data/persona_books/v2/`:
+  - `precheck_extract.py`(nl-lib-celery-cpu — 운영 ODL 로 추출만, OCR 로 가는 쪽이 0인지)
+  - `restage_v2.py`(nl-lib-fastapi)
+    - `snapshot`: 다시 적재 전 14행 요약 글 JSON — 마무리 단계는 summary·themes·introduction 을 무조건 덮고 LLM 이 실패하면 NULL
+    - `report`: 카탈로그·섹션·Milvus 청크·원문·썸네일 캐시, 읽기만
+    - `stage`: 옛 판을 `backup/persona-books-20261023-v1/` 에 올리고 해시 확인 뒤 같은 키에 덮기, 썸네일 캐시 치우기, 적재 목록
+    - `thumbs`·`restore`
+- 잡 params `{"reembed":true,"skip_cover":true,"high_water":1}`(카나리는 `max_attempts:1`) — reembed 가 없으면 14권이 모두
+  already_embedded 로 빠진다. 잡의 지우기(Milvus 그 책 청크·book_sections)는 모두 book_id 로 좁혀져 있고, skip_cover 라 표지 칸
+  (cover_image_key·cover_prompt)·covers/ 는 건드리지 않는다.
+- 새 키(.v2.pdf)를 같은 폴더에 두지 않는다: 원문 뷰어·썸네일(`_resolve_original_key`)이 폴더의 첫 객체(사전순)를 열어 옛 판이
+  열린다.
+- 금지:
+  - 옛 잡(v1 카나리·`1afccd1d`) retry 와 옛 `main.jsonl` 로 reembed — Griffis 가 섞인다
+  - 백필 API(14권 밖까지 다시 쓴다)
+  - 책 한 권 재시도 `POST /api/books/{id}/retry`(잡 파라미터 없이 돌아 표지를 새로 만든다)
+  - 진행 중 스택 업데이트·Recreate·fastapi 재시작(함정 16·18·20). nuxt 단독 Recreate 는 괜찮다.
+- 결과: 운영 적용 뒤 이 절에 적는다.
