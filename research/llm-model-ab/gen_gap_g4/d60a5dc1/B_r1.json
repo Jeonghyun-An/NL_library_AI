@@ -1,0 +1,70 @@
+{
+ "metrics": {
+  "job": "d60a5dc1",
+  "arm": "B",
+  "model": "gemma-4-26b-a4b",
+  "r": 1,
+  "attempts": 1,
+  "paragraphs": 2,
+  "unmarked": 0,
+  "numbers": 0,
+  "dropped": 0,
+  "titles": 0,
+  "reasoning_attempts": 0,
+  "sec": 3.1,
+  "completion_tokens": 216
+ },
+ "attempts": [
+  {
+   "sec": 3.1,
+   "finish": "stop",
+   "usage": {
+    "prompt_tokens": 3361,
+    "total_tokens": 3577,
+    "completion_tokens": 216,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 0
+    }
+   },
+   "raw": "선행연구에서는 사회적 지지가 노인의 우울을 감소시키며, 정서적 지지가 가장 효과적인 하위 개념이고 사회적 지지원으로는 가족 및 배우자가 파악되었다고 보고하였다 [E2]. 또한 농촌 노인을 대상으로 한 연구에서는 사회적 지지의 총합과 구조적 지지 중 가족지지가 주관적 경제상태가 우울에 미치는 영향을 완화하고, 기능적 지지 중 정서적 지지가 일상생활활동능력에 대해 우울을 완화시키는 매개효과가 있음이 확인되었다 [E4].\n\n다양한 사회적 지지 유형이 노인의 우울에 미치는 영향에 대한 심층적인 분석이 필요하다는 제언이 있다 [E1]. 선행연구 중 일부는 사회적 지지가 우울에 미치는 영향에 대한 구체적인 효과크기를 파악하지 못하였다는 한계를 지니며, 이에 대한 메타분석 연구가 제언된 바 있다 [E2].",
+   "reasoning": null
+  }
+ ],
+ "paragraphs": [
+  {
+   "id": "p1",
+   "text": "선행연구에서는 사회적 지지가 노인의 우울을 감소시키며, 정서적 지지가 가장 효과적인 하위 개념이고 사회적 지지원으로는 가족 및 배우자가 파악되었다고 보고하였다 [E2]. 또한 농촌 노인을 대상으로 한 연구에서는 사회적 지지의 총합과 구조적 지지 중 가족지지가 주관적 경제상태가 우울에 미치는 영향을 완화하고, 기능적 지지 중 정서적 지지가 일상생활활동능력에 대해 우울을 완화시키는 매개효과가 있음이 확인되었다 [E4].",
+   "state": "proposed",
+   "cites": [
+    "KCI_FI002782062",
+    "KCI_FI001407641"
+   ],
+   "checks": {
+    "dropped": 0,
+    "dropped_f": 0,
+    "unmarked": 0,
+    "numbers": [],
+    "softened": 0
+   },
+   "gen_id": null
+  },
+  {
+   "id": "p2",
+   "text": "다양한 사회적 지지 유형이 노인의 우울에 미치는 영향에 대한 심층적인 분석이 필요하다는 제언이 있다 [E1]. 선행연구 중 일부는 사회적 지지가 우울에 미치는 영향에 대한 구체적인 효과크기를 파악하지 못하였다는 한계를 지니며, 이에 대한 메타분석 연구가 제언된 바 있다 [E2].",
+   "state": "proposed",
+   "cites": [
+    "KCI_FI002162833",
+    "KCI_FI002782062"
+   ],
+   "checks": {
+    "dropped": 0,
+    "dropped_f": 0,
+    "unmarked": 0,
+    "numbers": [],
+    "softened": 0
+   },
+   "gen_id": null
+  }
+ ]
+}

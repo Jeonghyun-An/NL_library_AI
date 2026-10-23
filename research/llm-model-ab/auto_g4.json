@@ -1,0 +1,72 @@
+{
+ "synth": {
+  "A": {
+   "reports": 12,
+   "report_errors": 0,
+   "calls": 74,
+   "format_issues": 0,
+   "send_errors": 0,
+   "reasoning_calls": 0,
+   "sections": 72,
+   "failed_sections": 0,
+   "intro_first_cited": 65,
+   "summaries": 356,
+   "empty_summaries": 1,
+   "one_sentence_summaries": 143,
+   "future_lines": 70,
+   "future_leaks": 0,
+   "call_sec_median": 11.4,
+   "call_sec_p90": 15.4,
+   "gen_tokens_per_sec_median": 49.8
+  },
+  "B": {
+   "reports": 12,
+   "report_errors": 0,
+   "calls": 72,
+   "format_issues": 0,
+   "send_errors": 0,
+   "reasoning_calls": 0,
+   "sections": 72,
+   "failed_sections": 0,
+   "intro_first_cited": 72,
+   "summaries": 356,
+   "empty_summaries": 0,
+   "one_sentence_summaries": 121,
+   "future_lines": 49,
+   "future_leaks": 0,
+   "call_sec_median": 6.6,
+   "call_sec_p90": 7.6,
+   "gen_tokens_per_sec_median": 71.2
+  }
+ },
+ "gap": {
+  "A": {
+   "outputs": 27,
+   "paragraphs": 65,
+   "unmarked": 25,
+   "numbers": 18,
+   "dropped": 0,
+   "titles": 63,
+   "attempts": 27,
+   "completion_tokens": 10193,
+   "outputs_with_unmarked": 11,
+   "reasoning_attempts": 0,
+   "sec_median": 8.1,
+   "sec_p90": 12.6
+  },
+  "B": {
+   "outputs": 27,
+   "paragraphs": 55,
+   "unmarked": 10,
+   "numbers": 11,
+   "dropped": 0,
+   "titles": 17,
+   "attempts": 27,
+   "completion_tokens": 7402,
+   "outputs_with_unmarked": 10,
+   "reasoning_attempts": 0,
+   "sec_median": 4.0,
+   "sec_p90": 5.2
+  }
+ }
+}

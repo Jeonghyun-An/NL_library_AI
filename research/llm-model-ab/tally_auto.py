@@ -1,6 +1,6 @@
 """자동 지표 — 팔(모델)마다 형식·속도·모양 (판정 없이 생성 파일만 본다, 1회성).
 
-종합(gen_synth_*): 호출 수·형식 문제(JSON 파싱 실패·모양)·전송 실패, 호출 시간 중앙값·90%, 생성 토큰/초(usage), 절 실패,
+종합(gen_synth_*): 호출 수·형식 문제(JSON 파싱 실패·모양)·전송 실패·reasoning 칸에 든 호출, 호출 시간 중앙값·90%, 생성 토큰/초(usage), 절 실패,
 빈 요약·한 문장 요약, 도입 첫 문장 [E#] 비율, 향후 과제 줄의 '하위질문' 누출.
 공백 절(gen_gap_*/metrics.json): 근거 표시 없는 문장·확인 필요 숫자·지운 [E#]·제목 언급·다시 부른 횟수·시간.
 
@@ -40,6 +40,7 @@ def synth(gen: Path) -> dict:
             t["calls"] += 1
             t["format_issues"] += bool(c.get("issues"))
             t["send_errors"] += bool(c.get("error"))
+            t["reasoning_calls"] += bool(c.get("reasoning"))   # 답이나 생각이 reasoning 칸에 든 호출(Gemma 4)
             if c.get("sec") is not None:
                 secs[a].append(c["sec"])
             ct = (c.get("usage") or {}).get("completion_tokens")
@@ -74,6 +75,7 @@ def gap(gen: Path) -> dict:
         res[a] = {"outputs": len(xs), **{k: sum(m[k] for m in xs) for k in
                   ("paragraphs", "unmarked", "numbers", "dropped", "titles", "attempts", "completion_tokens")},
                   "outputs_with_unmarked": sum(1 for m in xs if m["unmarked"]),
+                  "reasoning_attempts": sum(m.get("reasoning_attempts", 0) for m in xs),
                   "sec_median": pct([m["sec"] for m in xs], 0.5), "sec_p90": pct([m["sec"] for m in xs], 0.9)}
     return res
 

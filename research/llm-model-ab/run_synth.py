@@ -65,7 +65,10 @@ async def arm_chat(messages, *, params=None, timeout=120.0, base_url=None, model
                     raise
         data = resp.json()
         choice = data["choices"][0]
-        call.update(raw=choice["message"]["content"], finish=choice.get("finish_reason"), usage=data.get("usage"))
+        msg = choice["message"]
+        # reasoning parser 를 켠 모델(Gemma 4)은 답이 reasoning 칸으로 빠지면 content 가 None 이다 — 따로 남긴다
+        call.update(raw=msg.get("content"), reasoning=msg.get("reasoning") or msg.get("reasoning_content"),
+                    finish=choice.get("finish_reason"), usage=data.get("usage"))
         return call["raw"]
     except httpx.HTTPError as e:
         call["error"] = f"{type(e).__name__}: {e}"
@@ -77,10 +80,10 @@ async def arm_chat(messages, *, params=None, timeout=120.0, base_url=None, model
 syn.chat = arm_chat
 
 
-def format_issues(raw: str | None) -> list[str]:
+def format_issues(raw: str | None, reasoning: str | None = None) -> list[str]:
     """한 호출 원문이 종합이 받는 모양인가(synth-prompt-ab/run_ab.py check_raw 의 줄인 판)."""
     if raw is None:
-        return ["전송 오류"]
+        return ["답이 reasoning 칸으로 감"] if reasoning else ["전송 오류"]
     data = extract_json(raw)
     if data is None:
         return ["JSON 파싱 실패"]
@@ -113,7 +116,7 @@ async def one(arm: str, tag: str, run: int, out_dir: Path) -> str:
     except Exception as e:  # 절이 전부 실패하면 ValueError — 기록하고 넘어간다
         out.update(sections=None, limitations=None, error=f"{type(e).__name__}: {e}")
     for c in rec["calls"]:
-        c["issues"] = format_issues(c["raw"])
+        c["issues"] = format_issues(c["raw"], c.get("reasoning"))
     out.update(calls=rec["calls"], elapsed=round(time.time() - t0, 1))
     # 근거 대목(chunks)은 판정 묶음이 jobs/ 에서 읽는다 — 결과 파일에는 싣지 않는다
     for s in out["sections"] or []:
