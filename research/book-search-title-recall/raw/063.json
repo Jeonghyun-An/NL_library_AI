@@ -1,0 +1,300 @@
+{
+ "kind": "title_en",
+ "query": "Heidi",
+ "targets": [
+  "LIT-GUTENBERG-1448"
+ ],
+ "on": {
+  "rewritten": "스위스 알프스, 고아 소녀의 성장, 억압과 착취, 따뜻한 인간애, 자연과 교감, 낭만주의적 풍경 묘사",
+  "elapsed_ms": 1758.9,
+  "wall_s": 1.94,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-1448",
+    "best": 1.0,
+    "content": 0.5649580045090148,
+    "title_score": 1.0,
+    "title": "Heidi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.584,
+    "content": 0.5696614583333333,
+    "title_score": 0.0833,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "best": 0.5284,
+    "content": 0.5128455528846154,
+    "title_score": 0.08,
+    "title": "The Swiss Family Robinson",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-766",
+    "best": 0.5149,
+    "content": 0.49361165364583326,
+    "title_score": 0.1053,
+    "title": "David Copperfield",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-84",
+    "best": 0.4803,
+    "content": 0.45099905149888886,
+    "title_score": 0.1333,
+    "title": "Frankenstein",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "best": 0.4412,
+    "content": 0.4201521632796411,
+    "title_score": 0.0909,
+    "title": "The Old Curiosity Shop",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-967",
+    "best": 0.437,
+    "content": 0.4370184295711429,
+    "title_score": 0.0,
+    "title": "Nicholas Nickleby",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.4257,
+    "content": 0.4256760350586829,
+    "title_score": 0.0,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "best": 0.4189,
+    "content": 0.40185546875,
+    "title_score": 0.0714,
+    "title": "Journey to the Centre of the Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17375",
+    "best": 0.3906,
+    "content": 0.36646307101775377,
+    "title_score": 0.0952,
+    "title": "The Enchanted Castle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1028",
+    "best": 0.3801,
+    "content": 0.34519449869791663,
+    "title_score": 0.1333,
+    "title": "The Professor",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2554",
+    "best": 0.3683,
+    "content": 0.36825878879898,
+    "title_score": 0.0,
+    "title": "Crime and Punishment",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "best": 0.3624,
+    "content": 0.3624307019785177,
+    "title_score": 0.0,
+    "title": "Little Women",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.3571,
+    "content": 0.3339399857954546,
+    "title_score": 0.087,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063929",
+    "best": 0.3317,
+    "content": 0.3316884629031789,
+    "title_score": 0.0,
+    "title": "이기영 소설의 여성의식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-74",
+    "best": 0.318,
+    "content": 0.29718461814242725,
+    "title_score": 0.0741,
+    "title": "The Adventures of Tom Sawyer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.3067,
+    "content": 0.3067345252403847,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-67979",
+    "best": 0.2967,
+    "content": 0.25969441731770826,
+    "title_score": 0.125,
+    "title": "The Blue Castle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "best": 0.2874,
+    "content": 0.2874118212669594,
+    "title_score": 0.0,
+    "title": "Great Expectations",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_009",
+    "best": 0.2866,
+    "content": 0.27205170380585686,
+    "title_score": 0.05,
+    "title": "인간문제",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-730",
+    "best": 0.2704,
+    "content": 0.2703888544980696,
+    "title_score": 0.0,
+    "title": "Oliver Twist",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-351",
+    "best": 0.2683,
+    "content": 0.22032674153645826,
+    "title_score": 0.1538,
+    "title": "The Betrothed",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.2662,
+    "content": 0.23561961535656506,
+    "title_score": 0.1,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-28054",
+    "best": 0.2521,
+    "content": 0.22253024062427285,
+    "title_score": 0.0952,
+    "title": "The Brothers Karamazov",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-55",
+    "best": 0.2509,
+    "content": 0.22618519176136365,
+    "title_score": 0.08,
+    "title": "The Wonderful Wizard of Oz",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.2322,
+    "content": 0.232177734375,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-176",
+    "best": 0.213,
+    "content": 0.168701171875,
+    "title_score": 0.1333,
+    "title": "The Europeans",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063059",
+    "best": 0.1336,
+    "content": 0.13363370028409094,
+    "title_score": 0.0,
+    "title": "朝鮮初期 樓亭記의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45524",
+    "best": 0.1133,
+    "content": 0.086181640625,
+    "title_score": 0.0741,
+    "title": "The Open Boat and Other Stories",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2226",
+    "best": 0.0734,
+    "content": 0.07342529296875,
+    "title_score": 0.0,
+    "title": "Kim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 760.6,
+  "wall_s": 1.66,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-1448",
+    "best": 1.0,
+    "content": 0.7698455030632255,
+    "title_score": 1.0,
+    "title": "Heidi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

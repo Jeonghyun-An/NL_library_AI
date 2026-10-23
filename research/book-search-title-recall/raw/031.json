@@ -1,0 +1,561 @@
+{
+ "kind": "title_kr",
+ "query": "귀의 성",
+ "targets": [
+  "WS_034"
+ ],
+ "on": {
+  "rewritten": "심리적 안식과 평화, 내면의 성찰, 고독과 사색, 정신세계 탐구, 초월적 경험",
+  "elapsed_ms": 1368.3,
+  "wall_s": 1.99,
+  "books": [
+   {
+    "book_id": "CNTS-00052063882",
+    "best": 0.4128,
+    "content": 0.4128277858384809,
+    "title_score": 0.0,
+    "title": "1930年代 韓國 心理小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.3874,
+    "content": 0.3874452577485398,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "best": 0.3729,
+    "content": 0.37291730991859817,
+    "title_score": 0.0,
+    "title": "The Star Rover",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1399",
+    "best": 0.3609,
+    "content": 0.3608719535598687,
+    "title_score": 0.0,
+    "title": "Anna Karenina",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "best": 0.357,
+    "content": 0.3569684890142828,
+    "title_score": 0.0,
+    "title": "Villette",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.3452,
+    "content": 0.3451627975627646,
+    "title_score": 0.0,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-28054",
+    "best": 0.34,
+    "content": 0.3400007948016759,
+    "title_score": 0.0,
+    "title": "The Brothers Karamazov",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.3203,
+    "content": 0.320325388235864,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "best": 0.3186,
+    "content": 0.31864542350147984,
+    "title_score": 0.0,
+    "title": "Lord Jim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-345",
+    "best": 0.3071,
+    "content": 0.307124584179023,
+    "title_score": 0.0,
+    "title": "Dracula",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.297,
+    "content": 0.29701672430679915,
+    "title_score": 0.0,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.2888,
+    "content": 0.28877689622998415,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "best": 0.2845,
+    "content": 0.28448782631981917,
+    "title_score": 0.0,
+    "title": "Moby-Dick; Or, The Whale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "best": 0.2843,
+    "content": 0.2843360789729872,
+    "title_score": 0.0,
+    "title": "The Old Curiosity Shop",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.2781,
+    "content": 0.27814861142975733,
+    "title_score": 0.0,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2638",
+    "best": 0.275,
+    "content": 0.2749962101762592,
+    "title_score": 0.0,
+    "title": "The Idiot",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_001",
+    "best": 0.2615,
+    "content": 0.261474609375,
+    "title_score": 0.0,
+    "title": "무정",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-110",
+    "best": 0.2547,
+    "content": 0.2547148840135358,
+    "title_score": 0.0,
+    "title": "Tess of the d'Urbervilles",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3285",
+    "best": 0.2501,
+    "content": 0.2501082433258619,
+    "title_score": 0.0,
+    "title": "The Deerslayer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-601",
+    "best": 0.2359,
+    "content": 0.23594156901041663,
+    "title_score": 0.0,
+    "title": "The Monk",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "best": 0.2191,
+    "content": 0.21908291903409094,
+    "title_score": 0.0,
+    "title": "The History of Tom Jones, a Foundling",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "best": 0.2164,
+    "content": 0.21641880252116352,
+    "title_score": 0.0,
+    "title": "Roughing It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.2096,
+    "content": 0.20962246187201605,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-209",
+    "best": 0.1811,
+    "content": 0.1811463214002006,
+    "title_score": 0.0,
+    "title": "The Turn of the Screw",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2554",
+    "best": 0.1797,
+    "content": 0.17974298650568188,
+    "title_score": 0.0,
+    "title": "Crime and Punishment",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-8117",
+    "best": 0.177,
+    "content": 0.17696866122159094,
+    "title_score": 0.0,
+    "title": "Demons",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3669",
+    "best": 0.1611,
+    "content": 0.16109952059659094,
+    "title_score": 0.0,
+    "title": "The Pathfinder",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1298",
+    "best": 0.1552,
+    "content": 0.15516246448863646,
+    "title_score": 0.0,
+    "title": "The Master of Ballantrae",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "best": 0.1058,
+    "content": 0.10577392578125,
+    "title_score": 0.0,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064565",
+    "best": 0.0904,
+    "content": 0.09039306640625,
+    "title_score": 0.0,
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 779.7,
+  "wall_s": 1.88,
+  "books": [
+   {
+    "book_id": "WS_034",
+    "best": 1.0,
+    "content": 0.58349609375,
+    "title_score": 1.0,
+    "title": "귀의 성",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-834",
+    "best": 0.5487,
+    "content": 0.5487154447115385,
+    "title_score": 0.0,
+    "title": "The Memoirs of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "best": 0.5172,
+    "content": 0.5171963898543631,
+    "title_score": 0.0,
+    "title": "韓國 近代小說論 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-175",
+    "best": 0.4884,
+    "content": 0.4884306004255482,
+    "title_score": 0.0,
+    "title": "The Phantom of the Opera",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.4769,
+    "content": 0.47687322443181823,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-500",
+    "best": 0.4488,
+    "content": 0.4487558015840507,
+    "title_score": 0.0,
+    "title": "The Adventures of Pinocchio",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.4426,
+    "content": 0.4425513553267313,
+    "title_score": 0.0,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_037",
+    "best": 0.4271,
+    "content": 0.4270796970395604,
+    "title_score": 0.0,
+    "title": "개척자",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "best": 0.3892,
+    "content": 0.389178936298077,
+    "title_score": 0.0,
+    "title": "The Canterbury Tales",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-223",
+    "best": 0.362,
+    "content": 0.361977022696799,
+    "title_score": 0.0,
+    "title": "The Wisdom of Father Brown",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_014",
+    "best": 0.3555,
+    "content": 0.3554665738923386,
+    "title_score": 0.0,
+    "title": "구운몽",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-159",
+    "best": 0.3466,
+    "content": 0.34664956268367253,
+    "title_score": 0.0,
+    "title": "The Island of Doctor Moreau",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-903",
+    "best": 0.3399,
+    "content": 0.33988131009615385,
+    "title_score": 0.0,
+    "title": "The White Company",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1056",
+    "best": 0.3395,
+    "content": 0.3395057091346154,
+    "title_score": 0.0,
+    "title": "Martin Eden",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-601",
+    "best": 0.3375,
+    "content": 0.33746122314683413,
+    "title_score": 0.0,
+    "title": "The Monk",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1837",
+    "best": 0.3282,
+    "content": 0.3281632871478436,
+    "title_score": 0.0,
+    "title": "The Prince and the Pauper",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-940",
+    "best": 0.317,
+    "content": 0.31704439304984156,
+    "title_score": 0.0,
+    "title": "The Spy",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-95",
+    "best": 0.3099,
+    "content": 0.30988865145446265,
+    "title_score": 0.0,
+    "title": "The Prisoner of Zenda",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3179",
+    "best": 0.3055,
+    "content": 0.30552164713541663,
+    "title_score": 0.0,
+    "title": "The Gilded Age",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3160",
+    "best": 0.2886,
+    "content": 0.28864967872256775,
+    "title_score": 0.0,
+    "title": "The Odyssey",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "best": 0.2629,
+    "content": 0.26294962565104163,
+    "title_score": 0.0,
+    "title": "Little Dorrit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.247,
+    "content": 0.246978759765625,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.2342,
+    "content": 0.23417358390692078,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2864",
+    "best": 0.2301,
+    "content": 0.23009236653645826,
+    "title_score": 0.0,
+    "title": "The Trumpet-Major",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.2183,
+    "content": 0.2182627709143431,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.2091,
+    "content": 0.20909534801136365,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "best": 0.2024,
+    "content": 0.20240464273299896,
+    "title_score": 0.0,
+    "title": "The Woman in White",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "best": 0.1907,
+    "content": 0.19070861463911737,
+    "title_score": 0.0,
+    "title": "The Jungle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063445",
+    "best": 0.1074,
+    "content": 0.107421875,
+    "title_score": 0.0,
+    "title": "金東里 小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063588",
+    "best": 0.0737,
+    "content": 0.07366943359375,
+    "title_score": 0.0,
+    "title": "柳致環 詩의 效用論的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

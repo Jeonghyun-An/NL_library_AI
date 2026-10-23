@@ -28,7 +28,7 @@ from services.search.metadata_filter import extract_metadata_filter, MetadataFil
 from services.search.reranker import rerank as rerank_docs
 from services.search.context_expander import expand_context, ExpandedContext
 from services.ingestion.embedder import embed_texts
-from services.ingestion.indexer import search_chunks, search_by_book
+from services.ingestion.indexer import SearchHit, search_chunks, search_by_book
 from schemas.book import (
     ChunkHit,
     BookChunkGroup,
@@ -90,6 +90,7 @@ async def search(
     generate_answer: bool = True,   # chunk 모드 전용 — False 면 검색 결과만 돌려준다
     use_metadata_filter: bool = True,   # False 면 db 가 있어도 날짜 필터(LLM)를 뽑지 않는다
     chunk_filter: Callable[[ChunkHit], bool] | None = None,   # chunk 모드 전용 — 리랭크 전에 거른다
+    include_original: bool = False,   # book 모드 전용 — 재작성했으면 원래 질의로도 후보를 찾아 합친다
     db=None,
 ) -> ChunkSearchResponse | BookSearchResponse:
     t0 = time.perf_counter()
@@ -129,10 +130,14 @@ async def search(
     if milvus_expr:
         log.info(f"Milvus expression: {milvus_expr}")
 
-    # ② 쿼리 임베딩 (dense + sparse)
-    dense_vecs, sparse_vecs = embed_texts([search_query], is_query=True)
+    # ② 쿼리 임베딩 (dense + sparse) — 원래 질의 갈래를 쓰면 두 질의를 한 번에 임베딩한다
+    with_original = (mode != "chunk" and include_original and rewritten is not None
+                     and rewritten.strip() != query.strip())
+    texts = [search_query, query] if with_original else [search_query]
+    dense_vecs, sparse_vecs = embed_texts(texts, is_query=True)
     query_dense = dense_vecs[0]
     query_sparse = sparse_vecs[0]
+    original_vectors = (dense_vecs[1], sparse_vecs[1]) if with_original else None
 
     elapsed = (time.perf_counter() - t0) * 1000
 
@@ -148,6 +153,7 @@ async def search(
             query, rewritten, query_dense, query_sparse, top_k, use_rerank, elapsed, db,
             meta_expr=milvus_expr,
             metadata_filter=metadata_filter,
+            original_vectors=original_vectors,
         )
 
 
@@ -283,44 +289,9 @@ def best_chunk_score(chunks: list[ChunkHit], *, default: float) -> float:
     return max((c.rerank_score or c.score for c in chunks), default=default)
 
 
-async def _search_book_mode(
-    original: str,
-    rewritten: str | None,
-    query_dense: list[float],
-    query_sparse: dict,
-    top_k: int,
-    use_rerank: bool,
-    elapsed_base: float,
-    db=None,
-    *,
-    meta_expr: str | None = None,
-    metadata_filter: MetadataFilter | None = None,
-) -> BookSearchResponse:
-    t0 = time.perf_counter()
-
-    # 리랭킹 품질은 후보 풀 크기에 비례한다.
-    # 날짜 정렬 시 4x, 일반 검색 시 3x 후보를 확보한 뒤 리랭킹으로 추려낸다.
-    needs_date_sort = metadata_filter and metadata_filter.sort_by in ("recent", "oldest")
-    fetch_books = top_k * cfg.BOOK_MODE_FETCH_MULTIPLIER_SORT if needs_date_sort else top_k * cfg.BOOK_MODE_FETCH_MULTIPLIER
-
-    book_hits = search_by_book(
-        query_dense,
-        query_sparse,
-        top_k_chunks=fetch_books * cfg.HYBRID_SEARCH_CHUNK_LIMIT_MULT,
-        top_k_books=fetch_books,
-        meta_expr=meta_expr,
-    )
-
-    if not book_hits:
-        elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
-        return BookSearchResponse(
-            query=original,
-            rewritten_query=rewritten,
-            books=[],
-            elapsed_ms=round(elapsed, 1),
-        )
-
-    books = []
+def _book_groups(book_hits: dict[str, list[SearchHit]], query_text: str, use_rerank: bool) -> list[BookChunkGroup]:
+    """search_by_book 결과 → 도서별 묶음. 본문 청크를 query_text 로 재정렬해 best_score(로그 부스트 포함)를 매긴다."""
+    groups = []
     for book_id, hits in book_hits.items():
         # 점수 집계: 메타 청크(chunk_idx=-1) 포함 → 메타 기반 쿼리도 책 발견 가능
         best_raw = max(h.score for h in hits)
@@ -342,7 +313,6 @@ async def _search_book_mode(
 
         # ④ 도서 내 청크 리랭킹
         if use_rerank and chunks:
-            query_text = rewritten or original
             try:
                 ranked = rerank_docs(query_text, [c.text for c in chunks])
                 reranked = []
@@ -365,11 +335,76 @@ async def _search_book_mode(
             boost = 1 + 0.1 * math.log2(n_chunks)
             best = 1.0 - (1.0 - best) / boost
 
-        books.append(BookChunkGroup(
+        groups.append(BookChunkGroup(
             book_id=book_id,
             best_score=best,
             chunks=chunks,
         ))
+    return groups
+
+
+async def _search_book_mode(
+    original: str,
+    rewritten: str | None,
+    query_dense: list[float],
+    query_sparse: dict,
+    top_k: int,
+    use_rerank: bool,
+    elapsed_base: float,
+    db=None,
+    *,
+    meta_expr: str | None = None,
+    metadata_filter: MetadataFilter | None = None,
+    original_vectors: tuple[list[float], dict] | None = None,
+) -> BookSearchResponse:
+    """도서 모드. original_vectors 가 있으면(재작성한 소장자료 검색) 원래 질의로도 같은 조건의 후보를 찾아 합친다.
+
+    재작성은 제목만 넣은 질의를 주제어로 바꿔('구운몽' → '요몽, 이상향, 유토피아…') 그 책을 후보에서 놓쳤고, 제목 일치
+    점수(api/book.py)는 찾은 후보의 순서만 바꾼다. 갈래마다 자기 질의로 재정렬하고 같은 책이면 점수가 높은 쪽을 둔다 —
+    재정렬을 재작성 질의 하나로 맞추거나 겹치는 책을 한 번만 재정렬하면 영어 원서의 한국어 제목 검색이 다시 빠졌다
+    (research/book-search-title-recall).
+    """
+    t0 = time.perf_counter()
+
+    # 리랭킹 품질은 후보 풀 크기에 비례한다.
+    # 날짜 정렬 시 4x, 일반 검색 시 3x 후보를 확보한 뒤 리랭킹으로 추려낸다.
+    needs_date_sort = metadata_filter and metadata_filter.sort_by in ("recent", "oldest")
+    fetch_books = top_k * cfg.BOOK_MODE_FETCH_MULTIPLIER_SORT if needs_date_sort else top_k * cfg.BOOK_MODE_FETCH_MULTIPLIER
+
+    book_hits = search_by_book(
+        query_dense,
+        query_sparse,
+        top_k_chunks=fetch_books * cfg.HYBRID_SEARCH_CHUNK_LIMIT_MULT,
+        top_k_books=fetch_books,
+        meta_expr=meta_expr,
+    )
+    original_hits: dict[str, list[SearchHit]] = {}   # 원래 질의 갈래를 쓰지 않으면 빈 채로 둔다
+    if original_vectors is not None:
+        original_hits = search_by_book(
+            original_vectors[0],
+            original_vectors[1],
+            top_k_chunks=fetch_books * cfg.HYBRID_SEARCH_CHUNK_LIMIT_MULT,
+            top_k_books=fetch_books,
+            meta_expr=meta_expr,
+        )
+
+    if not book_hits and not original_hits:
+        elapsed = elapsed_base + (time.perf_counter() - t0) * 1000
+        return BookSearchResponse(
+            query=original,
+            rewritten_query=rewritten,
+            books=[],
+            elapsed_ms=round(elapsed, 1),
+        )
+
+    books = _book_groups(book_hits, rewritten or original, use_rerank)
+    if original_hits:
+        merged = {b.book_id: b for b in books}
+        for b in _book_groups(original_hits, original, use_rerank):
+            if b.book_id not in merged or b.best_score > merged[b.book_id].best_score:
+                merged[b.book_id] = b
+        books = list(merged.values())
+        book_hits = {**original_hits, **book_hits}   # 날짜 정렬이 도서마다 pub_date 를 읽는다
 
     books.sort(key=lambda b: b.best_score, reverse=True)
 

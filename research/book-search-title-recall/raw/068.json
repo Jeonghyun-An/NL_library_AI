@@ -1,0 +1,345 @@
+{
+ "kind": "title_en",
+ "query": "Oliver Twist",
+ "targets": [
+  "LIT-GUTENBERG-730"
+ ],
+ "on": {
+  "rewritten": "고아의 비참한 현실, 빈민가의 범죄와 착취, 사회 부조리와 불평등, 성장 과정의 고난과 역경, 인간 존엄성 회복을 위한 노력",
+  "elapsed_ms": 1841.0,
+  "wall_s": 2.08,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-730",
+    "best": 1.0,
+    "content": 0.4915763492656907,
+    "title_score": 1.0,
+    "title": "Oliver Twist",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1688",
+    "best": 0.5367,
+    "content": 0.5367411526550934,
+    "title_score": 0.0,
+    "title": "The People of the Abyss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "best": 0.5,
+    "content": 0.4999679155942566,
+    "title_score": 0.0,
+    "title": "The Jungle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.4664,
+    "content": 0.46644176136363635,
+    "title_score": 0.0,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.4529,
+    "content": 0.4394898862724399,
+    "title_score": 0.0597,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.4381,
+    "content": 0.39791797722126376,
+    "title_score": 0.1667,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-28054",
+    "best": 0.4149,
+    "content": 0.39705965267041277,
+    "title_score": 0.0741,
+    "title": "The Brothers Karamazov",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2153",
+    "best": 0.4044,
+    "content": 0.37665517305603,
+    "title_score": 0.1111,
+    "title": "Mary Barton",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065041",
+    "best": 0.3837,
+    "content": 0.38368130570070924,
+    "title_score": 0.0,
+    "title": "韓國 戰後小說의 휴머니즘 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-967",
+    "best": 0.3787,
+    "content": 0.3563281625165102,
+    "title_score": 0.087,
+    "title": "Nicholas Nickleby",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "best": 0.3776,
+    "content": 0.35170200730886325,
+    "title_score": 0.1,
+    "title": "Little Dorrit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "best": 0.3431,
+    "content": 0.32373776300421264,
+    "title_score": 0.0714,
+    "title": "The Old Curiosity Shop",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_016",
+    "best": 0.3159,
+    "content": 0.31593862476584667,
+    "title_score": 0.0,
+    "title": "탈출기",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-46",
+    "best": 0.3113,
+    "content": 0.20443448153409094,
+    "title_score": 0.25,
+    "title": "A Christmas Carol",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "best": 0.3112,
+    "content": 0.31117537242751214,
+    "title_score": 0.0,
+    "title": "Our Mutual Friend",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-351",
+    "best": 0.3087,
+    "content": 0.30870265434827737,
+    "title_score": 0.0,
+    "title": "The Betrothed",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "best": 0.294,
+    "content": 0.24638227982954553,
+    "title_score": 0.1579,
+    "title": "The History of Tom Jones, a Foundling",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "best": 0.2879,
+    "content": 0.28792317708333326,
+    "title_score": 0.0,
+    "title": "The Innocents Abroad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_018",
+    "best": 0.2833,
+    "content": 0.28327582797673023,
+    "title_score": 0.0,
+    "title": "감자",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_025",
+    "best": 0.2743,
+    "content": 0.2743474786931819,
+    "title_score": 0.0,
+    "title": "고향",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-202",
+    "best": 0.2733,
+    "content": 0.2374400422034102,
+    "title_score": 0.1176,
+    "title": "Nostromo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1938",
+    "best": 0.2645,
+    "content": 0.26452003517753264,
+    "title_score": 0.0,
+    "title": "Resurrection",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "best": 0.239,
+    "content": 0.2138899315819458,
+    "title_score": 0.08,
+    "title": "A Tale of Two Cities",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_009",
+    "best": 0.2286,
+    "content": 0.21610269365376134,
+    "title_score": 0.04,
+    "title": "인간문제",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.2192,
+    "content": 0.136962890625,
+    "title_score": 0.1739,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063978",
+    "best": 0.2162,
+    "content": 0.21618143717447913,
+    "title_score": 0.0,
+    "title": "1930年代 世態小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "best": 0.2042,
+    "content": 0.20419592631494488,
+    "title_score": 0.0,
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "title_remainder": "毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065025",
+    "best": 0.2037,
+    "content": 0.2037353515625,
+    "title_score": 0.0,
+    "title": "李泰俊文學硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1837",
+    "best": 0.1528,
+    "content": 0.126953125,
+    "title_score": 0.0741,
+    "title": "The Prince and the Pauper",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "best": 0.135,
+    "content": 0.09722900390625,
+    "title_score": 0.1,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1069.5,
+  "wall_s": 1.51,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-730",
+    "best": 1.0,
+    "content": 0.8271585728364325,
+    "title_score": 1.0,
+    "title": "Oliver Twist",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-903",
+    "best": 0.3789,
+    "content": 0.37886555989583326,
+    "title_score": 0.0,
+    "title": "The White Company",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1260",
+    "best": 0.3356,
+    "content": 0.33563232421875,
+    "title_score": 0.0,
+    "title": "Jane Eyre",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1688",
+    "best": 0.2859,
+    "content": 0.285888671875,
+    "title_score": 0.0,
+    "title": "The People of the Abyss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "best": 0.2741,
+    "content": 0.2741255326704546,
+    "title_score": 0.0,
+    "title": "The Innocents Abroad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-482",
+    "best": 0.2078,
+    "content": 0.17919921875,
+    "title_score": 0.087,
+    "title": "The Woodlanders",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

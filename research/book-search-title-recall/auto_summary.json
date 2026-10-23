@@ -1,0 +1,224 @@
+{
+ "title_kr": {
+  "CUR": {
+   "queries": 41,
+   "hit1": 10,
+   "hit5": 10,
+   "found": 10,
+   "n": 1215
+  },
+  "A": {
+   "queries": 41,
+   "hit1": 41,
+   "hit5": 41,
+   "found": 41,
+   "n": 2135
+  },
+  "C": {
+   "queries": 41,
+   "hit1": 41,
+   "hit5": 41,
+   "found": 41,
+   "n": 1246
+  },
+  "AH0": {
+   "queries": 41,
+   "hit1": 41,
+   "hit5": 41,
+   "found": 41,
+   "n": 2135
+  },
+  "AH": {
+   "queries": 41,
+   "hit1": 41,
+   "hit5": 41,
+   "found": 41,
+   "n": 2135
+  }
+ },
+ "title_en_kr": {
+  "CUR": {
+   "queries": 20,
+   "hit1": 8,
+   "hit5": 12,
+   "found": 15,
+   "n": 600
+  },
+  "A": {
+   "queries": 20,
+   "hit1": 16,
+   "hit5": 17,
+   "found": 17,
+   "n": 887
+  },
+  "C": {
+   "queries": 20,
+   "hit1": 8,
+   "hit5": 12,
+   "found": 15,
+   "n": 600
+  },
+  "AH0": {
+   "queries": 20,
+   "hit1": 16,
+   "hit5": 17,
+   "found": 17,
+   "n": 887
+  },
+  "AH": {
+   "queries": 20,
+   "hit1": 16,
+   "hit5": 17,
+   "found": 17,
+   "n": 887
+  }
+ },
+ "title_en": {
+  "CUR": {
+   "queries": 10,
+   "hit1": 9,
+   "hit5": 9,
+   "found": 9,
+   "n": 298
+  },
+  "A": {
+   "queries": 10,
+   "hit1": 10,
+   "hit5": 10,
+   "found": 10,
+   "n": 486
+  },
+  "C": {
+   "queries": 10,
+   "hit1": 10,
+   "hit5": 10,
+   "found": 10,
+   "n": 306
+  },
+  "AH0": {
+   "queries": 10,
+   "hit1": 10,
+   "hit5": 10,
+   "found": 10,
+   "n": 486
+  },
+  "AH": {
+   "queries": 10,
+   "hit1": 10,
+   "hit5": 10,
+   "found": 10,
+   "n": 486
+  }
+ },
+ "title_in_question": {
+  "CUR": {
+   "queries": 8,
+   "hit1": 3,
+   "hit5": 5,
+   "found": 5,
+   "n": 240
+  },
+  "A": {
+   "queries": 8,
+   "hit1": 7,
+   "hit5": 8,
+   "found": 8,
+   "n": 391
+  },
+  "C": {
+   "queries": 8,
+   "hit1": 5,
+   "hit5": 7,
+   "found": 7,
+   "n": 242
+  },
+  "AH0": {
+   "queries": 8,
+   "hit1": 8,
+   "hit5": 8,
+   "found": 8,
+   "n": 391
+  },
+  "AH": {
+   "queries": 8,
+   "hit1": 8,
+   "hit5": 8,
+   "found": 8,
+   "n": 391
+  }
+ },
+ "author": {
+  "CUR": {
+   "queries": 5,
+   "hit1": 1,
+   "hit5": 1,
+   "found": 2,
+   "n": 131
+  },
+  "A": {
+   "queries": 5,
+   "hit1": 4,
+   "hit5": 5,
+   "found": 5,
+   "n": 215
+  },
+  "C": {
+   "queries": 5,
+   "hit1": 1,
+   "hit5": 1,
+   "found": 2,
+   "n": 131
+  },
+  "AH0": {
+   "queries": 5,
+   "hit1": 4,
+   "hit5": 5,
+   "found": 5,
+   "n": 215
+  },
+  "AH": {
+   "queries": 5,
+   "hit1": 4,
+   "hit5": 5,
+   "found": 5,
+   "n": 215
+  }
+ },
+ "judged": {
+  "CUR": {
+   "queries": 20,
+   "hit1": 0,
+   "hit5": 0,
+   "found": 0,
+   "n": 521
+  },
+  "A": {
+   "queries": 20,
+   "hit1": 0,
+   "hit5": 0,
+   "found": 0,
+   "n": 807
+  },
+  "C": {
+   "queries": 20,
+   "hit1": 0,
+   "hit5": 0,
+   "found": 0,
+   "n": 522
+  },
+  "AH0": {
+   "queries": 20,
+   "hit1": 0,
+   "hit5": 0,
+   "found": 0,
+   "n": 807
+  },
+  "AH": {
+   "queries": 20,
+   "hit1": 0,
+   "hit5": 0,
+   "found": 0,
+   "n": 807
+  }
+ }
+}

@@ -1,0 +1,561 @@
+{
+ "kind": "title_kr",
+ "query": "벙어리 삼룡이",
+ "targets": [
+  "WS_015"
+ ],
+ "on": {
+  "rewritten": "고독, 소외, 좌천, 삶의 역경, 희생, 인간애, 유머, 해학, 시대 반영",
+  "elapsed_ms": 1507.4,
+  "wall_s": 2.14,
+  "books": [
+   {
+    "book_id": "CNTS-00052063882",
+    "best": 0.4651,
+    "content": 0.46514873167894333,
+    "title_score": 0.0,
+    "title": "1930年代 韓國 心理小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "best": 0.431,
+    "content": 0.4309833919181192,
+    "title_score": 0.0,
+    "title": "Villette",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.42,
+    "content": 0.419961876608422,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.3934,
+    "content": 0.3934215359927242,
+    "title_score": 0.0,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.387,
+    "content": 0.3869925078819675,
+    "title_score": 0.0,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063398",
+    "best": 0.3764,
+    "content": 0.37636557748548927,
+    "title_score": 0.0,
+    "title": "辛夕汀 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064509",
+    "best": 0.3719,
+    "content": 0.3719379961656192,
+    "title_score": 0.0,
+    "title": "韓國 仙道說話 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "best": 0.3356,
+    "content": 0.3355611098313642,
+    "title_score": 0.0,
+    "title": "Moby-Dick; Or, The Whale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_001",
+    "best": 0.3204,
+    "content": 0.32044396033653844,
+    "title_score": 0.0,
+    "title": "무정",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-84",
+    "best": 0.3152,
+    "content": 0.315178504343666,
+    "title_score": 0.0,
+    "title": "Frankenstein",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-601",
+    "best": 0.3069,
+    "content": 0.3068625710227273,
+    "title_score": 0.0,
+    "title": "The Monk",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063978",
+    "best": 0.3047,
+    "content": 0.30470784505208326,
+    "title_score": 0.0,
+    "title": "1930年代 世態小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "best": 0.3036,
+    "content": 0.3036443536931819,
+    "title_score": 0.0,
+    "title": "The Jungle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063883",
+    "best": 0.3012,
+    "content": 0.30121519896946247,
+    "title_score": 0.0,
+    "title": "황순원 소설의 이미지 분석을 통한 동일성 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45524",
+    "best": 0.2878,
+    "content": 0.2878237695832808,
+    "title_score": 0.0,
+    "title": "The Open Boat and Other Stories",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063929",
+    "best": 0.2854,
+    "content": 0.2854233835532145,
+    "title_score": 0.0,
+    "title": "이기영 소설의 여성의식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065041",
+    "best": 0.2827,
+    "content": 0.28273518880208326,
+    "title_score": 0.0,
+    "title": "韓國 戰後小說의 휴머니즘 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.2827,
+    "content": 0.28270146453542544,
+    "title_score": 0.0,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064576",
+    "best": 0.2801,
+    "content": 0.28009033203125,
+    "title_score": 0.0,
+    "title": "徐有英 文學의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-600",
+    "best": 0.2731,
+    "content": 0.2730919129933961,
+    "title_score": 0.0,
+    "title": "Notes from the Underground",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_039",
+    "best": 0.2669,
+    "content": 0.2669001916389957,
+    "title_score": 0.0,
+    "title": "해파리의 노래",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065025",
+    "best": 0.2621,
+    "content": 0.262095415867981,
+    "title_score": 0.0,
+    "title": "李泰俊文學硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_021",
+    "best": 0.258,
+    "content": 0.2580344460227273,
+    "title_score": 0.0,
+    "title": "정지용 시집",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "best": 0.2575,
+    "content": 0.2574887751803071,
+    "title_score": 0.0,
+    "title": "The Star Rover",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.2464,
+    "content": 0.24641927083333326,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "best": 0.2349,
+    "content": 0.23485848645295893,
+    "title_score": 0.0,
+    "title": "Lord Jim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-233",
+    "best": 0.2103,
+    "content": 0.21025467960682043,
+    "title_score": 0.0,
+    "title": "Sister Carrie",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_011",
+    "best": 0.2095,
+    "content": 0.20953924005681823,
+    "title_score": 0.0,
+    "title": "날개",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-245",
+    "best": 0.179,
+    "content": 0.17896617542613646,
+    "title_score": 0.0,
+    "title": "Life on the Mississippi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2638",
+    "best": 0.1497,
+    "content": 0.14966930042613646,
+    "title_score": 0.0,
+    "title": "The Idiot",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 886.8,
+  "wall_s": 2.35,
+  "books": [
+   {
+    "book_id": "WS_015",
+    "best": 1.0,
+    "content": 0.7292643529130576,
+    "title_score": 1.0,
+    "title": "벙어리 삼룡이",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-236",
+    "best": 0.5919,
+    "content": 0.5919258931619064,
+    "title_score": 0.0,
+    "title": "The Jungle Book",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063539",
+    "best": 0.5108,
+    "content": 0.5108247871004202,
+    "title_score": 0.0,
+    "title": "조선후기 세태소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2781",
+    "best": 0.3847,
+    "content": 0.38474827227881625,
+    "title_score": 0.0,
+    "title": "Just So Stories",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063883",
+    "best": 0.377,
+    "content": 0.37700004926012376,
+    "title_score": 0.0,
+    "title": "황순원 소설의 이미지 분석을 통한 동일성 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-139",
+    "best": 0.3588,
+    "content": 0.35875525841346156,
+    "title_score": 0.0,
+    "title": "The Lost World",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_034",
+    "best": 0.3545,
+    "content": 0.35454263485251303,
+    "title_score": 0.0,
+    "title": "귀의 성",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-164",
+    "best": 0.3472,
+    "content": 0.3472035596728975,
+    "title_score": 0.0,
+    "title": "Twenty Thousand Leagues under the Sea",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "best": 0.3453,
+    "content": 0.34527926230691497,
+    "title_score": 0.0,
+    "title": "Adventures of Huckleberry Finn",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-12",
+    "best": 0.3234,
+    "content": 0.32344619251848383,
+    "title_score": 0.0,
+    "title": "Through the Looking-Glass",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "best": 0.3074,
+    "content": 0.30740547152176534,
+    "title_score": 0.0,
+    "title": "Journey to the Centre of the Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_008",
+    "best": 0.2955,
+    "content": 0.29551106756440837,
+    "title_score": 0.0,
+    "title": "상록수",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-910",
+    "best": 0.2923,
+    "content": 0.29229736328125,
+    "title_score": 0.0,
+    "title": "White Fang",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2788",
+    "best": 0.2889,
+    "content": 0.2889404296875,
+    "title_score": 0.0,
+    "title": "Little Men",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2610",
+    "best": 0.2381,
+    "content": 0.23807779947916663,
+    "title_score": 0.0,
+    "title": "The Hunchback of Notre-Dame",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23700",
+    "best": 0.2339,
+    "content": 0.23391070026275051,
+    "title_score": 0.0,
+    "title": "The Decameron",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3285",
+    "best": 0.2302,
+    "content": 0.23022222306439322,
+    "title_score": 0.0,
+    "title": "The Deerslayer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-159",
+    "best": 0.2291,
+    "content": 0.22907049005681823,
+    "title_score": 0.0,
+    "title": "The Island of Doctor Moreau",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-786",
+    "best": 0.2284,
+    "content": 0.22841389973958326,
+    "title_score": 0.0,
+    "title": "Hard Times",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.227,
+    "content": 0.22698974609375,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063445",
+    "best": 0.2215,
+    "content": 0.22147654439959885,
+    "title_score": 0.0,
+    "title": "金東里 小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-74",
+    "best": 0.1999,
+    "content": 0.19987577179378135,
+    "title_score": 0.0,
+    "title": "The Adventures of Tom Sawyer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063929",
+    "best": 0.1687,
+    "content": 0.1687011718750001,
+    "title_score": 0.0,
+    "title": "이기영 소설의 여성의식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-421",
+    "best": 0.163,
+    "content": 0.16304154829545459,
+    "title_score": 0.0,
+    "title": "Kidnapped",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2864",
+    "best": 0.1468,
+    "content": 0.14675625887784094,
+    "title_score": 0.0,
+    "title": "The Trumpet-Major",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_011",
+    "best": 0.1251,
+    "content": 0.1251220703125,
+    "title_score": 0.0,
+    "title": "날개",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-730",
+    "best": 0.1188,
+    "content": 0.1187744140625,
+    "title_score": 0.0,
+    "title": "Oliver Twist",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "GM_004",
+    "best": 0.0887,
+    "content": 0.08868408203125,
+    "title_score": 0.0,
+    "title": "미스터 방",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-46",
+    "best": 0.0756,
+    "content": 0.0755615234375,
+    "title_score": 0.0,
+    "title": "A Christmas Carol",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.0452,
+    "content": 0.045196533203125,
+    "title_score": 0.0,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

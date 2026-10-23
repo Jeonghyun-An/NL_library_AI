@@ -1,0 +1,561 @@
+{
+ "kind": "title_kr",
+ "query": "산골 나그네",
+ "targets": [
+  "GM_002"
+ ],
+ "on": {
+  "rewritten": "고독, 방랑, 자연과의 교감, 은둔, 자발적 고립, 삶의 무상함, 한국적 한(恨)",
+  "elapsed_ms": 1509.8,
+  "wall_s": 2.1,
+  "books": [
+   {
+    "book_id": "CNTS-00052064069",
+    "best": 0.4371,
+    "content": 0.43708702626185747,
+    "title_score": 0.0,
+    "title": "牧隱 李穡의 詩文學 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063445",
+    "best": 0.4218,
+    "content": 0.4218306107954546,
+    "title_score": 0.0,
+    "title": "金東里 小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063882",
+    "best": 0.4203,
+    "content": 0.42031728221827447,
+    "title_score": 0.0,
+    "title": "1930年代 韓國 心理小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_021",
+    "best": 0.4189,
+    "content": 0.4189453125,
+    "title_score": 0.0,
+    "title": "정지용 시집",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063278",
+    "best": 0.381,
+    "content": 0.3809515912846979,
+    "title_score": 0.0,
+    "title": "白湖 林悌의 詩文學 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.3753,
+    "content": 0.37529756206450804,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.3507,
+    "content": 0.35071571100909615,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1298",
+    "best": 0.3386,
+    "content": 0.3386013944929199,
+    "title_score": 0.0,
+    "title": "The Master of Ballantrae",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_002",
+    "best": 0.3296,
+    "content": 0.32962792158744825,
+    "title_score": 0.0,
+    "title": "진달래꽃",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_011",
+    "best": 0.3285,
+    "content": 0.3285222773975125,
+    "title_score": 0.0,
+    "title": "날개",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2610",
+    "best": 0.3257,
+    "content": 0.3256628974574025,
+    "title_score": 0.0,
+    "title": "The Hunchback of Notre-Dame",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063398",
+    "best": 0.3149,
+    "content": 0.31487415330459567,
+    "title_score": 0.0,
+    "title": "辛夕汀 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.3135,
+    "content": 0.31351690962487466,
+    "title_score": 0.0,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "best": 0.2876,
+    "content": 0.28760530784811056,
+    "title_score": 0.0,
+    "title": "Lord Jim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063883",
+    "best": 0.2804,
+    "content": 0.28037954154761746,
+    "title_score": 0.0,
+    "title": "황순원 소설의 이미지 분석을 통한 동일성 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-601",
+    "best": 0.2712,
+    "content": 0.271240234375,
+    "title_score": 0.0,
+    "title": "The Monk",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-370",
+    "best": 0.2642,
+    "content": 0.26418104895271954,
+    "title_score": 0.0,
+    "title": "Moll Flanders",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-974",
+    "best": 0.2633,
+    "content": 0.2633056640625,
+    "title_score": 0.0,
+    "title": "The Secret Agent",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.2512,
+    "content": 0.25124752005507156,
+    "title_score": 0.0,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063368",
+    "best": 0.2462,
+    "content": 0.246244609200716,
+    "title_score": 0.0,
+    "title": "韓國古典小說의 文體論的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-289",
+    "best": 0.2413,
+    "content": 0.2413330078125,
+    "title_score": 0.0,
+    "title": "The Wind in the Willows",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "best": 0.2376,
+    "content": 0.23756917317708326,
+    "title_score": 0.0,
+    "title": "The Mill on the Floss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5230",
+    "best": 0.2368,
+    "content": 0.23680623372395826,
+    "title_score": 0.0,
+    "title": "The Invisible Man",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17375",
+    "best": 0.2317,
+    "content": 0.23169739777893683,
+    "title_score": 0.0,
+    "title": "The Enchanted Castle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-766",
+    "best": 0.1752,
+    "content": 0.17519309303977282,
+    "title_score": 0.0,
+    "title": "David Copperfield",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_007",
+    "best": 0.1714,
+    "content": 0.1713645241477273,
+    "title_score": 0.0,
+    "title": "태평천하",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1337",
+    "best": 0.1545,
+    "content": 0.15449662642045459,
+    "title_score": 0.0,
+    "title": "The Black Arrow",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-526",
+    "best": 0.143,
+    "content": 0.1429831764914773,
+    "title_score": 0.0,
+    "title": "Heart of Darkness",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-227",
+    "best": 0.0922,
+    "content": 0.09222412109375,
+    "title_score": 0.0,
+    "title": "The Secret Sharer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-160",
+    "best": 0.0578,
+    "content": 0.05780029296875,
+    "title_score": 0.0,
+    "title": "The Awakening",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 695.6,
+  "wall_s": 1.75,
+  "books": [
+   {
+    "book_id": "GM_002",
+    "best": 1.0,
+    "content": 0.7514964161778873,
+    "title_score": 1.0,
+    "title": "산골 나그네",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-767",
+    "best": 0.4737,
+    "content": 0.4736971909580625,
+    "title_score": 0.0,
+    "title": "Agnes Grey",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-967",
+    "best": 0.3979,
+    "content": 0.3979153637188195,
+    "title_score": 0.0,
+    "title": "Nicholas Nickleby",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.3948,
+    "content": 0.3948360900554143,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.3929,
+    "content": 0.3928960170570883,
+    "title_score": 0.0,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-170",
+    "best": 0.3835,
+    "content": 0.38350380530707184,
+    "title_score": 0.0,
+    "title": "The Phoenix and the Carpet",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "best": 0.3522,
+    "content": 0.3521973450172152,
+    "title_score": 0.0,
+    "title": "Journey to the Centre of the Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2864",
+    "best": 0.3507,
+    "content": 0.35071571100909615,
+    "title_score": 0.0,
+    "title": "The Trumpet-Major",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-996",
+    "best": 0.3314,
+    "content": 0.3313816573376225,
+    "title_score": 0.0,
+    "title": "Don Quixote",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1842",
+    "best": 0.3296,
+    "content": 0.3296384618623872,
+    "title_score": 0.0,
+    "title": "Michael Strogoff",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1752",
+    "best": 0.3104,
+    "content": 0.3103652147778143,
+    "title_score": 0.0,
+    "title": "The Seagull",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "best": 0.3103,
+    "content": 0.310302734375,
+    "title_score": 0.0,
+    "title": "The Mill on the Floss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "best": 0.3043,
+    "content": 0.30428929259338,
+    "title_score": 0.0,
+    "title": "The Innocents Abroad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "best": 0.2963,
+    "content": 0.2963201349431819,
+    "title_score": 0.0,
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "title_remainder": "毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.2867,
+    "content": 0.28666416620224167,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_002",
+    "best": 0.2629,
+    "content": 0.2629394908405216,
+    "title_score": 0.0,
+    "title": "진달래꽃",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-223",
+    "best": 0.26,
+    "content": 0.26001499749290247,
+    "title_score": 0.0,
+    "title": "The Wisdom of Father Brown",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.2498,
+    "content": 0.24976828803209628,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-103",
+    "best": 0.2464,
+    "content": 0.24641927083333326,
+    "title_score": 0.0,
+    "title": "Around the World in Eighty Days",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-204",
+    "best": 0.2408,
+    "content": 0.24082438151041663,
+    "title_score": 0.0,
+    "title": "The Innocence of Father Brown",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "best": 0.2403,
+    "content": 0.240264892578125,
+    "title_score": 0.0,
+    "title": "Our Mutual Friend",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1695",
+    "best": 0.2362,
+    "content": 0.23619588216145826,
+    "title_score": 0.0,
+    "title": "The Man Who Was Thursday",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "best": 0.1993,
+    "content": 0.19929623887021064,
+    "title_score": 0.0,
+    "title": "The Ambassadors",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-60",
+    "best": 0.1864,
+    "content": 0.18644114492918762,
+    "title_score": 0.0,
+    "title": "The Scarlet Pimpernel",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063883",
+    "best": 0.1193,
+    "content": 0.11932373046875,
+    "title_score": 0.0,
+    "title": "황순원 소설의 이미지 분석을 통한 동일성 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_016",
+    "best": 0.1138,
+    "content": 0.11376953125,
+    "title_score": 0.0,
+    "title": "탈출기",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "best": 0.086,
+    "content": 0.08599853515625,
+    "title_score": 0.0,
+    "title": "The Woman in White",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2465",
+    "best": 0.0655,
+    "content": 0.06549072265625,
+    "title_score": 0.0,
+    "title": "Carmen",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.0575,
+    "content": 0.0574951171875,
+    "title_score": 0.0,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_026",
+    "best": 0.0104,
+    "content": 0.010416666977107525,
+    "title_score": 0.0,
+    "title": "물레방아",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

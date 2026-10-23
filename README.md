@@ -201,6 +201,7 @@ Celery Task: process_book_file
    → Milvus expression 조립 (doc_scope + 메타 필터)
   ↓
 ② BGE-M3 → Dense + Sparse 동시 생성 (is_query=True)
+   (소장자료 검색은 재작성 질의 + 원래 질의 두 개 — 재작성이 제목을 주제어로 바꿔 그 책을 놓치지 않게)
   ↓
 ③ Milvus hybrid_search (RRFRanker(k=60))
    AnnSearchRequest(embedding,        COSINE)
@@ -209,8 +210,9 @@ Celery Task: process_book_file
    → 메타 청크(chunk_idx=-1)도 점수 산정에 기여 (응답에서는 제거)
   ↓
 ④ Jina Reranker v2 (8K 컨텍스트) — 도서별 청크 내부 리랭킹
+   (두 질의면 갈래마다 자기 질의로 리랭킹 → 같은 책은 점수가 높은 갈래)
   ↓
-⑤ 다중 매칭 부스팅 + 날짜 정렬 (필요 시)
+⑤ 다중 매칭 부스팅 + 날짜 정렬 (필요 시) → API 가 제목 일치율과 종합해 재정렬
   ↓
 응답: 도서 + 청크 (도서 소개·표지·추천이유·대화는 별도 엔드포인트)
 ```

@@ -1,0 +1,505 @@
+{
+ "kind": "judged",
+ "query": "바다 모험 소설",
+ "targets": [],
+ "on": {
+  "rewritten": "미지의 세계 탐험, 용기와 도전, 예측 불가능한 사건, 인간의 한계 시험, 자연의 숭고함과 위협",
+  "elapsed_ms": 982.4,
+  "wall_s": 2.11,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-139",
+    "best": 0.5545,
+    "content": 0.5545332928809308,
+    "title_score": 0.0,
+    "title": "The Lost World",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-164",
+    "best": 0.5534,
+    "content": 0.5534229706598669,
+    "title_score": 0.0,
+    "title": "Twenty Thousand Leagues under the Sea",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "best": 0.4669,
+    "content": 0.466930484261024,
+    "title_score": 0.0,
+    "title": "Journey to the Centre of the Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1013",
+    "best": 0.4285,
+    "content": 0.42851169207819073,
+    "title_score": 0.0,
+    "title": "The First Men in the Moon",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-83",
+    "best": 0.4142,
+    "content": 0.4141972346956607,
+    "title_score": 0.0,
+    "title": "From the Earth to the Moon",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "best": 0.3552,
+    "content": 0.35518622083779716,
+    "title_score": 0.0,
+    "title": "The Country of the Blind",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-910",
+    "best": 0.3347,
+    "content": 0.334716796875,
+    "title_score": 0.0,
+    "title": "White Fang",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "best": 0.286,
+    "content": 0.28599039713541663,
+    "title_score": 0.0,
+    "title": "The Star Rover",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-526",
+    "best": 0.2795,
+    "content": 0.27948176943113723,
+    "title_score": 0.0,
+    "title": "Heart of Darkness",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-940",
+    "best": 0.2703,
+    "content": 0.2703180218266247,
+    "title_score": 0.0,
+    "title": "The Spy",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "best": 0.2561,
+    "content": 0.25605229582608624,
+    "title_score": 0.0,
+    "title": "Moby-Dick; Or, The Whale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "best": 0.2357,
+    "content": 0.235687255859375,
+    "title_score": 0.0,
+    "title": "Roughing It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-159",
+    "best": 0.2352,
+    "content": 0.2351745953203611,
+    "title_score": 0.0,
+    "title": "The Island of Doctor Moreau",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "best": 0.2153,
+    "content": 0.2152597366740221,
+    "title_score": 0.0,
+    "title": "The Ambassadors",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.1976,
+    "content": 0.19761032491073216,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-245",
+    "best": 0.189,
+    "content": 0.18897001586840523,
+    "title_score": 0.0,
+    "title": "Life on the Mississippi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1298",
+    "best": 0.181,
+    "content": 0.18101917613636376,
+    "title_score": 0.0,
+    "title": "The Master of Ballantrae",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "best": 0.1694,
+    "content": 0.16936700994318188,
+    "title_score": 0.0,
+    "title": "The Swiss Family Robinson",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3285",
+    "best": 0.077,
+    "content": 0.07696533203125,
+    "title_score": 0.0,
+    "title": "The Deerslayer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-12",
+    "best": 0.0581,
+    "content": 0.058135986328125,
+    "title_score": 0.0,
+    "title": "Through the Looking-Glass",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-36",
+    "best": 0.0544,
+    "content": 0.054412841796875,
+    "title_score": 0.0,
+    "title": "The War of the Worlds",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2885",
+    "best": 0.0504,
+    "content": 0.0504150390625,
+    "title_score": 0.0,
+    "title": "The Story of the Glittering Plain",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.0407,
+    "content": 0.040679931640625,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-345",
+    "best": 0.0331,
+    "content": 0.0330810546875,
+    "title_score": 0.0,
+    "title": "Dracula",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1146.8,
+  "wall_s": 1.96,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-164",
+    "best": 0.7176,
+    "content": 0.7176134025802348,
+    "title_score": 0.0,
+    "title": "Twenty Thousand Leagues under the Sea",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "best": 0.7111,
+    "content": 0.7111322063941603,
+    "title_score": 0.0,
+    "title": "Journey to the Centre of the Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "best": 0.6972,
+    "content": 0.6972160314378648,
+    "title_score": 0.0,
+    "title": "Moby-Dick; Or, The Whale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-120",
+    "best": 0.6427,
+    "content": 0.6426617075092398,
+    "title_score": 0.0,
+    "title": "Treasure Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.6342,
+    "content": 0.634242636152861,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-289",
+    "best": 0.618,
+    "content": 0.6179955593189146,
+    "title_score": 0.0,
+    "title": "The Wind in the Willows",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-421",
+    "best": 0.6008,
+    "content": 0.600830078125,
+    "title_score": 0.0,
+    "title": "Kidnapped",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "best": 0.5844,
+    "content": 0.5844367820373534,
+    "title_score": 0.0,
+    "title": "Lord Jim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "best": 0.5808,
+    "content": 0.5808149007798807,
+    "title_score": 0.0,
+    "title": "The Innocents Abroad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00047956839",
+    "best": 0.556,
+    "content": 0.5559724109223672,
+    "title_score": 0.0,
+    "title": "인연의 덫",
+    "title_remainder": "마지막 사랑이 첫사랑에게 보내는 영혼의 편지",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-829",
+    "best": 0.5206,
+    "content": 0.5206140838456881,
+    "title_score": 0.0,
+    "title": "Gulliver's Travels",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2781",
+    "best": 0.4977,
+    "content": 0.49772756373104166,
+    "title_score": 0.0,
+    "title": "Just So Stories",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45524",
+    "best": 0.4614,
+    "content": 0.46135048994663996,
+    "title_score": 0.0,
+    "title": "The Open Boat and Other Stories",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-526",
+    "best": 0.4467,
+    "content": 0.44668856534090917,
+    "title_score": 0.0,
+    "title": "Heart of Darkness",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.4372,
+    "content": 0.43719426084899815,
+    "title_score": 0.0,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "best": 0.4281,
+    "content": 0.42805368924694087,
+    "title_score": 0.0,
+    "title": "The Swiss Family Robinson",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.3762,
+    "content": 0.37621183499297894,
+    "title_score": 0.0,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.304,
+    "content": 0.303955078125,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-236",
+    "best": 0.2716,
+    "content": 0.27157315340909094,
+    "title_score": 0.0,
+    "title": "The Jungle Book",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "best": 0.2512,
+    "content": 0.251220703125,
+    "title_score": 0.0,
+    "title": "The Star Rover",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_001",
+    "best": 0.2429,
+    "content": 0.242919921875,
+    "title_score": 0.0,
+    "title": "무정",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16389",
+    "best": 0.1467,
+    "content": 0.146728515625,
+    "title_score": 0.0,
+    "title": "The Enchanted April",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7411",
+    "best": 0.0164,
+    "content": 0.016393441706895828,
+    "title_score": 0.0,
+    "title": "The Sea-Wolf",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.0159,
+    "content": 0.01587301678955555,
+    "title_score": 0.0,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1335",
+    "best": 0.0154,
+    "content": 0.015384615398943424,
+    "title_score": 0.0,
+    "title": "Armadale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1752",
+    "best": 0.0152,
+    "content": 0.01515151560306549,
+    "title_score": 0.0,
+    "title": "The Seagull",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-521",
+    "best": 0.0149,
+    "content": 0.014925372786819935,
+    "title_score": 0.0,
+    "title": "Robinson Crusoe",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_019",
+    "best": 0.0145,
+    "content": 0.014492753893136978,
+    "title_score": 0.0,
+    "title": "배따라기",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-159",
+    "best": 0.0122,
+    "content": 0.012195121496915817,
+    "title_score": 0.0,
+    "title": "The Island of Doctor Moreau",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-121",
+    "best": 0.0108,
+    "content": 0.01075268816202879,
+    "title_score": 0.0,
+    "title": "Northanger Abbey",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

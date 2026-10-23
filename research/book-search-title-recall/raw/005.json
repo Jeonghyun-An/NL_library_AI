@@ -1,0 +1,561 @@
+{
+ "kind": "title_kr",
+ "query": "봄봄",
+ "targets": [
+  "WS_006"
+ ],
+ "on": {
+  "rewritten": "새로운 시작과 희망, 생명력 넘치는 자연, 따뜻한 감성, 설렘과 기대, 긍정적인 에너지",
+  "elapsed_ms": 1277.2,
+  "wall_s": 1.99,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "best": 0.5666,
+    "content": 0.5665876751860862,
+    "title_score": 0.0,
+    "title": "The Old Curiosity Shop",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-84",
+    "best": 0.5246,
+    "content": 0.5245916193181819,
+    "title_score": 0.0,
+    "title": "Frankenstein",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17396",
+    "best": 0.5072,
+    "content": 0.5071988857275714,
+    "title_score": 0.0,
+    "title": "The Secret Garden",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1260",
+    "best": 0.47,
+    "content": 0.4700056309634587,
+    "title_score": 0.0,
+    "title": "Jane Eyre",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.4369,
+    "content": 0.4369401655839469,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-941",
+    "best": 0.4074,
+    "content": 0.4074411637445472,
+    "title_score": 0.0,
+    "title": "The Riddle of the Sands",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45",
+    "best": 0.3954,
+    "content": 0.3954496062723645,
+    "title_score": 0.0,
+    "title": "Anne of Green Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "best": 0.3897,
+    "content": 0.38969511732276707,
+    "title_score": 0.0,
+    "title": "The Jungle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.3768,
+    "content": 0.376844033424379,
+    "title_score": 0.0,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "best": 0.3767,
+    "content": 0.37669020432692313,
+    "title_score": 0.0,
+    "title": "The Swiss Family Robinson",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16389",
+    "best": 0.369,
+    "content": 0.36899692936111284,
+    "title_score": 0.0,
+    "title": "The Enchanted April",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1448",
+    "best": 0.3666,
+    "content": 0.3666428786057693,
+    "title_score": 0.0,
+    "title": "Heidi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-730",
+    "best": 0.3558,
+    "content": 0.35577392578125,
+    "title_score": 0.0,
+    "title": "Oliver Twist",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.3386,
+    "content": 0.33862541985256767,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-110",
+    "best": 0.2693,
+    "content": 0.2692616681885657,
+    "title_score": 0.0,
+    "title": "Tess of the d'Urbervilles",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "best": 0.2425,
+    "content": 0.24249778408184552,
+    "title_score": 0.0,
+    "title": "Great Expectations",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.2381,
+    "content": 0.23812494474944834,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1028",
+    "best": 0.2347,
+    "content": 0.23473011363636365,
+    "title_score": 0.0,
+    "title": "The Professor",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1399",
+    "best": 0.2113,
+    "content": 0.21130837583149453,
+    "title_score": 0.0,
+    "title": "Anna Karenina",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-409",
+    "best": 0.2087,
+    "content": 0.20865145596590917,
+    "title_score": 0.0,
+    "title": "Catriona",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-940",
+    "best": 0.2066,
+    "content": 0.2065667428204614,
+    "title_score": 0.0,
+    "title": "The Spy",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-215",
+    "best": 0.2024,
+    "content": 0.20238148082386365,
+    "title_score": 0.0,
+    "title": "The Call of the Wild",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "best": 0.1993,
+    "content": 0.19929623887021064,
+    "title_score": 0.0,
+    "title": "Roughing It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "best": 0.1652,
+    "content": 0.1651564811907723,
+    "title_score": 0.0,
+    "title": "Our Mutual Friend",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-153",
+    "best": 0.1551,
+    "content": 0.15505149147727282,
+    "title_score": 0.0,
+    "title": "Jude the Obscure",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-421",
+    "best": 0.1463,
+    "content": 0.1463401100852273,
+    "title_score": 0.0,
+    "title": "Kidnapped",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "best": 0.142,
+    "content": 0.1419677734375,
+    "title_score": 0.0,
+    "title": "Lord Jim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-176",
+    "best": 0.1281,
+    "content": 0.1281127929687501,
+    "title_score": 0.0,
+    "title": "The Europeans",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2885",
+    "best": 0.1268,
+    "content": 0.1268310546875,
+    "title_score": 0.0,
+    "title": "The Story of the Glittering Plain",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-289",
+    "best": 0.0869,
+    "content": 0.0869140625,
+    "title_score": 0.0,
+    "title": "The Wind in the Willows",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 848.2,
+  "wall_s": 1.87,
+  "books": [
+   {
+    "book_id": "WS_006",
+    "best": 1.0,
+    "content": 0.7007182329351582,
+    "title_score": 1.0,
+    "title": "봄봄",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064565",
+    "best": 0.6248,
+    "content": 0.6248493518575741,
+    "title_score": 0.0,
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063978",
+    "best": 0.5586,
+    "content": 0.5585960517644144,
+    "title_score": 0.0,
+    "title": "1930年代 世態小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_002",
+    "best": 0.5561,
+    "content": 0.556138679327467,
+    "title_score": 0.0,
+    "title": "진달래꽃",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063398",
+    "best": 0.5476,
+    "content": 0.5476478465276658,
+    "title_score": 0.0,
+    "title": "辛夕汀 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1399",
+    "best": 0.5429,
+    "content": 0.5429222184932786,
+    "title_score": 0.0,
+    "title": "Anna Karenina",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.5142,
+    "content": 0.514229209104319,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "best": 0.5005,
+    "content": 0.5005479895045135,
+    "title_score": 0.0,
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "title_remainder": "毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1448",
+    "best": 0.483,
+    "content": 0.4829852764423077,
+    "title_score": 0.0,
+    "title": "Heidi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065087",
+    "best": 0.4805,
+    "content": 0.4805277612357072,
+    "title_score": 0.0,
+    "title": "日帝 强占期 韓國小說에 나타난 獨立運動家像 硏",
+    "title_remainder": "문학적 형상화 과정과 작가 의 현실인식을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "best": 0.4714,
+    "content": 0.47140777672679013,
+    "title_score": 0.0,
+    "title": "The Canterbury Tales",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-289",
+    "best": 0.4676,
+    "content": 0.46758563701923084,
+    "title_score": 0.0,
+    "title": "The Wind in the Willows",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16389",
+    "best": 0.4567,
+    "content": 0.4566932091346154,
+    "title_score": 0.0,
+    "title": "The Enchanted April",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17396",
+    "best": 0.4535,
+    "content": 0.45347194148494396,
+    "title_score": 0.0,
+    "title": "The Secret Garden",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064759",
+    "best": 0.4511,
+    "content": 0.45109049479166663,
+    "title_score": 0.0,
+    "title": "1930年代 韓國詩의 意識構造硏究",
+    "title_remainder": "世界喪失과 그 變移過程을 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063321",
+    "best": 0.4455,
+    "content": 0.44547091694800955,
+    "title_score": 0.0,
+    "title": "韓國 四時歌의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.4414,
+    "content": 0.44141672309011837,
+    "title_score": 0.0,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-482",
+    "best": 0.4385,
+    "content": 0.4384765625,
+    "title_score": 0.0,
+    "title": "The Woodlanders",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_019",
+    "best": 0.4378,
+    "content": 0.43781072443181823,
+    "title_score": 0.0,
+    "title": "배따라기",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45",
+    "best": 0.4368,
+    "content": 0.43684895833333326,
+    "title_score": 0.0,
+    "title": "Anne of Green Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.4312,
+    "content": 0.43115234375,
+    "title_score": 0.0,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_008",
+    "best": 0.4169,
+    "content": 0.41691080729166663,
+    "title_score": 0.0,
+    "title": "상록수",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063883",
+    "best": 0.4161,
+    "content": 0.4160782908905051,
+    "title_score": 0.0,
+    "title": "황순원 소설의 이미지 분석을 통한 동일성 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_021",
+    "best": 0.3787,
+    "content": 0.378662109375,
+    "title_score": 0.0,
+    "title": "정지용 시집",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-122",
+    "best": 0.3648,
+    "content": 0.36482747395833326,
+    "title_score": 0.0,
+    "title": "The Return of the Native",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_034",
+    "best": 0.3289,
+    "content": 0.3289008745051154,
+    "title_score": 0.0,
+    "title": "귀의 성",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065025",
+    "best": 0.3027,
+    "content": 0.302734375,
+    "title_score": 0.0,
+    "title": "李泰俊文學硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-143",
+    "best": 0.2657,
+    "content": 0.26567910102467407,
+    "title_score": 0.0,
+    "title": "The Mayor of Casterbridge",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063422",
+    "best": 0.2037,
+    "content": 0.2037353515625,
+    "title_score": 0.0,
+    "title": "蘆溪 朴仁老의 詩歌硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.1357,
+    "content": 0.1357421875,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

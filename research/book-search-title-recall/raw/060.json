@@ -1,0 +1,489 @@
+{
+ "kind": "title_en_kr",
+ "query": "오페라의 유령",
+ "targets": [
+  "LIT-GUTENBERG-175"
+ ],
+ "on": {
+  "rewritten": "파리 오페라하우스, 낭만적 사랑과 비극, 고독한 천재, 숨겨진 과거와 복수, 초자연적 존재",
+  "elapsed_ms": 1402.5,
+  "wall_s": 1.97,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-175",
+    "best": 0.6129,
+    "content": 0.6128752297221478,
+    "title_score": 0.0,
+    "title": "The Phantom of the Opera",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1752",
+    "best": 0.4486,
+    "content": 0.4486378321175063,
+    "title_score": 0.0,
+    "title": "The Seagull",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.4473,
+    "content": 0.447305171089283,
+    "title_score": 0.0,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18727",
+    "best": 0.4423,
+    "content": 0.4423330342399049,
+    "title_score": 0.0,
+    "title": "The Railway Children",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17375",
+    "best": 0.4394,
+    "content": 0.4393945430301508,
+    "title_score": 0.0,
+    "title": "The Enchanted Castle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-44747",
+    "best": 0.437,
+    "content": 0.43697415865384615,
+    "title_score": 0.0,
+    "title": "The Red and the Black",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.4275,
+    "content": 0.42753533904901864,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.3971,
+    "content": 0.3971347404072856,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "best": 0.3679,
+    "content": 0.3679490841428098,
+    "title_score": 0.0,
+    "title": "Villette",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3160",
+    "best": 0.3669,
+    "content": 0.36692457932692313,
+    "title_score": 0.0,
+    "title": "The Odyssey",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-60",
+    "best": 0.3666,
+    "content": 0.36655680338541663,
+    "title_score": 0.0,
+    "title": "The Scarlet Pimpernel",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-351",
+    "best": 0.3421,
+    "content": 0.3420720773135406,
+    "title_score": 0.0,
+    "title": "The Betrothed",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-95",
+    "best": 0.3314,
+    "content": 0.331429745444333,
+    "title_score": 0.0,
+    "title": "The Prisoner of Zenda",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "best": 0.3273,
+    "content": 0.32729085286458326,
+    "title_score": 0.0,
+    "title": "The Innocents Abroad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "best": 0.3169,
+    "content": 0.3169293001825507,
+    "title_score": 0.0,
+    "title": "Great Expectations",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "best": 0.3062,
+    "content": 0.30623372395833326,
+    "title_score": 0.0,
+    "title": "The Woman in White",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-689",
+    "best": 0.3016,
+    "content": 0.30155436197916663,
+    "title_score": 0.0,
+    "title": "The Death of Ivan Ilyich",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_003",
+    "best": 0.2825,
+    "content": 0.2825382406194584,
+    "title_score": 0.0,
+    "title": "님의 침묵",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_039",
+    "best": 0.2821,
+    "content": 0.2670487929515013,
+    "title_score": 0.0513,
+    "title": "해파리의 노래",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.2578,
+    "content": 0.25776163736979163,
+    "title_score": 0.0,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-204",
+    "best": 0.2508,
+    "content": 0.2508219842567704,
+    "title_score": 0.0,
+    "title": "The Innocence of Father Brown",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "best": 0.2477,
+    "content": 0.24769083658854163,
+    "title_score": 0.0,
+    "title": "Little Women",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_007",
+    "best": 0.2437,
+    "content": 0.24365684992898695,
+    "title_score": 0.0,
+    "title": "태평천하",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-394",
+    "best": 0.2407,
+    "content": 0.24067179361979163,
+    "title_score": 0.0,
+    "title": "Cranford",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "best": 0.2207,
+    "content": 0.22074751420454553,
+    "title_score": 0.0,
+    "title": "Little Dorrit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2610",
+    "best": 0.2041,
+    "content": 0.2041015625000001,
+    "title_score": 0.0,
+    "title": "The Hunchback of Notre-Dame",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.1943,
+    "content": 0.1943359375,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-227",
+    "best": 0.1609,
+    "content": 0.16087757457386376,
+    "title_score": 0.0,
+    "title": "The Secret Sharer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_001",
+    "best": 0.1394,
+    "content": 0.139404296875,
+    "title_score": 0.0,
+    "title": "무정",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-940",
+    "best": 0.1362,
+    "content": 0.13615833629261376,
+    "title_score": 0.0,
+    "title": "The Spy",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 826.3,
+  "wall_s": 1.74,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-175",
+    "best": 0.6935,
+    "content": 0.6934983128452848,
+    "title_score": 0.0,
+    "title": "The Phantom of the Opera",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.4086,
+    "content": 0.40855345495346795,
+    "title_score": 0.0,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-601",
+    "best": 0.3904,
+    "content": 0.39038647127863324,
+    "title_score": 0.0,
+    "title": "The Monk",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-209",
+    "best": 0.3597,
+    "content": 0.3596942608173077,
+    "title_score": 0.0,
+    "title": "The Turn of the Screw",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "best": 0.3387,
+    "content": 0.33867471549692085,
+    "title_score": 0.0,
+    "title": "The Country of the Blind",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-46",
+    "best": 0.3029,
+    "content": 0.30293082693352835,
+    "title_score": 0.0,
+    "title": "A Christmas Carol",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-696",
+    "best": 0.2778,
+    "content": 0.2777966076084253,
+    "title_score": 0.0,
+    "title": "The Castle of Otranto",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-786",
+    "best": 0.2695,
+    "content": 0.26953125,
+    "title_score": 0.0,
+    "title": "Hard Times",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23700",
+    "best": 0.2668,
+    "content": 0.2668013139204546,
+    "title_score": 0.0,
+    "title": "The Decameron",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.2584,
+    "content": 0.2584085970744233,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-77",
+    "best": 0.2395,
+    "content": 0.2395474346527583,
+    "title_score": 0.0,
+    "title": "Five Children and It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1448",
+    "best": 0.2293,
+    "content": 0.22927929268965908,
+    "title_score": 0.0,
+    "title": "Heidi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-550",
+    "best": 0.2215,
+    "content": 0.22154744466145826,
+    "title_score": 0.0,
+    "title": "Silas Marner",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "best": 0.2179,
+    "content": 0.21785990397135413,
+    "title_score": 0.0,
+    "title": "The Woman in White",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "best": 0.1912,
+    "content": 0.191162109375,
+    "title_score": 0.0,
+    "title": "Little Women",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "best": 0.1895,
+    "content": 0.1894531250000001,
+    "title_score": 0.0,
+    "title": "Great Expectations",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.1871,
+    "content": 0.1871337890625,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "best": 0.1289,
+    "content": 0.12890625,
+    "title_score": 0.0,
+    "title": "The Faerie Queene",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18727",
+    "best": 0.1174,
+    "content": 0.11737060546875,
+    "title_score": 0.0,
+    "title": "The Railway Children",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.0706,
+    "content": 0.070556640625,
+    "title_score": 0.0,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2610",
+    "best": 0.0538,
+    "content": 0.053802490234375,
+    "title_score": 0.0,
+    "title": "The Hunchback of Notre-Dame",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "best": 0.0362,
+    "content": 0.036224365234375,
+    "title_score": 0.0,
+    "title": "Villette",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

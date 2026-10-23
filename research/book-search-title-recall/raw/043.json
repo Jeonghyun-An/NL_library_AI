@@ -1,0 +1,561 @@
+{
+ "kind": "title_en_kr",
+ "query": "작은 아씨들",
+ "targets": [
+  "LIT-GUTENBERG-514"
+ ],
+ "on": {
+  "rewritten": "가족 간의 따뜻한 사랑, 여성의 성장과 자아 찾기, 19세기 미국 가정의 일상, 여성의 사회적 역할, 자매애, 꿈과 현실의 갈등",
+  "elapsed_ms": 1735.6,
+  "wall_s": 1.89,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "best": 0.543,
+    "content": 0.543031336911421,
+    "title_score": 0.0,
+    "title": "Little Women",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064428",
+    "best": 0.4072,
+    "content": 0.398857088798259,
+    "title_score": 0.0345,
+    "title": "가정소설 작품세계의 시대적 변모",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065087",
+    "best": 0.345,
+    "content": 0.337281421629713,
+    "title_score": 0.029,
+    "title": "日帝 强占期 韓國小說에 나타난 獨立運動家像 硏",
+    "title_remainder": "문학적 형상화 과정과 작가 의 현실인식을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.341,
+    "content": 0.34096479634921095,
+    "title_score": 0.0,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.3301,
+    "content": 0.3198488249125123,
+    "title_score": 0.0377,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.3108,
+    "content": 0.310841778101166,
+    "title_score": 0.0,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-351",
+    "best": 0.2952,
+    "content": 0.295184795673077,
+    "title_score": 0.0,
+    "title": "The Betrothed",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1260",
+    "best": 0.2926,
+    "content": 0.29255266023420246,
+    "title_score": 0.0,
+    "title": "Jane Eyre",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_001",
+    "best": 0.2915,
+    "content": 0.29148356119791663,
+    "title_score": 0.0,
+    "title": "무정",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "best": 0.2882,
+    "content": 0.28822835286458326,
+    "title_score": 0.0,
+    "title": "The Old Curiosity Shop",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_009",
+    "best": 0.2723,
+    "content": 0.2722802952501685,
+    "title_score": 0.0,
+    "title": "인간문제",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.2658,
+    "content": 0.2657814988198801,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5200",
+    "best": 0.2646,
+    "content": 0.26462809244791663,
+    "title_score": 0.0,
+    "title": "The Metamorphosis",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1337",
+    "best": 0.2573,
+    "content": 0.25730387369791663,
+    "title_score": 0.0,
+    "title": "The Black Arrow",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-145",
+    "best": 0.2565,
+    "content": 0.25649809976360305,
+    "title_score": 0.0,
+    "title": "Middlemarch",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-141",
+    "best": 0.2507,
+    "content": 0.25065311480504915,
+    "title_score": 0.0,
+    "title": "Mansfield Park",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45",
+    "best": 0.2262,
+    "content": 0.22621817741063188,
+    "title_score": 0.0,
+    "title": "Anne of Green Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-143",
+    "best": 0.2213,
+    "content": 0.22131848996589776,
+    "title_score": 0.0,
+    "title": "The Mayor of Casterbridge",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065025",
+    "best": 0.2165,
+    "content": 0.216461181640625,
+    "title_score": 0.0,
+    "title": "李泰俊文學硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7469",
+    "best": 0.2163,
+    "content": 0.2163085937500001,
+    "title_score": 0.0,
+    "title": "Daniel Deronda",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-550",
+    "best": 0.2097,
+    "content": 0.20972783149448349,
+    "title_score": 0.0,
+    "title": "Silas Marner",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-122",
+    "best": 0.2085,
+    "content": 0.2084503173828125,
+    "title_score": 0.0,
+    "title": "The Return of the Native",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "best": 0.2049,
+    "content": 0.20493351367221668,
+    "title_score": 0.0,
+    "title": "The Country of the Blind",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-105",
+    "best": 0.1986,
+    "content": 0.1986113363241725,
+    "title_score": 0.0,
+    "title": "Persuasion",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1342",
+    "best": 0.1957,
+    "content": 0.19566098689508526,
+    "title_score": 0.0,
+    "title": "Pride and Prejudice",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-767",
+    "best": 0.1919,
+    "content": 0.19192036529749246,
+    "title_score": 0.0,
+    "title": "Agnes Grey",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1056",
+    "best": 0.1862,
+    "content": 0.1861777208730191,
+    "title_score": 0.0,
+    "title": "Martin Eden",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.118,
+    "content": 0.11798095703125,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-28054",
+    "best": 0.0693,
+    "content": 0.06927490234375,
+    "title_score": 0.0,
+    "title": "The Brothers Karamazov",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-44747",
+    "best": 0.0586,
+    "content": 0.058563232421875,
+    "title_score": 0.0,
+    "title": "The Red and the Black",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1230.4,
+  "wall_s": 1.78,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "best": 0.5487,
+    "content": 0.5487472296448714,
+    "title_score": 0.0,
+    "title": "Little Women",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "best": 0.5011,
+    "content": 0.501136359881736,
+    "title_score": 0.0,
+    "title": "Little Dorrit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2788",
+    "best": 0.4809,
+    "content": 0.4809242385679947,
+    "title_score": 0.0,
+    "title": "Little Men",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-766",
+    "best": 0.4641,
+    "content": 0.4640642398728795,
+    "title_score": 0.0,
+    "title": "David Copperfield",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.4511,
+    "content": 0.4511313231273031,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.4501,
+    "content": 0.4500921081292443,
+    "title_score": 0.0,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.4496,
+    "content": 0.449618418706798,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "best": 0.4004,
+    "content": 0.400443237810703,
+    "title_score": 0.0,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.3965,
+    "content": 0.3964805361438868,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45",
+    "best": 0.3951,
+    "content": 0.39505051733740404,
+    "title_score": 0.0,
+    "title": "Anne of Green Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-767",
+    "best": 0.39,
+    "content": 0.3899861082077054,
+    "title_score": 0.0,
+    "title": "Agnes Grey",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2097",
+    "best": 0.3883,
+    "content": 0.388257930185243,
+    "title_score": 0.0,
+    "title": "The Sign of the Four",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-146",
+    "best": 0.3847,
+    "content": 0.38469149868510844,
+    "title_score": 0.0,
+    "title": "A Little Princess",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "best": 0.3328,
+    "content": 0.33278010684981574,
+    "title_score": 0.0,
+    "title": "The Old Curiosity Shop",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_007",
+    "best": 0.3058,
+    "content": 0.3058249271847543,
+    "title_score": 0.0,
+    "title": "태평천하",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-370",
+    "best": 0.2986,
+    "content": 0.29855442323450354,
+    "title_score": 0.0,
+    "title": "Moll Flanders",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "best": 0.2923,
+    "content": 0.29229736328125,
+    "title_score": 0.0,
+    "title": "The Innocents Abroad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2153",
+    "best": 0.292,
+    "content": 0.2919921875000001,
+    "title_score": 0.0,
+    "title": "Mary Barton",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "best": 0.2919,
+    "content": 0.291865212139938,
+    "title_score": 0.0,
+    "title": "Roughing It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-969",
+    "best": 0.2862,
+    "content": 0.28619384765625,
+    "title_score": 0.0,
+    "title": "The Tenant of Wildfell Hall",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-541",
+    "best": 0.2711,
+    "content": 0.27112926136363646,
+    "title_score": 0.0,
+    "title": "The Age of Innocence",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11",
+    "best": 0.2701,
+    "content": 0.27007039388020826,
+    "title_score": 0.0,
+    "title": "Alice's Adventures in Wonderland",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "best": 0.2575,
+    "content": 0.25745646158854163,
+    "title_score": 0.0,
+    "title": "The Mill on the Floss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "best": 0.2137,
+    "content": 0.2137318771482447,
+    "title_score": 0.0,
+    "title": "No Name",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2759",
+    "best": 0.2132,
+    "content": 0.21320502903590777,
+    "title_score": 0.0,
+    "title": "The Man in the Iron Mask",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-903",
+    "best": 0.1595,
+    "content": 0.15949041193181823,
+    "title_score": 0.0,
+    "title": "The White Company",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064069",
+    "best": 0.0853,
+    "content": 0.08526611328125,
+    "title_score": 0.0,
+    "title": "牧隱 李穡의 詩文學 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-161",
+    "best": 0.0624,
+    "content": 0.06243896484375,
+    "title_score": 0.0,
+    "title": "Sense and Sensibility",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064623",
+    "best": 0.0547,
+    "content": 0.0546875,
+    "title_score": 0.0,
+    "title": "韓國基督敎 初期 讚頌詩歌의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.0374,
+    "content": 0.037384033203125,
+    "title_score": 0.0,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

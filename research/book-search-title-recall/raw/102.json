@@ -1,0 +1,559 @@
+{
+ "kind": "judged",
+ "query": "레 미제라블 같은 소설",
+ "targets": [],
+ "on": {
+  "rewritten": "불의에 대한 저항, 사회 부조리와 빈곤, 인간애와 연대, 희생과 구원, 역사적 격변 속 개인의 삶",
+  "elapsed_ms": 1493.2,
+  "wall_s": 2.02,
+  "books": [
+   {
+    "book_id": "CNTS-00052065041",
+    "best": 0.4978,
+    "content": 0.4978429499919089,
+    "title_score": 0.0,
+    "title": "韓國 戰後小說의 휴머니즘 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065087",
+    "best": 0.4712,
+    "content": 0.47117623269304465,
+    "title_score": 0.0,
+    "title": "日帝 强占期 韓國小說에 나타난 獨立運動家像 硏",
+    "title_remainder": "문학적 형상화 과정과 작가 의 현실인식을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063883",
+    "best": 0.4238,
+    "content": 0.4055336551545078,
+    "title_score": 0.0769,
+    "title": "황순원 소설의 이미지 분석을 통한 동일성 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.4144,
+    "content": 0.3972342354910714,
+    "title_score": 0.0714,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.4084,
+    "content": 0.40842535450810324,
+    "title_score": 0.0,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.3973,
+    "content": 0.3973421567853852,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-28054",
+    "best": 0.3587,
+    "content": 0.3587059303977138,
+    "title_score": 0.0,
+    "title": "The Brothers Karamazov",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_016",
+    "best": 0.3506,
+    "content": 0.3506053417793906,
+    "title_score": 0.0,
+    "title": "탈출기",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-59244",
+    "best": 0.3437,
+    "content": 0.34366861979166663,
+    "title_score": 0.0,
+    "title": "The Red House Mystery",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "best": 0.3419,
+    "content": 0.341866050451359,
+    "title_score": 0.0,
+    "title": "A Tale of Two Cities",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_009",
+    "best": 0.3389,
+    "content": 0.32471653284179447,
+    "title_score": 0.0526,
+    "title": "인간문제",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1688",
+    "best": 0.3326,
+    "content": 0.3325950716803707,
+    "title_score": 0.0,
+    "title": "The People of the Abyss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "best": 0.3078,
+    "content": 0.30782695001163496,
+    "title_score": 0.0,
+    "title": "The Jungle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "best": 0.3051,
+    "content": 0.3051137667673718,
+    "title_score": 0.0,
+    "title": "Lord Jim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_007",
+    "best": 0.3001,
+    "content": 0.30013020833333326,
+    "title_score": 0.0,
+    "title": "태평천하",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-122",
+    "best": 0.2724,
+    "content": 0.27242275686258777,
+    "title_score": 0.0,
+    "title": "The Return of the Native",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-4276",
+    "best": 0.2646,
+    "content": 0.26462809244791663,
+    "title_score": 0.0,
+    "title": "North and South",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "best": 0.2586,
+    "content": 0.258575439453125,
+    "title_score": 0.0,
+    "title": "Little Dorrit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-376",
+    "best": 0.2573,
+    "content": 0.25730387369791663,
+    "title_score": 0.0,
+    "title": "A Journal of the Plague Year",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45524",
+    "best": 0.2411,
+    "content": 0.24107869466145826,
+    "title_score": 0.0,
+    "title": "The Open Boat and Other Stories",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-786",
+    "best": 0.2399,
+    "content": 0.23986354352016048,
+    "title_score": 0.0,
+    "title": "Hard Times",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.2387,
+    "content": 0.238739013671875,
+    "title_score": 0.0,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.2365,
+    "content": 0.2365444004124373,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23245",
+    "best": 0.2245,
+    "content": 0.22447957863991974,
+    "title_score": 0.0,
+    "title": "The Story Girl",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1938",
+    "best": 0.1928,
+    "content": 0.19281600708846547,
+    "title_score": 0.0,
+    "title": "Resurrection",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "best": 0.1901,
+    "content": 0.19011896306818188,
+    "title_score": 0.0,
+    "title": "Our Mutual Friend",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_012",
+    "best": 0.1821,
+    "content": 0.18212890625,
+    "title_score": 0.0,
+    "title": "홍길동전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3669",
+    "best": 0.1774,
+    "content": 0.17741255326704553,
+    "title_score": 0.0,
+    "title": "The Pathfinder",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "best": 0.1609,
+    "content": 0.16087757457386376,
+    "title_score": 0.0,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-730",
+    "best": 0.1032,
+    "content": 0.10321044921875,
+    "title_score": 0.0,
+    "title": "Oliver Twist",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 753.8,
+  "wall_s": 1.56,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-44747",
+    "best": 0.5514,
+    "content": 0.5514134669263187,
+    "title_score": 0.0,
+    "title": "The Red and the Black",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.5229,
+    "content": 0.5228596624093804,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "best": 0.4858,
+    "content": 0.485839458730593,
+    "title_score": 0.0,
+    "title": "Villette",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-967",
+    "best": 0.4352,
+    "content": 0.4351781604839545,
+    "title_score": 0.0,
+    "title": "Nicholas Nickleby",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1259",
+    "best": 0.4261,
+    "content": 0.42608173076923084,
+    "title_score": 0.0,
+    "title": "The Three Musketeers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065073",
+    "best": 0.4234,
+    "content": 0.3948954554771602,
+    "title_score": 0.1176,
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "best": 0.4108,
+    "content": 0.41080806147237425,
+    "title_score": 0.0,
+    "title": "No Name",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-175",
+    "best": 0.4005,
+    "content": 0.400483339223613,
+    "title_score": 0.0,
+    "title": "The Phantom of the Opera",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.3687,
+    "content": 0.36874377360721045,
+    "title_score": 0.0,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-77",
+    "best": 0.3489,
+    "content": 0.34894156007291255,
+    "title_score": 0.0,
+    "title": "Five Children and It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45",
+    "best": 0.337,
+    "content": 0.337005104553172,
+    "title_score": 0.0,
+    "title": "Anne of Green Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-996",
+    "best": 0.3253,
+    "content": 0.32528913478975974,
+    "title_score": 0.0,
+    "title": "Don Quixote",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2759",
+    "best": 0.3213,
+    "content": 0.32131426168746235,
+    "title_score": 0.0,
+    "title": "The Man in the Iron Mask",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "best": 0.3196,
+    "content": 0.31956077679900297,
+    "title_score": 0.0,
+    "title": "The Ambassadors",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23245",
+    "best": 0.3096,
+    "content": 0.30963689630681823,
+    "title_score": 0.0,
+    "title": "The Story Girl",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2638",
+    "best": 0.2837,
+    "content": 0.2836921399521295,
+    "title_score": 0.0,
+    "title": "The Idiot",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "best": 0.282,
+    "content": 0.28202311197916663,
+    "title_score": 0.0,
+    "title": "The Swiss Family Robinson",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-139",
+    "best": 0.2766,
+    "content": 0.27663167317708326,
+    "title_score": 0.0,
+    "title": "The Lost World",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.2605,
+    "content": 0.26050821940104163,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.2569,
+    "content": 0.23501654088666002,
+    "title_score": 0.0714,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "best": 0.2411,
+    "content": 0.24109309703385495,
+    "title_score": 0.0,
+    "title": "Our Mutual Friend",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063568",
+    "best": 0.2091,
+    "content": 0.17774547230113646,
+    "title_score": 0.0952,
+    "title": "염상섭 장편소설의 아이러니 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-128",
+    "best": 0.2029,
+    "content": 0.2028808593750001,
+    "title_score": 0.0,
+    "title": "The Arabian Nights' Entertainments",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5230",
+    "best": 0.1725,
+    "content": 0.17252974076704553,
+    "title_score": 0.0,
+    "title": "The Invisible Man",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18727",
+    "best": 0.154,
+    "content": 0.15399724786931823,
+    "title_score": 0.0,
+    "title": "The Railway Children",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-174",
+    "best": 0.1126,
+    "content": 0.11260986328125,
+    "title_score": 0.0,
+    "title": "The Picture of Dorian Gray",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-145",
+    "best": 0.0721,
+    "content": 0.07208251953125,
+    "title_score": 0.0,
+    "title": "Middlemarch",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-135",
+    "best": 0.0156,
+    "content": 0.015625,
+    "title_score": 0.0,
+    "title": "Les Misérables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "best": 0.0116,
+    "content": 0.011627906933426857,
+    "title_score": 0.0,
+    "title": "Moby-Dick; Or, The Whale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1268",
+    "best": 0.0093,
+    "content": 0.009259259328246117,
+    "title_score": 0.0,
+    "title": "The Mysterious Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

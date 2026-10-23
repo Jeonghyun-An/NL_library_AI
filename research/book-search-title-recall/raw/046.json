@@ -1,0 +1,561 @@
+{
+ "kind": "title_en_kr",
+ "query": "오즈의 마법사",
+ "targets": [
+  "LIT-GUTENBERG-55"
+ ],
+ "on": {
+  "rewritten": "판타지 모험, 꿈과 현실의 경계, 성장과 용기, 마법과 신비, 동화적 상상력",
+  "elapsed_ms": 1210.6,
+  "wall_s": 1.87,
+  "books": [
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.4836,
+    "content": 0.48358817619618755,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "best": 0.4343,
+    "content": 0.434344546048236,
+    "title_score": 0.0,
+    "title": "The Country of the Blind",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.4285,
+    "content": 0.42845885134253703,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.4117,
+    "content": 0.4117369375611293,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11",
+    "best": 0.3922,
+    "content": 0.39221081434658056,
+    "title_score": 0.0,
+    "title": "Alice's Adventures in Wonderland",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-83",
+    "best": 0.3882,
+    "content": 0.3881715428571908,
+    "title_score": 0.0,
+    "title": "From the Earth to the Moon",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-996",
+    "best": 0.3709,
+    "content": 0.3709455217633928,
+    "title_score": 0.0,
+    "title": "Don Quixote",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16",
+    "best": 0.3681,
+    "content": 0.36805052948265127,
+    "title_score": 0.0,
+    "title": "Peter Pan",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.3677,
+    "content": 0.3676744732879239,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.3479,
+    "content": 0.3479029637034097,
+    "title_score": 0.0,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-74",
+    "best": 0.3346,
+    "content": 0.3346206585824958,
+    "title_score": 0.0,
+    "title": "The Adventures of Tom Sawyer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "best": 0.3262,
+    "content": 0.3261995519172912,
+    "title_score": 0.0,
+    "title": "Villette",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "best": 0.3181,
+    "content": 0.3181434044471154,
+    "title_score": 0.0,
+    "title": "Adventures of Huckleberry Finn",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-146",
+    "best": 0.3174,
+    "content": 0.317432380896426,
+    "title_score": 0.0,
+    "title": "A Little Princess",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-84",
+    "best": 0.3174,
+    "content": 0.31737069563108367,
+    "title_score": 0.0,
+    "title": "Frankenstein",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2610",
+    "best": 0.3104,
+    "content": 0.31039084243230397,
+    "title_score": 0.0,
+    "title": "The Hunchback of Notre-Dame",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-25344",
+    "best": 0.2899,
+    "content": 0.28988370028409094,
+    "title_score": 0.0,
+    "title": "The Scarlet Letter",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-12",
+    "best": 0.2732,
+    "content": 0.27319327555638484,
+    "title_score": 0.0,
+    "title": "Through the Looking-Glass",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_021",
+    "best": 0.268,
+    "content": 0.2679972327189569,
+    "title_score": 0.0,
+    "title": "정지용 시집",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1056",
+    "best": 0.2675,
+    "content": 0.26747038460661987,
+    "title_score": 0.0,
+    "title": "Martin Eden",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-514",
+    "best": 0.2572,
+    "content": 0.25724110632613106,
+    "title_score": 0.0,
+    "title": "Little Women",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-131",
+    "best": 0.2541,
+    "content": 0.2540884425532598,
+    "title_score": 0.0,
+    "title": "The Pilgrim's Progress",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-345",
+    "best": 0.2505,
+    "content": 0.2504882812500001,
+    "title_score": 0.0,
+    "title": "Dracula",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-289",
+    "best": 0.2205,
+    "content": 0.22053019205729163,
+    "title_score": 0.0,
+    "title": "The Wind in the Willows",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "best": 0.2144,
+    "content": 0.2144012451171875,
+    "title_score": 0.0,
+    "title": "The Faerie Queene",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23245",
+    "best": 0.1997,
+    "content": 0.19966264204545459,
+    "title_score": 0.0,
+    "title": "The Story Girl",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-120",
+    "best": 0.1799,
+    "content": 0.1799094460227273,
+    "title_score": 0.0,
+    "title": "Treasure Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "best": 0.1321,
+    "content": 0.13213556463068188,
+    "title_score": 0.0,
+    "title": "The History of Tom Jones, a Foundling",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-969",
+    "best": 0.0823,
+    "content": 0.082275390625,
+    "title_score": 0.0,
+    "title": "The Tenant of Wildfell Hall",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-209",
+    "best": 0.0545,
+    "content": 0.05450439453125,
+    "title_score": 0.0,
+    "title": "The Turn of the Screw",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1240.5,
+  "wall_s": 1.86,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-55",
+    "best": 0.7205,
+    "content": 0.7205048286875266,
+    "title_score": 0.0,
+    "title": "The Wonderful Wizard of Oz",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2781",
+    "best": 0.4052,
+    "content": 0.4051984798108824,
+    "title_score": 0.0,
+    "title": "Just So Stories",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2350",
+    "best": 0.3948,
+    "content": 0.39481454141444994,
+    "title_score": 0.0,
+    "title": "His Last Bow",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3160",
+    "best": 0.3848,
+    "content": 0.3847886940333095,
+    "title_score": 0.0,
+    "title": "The Odyssey",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-77",
+    "best": 0.3345,
+    "content": 0.33446425505821253,
+    "title_score": 0.0,
+    "title": "Five Children and It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-996",
+    "best": 0.3257,
+    "content": 0.3257493239182693,
+    "title_score": 0.0,
+    "title": "Don Quixote",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "best": 0.3107,
+    "content": 0.3107395905428454,
+    "title_score": 0.0,
+    "title": "The Faerie Queene",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "best": 0.3106,
+    "content": 0.31058443509615385,
+    "title_score": 0.0,
+    "title": "The Adventures of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-86",
+    "best": 0.3094,
+    "content": 0.30938163307980004,
+    "title_score": 0.0,
+    "title": "A Connecticut Yankee in King Arthur's Court",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2226",
+    "best": 0.305,
+    "content": 0.30498197020501505,
+    "title_score": 0.0,
+    "title": "Kim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "best": 0.3023,
+    "content": 0.30234772964333,
+    "title_score": 0.0,
+    "title": "The Country of the Blind",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "best": 0.3019,
+    "content": 0.301871033848649,
+    "title_score": 0.0,
+    "title": "The Canterbury Tales",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17375",
+    "best": 0.2892,
+    "content": 0.28924560546875,
+    "title_score": 0.0,
+    "title": "The Enchanted Castle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16389",
+    "best": 0.2464,
+    "content": 0.24644274428405688,
+    "title_score": 0.0,
+    "title": "The Enchanted April",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2097",
+    "best": 0.2427,
+    "content": 0.242706298828125,
+    "title_score": 0.0,
+    "title": "The Sign of the Four",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2852",
+    "best": 0.2369,
+    "content": 0.23691319409107325,
+    "title_score": 0.0,
+    "title": "The Hound of the Baskervilles",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17396",
+    "best": 0.2234,
+    "content": 0.22342588241524575,
+    "title_score": 0.0,
+    "title": "The Secret Garden",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "best": 0.2204,
+    "content": 0.22042284817492475,
+    "title_score": 0.0,
+    "title": "Great Expectations",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3289",
+    "best": 0.2143,
+    "content": 0.214324951171875,
+    "title_score": 0.0,
+    "title": "The Poison Belt",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-209",
+    "best": 0.2086,
+    "content": 0.20856876564734206,
+    "title_score": 0.0,
+    "title": "The Turn of the Screw",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-67979",
+    "best": 0.2002,
+    "content": 0.20019188066118354,
+    "title_score": 0.0,
+    "title": "The Blue Castle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-730",
+    "best": 0.198,
+    "content": 0.19803180340060178,
+    "title_score": 0.0,
+    "title": "Oliver Twist",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-128",
+    "best": 0.1933,
+    "content": 0.19328169389204553,
+    "title_score": 0.0,
+    "title": "The Arabian Nights' Entertainments",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "best": 0.175,
+    "content": 0.1750266335227273,
+    "title_score": 0.0,
+    "title": "The Innocents Abroad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-103",
+    "best": 0.1646,
+    "content": 0.16455078125,
+    "title_score": 0.0,
+    "title": "Around the World in Eighty Days",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.105,
+    "content": 0.10504150390625,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063978",
+    "best": 0.0869,
+    "content": 0.0869140625,
+    "title_score": 0.0,
+    "title": "1930年代 世態小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "best": 0.0638,
+    "content": 0.0638427734375,
+    "title_score": 0.0,
+    "title": "The Jungle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "best": 0.0624,
+    "content": 0.06243896484375,
+    "title_score": 0.0,
+    "title": "A Tale of Two Cities",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049202451",
+    "best": 0.0498,
+    "content": 0.049774169921875,
+    "title_score": 0.0,
+    "title": "에이즈가 아프리카 경제에 미치는 영향",
+    "title_remainder": "남부아프리카 3개 국가들을 中心으로",
+    "doc_type": "policy"
+   }
+  ]
+ }
+}

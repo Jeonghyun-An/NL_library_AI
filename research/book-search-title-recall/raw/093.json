@@ -1,0 +1,559 @@
+{
+ "kind": "judged",
+ "query": "조선시대 사랑 이야기",
+ "targets": [],
+ "on": {
+  "rewritten": "궁궐 암투와 애정 갈등, 신분 차이를 극복한 숭고한 사랑, 비극적인 운명과 애절한 이별, 역사적 배경 속 개인의 욕망과 갈등, 조선 시대 지배층의 권력 암투",
+  "elapsed_ms": 1923.3,
+  "wall_s": 2.13,
+  "books": [
+   {
+    "book_id": "CNTS-00052064428",
+    "best": 0.6269,
+    "content": 0.6121411897593043,
+    "title_score": 0.0952,
+    "title": "가정소설 작품세계의 시대적 변모",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063539",
+    "best": 0.5046,
+    "content": 0.4801717106729947,
+    "title_score": 0.1176,
+    "title": "조선후기 세태소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_014",
+    "best": 0.4759,
+    "content": 0.4759043647170561,
+    "title_score": 0.0,
+    "title": "구운몽",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "best": 0.4732,
+    "content": 0.4732434123669724,
+    "title_score": 0.0,
+    "title": "The Star Rover",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063979",
+    "best": 0.4726,
+    "content": 0.4551314569775775,
+    "title_score": 0.08,
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "best": 0.4318,
+    "content": 0.40186648756940013,
+    "title_score": 0.125,
+    "title": "조선조 가정소설 연구",
+    "title_remainder": "계모형.쟁총형 소설을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "best": 0.4284,
+    "content": 0.4284401220109719,
+    "title_score": 0.0,
+    "title": "The Canterbury Tales",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-227",
+    "best": 0.3969,
+    "content": 0.3968695115205313,
+    "title_score": 0.0,
+    "title": "The Secret Sharer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23700",
+    "best": 0.373,
+    "content": 0.37302809495192313,
+    "title_score": 0.0,
+    "title": "The Decameron",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2759",
+    "best": 0.3675,
+    "content": 0.3675449916294642,
+    "title_score": 0.0,
+    "title": "The Man in the Iron Mask",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063078",
+    "best": 0.3521,
+    "content": 0.3520749336157384,
+    "title_score": 0.0,
+    "title": "옥루몽 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-26",
+    "best": 0.3422,
+    "content": 0.3421666061161803,
+    "title_score": 0.0,
+    "title": "Paradise Lost",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2276",
+    "best": 0.3359,
+    "content": 0.33585120064159824,
+    "title_score": 0.0,
+    "title": "The Pioneers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-893",
+    "best": 0.3234,
+    "content": 0.32337726138279366,
+    "title_score": 0.0,
+    "title": "The Wonderful Adventures of Nils",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1251",
+    "best": 0.3026,
+    "content": 0.30264488893951735,
+    "title_score": 0.0,
+    "title": "Le Morte d'Arthur",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_001",
+    "best": 0.2944,
+    "content": 0.2944450079582749,
+    "title_score": 0.0,
+    "title": "무정",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-128",
+    "best": 0.2838,
+    "content": 0.2838407412646351,
+    "title_score": 0.0,
+    "title": "The Arabian Nights' Entertainments",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_031",
+    "best": 0.2832,
+    "content": 0.2831704583542628,
+    "title_score": 0.0,
+    "title": "박씨전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2638",
+    "best": 0.2826,
+    "content": 0.28263346354166663,
+    "title_score": 0.0,
+    "title": "The Idiot",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2610",
+    "best": 0.2792,
+    "content": 0.27916641270050147,
+    "title_score": 0.0,
+    "title": "The Hunchback of Notre-Dame",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063982",
+    "best": 0.2737,
+    "content": 0.2736871923321966,
+    "title_score": 0.0,
+    "title": "韓國 漢文小說의 背景硏究",
+    "title_remainder": "中國과의 關係를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_003",
+    "best": 0.2551,
+    "content": 0.2551421387779338,
+    "title_score": 0.0,
+    "title": "님의 침묵",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "best": 0.2524,
+    "content": 0.2523867967842812,
+    "title_score": 0.0,
+    "title": "No Name",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_037",
+    "best": 0.2297,
+    "content": 0.22969537495205616,
+    "title_score": 0.0,
+    "title": "개척자",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-351",
+    "best": 0.2008,
+    "content": 0.20077141358475425,
+    "title_score": 0.0,
+    "title": "The Betrothed",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.1896,
+    "content": 0.18961958451704553,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_034",
+    "best": 0.17,
+    "content": 0.1700439453125,
+    "title_score": 0.0,
+    "title": "귀의 성",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23245",
+    "best": 0.1693,
+    "content": 0.16925603693181823,
+    "title_score": 0.0,
+    "title": "The Story Girl",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.1477,
+    "content": 0.14767178622159094,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5465",
+    "best": 0.071,
+    "content": 0.071044921875,
+    "title_score": 0.0,
+    "title": "Emily of New Moon",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1766.7,
+  "wall_s": 1.98,
+  "books": [
+   {
+    "book_id": "WS_001",
+    "best": 0.6656,
+    "content": 0.6655544762442627,
+    "title_score": 0.0,
+    "title": "무정",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_034",
+    "best": 0.6493,
+    "content": 0.6492575074532865,
+    "title_score": 0.0,
+    "title": "귀의 성",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "best": 0.6076,
+    "content": 0.5869889898444586,
+    "title_score": 0.125,
+    "title": "조선조 가정소설 연구",
+    "title_remainder": "계모형.쟁총형 소설을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063369",
+    "best": 0.5588,
+    "content": 0.5404522235576923,
+    "title_score": 0.1,
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063539",
+    "best": 0.5554,
+    "content": 0.5334649298039416,
+    "title_score": 0.1176,
+    "title": "조선후기 세태소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_037",
+    "best": 0.5429,
+    "content": 0.5428804602410887,
+    "title_score": 0.0,
+    "title": "개척자",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063982",
+    "best": 0.54,
+    "content": 0.5400118028071512,
+    "title_score": 0.0,
+    "title": "韓國 漢文小說의 背景硏究",
+    "title_remainder": "中國과의 關係를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065025",
+    "best": 0.5299,
+    "content": 0.5298549107142857,
+    "title_score": 0.0,
+    "title": "李泰俊文學硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23700",
+    "best": 0.5282,
+    "content": 0.5281629260223414,
+    "title_score": 0.0,
+    "title": "The Decameron",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064428",
+    "best": 0.4992,
+    "content": 0.4793689047080886,
+    "title_score": 0.0952,
+    "title": "가정소설 작품세계의 시대적 변모",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.4824,
+    "content": 0.482421875,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_027",
+    "best": 0.4657,
+    "content": 0.46574073525330595,
+    "title_score": 0.0,
+    "title": "심청전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063268",
+    "best": 0.4643,
+    "content": 0.46434282455273534,
+    "title_score": 0.0,
+    "title": "판소리系 小說의 形成과 展開樣相 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00047956839",
+    "best": 0.4635,
+    "content": 0.43214485114523293,
+    "title_score": 0.1379,
+    "title": "인연의 덫",
+    "title_remainder": "마지막 사랑이 첫사랑에게 보내는 영혼의 편지",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_032",
+    "best": 0.4215,
+    "content": 0.42151012074268646,
+    "title_score": 0.0,
+    "title": "숙영낭자전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "best": 0.3842,
+    "content": 0.3842389073434376,
+    "title_score": 0.0,
+    "title": "The Canterbury Tales",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064735",
+    "best": 0.383,
+    "content": 0.38295549083089264,
+    "title_score": 0.0,
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_031",
+    "best": 0.3653,
+    "content": 0.36525339425636916,
+    "title_score": 0.0,
+    "title": "박씨전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "best": 0.3615,
+    "content": 0.36146129261363646,
+    "title_score": 0.0,
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "title_remainder": "毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-12",
+    "best": 0.3045,
+    "content": 0.30450439453125,
+    "title_score": 0.0,
+    "title": "Through the Looking-Glass",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-996",
+    "best": 0.2985,
+    "content": 0.298498788026358,
+    "title_score": 0.0,
+    "title": "Don Quixote",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-421",
+    "best": 0.2897,
+    "content": 0.28970337494724174,
+    "title_score": 0.0,
+    "title": "Kidnapped",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_007",
+    "best": 0.2617,
+    "content": 0.26171875,
+    "title_score": 0.0,
+    "title": "태평천하",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1251",
+    "best": 0.2584,
+    "content": 0.2584228515625,
+    "title_score": 0.0,
+    "title": "Le Morte d'Arthur",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.2276,
+    "content": 0.22762784090909094,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-245",
+    "best": 0.2128,
+    "content": 0.2127685546875,
+    "title_score": 0.0,
+    "title": "Life on the Mississippi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.1947,
+    "content": 0.19472434303977282,
+    "title_score": 0.0,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_008",
+    "best": 0.1942,
+    "content": 0.1942138671875,
+    "title_score": 0.0,
+    "title": "상록수",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-601",
+    "best": 0.1326,
+    "content": 0.132568359375,
+    "title_score": 0.0,
+    "title": "The Monk",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-128",
+    "best": 0.1311,
+    "content": 0.131103515625,
+    "title_score": 0.0,
+    "title": "The Arabian Nights' Entertainments",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

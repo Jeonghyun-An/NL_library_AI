@@ -1,0 +1,316 @@
+{
+ "kind": "judged",
+ "query": "조선시대 고전소설을 연구한 자료 찾아줘",
+ "targets": [],
+ "on": {
+  "rewritten": "조선시대 소설 연구, 고전 소설 비평, 문학사 연구, 작품 해석, 주제 분석, 등장인물 연구, 시대적 배경, 사회 문화 반영",
+  "elapsed_ms": 1708.8,
+  "wall_s": 2.76,
+  "books": [
+   {
+    "book_id": "CNTS-00052063539",
+    "best": 0.735,
+    "content": 0.7068273440617321,
+    "title_score": 0.24,
+    "title": "조선후기 세태소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064428",
+    "best": 0.6603,
+    "content": 0.6380564689826058,
+    "title_score": 0.1538,
+    "title": "가정소설 작품세계의 시대적 변모",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063979",
+    "best": 0.6436,
+    "content": 0.625428898667802,
+    "title_score": 0.1212,
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063369",
+    "best": 0.6146,
+    "content": 0.5912256659085029,
+    "title_score": 0.1429,
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "best": 0.5805,
+    "content": 0.533890576110694,
+    "title_score": 0.25,
+    "title": "조선조 가정소설 연구",
+    "title_remainder": "계모형.쟁총형 소설을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065073",
+    "best": 0.5255,
+    "content": 0.4930331908249185,
+    "title_score": 0.16,
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063368",
+    "best": 0.4943,
+    "content": 0.4943193427749951,
+    "title_score": 0.0,
+    "title": "韓國古典小說의 文體論的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063078",
+    "best": 0.4759,
+    "content": 0.45406400240384615,
+    "title_score": 0.1,
+    "title": "옥루몽 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064735",
+    "best": 0.4715,
+    "content": 0.47148907696985964,
+    "title_score": 0.0,
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063982",
+    "best": 0.4674,
+    "content": 0.4674203953971974,
+    "title_score": 0.0,
+    "title": "韓國 漢文小說의 背景硏究",
+    "title_remainder": "中國과의 關係를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063987",
+    "best": 0.3238,
+    "content": 0.3238431326266801,
+    "title_score": 0.0,
+    "title": "李光洙小說의 批評的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.3111,
+    "content": 0.3110795454545455,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "best": 0.3026,
+    "content": 0.30257161458333326,
+    "title_score": 0.0,
+    "title": "韓國 近代小說論 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063268",
+    "best": 0.2495,
+    "content": 0.2494895241477273,
+    "title_score": 0.0,
+    "title": "판소리系 小說의 形成과 展開樣相 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.2346,
+    "content": 0.198974609375,
+    "title_score": 0.1111,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064509",
+    "best": 0.1781,
+    "content": 0.1781005859375,
+    "title_score": 0.0,
+    "title": "韓國 仙道說話 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1501.7,
+  "wall_s": 2.56,
+  "books": [
+   {
+    "book_id": "CNTS-00052063539",
+    "best": 0.7719,
+    "content": 0.7476641314622754,
+    "title_score": 0.24,
+    "title": "조선후기 세태소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064428",
+    "best": 0.7524,
+    "content": 0.737930351991732,
+    "title_score": 0.1379,
+    "title": "가정소설 작품세계의 시대적 변모",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063369",
+    "best": 0.7298,
+    "content": 0.713413288478522,
+    "title_score": 0.1429,
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063979",
+    "best": 0.726,
+    "content": 0.7120695526588685,
+    "title_score": 0.1212,
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063368",
+    "best": 0.6698,
+    "content": 0.6698310429053973,
+    "title_score": 0.0,
+    "title": "韓國古典小說의 文體論的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "best": 0.6432,
+    "content": 0.6035476804453922,
+    "title_score": 0.25,
+    "title": "조선조 가정소설 연구",
+    "title_remainder": "계모형.쟁총형 소설을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.6038,
+    "content": 0.603848529457941,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "best": 0.5773,
+    "content": 0.5772611177884616,
+    "title_score": 0.0,
+    "title": "韓國 近代小說論 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063982",
+    "best": 0.5217,
+    "content": 0.5217263481523107,
+    "title_score": 0.0,
+    "title": "韓國 漢文小說의 背景硏究",
+    "title_remainder": "中國과의 關係를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063554",
+    "best": 0.5186,
+    "content": 0.4924367214112506,
+    "title_score": 0.129,
+    "title": "1940년대 초기 한국 농민소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064509",
+    "best": 0.5124,
+    "content": 0.5124236902461099,
+    "title_score": 0.0,
+    "title": "韓國 仙道說話 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064735",
+    "best": 0.4931,
+    "content": 0.49309387843750496,
+    "title_score": 0.0,
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065073",
+    "best": 0.4317,
+    "content": 0.39286023534282855,
+    "title_score": 0.16,
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063268",
+    "best": 0.3676,
+    "content": 0.367571525950652,
+    "title_score": 0.0,
+    "title": "판소리系 小說의 形成과 展開樣相 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063078",
+    "best": 0.3123,
+    "content": 0.28369140625,
+    "title_score": 0.1,
+    "title": "옥루몽 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_034",
+    "best": 0.1113,
+    "content": 0.11126708984375,
+    "title_score": 0.0,
+    "title": "귀의 성",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655488",
+    "best": 0.0541,
+    "content": 0.054107666015625,
+    "title_score": 0.0,
+    "title": "2005년도 세입세출예산안사항별설명서",
+    "title_remainder": "환경노동·건설교통·정보·여성",
+    "doc_type": "book"
+   }
+  ]
+ }
+}

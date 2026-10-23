@@ -126,6 +126,8 @@ async def search_books(
             use_rewrite=req.use_rewrite,
             use_rerank=req.use_rerank,
             doc_scope="book",   # 논문 제외, 도서만 검색
+            # 재작성이 제목만 넣은 질의를 주제어로 바꿔('구운몽' → '요몽, 이상향…') 그 책을 놓치던 것 — 원래 질의로도 찾는다
+            include_original=True,
             db=db,
         )
 
@@ -138,13 +140,15 @@ async def search_books(
                 top_k=req.top_k,
                 use_rewrite=req.use_rewrite,
                 use_rerank=req.use_rerank,
+                include_original=True,
                 db=db,
             )
 
     if isinstance(result, BookSearchResponse):
-        repo = BookRepository(db)
+        # 서지는 한 번에 읽는다 — 원래 질의 갈래까지 합치면 후보가 40~50권이라 책마다 부르면 그만큼 순차 쿼리가 는다
+        book_map = await BookRepository(db).get_by_cnts_ids([bg.book_id for bg in result.books])
         for bg in result.books:
-            book = await repo.get_by_cnts_id(bg.book_id)
+            book = book_map.get(bg.book_id)
             if book:
                 bg.book_info = BookOut.model_validate(book)
         # 제목 일치율 반영: 연관도 = max(제목, 내용), 재정렬 포함

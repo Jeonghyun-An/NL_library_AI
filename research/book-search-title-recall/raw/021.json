@@ -1,0 +1,534 @@
+{
+ "kind": "title_kr",
+ "query": "금수회의록",
+ "targets": [
+  "WS_022"
+ ],
+ "on": {
+  "rewritten": "조선시대 왕실의 비밀 회의록, 정치적 음모와 권력 다툼, 왕조 정치의 실상, 역사적 문서, 고문헌 연구",
+  "elapsed_ms": 1949.0,
+  "wall_s": 2.21,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-1259",
+    "best": 0.5123,
+    "content": 0.5122548348211307,
+    "title_score": 0.0,
+    "title": "The Three Musketeers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "best": 0.4734,
+    "content": 0.4539804725277303,
+    "title_score": 0.0889,
+    "title": "조선조 가정소설 연구",
+    "title_remainder": "계모형.쟁총형 소설을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2759",
+    "best": 0.4695,
+    "content": 0.4694634599541716,
+    "title_score": 0.0,
+    "title": "The Man in the Iron Mask",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063539",
+    "best": 0.4429,
+    "content": 0.4228607301308548,
+    "title_score": 0.087,
+    "title": "조선후기 세태소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "best": 0.4263,
+    "content": 0.4263475673429873,
+    "title_score": 0.0,
+    "title": "No Name",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.4145,
+    "content": 0.41454182455760447,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064428",
+    "best": 0.4071,
+    "content": 0.3974238209599015,
+    "title_score": 0.04,
+    "title": "가정소설 작품세계의 시대적 변모",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063979",
+    "best": 0.396,
+    "content": 0.3868792234527828,
+    "title_score": 0.037,
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063369",
+    "best": 0.3745,
+    "content": 0.3640800620481335,
+    "title_score": 0.0408,
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063982",
+    "best": 0.3622,
+    "content": 0.3621826171875,
+    "title_score": 0.0,
+    "title": "韓國 漢文小說의 背景硏究",
+    "title_remainder": "中國과의 關係를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065117",
+    "best": 0.3493,
+    "content": 0.3492713341346154,
+    "title_score": 0.0,
+    "title": "張維 詩文學 硏究",
+    "title_remainder": "莊子的 天機論을 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063078",
+    "best": 0.3361,
+    "content": 0.32287335268277506,
+    "title_score": 0.0488,
+    "title": "옥루몽 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "best": 0.2897,
+    "content": 0.28973974834646565,
+    "title_score": 0.0,
+    "title": "The Adventures of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "best": 0.2889,
+    "content": 0.2889404296875,
+    "title_score": 0.0,
+    "title": "The Star Rover",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-965",
+    "best": 0.2807,
+    "content": 0.28070068359375,
+    "title_score": 0.0,
+    "title": "The Black Tulip",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064509",
+    "best": 0.2707,
+    "content": 0.2707368429031094,
+    "title_score": 0.0,
+    "title": "韓國 仙道說話 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-95",
+    "best": 0.2501,
+    "content": 0.25008439689949846,
+    "title_score": 0.0,
+    "title": "The Prisoner of Zenda",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063059",
+    "best": 0.2297,
+    "content": 0.22969537495205616,
+    "title_score": 0.0,
+    "title": "朝鮮初期 樓亭記의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2610",
+    "best": 0.212,
+    "content": 0.21199327837753257,
+    "title_score": 0.0,
+    "title": "The Hunchback of Notre-Dame",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1155",
+    "best": 0.1987,
+    "content": 0.19871670594663993,
+    "title_score": 0.0,
+    "title": "The Secret Adversary",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1842",
+    "best": 0.1803,
+    "content": 0.1802978515625,
+    "title_score": 0.0,
+    "title": "Michael Strogoff",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063368",
+    "best": 0.1383,
+    "content": 0.13829456676136376,
+    "title_score": 0.0,
+    "title": "韓國古典小說의 文體論的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064735",
+    "best": 0.1011,
+    "content": 0.10107421875,
+    "title_score": 0.0,
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1837",
+    "best": 0.0969,
+    "content": 0.09686279296875,
+    "title_score": 0.0,
+    "title": "The Prince and the Pauper",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3289",
+    "best": 0.0642,
+    "content": 0.064208984375,
+    "title_score": 0.0,
+    "title": "The Poison Belt",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2226",
+    "best": 0.0579,
+    "content": 0.05792236328125,
+    "title_score": 0.0,
+    "title": "Kim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "best": 0.0544,
+    "content": 0.054412841796875,
+    "title_score": 0.0,
+    "title": "The History of Tom Jones, a Foundling",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 2359.6,
+  "wall_s": 3.38,
+  "books": [
+   {
+    "book_id": "WS_022",
+    "best": 1.0,
+    "content": 0.70703125,
+    "title_score": 1.0,
+    "title": "금수회의록",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "best": 0.7724,
+    "content": 0.772411916749687,
+    "title_score": 0.0,
+    "title": "韓國 近代小說論 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065073",
+    "best": 0.6779,
+    "content": 0.6778588503016127,
+    "title_score": 0.0,
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655651",
+    "best": 0.5875,
+    "content": 0.587471527167553,
+    "title_score": 0.0,
+    "title": "2003년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655891",
+    "best": 0.567,
+    "content": 0.5669991629464286,
+    "title_score": 0.0,
+    "title": "2002년도 예산개요 참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655319",
+    "best": 0.5609,
+    "content": 0.5608579064699795,
+    "title_score": 0.0,
+    "title": "2007년도 기금운용계획안 심의참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655484",
+    "best": 0.5218,
+    "content": 0.5218056955958095,
+    "title_score": 0.0,
+    "title": "변화 선도를 위한 기획예산처 혁신 핸드북",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049204001",
+    "best": 0.4944,
+    "content": 0.47772771031624073,
+    "title_score": 0.08,
+    "title": "북핵 해결 이후 국제사회의 대북 경제지원 활성화 방안",
+    "title_remainder": "양자간 지원을 중심으로",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00052065111",
+    "best": 0.4573,
+    "content": 0.45734197443181823,
+    "title_score": 0.0,
+    "title": "新小說의 近代文學的 位相",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655779",
+    "best": 0.4502,
+    "content": 0.45020692155355624,
+    "title_score": 0.0,
+    "title": "경제백서 1999",
+    "title_remainder": "외환위기 극복과 새천년 대비",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655206",
+    "best": 0.4491,
+    "content": 0.4490584134529718,
+    "title_score": 0.0,
+    "title": "2008년도 기금운용계획안 심의참고자료",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00052063898",
+    "best": 0.443,
+    "content": 0.4430106026785714,
+    "title_score": 0.0,
+    "title": "金洙暎 詩의 모더니즘 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049202839",
+    "best": 0.4054,
+    "content": 0.4053966148942233,
+    "title_score": 0.0,
+    "title": "Diversity in Development",
+    "title_remainder": "Reconsidering the Washington Consensus",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-834",
+    "best": 0.3942,
+    "content": 0.39415564903846156,
+    "title_score": 0.0,
+    "title": "The Memoirs of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "best": 0.3915,
+    "content": 0.39147652415652545,
+    "title_score": 0.0,
+    "title": "The Adventures of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.3782,
+    "content": 0.378192608173077,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.3668,
+    "content": 0.366760273642765,
+    "title_score": 0.0,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.3352,
+    "content": 0.335205078125,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-228",
+    "best": 0.3028,
+    "content": 0.30276920813319963,
+    "title_score": 0.0,
+    "title": "The Aeneid",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.2898,
+    "content": 0.28975423177083326,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "best": 0.2794,
+    "content": 0.27937825520833326,
+    "title_score": 0.0,
+    "title": "Lord Jim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "best": 0.2729,
+    "content": 0.2729496049749248,
+    "title_score": 0.0,
+    "title": "No Name",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "best": 0.2696,
+    "content": 0.2695756392045455,
+    "title_score": 0.0,
+    "title": "조선조 가정소설 연구",
+    "title_remainder": "계모형.쟁총형 소설을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655903",
+    "best": 0.2668,
+    "content": 0.266845703125,
+    "title_score": 0.0,
+    "title": "2002년도 공공기금운용계획서",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "best": 0.263,
+    "content": 0.263044860462989,
+    "title_score": 0.0,
+    "title": "The History of Tom Jones, a Foundling",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-139",
+    "best": 0.2535,
+    "content": 0.2534562248184554,
+    "title_score": 0.0,
+    "title": "The Lost World",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_008",
+    "best": 0.2238,
+    "content": 0.2237548828125,
+    "title_score": 0.0,
+    "title": "상록수",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655489",
+    "best": 0.2196,
+    "content": 0.21963778409090917,
+    "title_score": 0.0,
+    "title": "2005년도 세입세출예산안사항별설명서(산업자원·보건복지)",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.2058,
+    "content": 0.20576615767045459,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "best": 0.1762,
+    "content": 0.1762473366477273,
+    "title_score": 0.0,
+    "title": "Journey to the Centre of the Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

@@ -1,0 +1,250 @@
+{
+ "kind": "author",
+ "query": "코난 도일 셜록 홈즈",
+ "targets": [
+  "LIT-GUTENBERG-1661",
+  "LIT-GUTENBERG-834",
+  "LIT-GUTENBERG-2852",
+  "LIT-GUTENBERG-2097",
+  "LIT-GUTENBERG-2350"
+ ],
+ "on": {
+  "rewritten": "추리, 범죄 수사, 논리적 추론, 과학적 방법, 빅토리아 시대 영국, 명탐정, 수수께끼, 단서 분석",
+  "elapsed_ms": 925.4,
+  "wall_s": 2.73,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "best": 0.4543,
+    "content": 0.45425235615305515,
+    "title_score": 0.0,
+    "title": "The Adventures of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-834",
+    "best": 0.4461,
+    "content": 0.4460712749896545,
+    "title_score": 0.0,
+    "title": "The Memoirs of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2350",
+    "best": 0.4077,
+    "content": 0.4076983863971124,
+    "title_score": 0.0,
+    "title": "His Last Bow",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2097",
+    "best": 0.4026,
+    "content": 0.40262863273377114,
+    "title_score": 0.0,
+    "title": "The Sign of the Four",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3289",
+    "best": 0.3937,
+    "content": 0.39374379634289436,
+    "title_score": 0.0,
+    "title": "The Poison Belt",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-863",
+    "best": 0.3771,
+    "content": 0.37705098418697514,
+    "title_score": 0.0,
+    "title": "The Mysterious Affair at Styles",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2852",
+    "best": 0.3558,
+    "content": 0.35579342853759655,
+    "title_score": 0.0,
+    "title": "The Hound of the Baskervilles",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-204",
+    "best": 0.3389,
+    "content": 0.33892251155288355,
+    "title_score": 0.0,
+    "title": "The Innocence of Father Brown",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "best": 0.2955,
+    "content": 0.29547126470786544,
+    "title_score": 0.0,
+    "title": "The Ambassadors",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1155",
+    "best": 0.2826,
+    "content": 0.2826292293587477,
+    "title_score": 0.0,
+    "title": "The Secret Adversary",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-558",
+    "best": 0.2592,
+    "content": 0.2591857054279456,
+    "title_score": 0.0,
+    "title": "The Thirty-Nine Steps",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-155",
+    "best": 0.2538,
+    "content": 0.2537737423676669,
+    "title_score": 0.0,
+    "title": "The Moonstone",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "best": 0.2108,
+    "content": 0.21084086100260413,
+    "title_score": 0.0,
+    "title": "Little Dorrit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-223",
+    "best": 0.1579,
+    "content": 0.15788130326704553,
+    "title_score": 0.0,
+    "title": "The Wisdom of Father Brown",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "best": 0.1368,
+    "content": 0.13682417436079553,
+    "title_score": 0.0,
+    "title": "The Faerie Queene",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "best": 0.0557,
+    "content": 0.05572509765625,
+    "title_score": 0.0,
+    "title": "Journey to the Centre of the Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-28054",
+    "best": 0.0546,
+    "content": 0.054595947265625,
+    "title_score": 0.0,
+    "title": "The Brothers Karamazov",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.0278,
+    "content": 0.0278472900390625,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 731.7,
+  "wall_s": 2.49,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-834",
+    "best": 0.7466,
+    "content": 0.7465682304591552,
+    "title_score": 0.0,
+    "title": "The Memoirs of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2350",
+    "best": 0.7026,
+    "content": 0.7026417146568169,
+    "title_score": 0.0,
+    "title": "His Last Bow",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2852",
+    "best": 0.6165,
+    "content": 0.6164618373665849,
+    "title_score": 0.0,
+    "title": "The Hound of the Baskervilles",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2097",
+    "best": 0.6139,
+    "content": 0.6138509285141454,
+    "title_score": 0.0,
+    "title": "The Sign of the Four",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "best": 0.4853,
+    "content": 0.48525227896521295,
+    "title_score": 0.0,
+    "title": "The Adventures of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3289",
+    "best": 0.4341,
+    "content": 0.43407750570737946,
+    "title_score": 0.0,
+    "title": "The Poison Belt",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "best": 0.0411,
+    "content": 0.0411376953125,
+    "title_score": 0.0,
+    "title": "Little Dorrit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

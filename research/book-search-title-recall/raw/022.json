@@ -1,0 +1,561 @@
+{
+ "kind": "title_kr",
+ "query": "혈의 누",
+ "targets": [
+  "WS_023"
+ ],
+ "on": {
+  "rewritten": "역사, 복수, 몰락, 가문, 비극, 인간 욕망, 권력 투쟁",
+  "elapsed_ms": 836.9,
+  "wall_s": 2.2,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-893",
+    "best": 0.4927,
+    "content": 0.4927172276662456,
+    "title_score": 0.0,
+    "title": "The Wonderful Adventures of Nils",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-26",
+    "best": 0.4802,
+    "content": 0.48022847622605225,
+    "title_score": 0.0,
+    "title": "Paradise Lost",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23700",
+    "best": 0.3946,
+    "content": 0.39464900697709937,
+    "title_score": 0.0,
+    "title": "The Decameron",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1335",
+    "best": 0.3849,
+    "content": 0.3849422662021085,
+    "title_score": 0.0,
+    "title": "Armadale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "best": 0.3673,
+    "content": 0.36731169329554747,
+    "title_score": 0.0,
+    "title": "A Tale of Two Cities",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "best": 0.3466,
+    "content": 0.34657851908721027,
+    "title_score": 0.0,
+    "title": "The Canterbury Tales",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.3321,
+    "content": 0.33208759014423084,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2759",
+    "best": 0.3186,
+    "content": 0.3185963444361791,
+    "title_score": 0.0,
+    "title": "The Man in the Iron Mask",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.3074,
+    "content": 0.307410522173034,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.3047,
+    "content": 0.30467728043996445,
+    "title_score": 0.0,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "best": 0.3028,
+    "content": 0.3027626417236827,
+    "title_score": 0.0,
+    "title": "The Faerie Queene",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.3014,
+    "content": 0.3014278822248202,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.2979,
+    "content": 0.29792220549969917,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_007",
+    "best": 0.2752,
+    "content": 0.27517233136847463,
+    "title_score": 0.0,
+    "title": "태평천하",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-996",
+    "best": 0.2708,
+    "content": 0.27077684234465405,
+    "title_score": 0.0,
+    "title": "Don Quixote",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.2656,
+    "content": 0.26564534505208326,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3268",
+    "best": 0.2613,
+    "content": 0.261322021484375,
+    "title_score": 0.0,
+    "title": "The Mysteries of Udolpho",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1056",
+    "best": 0.2528,
+    "content": 0.25282400708365094,
+    "title_score": 0.0,
+    "title": "Martin Eden",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-768",
+    "best": 0.2383,
+    "content": 0.23833211263020826,
+    "title_score": 0.0,
+    "title": "Wuthering Heights",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "best": 0.2371,
+    "content": 0.23707124852477435,
+    "title_score": 0.0,
+    "title": "The Adventures of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "best": 0.2196,
+    "content": 0.21957989119518562,
+    "title_score": 0.0,
+    "title": "The Star Rover",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-145",
+    "best": 0.2052,
+    "content": 0.2051969377283852,
+    "title_score": 0.0,
+    "title": "Middlemarch",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.2015,
+    "content": 0.2014563161307924,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-421",
+    "best": 0.1978,
+    "content": 0.19777610085227282,
+    "title_score": 0.0,
+    "title": "Kidnapped",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-223",
+    "best": 0.1929,
+    "content": 0.19289328835227282,
+    "title_score": 0.0,
+    "title": "The Wisdom of Father Brown",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-228",
+    "best": 0.1882,
+    "content": 0.1882324218750001,
+    "title_score": 0.0,
+    "title": "The Aeneid",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "best": 0.1591,
+    "content": 0.15910200639204553,
+    "title_score": 0.0,
+    "title": "Moby-Dick; Or, The Whale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_008",
+    "best": 0.1579,
+    "content": 0.15788130326704553,
+    "title_score": 0.0,
+    "title": "상록수",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2276",
+    "best": 0.1525,
+    "content": 0.1524658203125,
+    "title_score": 0.0,
+    "title": "The Pioneers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-27681",
+    "best": 0.0983,
+    "content": 0.0982666015625,
+    "title_score": 0.0,
+    "title": "The Last of the Mohicans",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 3202.1,
+  "wall_s": 3.38,
+  "books": [
+   {
+    "book_id": "WS_023",
+    "best": 1.0,
+    "content": 0.6708984375,
+    "title_score": 1.0,
+    "title": "혈의 누",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065111",
+    "best": 0.6823,
+    "content": 0.6822703436029961,
+    "title_score": 0.0,
+    "title": "新小說의 近代文學的 位相",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-601",
+    "best": 0.6283,
+    "content": 0.6282766435038919,
+    "title_score": 0.0,
+    "title": "The Monk",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "best": 0.62,
+    "content": 0.6200305925853206,
+    "title_score": 0.0,
+    "title": "韓國 近代小說論 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-345",
+    "best": 0.5344,
+    "content": 0.5343808572120172,
+    "title_score": 0.0,
+    "title": "Dracula",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065073",
+    "best": 0.4607,
+    "content": 0.46071686605806417,
+    "title_score": 0.0,
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-228",
+    "best": 0.4481,
+    "content": 0.44809869049311013,
+    "title_score": 0.0,
+    "title": "The Aeneid",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-227",
+    "best": 0.4342,
+    "content": 0.4341571514423077,
+    "title_score": 0.0,
+    "title": "The Secret Sharer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1251",
+    "best": 0.4085,
+    "content": 0.40851384943181823,
+    "title_score": 0.0,
+    "title": "Le Morte d'Arthur",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-110",
+    "best": 0.3805,
+    "content": 0.3804820316293127,
+    "title_score": 0.0,
+    "title": "Tess of the d'Urbervilles",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "best": 0.3469,
+    "content": 0.34691945723683904,
+    "title_score": 0.0,
+    "title": "The Faerie Queene",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6130",
+    "best": 0.339,
+    "content": 0.3390213619750513,
+    "title_score": 0.0,
+    "title": "The Iliad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063059",
+    "best": 0.3355,
+    "content": 0.3354549304749166,
+    "title_score": 0.0,
+    "title": "朝鮮初期 樓亭記의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063882",
+    "best": 0.3316,
+    "content": 0.33164048468926777,
+    "title_score": 0.0,
+    "title": "1930年代 韓國 心理小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-25344",
+    "best": 0.2939,
+    "content": 0.29394563051501654,
+    "title_score": 0.0,
+    "title": "The Scarlet Letter",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-153",
+    "best": 0.2771,
+    "content": 0.27714875114020365,
+    "title_score": 0.0,
+    "title": "Jude the Obscure",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5230",
+    "best": 0.2489,
+    "content": 0.24893465909090917,
+    "title_score": 0.0,
+    "title": "The Invisible Man",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "best": 0.2399,
+    "content": 0.23985475276297485,
+    "title_score": 0.0,
+    "title": "Great Expectations",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "best": 0.2295,
+    "content": 0.22953732051835507,
+    "title_score": 0.0,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7469",
+    "best": 0.2271,
+    "content": 0.22707503988749245,
+    "title_score": 0.0,
+    "title": "Daniel Deronda",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-8395",
+    "best": 0.222,
+    "content": 0.22196821732954553,
+    "title_score": 0.0,
+    "title": "The Gods of Pegana",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "best": 0.1945,
+    "content": 0.19450239701704553,
+    "title_score": 0.0,
+    "title": "The Star Rover",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-41537",
+    "best": 0.1796,
+    "content": 0.1795654296875,
+    "title_score": 0.0,
+    "title": "The Divine Comedy",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.1665,
+    "content": 0.16650390625,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_012",
+    "best": 0.1476,
+    "content": 0.1475830078125,
+    "title_score": 0.0,
+    "title": "홍길동전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23700",
+    "best": 0.1394,
+    "content": 0.139404296875,
+    "title_score": 0.0,
+    "title": "The Decameron",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "best": 0.131,
+    "content": 0.1309814453125,
+    "title_score": 0.0,
+    "title": "조선조 가정소설 연구",
+    "title_remainder": "계모형.쟁총형 소설을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2600",
+    "best": 0.1144,
+    "content": 0.1143798828125,
+    "title_score": 0.0,
+    "title": "War and Peace",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2383",
+    "best": 0.113,
+    "content": 0.11297607421875,
+    "title_score": 0.0,
+    "title": "The Canterbury Tales",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17375",
+    "best": 0.0479,
+    "content": 0.047882080078125,
+    "title_score": 0.0,
+    "title": "The Enchanted Castle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

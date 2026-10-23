@@ -1,0 +1,561 @@
+{
+ "kind": "title_kr",
+ "query": "상록수",
+ "targets": [
+  "WS_008"
+ ],
+ "on": {
+  "rewritten": "삶의 숭고함, 인간 존엄성, 고독과 연대, 시대의 아픔, 민족의 역사",
+  "elapsed_ms": 895.4,
+  "wall_s": 1.89,
+  "books": [
+   {
+    "book_id": "CNTS-00052063588",
+    "best": 0.4732,
+    "content": 0.4731738655831912,
+    "title_score": 0.0,
+    "title": "柳致環 詩의 效用論的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063398",
+    "best": 0.4482,
+    "content": 0.4482355059219636,
+    "title_score": 0.0,
+    "title": "辛夕汀 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2153",
+    "best": 0.4455,
+    "content": 0.44553624314866713,
+    "title_score": 0.0,
+    "title": "Mary Barton",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "best": 0.3657,
+    "content": 0.36573686779618153,
+    "title_score": 0.0,
+    "title": "Roughing It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-202",
+    "best": 0.3495,
+    "content": 0.3495383752012836,
+    "title_score": 0.0,
+    "title": "Nostromo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "best": 0.3393,
+    "content": 0.33929260850526,
+    "title_score": 0.0,
+    "title": "The Old Curiosity Shop",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "best": 0.3307,
+    "content": 0.3306921580870612,
+    "title_score": 0.0,
+    "title": "The Innocents Abroad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_002",
+    "best": 0.3254,
+    "content": 0.3253659159696516,
+    "title_score": 0.0,
+    "title": "진달래꽃",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-28054",
+    "best": 0.3247,
+    "content": 0.32471642127403844,
+    "title_score": 0.0,
+    "title": "The Brothers Karamazov",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-77",
+    "best": 0.3231,
+    "content": 0.3230894555113035,
+    "title_score": 0.0,
+    "title": "Five Children and It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2610",
+    "best": 0.3215,
+    "content": 0.32148640709938936,
+    "title_score": 0.0,
+    "title": "The Hunchback of Notre-Dame",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.3162,
+    "content": 0.31617149939903844,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5658",
+    "best": 0.3153,
+    "content": 0.31527381700833634,
+    "title_score": 0.0,
+    "title": "Lord Jim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.3134,
+    "content": 0.31335850850728997,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1938",
+    "best": 0.2999,
+    "content": 0.2999267578125,
+    "title_score": 0.0,
+    "title": "Resurrection",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-105",
+    "best": 0.299,
+    "content": 0.29897590172437316,
+    "title_score": 0.0,
+    "title": "Persuasion",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2759",
+    "best": 0.2826,
+    "content": 0.28264361024192575,
+    "title_score": 0.0,
+    "title": "The Man in the Iron Mask",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1260",
+    "best": 0.2823,
+    "content": 0.28232750137452356,
+    "title_score": 0.0,
+    "title": "Jane Eyre",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063982",
+    "best": 0.2797,
+    "content": 0.2796799045144781,
+    "title_score": 0.0,
+    "title": "韓國 漢文小說의 背景硏究",
+    "title_remainder": "中國과의 關係를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "best": 0.275,
+    "content": 0.2749516278018055,
+    "title_score": 0.0,
+    "title": "Villette",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-27681",
+    "best": 0.2666,
+    "content": 0.26661173502604163,
+    "title_score": 0.0,
+    "title": "The Last of the Mohicans",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-4276",
+    "best": 0.2599,
+    "content": 0.25986639618039686,
+    "title_score": 0.0,
+    "title": "North and South",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.2572,
+    "content": 0.25724110632613106,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "best": 0.2565,
+    "content": 0.25649007161458326,
+    "title_score": 0.0,
+    "title": "A Tale of Two Cities",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "best": 0.2467,
+    "content": 0.24671519886363646,
+    "title_score": 0.0,
+    "title": "The History of Tom Jones, a Foundling",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6130",
+    "best": 0.2299,
+    "content": 0.22985342938575726,
+    "title_score": 0.0,
+    "title": "The Iliad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-26",
+    "best": 0.2241,
+    "content": 0.22405810015005012,
+    "title_score": 0.0,
+    "title": "Paradise Lost",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-233",
+    "best": 0.1952,
+    "content": 0.19523950840521564,
+    "title_score": 0.0,
+    "title": "Sister Carrie",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.1873,
+    "content": 0.18725775950330992,
+    "title_score": 0.0,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-107",
+    "best": 0.1342,
+    "content": 0.13418856534090917,
+    "title_score": 0.0,
+    "title": "Far from the Madding Crowd",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1433.7,
+  "wall_s": 2.02,
+  "books": [
+   {
+    "book_id": "WS_008",
+    "best": 1.0,
+    "content": 0.09600830078125,
+    "title_score": 1.0,
+    "title": "상록수",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655488",
+    "best": 0.5021,
+    "content": 0.5021151046483698,
+    "title_score": 0.0,
+    "title": "2005년도 세입세출예산안사항별설명서",
+    "title_remainder": "환경노동·건설교통·정보·여성",
+    "doc_type": "book"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-164",
+    "best": 0.4204,
+    "content": 0.4203653997342608,
+    "title_score": 0.0,
+    "title": "Twenty Thousand Leagues under the Sea",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "best": 0.4193,
+    "content": 0.41934120820294973,
+    "title_score": 0.0,
+    "title": "韓國 近代小說論 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-834",
+    "best": 0.415,
+    "content": 0.41498370236441184,
+    "title_score": 0.0,
+    "title": "The Memoirs of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1661",
+    "best": 0.4045,
+    "content": 0.4044712611607143,
+    "title_score": 0.0,
+    "title": "The Adventures of Sherlock Holmes",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655790",
+    "best": 0.4044,
+    "content": 0.40440593947751924,
+    "title_score": 0.0,
+    "title": "4대 江 水質改善을 위한 綜合對策 본격 추진",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.4001,
+    "content": 0.40006905035596785,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "best": 0.3441,
+    "content": 0.34407552083333326,
+    "title_score": 0.0,
+    "title": "Moby-Dick; Or, The Whale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655326",
+    "best": 0.3361,
+    "content": 0.33614095052083326,
+    "title_score": 0.0,
+    "title": "2006年度 基金現況",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2350",
+    "best": 0.332,
+    "content": 0.33199368990384615,
+    "title_score": 0.0,
+    "title": "His Last Bow",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-974",
+    "best": 0.3236,
+    "content": 0.3236249247850572,
+    "title_score": 0.0,
+    "title": "The Secret Agent",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655670",
+    "best": 0.3163,
+    "content": 0.31630452473958326,
+    "title_score": 0.0,
+    "title": "주요 재정개혁과제의 추진방향",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-141",
+    "best": 0.3137,
+    "content": 0.3137276488698094,
+    "title_score": 0.0,
+    "title": "Mansfield Park",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2852",
+    "best": 0.2987,
+    "content": 0.29870087251519606,
+    "title_score": 0.0,
+    "title": "The Hound of the Baskervilles",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-139",
+    "best": 0.2884,
+    "content": 0.28843180338541663,
+    "title_score": 0.0,
+    "title": "The Lost World",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655725",
+    "best": 0.2856,
+    "content": 0.2855688789956836,
+    "title_score": 0.0,
+    "title": "2003년 기금운용계획 이렇게 만들었습니다",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655786",
+    "best": 0.2832,
+    "content": 0.28324381510416663,
+    "title_score": 0.0,
+    "title": "기금의 운용 및 조성규모",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11870",
+    "best": 0.2775,
+    "content": 0.27754720052083326,
+    "title_score": 0.0,
+    "title": "The Country of the Blind",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_039",
+    "best": 0.2486,
+    "content": 0.24860922218495485,
+    "title_score": 0.0,
+    "title": "해파리의 노래",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.2443,
+    "content": 0.24433390299479163,
+    "title_score": 0.0,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.231,
+    "content": 0.23101249523289868,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.2153,
+    "content": 0.2152597366740221,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-35",
+    "best": 0.2065,
+    "content": 0.2065429687500001,
+    "title_score": 0.0,
+    "title": "The Time Machine",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "best": 0.2006,
+    "content": 0.2005606743398195,
+    "title_score": 0.0,
+    "title": "Journey to the Centre of the Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "best": 0.1967,
+    "content": 0.19666637073863646,
+    "title_score": 0.0,
+    "title": "Roughing It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-122",
+    "best": 0.1924,
+    "content": 0.19239390980113646,
+    "title_score": 0.0,
+    "title": "The Return of the Native",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-128",
+    "best": 0.1614,
+    "content": 0.1613769531250001,
+    "title_score": 0.0,
+    "title": "The Arabian Nights' Entertainments",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_022",
+    "best": 0.1497,
+    "content": 0.149658203125,
+    "title_score": 0.0,
+    "title": "금수회의록",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3289",
+    "best": 0.1463,
+    "content": 0.1463401100852273,
+    "title_score": 0.0,
+    "title": "The Poison Belt",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

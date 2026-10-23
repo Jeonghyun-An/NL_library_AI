@@ -1,0 +1,552 @@
+{
+ "kind": "title_en_kr",
+ "query": "허클베리 핀의 모험",
+ "targets": [
+  "LIT-GUTENBERG-76"
+ ],
+ "on": {
+  "rewritten": "미국 남부, 19세기, 성장 소설, 자유, 모험, 사회 비판, 인종 차별, 도피, 우정, 정체성 탐구",
+  "elapsed_ms": 1531.5,
+  "wall_s": 1.71,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "best": 0.6139,
+    "content": 0.6138772479802094,
+    "title_score": 0.0,
+    "title": "Roughing It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-245",
+    "best": 0.5968,
+    "content": 0.5968471742773813,
+    "title_score": 0.0,
+    "title": "Life on the Mississippi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-202",
+    "best": 0.5452,
+    "content": 0.5451605909589645,
+    "title_score": 0.0,
+    "title": "Nostromo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-74",
+    "best": 0.4531,
+    "content": 0.4531455058073862,
+    "title_score": 0.0,
+    "title": "The Adventures of Tom Sawyer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.4443,
+    "content": 0.4266443434677719,
+    "title_score": 0.0769,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "best": 0.4342,
+    "content": 0.43418128971360814,
+    "title_score": 0.0,
+    "title": "韓國 近代小說論 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "best": 0.4295,
+    "content": 0.42945838928339386,
+    "title_score": 0.0,
+    "title": "Adventures of Huckleberry Finn",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065111",
+    "best": 0.3661,
+    "content": 0.36610296065702275,
+    "title_score": 0.0,
+    "title": "新小說의 近代文學的 位相",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065073",
+    "best": 0.354,
+    "content": 0.3411011102308472,
+    "title_score": 0.0488,
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1298",
+    "best": 0.3448,
+    "content": 0.34480814095254186,
+    "title_score": 0.0,
+    "title": "The Master of Ballantrae",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "best": 0.3108,
+    "content": 0.31080870948292216,
+    "title_score": 0.0,
+    "title": "The Ambassadors",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2641",
+    "best": 0.2848,
+    "content": 0.28483141668133916,
+    "title_score": 0.0,
+    "title": "A Room with a View",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-84",
+    "best": 0.2694,
+    "content": 0.26935831705729163,
+    "title_score": 0.0,
+    "title": "Frankenstein",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-139",
+    "best": 0.2662,
+    "content": 0.266205949137011,
+    "title_score": 0.0,
+    "title": "The Lost World",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-4276",
+    "best": 0.2576,
+    "content": 0.2575656400946841,
+    "title_score": 0.0,
+    "title": "North and South",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063230",
+    "best": 0.245,
+    "content": 0.22685039514543637,
+    "title_score": 0.0588,
+    "title": "19世紀 時調의 變貌樣相",
+    "title_remainder": "趙榥.安玟英.李世輔의 개인시조집을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-86",
+    "best": 0.2233,
+    "content": 0.22327677408854163,
+    "title_score": 0.0,
+    "title": "A Connecticut Yankee in King Arthur's Court",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.2121,
+    "content": 0.21209161931818188,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3176",
+    "best": 0.2085,
+    "content": 0.208526611328125,
+    "title_score": 0.0,
+    "title": "The Innocents Abroad",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-164",
+    "best": 0.2057,
+    "content": 0.2056711010294885,
+    "title_score": 0.0,
+    "title": "Twenty Thousand Leagues under the Sea",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3669",
+    "best": 0.1999,
+    "content": 0.19987577179378135,
+    "title_score": 0.0,
+    "title": "The Pathfinder",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2276",
+    "best": 0.1879,
+    "content": 0.18791631964373123,
+    "title_score": 0.0,
+    "title": "The Pioneers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063883",
+    "best": 0.1849,
+    "content": 0.17164195667613646,
+    "title_score": 0.04,
+    "title": "황순원 소설의 이미지 분석을 통한 동일성 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063078",
+    "best": 0.1656,
+    "content": 0.16557795968064193,
+    "title_score": 0.0,
+    "title": "옥루몽 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1688",
+    "best": 0.1645,
+    "content": 0.16448419744318188,
+    "title_score": 0.0,
+    "title": "The People of the Abyss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.1439,
+    "content": 0.12642045454545459,
+    "title_score": 0.05,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-541",
+    "best": 0.1329,
+    "content": 0.1329345703125,
+    "title_score": 0.0,
+    "title": "The Age of Innocence",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "best": 0.0771,
+    "content": 0.07708740234375,
+    "title_score": 0.0,
+    "title": "The Jungle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-558",
+    "best": 0.0444,
+    "content": 0.04443359375,
+    "title_score": 0.0,
+    "title": "The Thirty-Nine Steps",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3179",
+    "best": 0.0376,
+    "content": 0.03759765625,
+    "title_score": 0.0,
+    "title": "The Gilded Age",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1455.0,
+  "wall_s": 1.64,
+  "books": [
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "best": 0.8156,
+    "content": 0.815649932804988,
+    "title_score": 0.0,
+    "title": "Adventures of Huckleberry Finn",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-74",
+    "best": 0.7091,
+    "content": 0.7090767886228845,
+    "title_score": 0.0,
+    "title": "The Adventures of Tom Sawyer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2788",
+    "best": 0.4274,
+    "content": 0.42737926136363646,
+    "title_score": 0.0,
+    "title": "Little Men",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-16",
+    "best": 0.4192,
+    "content": 0.4191805477584143,
+    "title_score": 0.0,
+    "title": "Peter Pan",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-940",
+    "best": 0.3587,
+    "content": 0.3587363920980077,
+    "title_score": 0.0,
+    "title": "The Spy",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18857",
+    "best": 0.357,
+    "content": 0.3570185420799572,
+    "title_score": 0.0,
+    "title": "Journey to the Centre of the Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.3321,
+    "content": 0.33213831277923167,
+    "title_score": 0.0,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-883",
+    "best": 0.3014,
+    "content": 0.30142489346590917,
+    "title_score": 0.0,
+    "title": "Our Mutual Friend",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-27681",
+    "best": 0.275,
+    "content": 0.2749516278018055,
+    "title_score": 0.0,
+    "title": "The Last of the Mohicans",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-143",
+    "best": 0.242,
+    "content": 0.24199422200520826,
+    "title_score": 0.0,
+    "title": "The Mayor of Casterbridge",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-35",
+    "best": 0.2411,
+    "content": 0.24105557528409094,
+    "title_score": 0.0,
+    "title": "The Time Machine",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.2336,
+    "content": 0.23364673579458373,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3177",
+    "best": 0.2024,
+    "content": 0.202392578125,
+    "title_score": 0.0,
+    "title": "Roughing It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-829",
+    "best": 0.1949,
+    "content": 0.1949462890625,
+    "title_score": 0.0,
+    "title": "Gulliver's Travels",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-44747",
+    "best": 0.1732,
+    "content": 0.17321725730952864,
+    "title_score": 0.0,
+    "title": "The Red and the Black",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-83",
+    "best": 0.1696,
+    "content": 0.16964444247159094,
+    "title_score": 0.0,
+    "title": "From the Earth to the Moon",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-15272",
+    "best": 0.1657,
+    "content": 0.16570490056818188,
+    "title_score": 0.0,
+    "title": "The Faerie Queene",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-583",
+    "best": 0.1616,
+    "content": 0.16162109375,
+    "title_score": 0.0,
+    "title": "The Woman in White",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6593",
+    "best": 0.1564,
+    "content": 0.1563720703125,
+    "title_score": 0.0,
+    "title": "The History of Tom Jones, a Foundling",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2701",
+    "best": 0.1514,
+    "content": 0.15144486860795459,
+    "title_score": 0.0,
+    "title": "Moby-Dick; Or, The Whale",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-821",
+    "best": 0.1494,
+    "content": 0.14944735440340917,
+    "title_score": 0.0,
+    "title": "Dombey and Son",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.1344,
+    "content": 0.13435502485795459,
+    "title_score": 0.0,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-910",
+    "best": 0.1174,
+    "content": 0.11737060546875,
+    "title_score": 0.0,
+    "title": "White Fang",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3285",
+    "best": 0.115,
+    "content": 0.114990234375,
+    "title_score": 0.0,
+    "title": "The Deerslayer",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "best": 0.0939,
+    "content": 0.0938720703125,
+    "title_score": 0.0,
+    "title": "The Swiss Family Robinson",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.0772,
+    "content": 0.07720947265625,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-215",
+    "best": 0.0545,
+    "content": 0.05450439453125,
+    "title_score": 0.0,
+    "title": "The Call of the Wild",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-963",
+    "best": 0.0523,
+    "content": 0.052337646484375,
+    "title_score": 0.0,
+    "title": "Little Dorrit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1155",
+    "best": 0.0443,
+    "content": 0.044281005859375,
+    "title_score": 0.0,
+    "title": "The Secret Adversary",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

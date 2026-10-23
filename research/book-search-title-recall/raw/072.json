@@ -1,0 +1,561 @@
+{
+ "kind": "title_in_question",
+ "query": "김유정의 동백꽃",
+ "targets": [
+  "GM_001"
+ ],
+ "on": {
+  "rewritten": "김유정, 동백꽃, 순수, 낭만, 농촌, 청춘, 첫사랑, 아련함, 쓸쓸함, 시대적 배경 (1930년대)",
+  "elapsed_ms": 2303.0,
+  "wall_s": 2.47,
+  "books": [
+   {
+    "book_id": "CNTS-00052063978",
+    "best": 1.0,
+    "content": 0.2836289397627617,
+    "title_score": 1.0,
+    "title": "1930年代 世態小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063882",
+    "best": 1.0,
+    "content": 0.14717240767045459,
+    "title_score": 1.0,
+    "title": "1930年代 韓國 心理小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "GM_001",
+    "best": 0.6769,
+    "content": 0.5961046517056583,
+    "title_score": 0.5,
+    "title": "동백꽃",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.6188,
+    "content": 0.6033037651446103,
+    "title_score": 0.0976,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063554",
+    "best": 0.5892,
+    "content": 0.5676286440380296,
+    "title_score": 0.125,
+    "title": "1940년대 초기 한국 농민소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.5025,
+    "content": 0.47894357909691854,
+    "title_score": 0.1132,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064576",
+    "best": 0.4333,
+    "content": 0.4333359479134037,
+    "title_score": 0.0,
+    "title": "徐有英 文學의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063929",
+    "best": 0.4254,
+    "content": 0.42538999920853027,
+    "title_score": 0.0,
+    "title": "이기영 소설의 여성의식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064759",
+    "best": 0.4065,
+    "content": 0.3653129659602605,
+    "title_score": 0.1622,
+    "title": "1930年代 韓國詩의 意識構造硏究",
+    "title_remainder": "世界喪失과 그 變移過程을 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00047956839",
+    "best": 0.3882,
+    "content": 0.36952196164858253,
+    "title_score": 0.0741,
+    "title": "인연의 덫",
+    "title_remainder": "마지막 사랑이 첫사랑에게 보내는 영혼의 편지",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_006",
+    "best": 0.3684,
+    "content": 0.36838785807291663,
+    "title_score": 0.0,
+    "title": "봄봄",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063765",
+    "best": 0.3311,
+    "content": 0.3310546875,
+    "title_score": 0.0,
+    "title": "李光洙의 民族主義와 人道主義 文學思想硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_002",
+    "best": 0.3258,
+    "content": 0.32584515545356074,
+    "title_score": 0.0,
+    "title": "진달래꽃",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_008",
+    "best": 0.3163,
+    "content": 0.31627459998737484,
+    "title_score": 0.0,
+    "title": "상록수",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063568",
+    "best": 0.2871,
+    "content": 0.2871208303820211,
+    "title_score": 0.0,
+    "title": "염상섭 장편소설의 아이러니 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.2865,
+    "content": 0.28648939227789616,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063059",
+    "best": 0.2789,
+    "content": 0.27889310396634615,
+    "title_score": 0.0,
+    "title": "朝鮮初期 樓亭記의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063987",
+    "best": 0.2742,
+    "content": 0.27419405853542334,
+    "title_score": 0.0,
+    "title": "李光洙小說의 批評的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063898",
+    "best": 0.2611,
+    "content": 0.2610771461800445,
+    "title_score": 0.0,
+    "title": "金洙暎 詩의 모더니즘 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.2482,
+    "content": 0.1729736328125001,
+    "title_score": 0.1923,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-766",
+    "best": 0.2163,
+    "content": 0.21626074808746243,
+    "title_score": 0.0,
+    "title": "David Copperfield",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2153",
+    "best": 0.2142,
+    "content": 0.21422322591145826,
+    "title_score": 0.0,
+    "title": "Mary Barton",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063398",
+    "best": 0.2137,
+    "content": 0.2137451171875,
+    "title_score": 0.0,
+    "title": "辛夕汀 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.2088,
+    "content": 0.208831787109375,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1023",
+    "best": 0.2085,
+    "content": 0.2084503173828125,
+    "title_score": 0.0,
+    "title": "Bleak House",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "best": 0.1927,
+    "content": 0.1927490234375,
+    "title_score": 0.0,
+    "title": "The Mill on the Floss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063539",
+    "best": 0.1481,
+    "content": 0.14811567826704553,
+    "title_score": 0.0,
+    "title": "조선후기 세태소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065111",
+    "best": 0.1255,
+    "content": 0.12548828125,
+    "title_score": 0.0,
+    "title": "新小說의 近代文學的 位相",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063230",
+    "best": 0.0745,
+    "content": 0.0460205078125,
+    "title_score": 0.0571,
+    "title": "19世紀 時調의 變貌樣相",
+    "title_remainder": "趙榥.安玟英.李世輔의 개인시조집을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1298",
+    "best": 0.0685,
+    "content": 0.06854248046875,
+    "title_score": 0.0,
+    "title": "The Master of Ballantrae",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 2136.3,
+  "wall_s": 2.32,
+  "books": [
+   {
+    "book_id": "GM_001",
+    "best": 0.8223,
+    "content": 0.7778736507487737,
+    "title_score": 0.5,
+    "title": "동백꽃",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064576",
+    "best": 0.5383,
+    "content": 0.5382860897979789,
+    "title_score": 0.0,
+    "title": "徐有英 文學의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_008",
+    "best": 0.4724,
+    "content": 0.4724101868388003,
+    "title_score": 0.0,
+    "title": "상록수",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.4626,
+    "content": 0.4625745367840586,
+    "title_score": 0.0,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063987",
+    "best": 0.4412,
+    "content": 0.4411585552366796,
+    "title_score": 0.0,
+    "title": "李光洙小說의 批評的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_006",
+    "best": 0.4118,
+    "content": 0.41182454427083326,
+    "title_score": 0.0,
+    "title": "봄봄",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063445",
+    "best": 0.3757,
+    "content": 0.37567399894922315,
+    "title_score": 0.0,
+    "title": "金東里 小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063898",
+    "best": 0.358,
+    "content": 0.3579721822815486,
+    "title_score": 0.0,
+    "title": "金洙暎 詩의 모더니즘 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17396",
+    "best": 0.3517,
+    "content": 0.3517127403846154,
+    "title_score": 0.0,
+    "title": "The Secret Garden",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2226",
+    "best": 0.3469,
+    "content": 0.34694676530868374,
+    "title_score": 0.0,
+    "title": "Kim",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064565",
+    "best": 0.3374,
+    "content": 0.3374137549955216,
+    "title_score": 0.0,
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_005",
+    "best": 0.3301,
+    "content": 0.33005994035225683,
+    "title_score": 0.0,
+    "title": "메밀꽃 필 무렵",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00047956839",
+    "best": 0.3261,
+    "content": 0.32607014973958326,
+    "title_score": 0.0,
+    "title": "인연의 덫",
+    "title_remainder": "마지막 사랑이 첫사랑에게 보내는 영혼의 편지",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_001",
+    "best": 0.3074,
+    "content": 0.30735270182291663,
+    "title_score": 0.0,
+    "title": "무정",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-153",
+    "best": 0.3052,
+    "content": 0.3051706745532812,
+    "title_score": 0.0,
+    "title": "Jude the Obscure",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063398",
+    "best": 0.3035,
+    "content": 0.30353338068181823,
+    "title_score": 0.0,
+    "title": "辛夕汀 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_034",
+    "best": 0.2798,
+    "content": 0.27978515625,
+    "title_score": 0.0,
+    "title": "귀의 성",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.2787,
+    "content": 0.2787387628686092,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1448",
+    "best": 0.2772,
+    "content": 0.27724202473958326,
+    "title_score": 0.0,
+    "title": "Heidi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "best": 0.2642,
+    "content": 0.26424893465909094,
+    "title_score": 0.0,
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "title_remainder": "毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063568",
+    "best": 0.2623,
+    "content": 0.26228841145833326,
+    "title_score": 0.0,
+    "title": "염상섭 장편소설의 아이러니 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-23245",
+    "best": 0.2576,
+    "content": 0.2575905539772728,
+    "title_score": 0.0,
+    "title": "The Story Girl",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_002",
+    "best": 0.229,
+    "content": 0.22895951704545459,
+    "title_score": 0.0,
+    "title": "진달래꽃",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-13707",
+    "best": 0.2184,
+    "content": 0.21841708096590917,
+    "title_score": 0.0,
+    "title": "The Blithedale Romance",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2864",
+    "best": 0.1865,
+    "content": 0.1865201721460381,
+    "title_score": 0.0,
+    "title": "The Trumpet-Major",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-45524",
+    "best": 0.1506,
+    "content": 0.15055708451704553,
+    "title_score": 0.0,
+    "title": "The Open Boat and Other Stories",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1400",
+    "best": 0.1347,
+    "content": 0.13466020063920459,
+    "title_score": 0.0,
+    "title": "Great Expectations",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1245",
+    "best": 0.1279,
+    "content": 0.1279296875,
+    "title_score": 0.0,
+    "title": "The Wonderful Visit",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_009",
+    "best": 0.1166,
+    "content": 0.1165771484375,
+    "title_score": 0.0,
+    "title": "인간문제",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065087",
+    "best": 0.1056,
+    "content": 0.1055908203125,
+    "title_score": 0.0,
+    "title": "日帝 强占期 韓國小說에 나타난 獨立運動家像 硏",
+    "title_remainder": "문학적 형상화 과정과 작가 의 현실인식을 중심으로",
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

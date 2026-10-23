@@ -1,0 +1,516 @@
+{
+ "kind": "title_kr",
+ "query": "박씨전",
+ "targets": [
+  "WS_031"
+ ],
+ "on": {
+  "rewritten": "여성, 억압, 저항, 사회 비판, 해학, 풍자, 조선시대",
+  "elapsed_ms": 1678.8,
+  "wall_s": 2.49,
+  "books": [
+   {
+    "book_id": "WS_031",
+    "best": 1.0,
+    "content": 0.059326171875,
+    "title_score": 1.0,
+    "title": "박씨전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064428",
+    "best": 0.5703,
+    "content": 0.5585563447982855,
+    "title_score": 0.0667,
+    "title": "가정소설 작품세계의 시대적 변모",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.5539,
+    "content": 0.5539293186384626,
+    "title_score": 0.0,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063929",
+    "best": 0.5459,
+    "content": 0.5325466887613168,
+    "title_score": 0.0714,
+    "title": "이기영 소설의 여성의식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063539",
+    "best": 0.5332,
+    "content": 0.5183861246693988,
+    "title_score": 0.0769,
+    "title": "조선후기 세태소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "best": 0.5216,
+    "content": 0.505761657158018,
+    "title_score": 0.08,
+    "title": "조선조 가정소설 연구",
+    "title_remainder": "계모형.쟁총형 소설을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063982",
+    "best": 0.4371,
+    "content": 0.43707394443814096,
+    "title_score": 0.0,
+    "title": "韓國 漢文小說의 背景硏究",
+    "title_remainder": "中國과의 關係를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "best": 0.4313,
+    "content": 0.43129544319942914,
+    "title_score": 0.0,
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "title_remainder": "毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3669",
+    "best": 0.3906,
+    "content": 0.39062030780573154,
+    "title_score": 0.0,
+    "title": "The Pathfinder",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063908",
+    "best": 0.3863,
+    "content": 0.38631924715909094,
+    "title_score": 0.0,
+    "title": "민요에 반영된 삶의 의식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_037",
+    "best": 0.3376,
+    "content": 0.33764655316990977,
+    "title_score": 0.0,
+    "title": "개척자",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.3153,
+    "content": 0.31530819320682046,
+    "title_score": 0.0,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063882",
+    "best": 0.2896,
+    "content": 0.2895507812500001,
+    "title_score": 0.0,
+    "title": "1930年代 韓國 心理小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065087",
+    "best": 0.2892,
+    "content": 0.2891765268349047,
+    "title_score": 0.0,
+    "title": "日帝 强占期 韓國小說에 나타난 獨立運動家像 硏",
+    "title_remainder": "문학적 형상화 과정과 작가 의 현실인식을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-689",
+    "best": 0.2674,
+    "content": 0.2673561789772728,
+    "title_score": 0.0,
+    "title": "The Death of Ivan Ilyich",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065041",
+    "best": 0.2589,
+    "content": 0.25892223011363646,
+    "title_score": 0.0,
+    "title": "韓國 戰後小說의 휴머니즘 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065025",
+    "best": 0.2161,
+    "content": 0.21608664772727282,
+    "title_score": 0.0,
+    "title": "李泰俊文學硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-209",
+    "best": 0.1922,
+    "content": 0.19222745028409094,
+    "title_score": 0.0,
+    "title": "The Turn of the Screw",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1260",
+    "best": 0.1634,
+    "content": 0.1634299538352273,
+    "title_score": 0.0,
+    "title": "Jane Eyre",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1337",
+    "best": 0.1333,
+    "content": 0.1333007812500001,
+    "title_score": 0.0,
+    "title": "The Black Arrow",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "best": 0.1271,
+    "content": 0.1270751953125,
+    "title_score": 0.0,
+    "title": "A Tale of Two Cities",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "GM_003",
+    "best": 0.1155,
+    "content": 0.11553955078125,
+    "title_score": 0.0,
+    "title": "레디메이드 인생",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_035",
+    "best": 0.0644,
+    "content": 0.06439208984375,
+    "title_score": 0.0,
+    "title": "자유종",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-7469",
+    "best": 0.0593,
+    "content": 0.059326171875,
+    "title_score": 0.0,
+    "title": "Daniel Deronda",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-893",
+    "best": 0.0528,
+    "content": 0.052825927734375,
+    "title_score": 0.0,
+    "title": "The Wonderful Adventures of Nils",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1084.6,
+  "wall_s": 2.64,
+  "books": [
+   {
+    "book_id": "WS_031",
+    "best": 1.0,
+    "content": 0.8194293639771478,
+    "title_score": 1.0,
+    "title": "박씨전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064735",
+    "best": 0.651,
+    "content": 0.6509873818901522,
+    "title_score": 0.0,
+    "title": "'傳'의 敍述樣式과 小說로의 變容에 關한 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063078",
+    "best": 0.5918,
+    "content": 0.591796875,
+    "title_score": 0.0,
+    "title": "옥루몽 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063979",
+    "best": 0.5772,
+    "content": 0.5772435485022858,
+    "title_score": 0.0,
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063422",
+    "best": 0.5194,
+    "content": 0.5194413247391214,
+    "title_score": 0.0,
+    "title": "蘆溪 朴仁老의 詩歌硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "best": 0.5139,
+    "content": 0.5138837554767108,
+    "title_score": 0.0,
+    "title": "조선조 가정소설 연구",
+    "title_remainder": "계모형.쟁총형 소설을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064428",
+    "best": 0.4222,
+    "content": 0.4221741889446008,
+    "title_score": 0.0,
+    "title": "가정소설 작품세계의 시대적 변모",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063369",
+    "best": 0.4083,
+    "content": 0.40831853395881745,
+    "title_score": 0.0,
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_027",
+    "best": 0.3906,
+    "content": 0.390559022427282,
+    "title_score": 0.0,
+    "title": "심청전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_013",
+    "best": 0.3767,
+    "content": 0.3766975244621903,
+    "title_score": 0.0,
+    "title": "흥부전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.3542,
+    "content": 0.35423788131340084,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_034",
+    "best": 0.3504,
+    "content": 0.3504441902716888,
+    "title_score": 0.0,
+    "title": "귀의 성",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063898",
+    "best": 0.2978,
+    "content": 0.29783159937366566,
+    "title_score": 0.0,
+    "title": "金洙暎 詩의 모더니즘 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063368",
+    "best": 0.2601,
+    "content": 0.2600945110339017,
+    "title_score": 0.0,
+    "title": "韓國古典小說의 文體論的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-580",
+    "best": 0.2432,
+    "content": 0.24321492513020826,
+    "title_score": 0.0,
+    "title": "The Pickwick Papers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063539",
+    "best": 0.2412,
+    "content": 0.24123334861223678,
+    "title_score": 0.0,
+    "title": "조선후기 세태소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_007",
+    "best": 0.2301,
+    "content": 0.23006924715909094,
+    "title_score": 0.0,
+    "title": "태평천하",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065025",
+    "best": 0.1844,
+    "content": 0.18440385298295459,
+    "title_score": 0.0,
+    "title": "李泰俊文學硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-9182",
+    "best": 0.1836,
+    "content": 0.1835961651225677,
+    "title_score": 0.0,
+    "title": "Villette",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_001",
+    "best": 0.172,
+    "content": 0.1719970703125,
+    "title_score": 0.0,
+    "title": "무정",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_033",
+    "best": 0.1495,
+    "content": 0.1495361328125,
+    "title_score": 0.0,
+    "title": "유충렬전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "best": 0.1279,
+    "content": 0.1279296875,
+    "title_score": 0.0,
+    "title": "韓國 近代小說論 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064904",
+    "best": 0.1237,
+    "content": 0.1236572265625,
+    "title_score": 0.0,
+    "title": "1950년대 소설에 나타난 작가의 현실 인식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063908",
+    "best": 0.0969,
+    "content": 0.09686279296875,
+    "title_score": 0.0,
+    "title": "민요에 반영된 삶의 의식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.0702,
+    "content": 0.0701904296875,
+    "title_score": 0.0,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064623",
+    "best": 0.0573,
+    "content": 0.057281494140625,
+    "title_score": 0.0,
+    "title": "韓國基督敎 初期 讚頌詩歌의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-223",
+    "best": 0.0526,
+    "content": 0.0526123046875,
+    "title_score": 0.0,
+    "title": "The Wisdom of Father Brown",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064509",
+    "best": 0.0086,
+    "content": 0.008620689623057842,
+    "title_score": 0.0,
+    "title": "韓國 仙道說話 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063978",
+    "best": 0.0084,
+    "content": 0.008403361774981022,
+    "title_score": 0.0,
+    "title": "1930年代 世態小說 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_012",
+    "best": 0.0062,
+    "content": 0.006211180239915848,
+    "title_score": 0.0,
+    "title": "홍길동전",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

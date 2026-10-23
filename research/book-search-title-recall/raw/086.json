@@ -1,0 +1,370 @@
+{
+ "kind": "judged",
+ "query": "김소월과 한용운의 시를 연구한 자료",
+ "targets": [],
+ "on": {
+  "rewritten": "김소월, 한용운, 시 연구, 창작 배경, 문학사조, 민족의식, 구한말, 일제강점기, 저항시, 서정시, 시적 표현, 상징, 은유",
+  "elapsed_ms": 2125.7,
+  "wall_s": 2.3,
+  "books": [
+   {
+    "book_id": "CNTS-00052064565",
+    "best": 0.7132,
+    "content": 0.7132067961585304,
+    "title_score": 0.0,
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064036",
+    "best": 0.4901,
+    "content": 0.49012755591893153,
+    "title_score": 0.0,
+    "title": "韓國初期近代詩論硏究",
+    "title_remainder": "1920年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.4376,
+    "content": 0.4376465283013614,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.4161,
+    "content": 0.4161191661716732,
+    "title_score": 0.0,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064759",
+    "best": 0.4055,
+    "content": 0.40548243250012717,
+    "title_score": 0.0,
+    "title": "1930年代 韓國詩의 意識構造硏究",
+    "title_remainder": "世界喪失과 그 變移過程을 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_039",
+    "best": 0.4042,
+    "content": 0.40420780439417836,
+    "title_score": 0.0,
+    "title": "해파리의 노래",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064810",
+    "best": 0.4041,
+    "content": 0.4041224888392857,
+    "title_score": 0.0,
+    "title": "時調의 韻律構造 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064069",
+    "best": 0.3825,
+    "content": 0.38251201276835944,
+    "title_score": 0.0,
+    "title": "牧隱 李穡의 詩文學 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "best": 0.329,
+    "content": 0.32902655702995676,
+    "title_score": 0.0,
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "title_remainder": "毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063230",
+    "best": 0.3155,
+    "content": 0.31546724759615385,
+    "title_score": 0.0,
+    "title": "19世紀 時調의 變貌樣相",
+    "title_remainder": "趙榥.安玟英.李世輔의 개인시조집을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063369",
+    "best": 0.2873,
+    "content": 0.28734412560096156,
+    "title_score": 0.0,
+    "title": "조선 초기 소설의 갈래 교섭 양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063278",
+    "best": 0.2826,
+    "content": 0.28255286322291984,
+    "title_score": 0.0,
+    "title": "白湖 林悌의 詩文學 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063398",
+    "best": 0.2798,
+    "content": 0.2798285058269837,
+    "title_score": 0.0,
+    "title": "辛夕汀 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063982",
+    "best": 0.2686,
+    "content": 0.2686294504537613,
+    "title_score": 0.0,
+    "title": "韓國 漢文小說의 背景硏究",
+    "title_remainder": "中國과의 關係를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064576",
+    "best": 0.2109,
+    "content": 0.21093958215285857,
+    "title_score": 0.0,
+    "title": "徐有英 文學의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065087",
+    "best": 0.1586,
+    "content": 0.14828213778409094,
+    "title_score": 0.0303,
+    "title": "日帝 强占期 韓國小說에 나타난 獨立運動家像 硏",
+    "title_remainder": "문학적 형상화 과정과 작가 의 현실인식을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063588",
+    "best": 0.1273,
+    "content": 0.1273193359375,
+    "title_score": 0.0,
+    "title": "柳致環 詩의 效用論的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.1058,
+    "content": 0.10577392578125,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063321",
+    "best": 0.0981,
+    "content": 0.09808349609375,
+    "title_score": 0.0,
+    "title": "韓國 四時歌의 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1967.8,
+  "wall_s": 2.15,
+  "books": [
+   {
+    "book_id": "CNTS-00052064565",
+    "best": 0.7976,
+    "content": 0.7975865328885066,
+    "title_score": 0.0,
+    "title": "素月과 萬海詩의 女性志向 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064782",
+    "best": 0.6749,
+    "content": 0.674898324197949,
+    "title_score": 0.0,
+    "title": "韓國現代時에 나타난 道家思想 硏究",
+    "title_remainder": "1930년대와 그 전.후기를 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064810",
+    "best": 0.6284,
+    "content": 0.6283899217129884,
+    "title_score": 0.0,
+    "title": "時調의 韻律構造 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064036",
+    "best": 0.4869,
+    "content": 0.4868565032787804,
+    "title_score": 0.0,
+    "title": "韓國初期近代詩論硏究",
+    "title_remainder": "1920年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064759",
+    "best": 0.4311,
+    "content": 0.4310651506696428,
+    "title_score": 0.0,
+    "title": "1930年代 韓國詩의 意識構造硏究",
+    "title_remainder": "世界喪失과 그 變移過程을 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063230",
+    "best": 0.4137,
+    "content": 0.41374412636656455,
+    "title_score": 0.0,
+    "title": "19世紀 時調의 變貌樣相",
+    "title_remainder": "趙榥.安玟英.李世輔의 개인시조집을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063982",
+    "best": 0.3708,
+    "content": 0.37076913344157525,
+    "title_score": 0.0,
+    "title": "韓國 漢文小說의 背景硏究",
+    "title_remainder": "中國과의 關係를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063862",
+    "best": 0.3642,
+    "content": 0.3642482600730037,
+    "title_score": 0.0,
+    "title": "韓國 女性文學 硏究",
+    "title_remainder": "1920年代.30年代를 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065117",
+    "best": 0.3619,
+    "content": 0.36188091528864574,
+    "title_score": 0.0,
+    "title": "張維 詩文學 硏究",
+    "title_remainder": "莊子的 天機論을 中心으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063400",
+    "best": 0.3535,
+    "content": 0.35351525062877354,
+    "title_score": 0.0,
+    "title": "韓.中.越 傳奇小說의 比較 硏究",
+    "title_remainder": "'剪燈新話', '金鰲新話', '傳奇漫錄'을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063368",
+    "best": 0.3196,
+    "content": 0.3196041238076517,
+    "title_score": 0.0,
+    "title": "韓國古典小說의 文體論的 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063063",
+    "best": 0.2762,
+    "content": 0.27621606327141424,
+    "title_score": 0.0,
+    "title": "韓國 近代小說論 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063278",
+    "best": 0.2061,
+    "content": 0.20609907670454553,
+    "title_score": 0.0,
+    "title": "白湖 林悌의 詩文學 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063979",
+    "best": 0.2054,
+    "content": 0.20543323863636365,
+    "title_score": 0.0,
+    "title": "조선후기 우화소설의 다층적 의미구현양상",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052065073",
+    "best": 0.1513,
+    "content": 0.1207275390625,
+    "title_score": 0.087,
+    "title": "신소설의 敍事樣式과 主題意識에 관한 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064616",
+    "best": 0.1451,
+    "content": 0.11279296875,
+    "title_score": 0.0909,
+    "title": "조선조 가정소설 연구",
+    "title_remainder": "계모형.쟁총형 소설을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052064069",
+    "best": 0.1445,
+    "content": 0.14453125,
+    "title_score": 0.0,
+    "title": "牧隱 李穡의 詩文學 硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_021",
+    "best": 0.1134,
+    "content": 0.1134033203125,
+    "title_score": 0.0,
+    "title": "정지용 시집",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063422",
+    "best": 0.076,
+    "content": 0.07598876953125,
+    "title_score": 0.0,
+    "title": "蘆溪 朴仁老의 詩歌硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063399",
+    "best": 0.0079,
+    "content": 0.007874015718698502,
+    "title_score": 0.0,
+    "title": "韓國現代女流詩에 나타난 愛情意識硏究",
+    "title_remainder": "毛允淑, 盧天命, 金南祚, 洪允淑 詩를 中心으로",
+    "doc_type": "literature"
+   }
+  ]
+ }
+}

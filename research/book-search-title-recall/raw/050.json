@@ -1,0 +1,561 @@
+{
+ "kind": "title_en_kr",
+ "query": "올리버 트위스트",
+ "targets": [
+  "LIT-GUTENBERG-730"
+ ],
+ "on": {
+  "rewritten": "고아의 불행, 사회 부조리, 악독한 인물들의 착취, 성장 과정의 고난, 인간애와 구원",
+  "elapsed_ms": 1622.9,
+  "wall_s": 3.22,
+  "books": [
+   {
+    "book_id": "KCI_FI003318470",
+    "best": 0.5045,
+    "content": 0.4958650319763245,
+    "title_score": 0.0426,
+    "title": "복음 고난의 경험과 의미에 관한 질적연구",
+    "title_remainder": "A Qualitative Study on the Experience and Meaning of Suffering for the Gospel",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003307723",
+    "best": 0.4917,
+    "content": 0.4917452306806548,
+    "title_score": 0.0,
+    "title": "드라마적 전능과 부정 신학(否定神學) 관점에서 고찰한 한국 동화 - 권정생·유은실·송미경의 작품을 중심으로 -",
+    "title_remainder": "An Exploration of Korean Children’s Stories through the Lenses of Dramatic Omnipotence and Apophatic Theology - Focusing on the Works of Kwon Jeong-saeng, Yu Eun-sil, and Song Mi-kyung -",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003306839",
+    "best": 0.427,
+    "content": 0.4269802600019652,
+    "title_score": 0.0,
+    "title": "Maternal Writing and Female Solidarity in The Wrongs of Woman: or, Maria",
+    "title_remainder": null,
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003316999",
+    "best": 0.4078,
+    "content": 0.4078427825381953,
+    "title_score": 0.0,
+    "title": "발달장애 자녀를 둔 기독교인 어머니의 신앙 여정과 의미 재구성에 관한 내러티브 탐구",
+    "title_remainder": "A Narrative Inquiry into the Faith Journey and Meaning Reconstruction of Christian Mothers Raising Children with Developmental Disabilities",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003317002",
+    "best": 0.3903,
+    "content": 0.3903057391826923,
+    "title_score": 0.0,
+    "title": "중년기 기독 여성의 열등감과 우울증 경험에 대한 사례연구",
+    "title_remainder": "A Case Study on Middle-Aged Christian Women’s Experiences of Inferiority and Depression",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003336605",
+    "best": 0.3738,
+    "content": 0.3634118083775011,
+    "title_score": 0.0408,
+    "title": "『조선동화대집』에 나타난 등장인물의 특성 고찰",
+    "title_remainder": "A Study on the Characteristics of Characters in the Great Book of Joseon Fairy Tales",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003323406",
+    "best": 0.367,
+    "content": 0.35923114047581406,
+    "title_score": 0.0303,
+    "title": "성장에서 ‘생성(Becoming)’으로: 들뢰즈/가타리의 관점으로 본 <막걸리가 알려줄거야>",
+    "title_remainder": "From Growth to ‘Becoming’: A Deleuzian Analysis of FAQ (Makgeolli-ga Allyeojulgeoya, 2024)",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003325204",
+    "best": 0.3506,
+    "content": 0.35062381364623274,
+    "title_score": 0.0,
+    "title": "아동 발달의 관점에서 본 설화 <나무도령>의 가치",
+    "title_remainder": "The Value of the Folktale Namudoryeong from a Child Development Perspective",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003331398",
+    "best": 0.3496,
+    "content": 0.32839303756243476,
+    "title_score": 0.0789,
+    "title": "종교중독 한강 문학에 담긴 인간론과 세속적 구원 서사에 대한 기독교 철학적 비판 -‘존재 거부’와 ‘자력 구원’을 중심으로-",
+    "title_remainder": "A Christian Philosophical Critique of Anthropology and Secular Salvation Narrative in Han Kang’s Literature: Focusing on ‘Denial of Existence’ and ‘Self-Salvation’",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003301033",
+    "best": 0.346,
+    "content": 0.3116125631976603,
+    "title_score": 0.125,
+    "title": "카뮈의 연극 『정의의 사람들』에 나타난 부조리",
+    "title_remainder": "A Study on the Absurdity in Camus's Play The Just",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003311317",
+    "best": 0.34,
+    "content": 0.3298479919871262,
+    "title_score": 0.0377,
+    "title": "글로벌 K-드라마 <지옥>에 나타난 인지와 정동의 역동 연구",
+    "title_remainder": "A study on the dynamics of cognition and affect in global K-drama Hellbound",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003317556",
+    "best": 0.3323,
+    "content": 0.32149251302083326,
+    "title_score": 0.04,
+    "title": "기독교 인간관과 이슬람 인간관의 비교 및 상담적 함의",
+    "title_remainder": "Comparison of Christian and Islamic Views of Human Nature and Their Implications for Counseling",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003325209",
+    "best": 0.3133,
+    "content": 0.3132638011407457,
+    "title_score": 0.0,
+    "title": "사드의 권악징선 논리에 대한 연구 - 한국소설과의 비교를 중심으로 -",
+    "title_remainder": "An Analysis of Sade’s Logic of Promoting Evil and Punishing Good",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003335885",
+    "best": 0.2909,
+    "content": 0.28324381510416663,
+    "title_score": 0.0267,
+    "title": "『난장이가 쏘아올린 작은 공』의 소환 콤플렉스 기초원리 연구 - ‘인간소외’의 정신분석학적 인텔리전트를 중심으로",
+    "title_remainder": "A Study on the Fundamental Principles of the Evocation Complex in The 󰡔A Small Ball Launched by a Dwarf󰡕 — Focusing on the Psychoanalytic Intelligence of ‘Human Alienation’",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003316996",
+    "best": 0.2864,
+    "content": 0.26946004231770826,
+    "title_score": 0.058,
+    "title": "사회적 열등감 치유: 자기긍휼(Skill)에서 살아있는 인간 망(Ontology)으로의 전이",
+    "title_remainder": "Healing Social Inferiority: A Transition from Self-Compassion(Skill) to the Living Human Web(Ontology)",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003301091",
+    "best": 0.285,
+    "content": 0.28502955176468003,
+    "title_score": 0.0,
+    "title": "박경리의 ｢토지｣에 나타난 복수의 의미",
+    "title_remainder": "The Meanings of Revenge in Park Kyung-ni’s Toji(Land)",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003318415",
+    "best": 0.2795,
+    "content": 0.2704666231391303,
+    "title_score": 0.0308,
+    "title": "한국 사회의 재편에 따른 영화 속 도시 공간의 의미: 1988년부터 1997년까지 한국 영화",
+    "title_remainder": "The Meaning of Urban Spaces in Cinema Following the Reconfiguration of Korean Society: South Korean Cinema 1988 to 1997",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003316740",
+    "best": 0.2737,
+    "content": 0.2736871923321966,
+    "title_score": 0.0,
+    "title": "흑인여성의 자아탐구와 부처의 각성: 토니 모리슨의 󰡔빌러비드󰡕와 󰡔자비󰡕를 중심으로",
+    "title_remainder": "Black Women’s Self-Exploration and Buddha’s Awakening—Based on Toni Morrison’s Beloved and A Mercy",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003317960",
+    "best": 0.263,
+    "content": 0.263044860462989,
+    "title_score": 0.0,
+    "title": "이창래의 󰡔『항복자 』와 한국전 냉전 담론의 해체",
+    "title_remainder": "Unsettling Cold War Discourses of the Korean War in Chang-Rae Lee’s The Surrendered",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003329719",
+    "best": 0.2511,
+    "content": 0.25109891874256596,
+    "title_score": 0.0,
+    "title": "『블랙 뷰티』를 통해 본 빅토리아 시대 동물 노동과 장애 담론의 현재성",
+    "title_remainder": "The Contemporary Relevance of Victorian Discourses on Animal Labor and Disability in Black Beauty",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003300457",
+    "best": 0.2494,
+    "content": 0.249420166015625,
+    "title_score": 0.0,
+    "title": "디지털 시대 루쉰의 <아Q정전> 다시 읽기 – 아Q의 정신 승리법과 MZ세대의 신 아Q주의",
+    "title_remainder": "Rereading Lu Xun’s “The True Story of Ah Q” in the Digital Age: Ah Q’s Spiritual Victory and the MZ Generation’s New Ah Qism",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003310497",
+    "best": 0.2285,
+    "content": 0.21146643026519563,
+    "title_score": 0.0541,
+    "title": "제4차 산업혁명 속 인간성의 퇴조와 포스트휴먼 디스토피아의 징후적 서사 - 영화 <어쩔수가없다>를 중심으로",
+    "title_remainder": "The Erosion of Humanity in the Fourth Industrial Revolution - A Symptomatic Narrative of Posthuman Dystopia in No Other Choice",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003309151",
+    "best": 0.2272,
+    "content": 0.22716650401283855,
+    "title_score": 0.0,
+    "title": "북한의 원조 수용 조건에 대한 전략적 분석: 1953년 이후 국제원조 수용 사례를 중심으로",
+    "title_remainder": "A Strategic Analysis of North Korea’s Conditions for Accepting Foreign Aid since 1953",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003306859",
+    "best": 0.2216,
+    "content": 0.22163459883329995,
+    "title_score": 0.0,
+    "title": "스마트폰 중독과 관계 소외 극복을 위한 환대 신학",
+    "title_remainder": "A Theology of Hospitality for Overcoming Smartphone Addiction and Relational Alienation",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003306704",
+    "best": 0.2213,
+    "content": 0.21420010653409094,
+    "title_score": 0.0227,
+    "title": "Noddings와 Tronto의 돌봄 이론에 기반한 2022 실과(기술·가정) 교육과정 가정 분야 성취기준 분석: 돌봄 영역과 단계를 중심으로",
+    "title_remainder": "Analysis of the Home Economics Achievement Standards in the 2022 Practical Arts (Technology·Home Economics) Curriculum Based on Noddings’ and Tronto’s Theories of Care: A Focus on Care Domains and Phases",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003308056",
+    "best": 0.2059,
+    "content": 0.20587713068181823,
+    "title_score": 0.0,
+    "title": "계획된 우연이론의 섭리론적 재해석과 기독교 진로상담에의 적용",
+    "title_remainder": "A Providential Reinterpretation of Planned Happenstance Theory and Its Application to Christian Career Counseling",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003307761",
+    "best": 0.1844,
+    "content": 0.16964444247159094,
+    "title_score": 0.0444,
+    "title": "현대 한국 그림책에 나타난 자아의식",
+    "title_remainder": "Self-consciousness in Modern Korean picture books",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003300082",
+    "best": 0.137,
+    "content": 0.136962890625,
+    "title_score": 0.0,
+    "title": "아동기 부정적 경험을 가진 어머니의 체벌 허용 태도가 자녀의 또래 폭력 가해에 미치는 영향: 양육행동과 자아존중감의 매개효과",
+    "title_remainder": "Tolerant Maternal Attitudes Toward Corporal Punishment and Peer Violence Among Children: Implications of Harsh Parenting and Child Self-Esteem for Parenting Education in Mothers With Adverse Childhood Experiences",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003306807",
+    "best": 0.0717,
+    "content": 0.058441162109375,
+    "title_score": 0.0351,
+    "title": "슈토름의 사회소설과 시민사회 비판- 사회경제적 관점에서 본 임멘호수",
+    "title_remainder": "Storms Gesellschaftsnovellen und die Kritik am Bürgertum - Immensee aus sozioökonomischer Perspektive",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003333270",
+    "best": 0.0486,
+    "content": 0.048583984375,
+    "title_score": 0.0,
+    "title": "신라 향가 ｢원왕생가｣의 새로운 해독 — 天台大師의 止觀 수행법과 元曉大師의 如來藏 사상을 중심으로 —",
+    "title_remainder": "A New Readout on ｢Wonwangsaengga｣ of Silla Hyangga — focusing on the method for performing Jigwan of Cheontaedaesa(天台大師) and the thought of Yeoraejang by Wonhyodaesa(元曉大師) —",
+    "doc_type": "paper"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 1363.4,
+  "wall_s": 3.32,
+  "books": [
+   {
+    "book_id": "KCI_FI003301225",
+    "best": 0.4973,
+    "content": 0.49730284997152463,
+    "title_score": 0.0,
+    "title": "횡스크롤 퍼즐 플랫폼 게임 Meowment의 구현 및 평가",
+    "title_remainder": "Implementation & Evaluation of Side-scrolling Puzzle Platformer Meowment",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003305232",
+    "best": 0.4548,
+    "content": 0.4332106399251108,
+    "title_score": 0.0952,
+    "title": "진정성과 성실성 리더십 성공 사례 연구: 장진호 전투를 중심으로 한 올리버 스미스 장군의 리더십",
+    "title_remainder": "A Case Study of Leadership Authenticity and Integrity: General Oliver P. Smith’s Leadership in the Battle of Chosin Reservoir",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003307669",
+    "best": 0.3859,
+    "content": 0.3858882674130534,
+    "title_score": 0.0,
+    "title": "헨리 제임스의 『보스턴 사람들』에 나타난 사회적 장의 불협화음과 아비투스 번역 실패",
+    "title_remainder": "Dissonance between Social Fields and the Translational Failure of Habitus in Henry James’s The Bostonians",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003325144",
+    "best": 0.3755,
+    "content": 0.36389679981817613,
+    "title_score": 0.0455,
+    "title": "뷰티 옴니채널 올리브영의 구조적 특성이 소비자 인게이지먼트 및 지속사용의도에 미치는 영향",
+    "title_remainder": "The Effects of Structural Characteristics of Beauty Omni-Channel Services on Consumer Engagement and Continuous Usage Intention: Focusing on Olive Young",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003301199",
+    "best": 0.3753,
+    "content": 0.37529953023826357,
+    "title_score": 0.0,
+    "title": "선택과 결과의 영화적 재구성 : 유튜브 기반 인터랙티브 콘텐츠 <아오르비>의 서사 구조",
+    "title_remainder": "Reconstructing Choice and Consequence in Cinema : The Narrative Structure of the Youtube Interactive Film Content <AORB>",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003322549",
+    "best": 0.3016,
+    "content": 0.30157001201923084,
+    "title_score": 0.0,
+    "title": "Design of Adaptive On-Time GaN DC-DC Converter with Active Gate Driving for Automotive System",
+    "title_remainder": null,
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003280844",
+    "best": 0.3004,
+    "content": 0.30038502072359297,
+    "title_score": 0.0,
+    "title": "A High-Efficiency Hybrid Buck-Boost Photovoltaic Energy Harvester with Adaptive Fractional Open-Circuit Voltage Maximum-Power-Point-Tracking Control",
+    "title_remainder": null,
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003309858",
+    "best": 0.2818,
+    "content": 0.28181907170904985,
+    "title_score": 0.0,
+    "title": "퍼포먼스 복합체의 재연: 재설정된 상황의 유동성과 불화",
+    "title_remainder": "The Reenactment of the Performance Complex: The Fluidity and Discord of Resetting Situations",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003304758",
+    "best": 0.2816,
+    "content": 0.2815920035681937,
+    "title_score": 0.0,
+    "title": "The effect of implant-abutment connection fit and proximal contact tightness on screw loosening",
+    "title_remainder": null,
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003280843",
+    "best": 0.2814,
+    "content": 0.28139016471803335,
+    "title_score": 0.0,
+    "title": "A Multi-Path Hybrid DC-DC Converter with Reduced Inductor Current and Wide Voltage Conversion Ratio",
+    "title_remainder": null,
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003336062",
+    "best": 0.2461,
+    "content": 0.2460960078882104,
+    "title_score": 0.0,
+    "title": "IoT 보안 강화를 위한 제도적 개선 방안 연구",
+    "title_remainder": "A Study on Institutional Improvement Measures for Strengthening IoT Security",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003308103",
+    "best": 0.245,
+    "content": 0.2449951171875,
+    "title_score": 0.0,
+    "title": "‘강제된 주의’와 ‘허용된 산만함’:넷플릭스의 이중적 시각 전략 연구",
+    "title_remainder": "‘Forced Attention’ and ‘Permitted Distraction’: A Study on Netflix’s Dual Visual Strategy",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003320149",
+    "best": 0.2419,
+    "content": 0.24188563736721824,
+    "title_score": 0.0,
+    "title": "사이버안보 위협 대응체계의 법적 정비 방안 — 일본의 ｢사이버 대처능력 강화법｣에 대한 비교법적 검토를 중심으로 —",
+    "title_remainder": "Legal Reform Measures for the Cyber ​​Security Threat Response System — Focusing on a Comparative Legal Review of Japan’s “Cyber ​​Response Capability Enhancement Act” —",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003301095",
+    "best": 0.2375,
+    "content": 0.23746744791666663,
+    "title_score": 0.0,
+    "title": "사이버기반범죄에 대한 국제형사재판소의 적극적 역할 고찰",
+    "title_remainder": "The Role of the International Criminal Court in Cyber-Enabled Crimes",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003335878",
+    "best": 0.2258,
+    "content": 0.214935302734375,
+    "title_score": 0.0345,
+    "title": "『차라투스트라는 이렇게 말했다』에 대한 건강철학적 해명 - 이 저서의 「2부」에 제기된 선한 인간과 평등에 대한 차라투스트라의 심리학적 비판을 중심으로",
+    "title_remainder": "Nietzsche's Thus spoke Zarathustra read from the point of view of health philosophy - In the centre of Zarathustras' psychological criticism of good people and equality in Part 2 of this book",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003318056",
+    "best": 0.2196,
+    "content": 0.21957989119518562,
+    "title_score": 0.0,
+    "title": "플라스틱 컵 슬리브 실시간 탐지 분거수거함 설계-YOLO v5 활용을 중심으로",
+    "title_remainder": "Design of a Recycling Bin for Plastic Cup Sleeve Real-Time Detection Based on YOLO v5",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003307185",
+    "best": 0.2189,
+    "content": 0.218902587890625,
+    "title_score": 0.0,
+    "title": "외래어 선호 현상의 인지의미론적 해명",
+    "title_remainder": "A Cognitive Semantic Account of the Phenomenon of Transliterated Loanword Preference",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003321039",
+    "best": 0.2029,
+    "content": 0.20287880603410235,
+    "title_score": 0.0,
+    "title": "디지털플랫폼 환경에서 딥페이크 성범죄에 대응한 수사법제의 개선 방안",
+    "title_remainder": "An Improvement Plans of the Investigative Legal Framework for Addressing Deepfake Sexual Crimes in Digital Platform Environments",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003326647",
+    "best": 0.1877,
+    "content": 0.1877319228044133,
+    "title_score": 0.0,
+    "title": "플랫폼 혐오표현 규제에 대한 미디어사회학적 연구 - 인정이론을 중심으로 -",
+    "title_remainder": "A Media-Sociological Study on the Regulation of Hate Speech on Digital Platforms - Focusing on the ‘Theory of Recognition’ -",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003311617",
+    "best": 0.1737,
+    "content": 0.17369495738636376,
+    "title_score": 0.0,
+    "title": "최중도 지적장애인의 행동 특성 분석과 보호자의 관리 편의성을 고려한 여름 활동복 디자인 개발",
+    "title_remainder": "Design of Summer Activity Wear for Adults with Profound Intellectual Disabilities - Focusing on Behavioral Traits and Caregiver Convenience -",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003302501",
+    "best": 0.1719,
+    "content": 0.17192647943430295,
+    "title_score": 0.0,
+    "title": "Pricing Power Options Under Hybrid Stochastic and Local Volatility",
+    "title_remainder": null,
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003334399",
+    "best": 0.171,
+    "content": 0.17103083764333005,
+    "title_score": 0.0,
+    "title": "Ultrasonic Nanocrystal Surface Modification of 3D Interconnected Heterostructured Complex Concentrated Alloys Produced by Liquid Metal Dealloying: Microstructural Evolution and Wear Behavior",
+    "title_remainder": null,
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003330187",
+    "best": 0.1614,
+    "content": 0.1613769531250001,
+    "title_score": 0.0,
+    "title": "마르틴 부버의 관계 철학과 그의 연극관 - 인간과 인간 사이 공간에서 비인간과의 대화 가능성까지",
+    "title_remainder": "Martin Buber’s Philosophy of Relationship and View of Theatre - From the Between Man and Man to the Possibility of Dialogue with Non-Human",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003301339",
+    "best": 0.1371,
+    "content": 0.13710160688920459,
+    "title_score": 0.0,
+    "title": "T. S. Eliot and Virginia Woolf: 1926-1929",
+    "title_remainder": "T. S. 엘리엇과 버지니아 울프: 1926-1929년",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003332326",
+    "best": 0.1368,
+    "content": 0.13682417436079553,
+    "title_score": 0.0,
+    "title": "이승만 정권하의 자유당 연구",
+    "title_remainder": "A Study on the Liberal Party under Syngman Rhee's Regime",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003303629",
+    "best": 0.1149,
+    "content": 0.11486538973721594,
+    "title_score": 0.0,
+    "title": "노자와 장자의 무위(無爲) 개념 비교연구 ― 성인(聖人)과 진인(眞人)의 주체 형식과 무위적 행동 양식을 중심으로 ―",
+    "title_remainder": "Comparative Study on Wu-wei of Laozi and Zhuangzi: Focusing on the Subject Forms of the Sage and the True Person, and Their Modes of Wuwei-based Action",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003330250",
+    "best": 0.0821,
+    "content": 0.08209228515625,
+    "title_score": 0.0,
+    "title": "Informativeness-Aware Layer Freezing and Sample Replay for Efficient Online Continual Object Detection",
+    "title_remainder": "정보성 인지 계층 동결 및 샘플 리플레이 기반 온라인 지속 객체 탐지",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003334662",
+    "best": 0.0692,
+    "content": 0.06915283203125,
+    "title_score": 0.0,
+    "title": "제3자에 의한 업무상 재해와 근로복지공단의 대위권 행사 가능성 — 대법원 2026. 1. 22. 선고 2022다214040 전원합의체 판결을 중심으로 —",
+    "title_remainder": "Occupational Accidents Caused by Third Parties and the Possibility of Subrogation by the Korea Workers' Compensation & Welfare Service — Focusing on the Supreme Court En Banc Decision 2022Da214040 Delivered on January 22, 2026 —",
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003318068",
+    "best": 0.0488,
+    "content": 0.04876708984375,
+    "title_score": 0.0,
+    "title": "The Multiverse as Ideological Closure: Formal Excess, Algorithmic Variation, and the Crisis of Futurity in Everything Everywhere All at Once",
+    "title_remainder": null,
+    "doc_type": "paper"
+   },
+   {
+    "book_id": "KCI_FI003335071",
+    "best": 0.0476,
+    "content": 0.047607421875,
+    "title_score": 0.0,
+    "title": "Bilingual effects on /ɨ/ epenthesis in English loanwords in Korean",
+    "title_remainder": null,
+    "doc_type": "paper"
+   }
+  ]
+ }
+}

@@ -1,0 +1,561 @@
+{
+ "kind": "title_kr",
+ "query": "감자",
+ "targets": [
+  "WS_018"
+ ],
+ "on": {
+  "rewritten": "농업, 식량, 작물, 채소, 식생활, 조리법, 영양",
+  "elapsed_ms": 1719.5,
+  "wall_s": 1.95,
+  "books": [
+   {
+    "book_id": "CNTS-00049203536",
+    "best": 0.5314,
+    "content": 0.5314462030925724,
+    "title_score": 0.0,
+    "title": "North Korea Development Report 2003/04",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-521",
+    "best": 0.437,
+    "content": 0.43700400742416257,
+    "title_score": 0.0,
+    "title": "Robinson Crusoe",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-140",
+    "best": 0.4181,
+    "content": 0.41813151041666663,
+    "title_score": 0.0,
+    "title": "The Jungle",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049204001",
+    "best": 0.3902,
+    "content": 0.3901949298170502,
+    "title_score": 0.0,
+    "title": "북핵 해결 이후 국제사회의 대북 경제지원 활성화 방안",
+    "title_remainder": "양자간 지원을 중심으로",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049655760",
+    "best": 0.3847,
+    "content": 0.3846717247596154,
+    "title_score": 0.0,
+    "title": "OECD in Figures",
+    "title_remainder": "STATISTICS ON THE MEMBER COUNTRIES",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1399",
+    "best": 0.3797,
+    "content": 0.37965210103580194,
+    "title_score": 0.0,
+    "title": "Anna Karenina",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063422",
+    "best": 0.3782,
+    "content": 0.3781692900426885,
+    "title_score": 0.0,
+    "title": "蘆溪 朴仁老의 詩歌硏究",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11696",
+    "best": 0.3649,
+    "content": 0.3648983496873781,
+    "title_score": 0.0,
+    "title": "The Food of the Gods and How It Came to Earth",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00052063908",
+    "best": 0.3538,
+    "content": 0.353814022237403,
+    "title_score": 0.0,
+    "title": "민요에 반영된 삶의 의식 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2873",
+    "best": 0.3487,
+    "content": 0.3486765597802882,
+    "title_score": 0.0,
+    "title": "The Ambassadors",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "best": 0.3362,
+    "content": 0.3361579614502236,
+    "title_score": 0.0,
+    "title": "The Swiss Family Robinson",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655312",
+    "best": 0.3004,
+    "content": 0.3003573849874295,
+    "title_score": 0.0,
+    "title": "2006~2010년 국가재정운용계획",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00052063554",
+    "best": 0.2759,
+    "content": 0.2759096864994893,
+    "title_score": 0.0,
+    "title": "1940년대 초기 한국 농민소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655466",
+    "best": 0.2652,
+    "content": 0.26524801553082655,
+    "title_score": 0.0,
+    "title": "2005 나라살림",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00049204004",
+    "best": 0.2623,
+    "content": 0.2623072731057172,
+    "title_score": 0.0,
+    "title": "세계화와 개방정책",
+    "title_remainder": "평가와 과제",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00052063539",
+    "best": 0.2593,
+    "content": 0.25927199093037445,
+    "title_score": 0.0,
+    "title": "조선후기 세태소설 연구",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-245",
+    "best": 0.2468,
+    "content": 0.24681793860300905,
+    "title_score": 0.0,
+    "title": "Life on the Mississippi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-145",
+    "best": 0.2427,
+    "content": 0.24265583851554662,
+    "title_score": 0.0,
+    "title": "Middlemarch",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2788",
+    "best": 0.2354,
+    "content": 0.23538533456529587,
+    "title_score": 0.0,
+    "title": "Little Men",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-26",
+    "best": 0.2264,
+    "content": 0.22640713778409094,
+    "title_score": 0.0,
+    "title": "Paradise Lost",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "best": 0.2125,
+    "content": 0.21252012648986962,
+    "title_score": 0.0,
+    "title": "No Name",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1013",
+    "best": 0.2117,
+    "content": 0.2116546630859375,
+    "title_score": 0.0,
+    "title": "The First Men in the Moon",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.1996,
+    "content": 0.19961234773761283,
+    "title_score": 0.0,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1162",
+    "best": 0.1878,
+    "content": 0.18783729242688063,
+    "title_score": 0.0,
+    "title": "The Star Rover",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-307",
+    "best": 0.1776,
+    "content": 0.17757901278409094,
+    "title_score": 0.0,
+    "title": "Fathers and Sons",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-202",
+    "best": 0.1373,
+    "content": 0.1373291015625,
+    "title_score": 0.0,
+    "title": "Nostromo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655323",
+    "best": 0.1002,
+    "content": 0.10015869140625,
+    "title_score": 0.0,
+    "title": "함께가는 희망한국 VISION2030",
+    "title_remainder": null,
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "CNTS-00052063230",
+    "best": 0.0677,
+    "content": 0.06768798828125,
+    "title_score": 0.0,
+    "title": "19世紀 時調의 變貌樣相",
+    "title_remainder": "趙榥.安玟英.李世輔의 개인시조집을 중심으로",
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-512",
+    "best": 0.0599,
+    "content": 0.05987548828125,
+    "title_score": 0.0,
+    "title": "The House of the Seven Gables",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_037",
+    "best": 0.0426,
+    "content": 0.042633056640625,
+    "title_score": 0.0,
+    "title": "개척자",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ },
+ "off": {
+  "rewritten": null,
+  "elapsed_ms": 695.3,
+  "wall_s": 1.67,
+  "books": [
+   {
+    "book_id": "WS_018",
+    "best": 1.0,
+    "content": 0.5009765625,
+    "title_score": 1.0,
+    "title": "감자",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "GM_001",
+    "best": 0.5316,
+    "content": 0.5316256009615385,
+    "title_score": 0.0,
+    "title": "동백꽃",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "WS_037",
+    "best": 0.4103,
+    "content": 0.41025847319173936,
+    "title_score": 0.0,
+    "title": "개척자",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-5230",
+    "best": 0.4046,
+    "content": 0.40463264941626587,
+    "title_score": 0.0,
+    "title": "The Invisible Man",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-11703",
+    "best": 0.4045,
+    "content": 0.40445855349473003,
+    "title_score": 0.0,
+    "title": "The Swiss Family Robinson",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3669",
+    "best": 0.3912,
+    "content": 0.3911644777942962,
+    "title_score": 0.0,
+    "title": "The Pathfinder",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-76",
+    "best": 0.357,
+    "content": 0.35697246351281986,
+    "title_score": 0.0,
+    "title": "Adventures of Huckleberry Finn",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-18727",
+    "best": 0.3453,
+    "content": 0.34532752403846156,
+    "title_score": 0.0,
+    "title": "The Railway Children",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-245",
+    "best": 0.3443,
+    "content": 0.3443441797327875,
+    "title_score": 0.0,
+    "title": "Life on the Mississippi",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-4276",
+    "best": 0.3402,
+    "content": 0.3402457351519633,
+    "title_score": 0.0,
+    "title": "North and South",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-110",
+    "best": 0.3384,
+    "content": 0.33837890625,
+    "title_score": 0.0,
+    "title": "Tess of the d'Urbervilles",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-145",
+    "best": 0.3261,
+    "content": 0.3260779747596154,
+    "title_score": 0.0,
+    "title": "Middlemarch",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-146",
+    "best": 0.3211,
+    "content": 0.32108788955322665,
+    "title_score": 0.0,
+    "title": "A Little Princess",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-175",
+    "best": 0.3081,
+    "content": 0.3081206725784008,
+    "title_score": 0.0,
+    "title": "The Phantom of the Opera",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1184",
+    "best": 0.3027,
+    "content": 0.3026638385107322,
+    "title_score": 0.0,
+    "title": "The Count of Monte Cristo",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1342",
+    "best": 0.2974,
+    "content": 0.29740269238264916,
+    "title_score": 0.0,
+    "title": "Pride and Prejudice",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-6688",
+    "best": 0.2963,
+    "content": 0.2963232515151063,
+    "title_score": 0.0,
+    "title": "The Mill on the Floss",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-3361",
+    "best": 0.2948,
+    "content": 0.29483723839005016,
+    "title_score": 0.0,
+    "title": "No Name",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-1259",
+    "best": 0.2899,
+    "content": 0.28987943209134615,
+    "title_score": 0.0,
+    "title": "The Three Musketeers",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "CNTS-00049655779",
+    "best": 0.2791,
+    "content": 0.279052734375,
+    "title_score": 0.0,
+    "title": "경제백서 1999",
+    "title_remainder": "외환위기 극복과 새천년 대비",
+    "doc_type": "policy"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-35",
+    "best": 0.2648,
+    "content": 0.26483154296875,
+    "title_score": 0.0,
+    "title": "The Time Machine",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-41537",
+    "best": 0.2533,
+    "content": 0.25328572591145826,
+    "title_score": 0.0,
+    "title": "The Divine Comedy",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-8117",
+    "best": 0.2402,
+    "content": 0.24016316731770826,
+    "title_score": 0.0,
+    "title": "Demons",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-2788",
+    "best": 0.239,
+    "content": 0.23902058654042124,
+    "title_score": 0.0,
+    "title": "Little Men",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-98",
+    "best": 0.2194,
+    "content": 0.21942183676148452,
+    "title_score": 0.0,
+    "title": "A Tale of Two Cities",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-77",
+    "best": 0.1891,
+    "content": 0.1890647194602273,
+    "title_score": 0.0,
+    "title": "Five Children and It",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-17489",
+    "best": 0.1857,
+    "content": 0.18573552911931823,
+    "title_score": 0.0,
+    "title": "The Coral Island",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-46",
+    "best": 0.1464,
+    "content": 0.1463623046875,
+    "title_score": 0.0,
+    "title": "A Christmas Carol",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-700",
+    "best": 0.113,
+    "content": 0.11297607421875,
+    "title_score": 0.0,
+    "title": "The Old Curiosity Shop",
+    "title_remainder": null,
+    "doc_type": "literature"
+   },
+   {
+    "book_id": "LIT-GUTENBERG-122",
+    "best": 0.0891,
+    "content": 0.089111328125,
+    "title_score": 0.0,
+    "title": "The Return of the Native",
+    "title_remainder": null,
+    "doc_type": "literature"
+   }
+  ]
+ }
+}
