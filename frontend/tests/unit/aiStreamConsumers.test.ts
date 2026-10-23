@@ -169,7 +169,7 @@ describe("DeepRead 대화 칸 — components/BookChat.vue", () => {
   // 다른 AI 글 화면(논문 검색·상세 요약·추천 이유·관련 카드 팝업)처럼 받던 글을 남기고 그 아래에 안내를 둔다 — 대화(messages·store)
   // 에는 넣지 않는다. 받던 글은 안내(role=alert) 밖이라 알림이 긴 글을 다시 읽지 않는다
   it("글 일부를 받은 뒤 실패하면 받던 글을 흐리게 실패 말풍선에 남기고, 안내만 role=alert 다", () => {
-    expect(src).toMatch(/<div v-if="failure\.partial" class="skx-chat-msg__partial" v-html="formatText\(failure\.partial\)" \/>/);
+    expect(src).toMatch(/<div v-if="failure\.partial" class="skx-chat-msg__partial" v-html="formatStatic\(failure\.partial\)" \/>/);
     expect(src).not.toMatch(/role="alert"[^>]*>\s*<div v-if="failure\.partial"/);
   });
 

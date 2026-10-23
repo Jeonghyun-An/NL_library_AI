@@ -300,7 +300,8 @@
             <img src="/img/ico-arrow.svg" alt="" class="skx-chat-close__ico" />
           </button>
           <h2 class="skx-chat-title">
-            DeepRead<template v-if="paper?.title">: {{ paper.title }}</template>
+            <span class="skx-chat-title__brand">DeepRead</span>
+            <span v-if="paper?.title" class="skx-chat-title__doc">{{ paper.title }}</span>
           </h2>
         </div>
         <BookChat :cnts-id="paperId" :book-title="paper?.title" doc-kind="paper" @close="chatOpen = false" />
