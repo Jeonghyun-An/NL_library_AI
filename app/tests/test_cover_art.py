@@ -4,6 +4,7 @@
 LLM 은 카메라가 찍을 장면 한 문장만 쓴다. 장면의 금지어는 걸린 말을 알려 두 번까지 다시, 그래도 남은 문학 아닌 자료는
 표지를 만들지 않는다(옛 표지를 둔다)."""
 import asyncio
+import json
 
 import pytest
 
@@ -100,6 +101,7 @@ def test_disaster_titles_also_ban_boats_and_floating_things_including_compounds(
     scene = "Rescue workers move through the rubble of a collapsed apartment block"
     assert cover_art.banned_terms(scene, "2004 재난연감") == ["collapsed", "rubble"]
     assert cover_art.banned_terms(scene, "조선조 가정소설 연구") == []
+    assert cover_art.banned_terms("A ruined apartment block", "2004 재난연감") == ["ruined"]  # 리뷰 지적 — ruins? 가 놓쳤다
 
 
 # 리뷰 지적 — '안전'(사회안전망)·'사고'(思考)는 재난이 아닌 제목에도 있다
@@ -268,12 +270,92 @@ def test_args_default_to_a_dry_run_with_backups_and_a_failure_stop():
 class _FakeMinio:
     def __init__(self, fail_prefix: str = ""):
         self.keys: list[str] = []
+        self.copies: list[tuple[str, str]] = []
         self.fail_prefix = fail_prefix
 
     def put_object(self, bucket, key, data, length, content_type):
         if self.fail_prefix and key.startswith(self.fail_prefix):
             raise RuntimeError("MinIO down")
         self.keys.append(key)
+
+    def copy_object(self, bucket, key, source):
+        self.copies.append((key, source.object_name))
+
+
+# ── 다시 만들기 스크립트의 실행(_run) — DB·MinIO·LLM·FLUX 는 가짜 ─────────────────
+def _regen(monkeypatch, tmp_path, targets, argv, *, photo_error=None, exists=lambda key: True):
+    from services.ingestion import cover_generator, stages
+
+    client, saved = _FakeMinio(), []
+
+    async def fake_compose(**kw):
+        return "a photo prompt", "A dam in a valley."
+
+    async def fake_render(prompt):
+        if photo_error:
+            raise photo_error
+        return b"jpeg"
+
+    monkeypatch.setattr(regen, "_load_targets", lambda args: targets)
+    monkeypatch.setattr(regen, "_save", lambda cid, key, prompt: saved.append((cid, key, prompt)))
+    monkeypatch.setattr(regen, "_exists", lambda c, bucket, key: exists(key))
+    monkeypatch.setattr(stages, "minio_client", lambda: client)
+    monkeypatch.setattr(cover_generator, "compose_cover", fake_compose)
+    monkeypatch.setattr(cover_generator, "render_cover_image", fake_render)
+    log = tmp_path / "run.jsonl"
+    counts = asyncio.run(regen._run(regen.parse_args(argv + ["--log", str(log)])))
+    rows = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()] if log.exists() else []
+    return counts, client, saved, rows
+
+
+def _target(cid, doc_type="policy", title="2005 나라살림"):
+    return {"cnts_id": cid, "title": title, "author": "", "kdc": "329", "doc_type": doc_type, "themes": "",
+            "publisher": "기획예산처", "introduction": "", "summary": "요약", "old_key": f"covers/{cid}.jpg",
+            "old_prompt": "old"}
+
+
+def test_run_policy_makes_both_backs_up_the_old_photo_and_shows_the_typo(monkeypatch, tmp_path):
+    counts, client, saved, rows = _regen(monkeypatch, tmp_path, [_target("P")], ["--apply"])
+    assert counts["ok"] == 1 and sorted(client.keys) == ["covers/P.jpg", "covers/typo/P.jpg"]
+    assert client.copies and client.copies[0][1] == "covers/P.jpg"          # 옛 그림을 덮기 전에 백업
+    assert saved == [("P", "covers/typo/P.jpg", "a photo prompt")]
+    assert rows[0]["made"] == ["typo", "photo"] and rows[0]["status"] == "ok"
+
+
+# 리뷰 지적 — 그림 판이 실패하면(FLUX 가 꺼져 있음) 이미 올린 목업이 DB 에 반영되지 않았다
+def test_run_photo_failure_still_shows_the_typo_and_retries_only_the_photo(monkeypatch, tmp_path):
+    counts, client, saved, rows = _regen(monkeypatch, tmp_path, [_target("P")], ["--apply"],
+                                         photo_error=ConnectionError("flux down"))
+    assert client.keys == ["covers/typo/P.jpg"]
+    assert saved == [("P", "covers/typo/P.jpg", None)]                       # 올리지 못한 그림의 프롬프트는 쓰지 않는다
+    assert rows[0]["status"] == "ok" and rows[0]["made"] == ["typo"] and rows[0]["photo"] == "fail"
+    done = regen.done_parts(str(tmp_path / "run.jsonl"))
+    assert [t["cnts_id"] for t in regen.pending([_target("P")], done, 0, {"typo", "photo"})] == ["P"]
+
+
+def test_run_stops_after_repeated_photo_failures(monkeypatch, tmp_path):
+    targets = [_target(f"P{n}") for n in range(8)]
+    counts, *_ = _regen(monkeypatch, tmp_path, targets, ["--apply", "--max-fails", "3"],
+                        photo_error=ConnectionError("flux down"))
+    assert counts["ok"] == 3                                                  # 셋째에서 멈춘다(목업만 만들며 계속 돌지 않는다)
+
+
+def test_run_without_apply_writes_nothing(monkeypatch, tmp_path):
+    counts, client, saved, rows = _regen(monkeypatch, tmp_path, [_target("P"), _target("L", "literature")], [])
+    assert counts["dry"] == 2 and client.keys == [] and saved == []
+
+
+# 리뷰 지적 — --switch 가 --limit·--log 를 무시해 몇 건만 시험해도 정책 보고서 전부를 바꾸고 기록도 없었다
+def test_switch_respects_limit_logs_old_keys_and_does_not_count_as_done(monkeypatch, tmp_path):
+    targets = [_target("P1"), _target("P2"), _target("P3"), _target("L", "literature")]
+    counts, client, saved, rows = _regen(monkeypatch, tmp_path, targets,
+                                         ["--apply", "--switch", "--show", "photo", "--limit", "2"])
+    assert counts["switched"] == 2 and [s[:2] for s in saved] == [("P1", "covers/P1.jpg"), ("P2", "covers/P2.jpg")]
+    assert [r["old_key"] for r in rows] == ["covers/P1.jpg", "covers/P2.jpg"] and client.keys == []
+    assert regen.done_parts(str(tmp_path / "run.jsonl")) == {}
+    counts, _, saved, _ = _regen(monkeypatch, tmp_path, [_target("P9")], ["--apply", "--switch"],
+                                 exists=lambda key: False)
+    assert counts["missing"] == 1 and saved == []
 
 
 def _store(monkeypatch, doc_type, client, photo=("covers/X.jpg", "a photo prompt")):

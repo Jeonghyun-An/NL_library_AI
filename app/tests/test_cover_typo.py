@@ -54,6 +54,54 @@ def test_render_gives_a_cover_sized_jpeg_and_is_deterministic(cid, title, publis
     assert data == cover_typo.render_typo_cover(cid, title, publisher)
 
 
+# 리뷰 지적 — year 판형이 제목의 연도를 모두 지워 '2006~2010년 …' 이 '~ 국가재정운용계획' 으로 깨졌다
+@pytest.mark.parametrize("title, want", [
+    ("2003년 기금운용계획 이렇게 만들었습니다", "2003"),
+    ("경제백서 1999", "1999"),
+    ("2006~2010년 국가재정운용계획", None),
+    ("North Korea Development Report 2003/04", None),
+    ("2024년도 예산안 및 2025년 기금운용계획", None),
+    ("2000억 규모 기금 운용", None),
+    ("개혁과 도약의 길", None),
+])
+def test_single_year_only_for_one_plain_year(title, want):
+    assert cover_typo.single_year(title) == want
+    if want is None:
+        assert {cover_typo.layout_of(f"C{n}", title) for n in range(100)} == {"classic", "band"}
+
+
+# 리뷰 지적 — Pretendard 에 한자가 없어 한자 제목이 네모 상자로 찍혔다
+def test_hanja_titles_switch_to_a_cjk_font_that_has_every_glyph():
+    title, publisher = "2006年度 基金現況", "企劃豫算處"
+    assert cover_typo.missing_chars(title + publisher) >= {"年", "基", "企"}
+    assert cover_typo.missing_chars("2005 나라살림 기획예산처 · ~") == set()
+    if cover_typo._fallback_spec() is None:
+        pytest.skip("대체 CJK 글꼴이 없는 환경")
+    assert cover_typo.family_for(title + publisher) == "fallback"
+    assert cover_typo.missing_chars(title + publisher, "fallback") == set()
+    assert cover_typo.render_typo_cover("CNTS-Y", title, publisher)
+
+
+def test_missing_fallback_font_raises_so_the_caller_shows_the_photo(monkeypatch):
+    from services.ingestion import cover_generator
+
+    monkeypatch.setattr(cover_typo, "FALLBACK_FONTS", [])
+    cover_typo._fallback_spec.cache_clear()
+    try:
+        with pytest.raises(cover_typo.MissingGlyphs):
+            cover_typo.render_typo_cover("CNTS-Y", "2006年度 基金現況", "")
+
+        class Client:
+            def put_object(self, *a, **kw):
+                raise AssertionError("올리면 안 된다")
+
+        assert cover_generator.store_typo_cover("CNTS-Y", "2006年度 基金現況", "", Client()) is None
+    finally:
+        cover_typo._fallback_spec.cache_clear()
+        cover_typo._font.cache_clear()
+        cover_typo._glyph.cache_clear()
+
+
 def test_every_layout_renders():
     seen = set()
     for n in range(60):

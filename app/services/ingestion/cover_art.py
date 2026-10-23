@@ -70,7 +70,8 @@ PALETTES: dict[str, list[str]] = {
 # 8~9장이 서양인·유럽 거리·장자제 같은 기암 협곡·한푸풍 옷). 문학 근현대는 시대를 못 박지 않는다(1900~1990년대가 섞인다)
 SETTING: dict[str, str] = {
     "policy": "Photographed in South Korea, with Korean people and Korean surroundings.",
-    "classical": ("Set in Joseon-dynasty Korea: Korean hanbok, Korean hanok houses with grey tiled or thatched roofs, "
+    # 고전은 신라·고려 문학도 있어 왕조를 못 박지 않는다(리뷰 지적 — 시대는 장면 문장이 정한다)
+    "classical": ("Set in premodern Korea: Korean hanbok, Korean hanok houses with grey tiled or thatched roofs, "
                   "low rounded Korean hills."),
     "modern": "Set in twentieth-century Korea, with Korean people in clothes of the period and Korean surroundings.",
 }
@@ -133,7 +134,7 @@ _BANNED_RE = re.compile(r"\b(" + "|".join(re.escape(w) for w in BANNED_WORDS) + 
 # 견본에서 '옆으로 누운 여객선', v8 에서 '무너진 아파트 잔해 속 구조대'가 나왔다). 합성어(lifeboat·warship·sailboat)도 잡는다
 _DISASTER_RE = re.compile(
     r"\b(\w*(?:boat|ship|ferry|ferries|vessel)s?|sink|sinking|sank|sunk|tilt|tilted|tilting|overturn|overturned|"
-    r"floating|flood ?water|collaps\w*|rubble|debris|ruins?)\b", re.I)
+    r"floating|flood ?water|collaps\w*|rubble|debris|ruin\w*)\b", re.I)
 
 # 장면 끝의 의미 풀이('…, representing resilience') — 상징물을 부르고 그림에 쓸모없다.
 # 'reflecting the …'는 물에 비친 모습 같은 실제 묘사일 수 있어 두다(리뷰 지적)

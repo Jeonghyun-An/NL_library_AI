@@ -171,23 +171,36 @@ def _exists(client, bucket: str, key: str) -> bool:
 
 
 def _switch(args, targets: list[dict], client, bucket: str) -> dict:
-    """정책 보고서의 표지 키만 --show 판으로 바꾼다 — 그리지 않는다. 그 판이 없는 자료는 그대로 둔다(missing)."""
+    """정책 보고서의 표지 키만 --show 판으로 바꾼다 — 그리지 않는다. 그 판이 없는 자료는 그대로 둔다(missing).
+    --limit 으로 앞 몇 건만 시험할 수 있고, --log 에는 자료마다 바꾸기 전 키를 남긴다(상태는 ok 가 아니라 이어 가기에 섞이지 않는다)."""
     counts = {"switched": 0, "dry": 0, "missing": 0, "fail": 0}
-    for i, t in enumerate([t for t in targets if t["doc_type"] == "policy"], 1):
-        cid, key = t["cnts_id"], cover_key(t["cnts_id"], args.show)
-        try:
-            if not _exists(client, bucket, key):
-                status = "missing"
-            elif not args.apply:
-                status = "dry"
-            else:
-                _save(cid, key, None)
-                status = "switched"
-        except Exception as e:
-            status = "fail"
-            log.warning(f"[{cid}] 바꾸기 실패: {type(e).__name__}: {e}")
-        counts[status] += 1
-        print(f"[{i}] {status} {cid} {t['old_key']} -> {key}", flush=True)
+    policy = [t for t in targets if t["doc_type"] == "policy"]
+    if args.limit:
+        policy = policy[:args.limit]
+    logf = open(args.log, "a", encoding="utf-8") if args.log else None
+    try:
+        for i, t in enumerate(policy, 1):
+            cid, key = t["cnts_id"], cover_key(t["cnts_id"], args.show)
+            try:
+                if not _exists(client, bucket, key):
+                    status = "missing"
+                elif not args.apply:
+                    status = "dry"
+                else:
+                    _save(cid, key, None)
+                    status = "switched"
+            except Exception as e:
+                status = "fail"
+                log.warning(f"[{cid}] 바꾸기 실패: {type(e).__name__}: {e}")
+            counts[status] += 1
+            if logf:
+                logf.write(json.dumps({"cnts_id": cid, "switch": args.show, "status": status,
+                                       "old_key": t["old_key"], "new_key": key}, ensure_ascii=False) + "\n")
+                logf.flush()
+            print(f"[{i}/{len(policy)}] {status} {cid} {t['old_key']} -> {key}", flush=True)
+    finally:
+        if logf:
+            logf.close()
     return counts
 
 
@@ -197,7 +210,7 @@ async def _run(args) -> dict:
     from core.config import get_settings
     from services.ingestion import cover_art
     from services.ingestion.cover_generator import compose_cover, render_cover_image, upload_cover_to_minio
-    from services.ingestion.cover_typo import render_typo_cover
+    from services.ingestion.cover_typo import MissingGlyphs, render_typo_cover
     from services.ingestion.stages import minio_client
 
     cfg = get_settings()
@@ -224,57 +237,76 @@ async def _run(args) -> dict:
             row = {"cnts_id": cid, "title": t["title"], "doc_type": t["doc_type"],
                    "old_key": t["old_key"], "old_prompt": t["old_prompt"], "made": []}
             genre = cover_art.genre_of(t["doc_type"], t["title"] or "", t["themes"], t["summary"])
+            photo_failed = False
             try:
                 if TYPO in need:
-                    image = render_typo_cover(cid, t["title"] or cid, t["publisher"])
-                    if args.apply:
-                        upload_cover_to_minio(cid, image, client, TYPO)
-                    row["made"].append(TYPO)
-                if PHOTO in need:
-                    made = await compose_cover(
-                        title=t["title"] or cid, author=t["author"], kdc=t["kdc"], themes=t["themes"],
-                        introduction=t["introduction"], summary=t["summary"], book_id=cid, doc_type=t["doc_type"],
-                        avoid=list(avoid[genre]),
-                    )
-                    if not made:
-                        # 금지어를 끝내 못 뺀 문학 아닌 자료 — 옛 그림을 그대로 둔다(같은 기록으로 다시 돌리면 다시 해 본다)
-                        row["photo"] = "kept_old"
+                    try:
+                        image = render_typo_cover(cid, t["title"] or cid, t["publisher"])
+                    except MissingGlyphs as e:
+                        # 그릴 글꼴이 없는 글자 — 목업 없이 그림 판을 보인다(shown_key 가 다른 판으로 넘어간다)
+                        row["typo"] = f"skipped: {e}"
                     else:
-                        prompt, scene = made
-                        row["prompt"] = prompt
-                        avoid[genre].append(cover_art.key_nouns(scene))
                         if args.apply:
-                            image = await render_cover_image(prompt)
-                            if not image:
-                                raise RuntimeError("FLUX 가 빈 이미지를 돌려줬다")
-                            photo = cover_key(cid, PHOTO)
-                            if not args.no_backup and _exists(client, bucket, photo):
-                                backup = f"covers_backup/{stamp}/{cid}.jpg"
-                                # 백업이 안 되면 덮어쓰지 않는다 — 옛 그림을 되돌릴 수 없게 된다(이 자료는 실패로 남기고 넘어간다)
-                                client.copy_object(bucket, backup, CopySource(bucket, photo))
-                                row["backup"] = backup
-                            upload_cover_to_minio(cid, image, client)
-                        row["made"].append(PHOTO)
+                            upload_cover_to_minio(cid, image, client, TYPO)
+                        row["made"].append(TYPO)
+                if PHOTO in need:
+                    # 그림 판의 실패(FLUX·LLM·백업)는 따로 받는다 — 이미 만든 목업은 그대로 화면에 반영한다(리뷰 지적:
+                    # FLUX 가 죽어 있으면 정책 보고서가 끝내 목업으로 바뀌지 않았다)
+                    try:
+                        made = await compose_cover(
+                            title=t["title"] or cid, author=t["author"], kdc=t["kdc"], themes=t["themes"],
+                            introduction=t["introduction"], summary=t["summary"], book_id=cid, doc_type=t["doc_type"],
+                            avoid=list(avoid[genre]),
+                        )
+                        if not made:
+                            # 금지어를 끝내 못 뺀 문학 아닌 자료 — 옛 그림을 그대로 둔다(같은 기록으로 다시 돌리면 다시 해 본다)
+                            row["photo"] = "kept_old"
+                        else:
+                            prompt, scene = made
+                            row["prompt"] = prompt
+                            avoid[genre].append(cover_art.key_nouns(scene))
+                            if args.apply:
+                                image = await render_cover_image(prompt)
+                                if not image:
+                                    raise RuntimeError("FLUX 가 빈 이미지를 돌려줬다")
+                                photo = cover_key(cid, PHOTO)
+                                if not args.no_backup and _exists(client, bucket, photo):
+                                    backup = f"covers_backup/{stamp}/{cid}.jpg"
+                                    # 백업이 안 되면 덮어쓰지 않는다 — 옛 그림을 되돌릴 수 없게 된다(이 판은 실패로 남긴다)
+                                    client.copy_object(bucket, backup, CopySource(bucket, photo))
+                                    row["backup"] = backup
+                                upload_cover_to_minio(cid, image, client)
+                            row["made"].append(PHOTO)
+                    except Exception as e:
+                        photo_failed = True
+                        row["photo"] = "fail"
+                        row["photo_error"] = f"{type(e).__name__}: {e}"
+                        row.pop("prompt", None)  # 올리지 못한 그림의 프롬프트를 DB 에 쓰지 않는다
+                        log.warning(f"[{cid}] 그림 판 실패: {row['photo_error']}")
                 if args.apply and row["made"]:
                     made_now = set(row["made"])
                     key = shown_key(cid, t["doc_type"], args.show,
                                     lambda v: v in made_now or _exists(client, bucket, cover_key(cid, v)))
                     _save(cid, key, row.get("prompt"))
                     row["new_key"] = key
-                row["status"] = ("ok" if args.apply else "dry") if row["made"] else "kept_old"
-                counts[row["status"]] += 1
-                fails_in_row = 0
+                if row["made"]:
+                    row["status"] = "ok" if args.apply else "dry"
+                else:
+                    row["status"] = "fail" if photo_failed else "kept_old"
+                    if photo_failed:
+                        row["error"] = row["photo_error"]
             except Exception as e:
                 row["status"] = "fail"
                 row["error"] = f"{type(e).__name__}: {e}"
-                counts["fail"] += 1
-                fails_in_row += 1
                 log.warning(f"[{cid}] 실패: {row['error']}")
+            counts[row["status"]] += 1
+            # 잇단 실패는 그림 판 실패도 센다 — FLUX·LLM 이 죽어 있으면 목업만 만들며 운영 LLM 을 계속 부르지 않게 멈춘다
+            fails_in_row = fails_in_row + 1 if (row["status"] == "fail" or photo_failed) else 0
             if logf:
                 logf.write(json.dumps(row, ensure_ascii=False) + "\n")
                 logf.flush()
             print(f"[{i}/{len(todo)}] {row['status']} {'+'.join(row['made']) or '-'} {cid} {(t['title'] or '')[:30]} | "
-                  f"{(row.get('prompt') or row.get('error') or '')[:140]}", flush=True)
+                  f"{(row.get('prompt') or row.get('error') or row.get('photo_error') or '')[:140]}", flush=True)
             if fails_in_row >= args.max_fails:
                 log.error(f"잇달아 {fails_in_row}건 실패 — 멈춘다(FLUX·LLM 상태를 보고 같은 --log 로 다시 돌리면 이어 간다)")
                 break
