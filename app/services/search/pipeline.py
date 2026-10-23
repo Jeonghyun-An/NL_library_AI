@@ -474,9 +474,9 @@ async def stream_book_reason(
     # ── 컨텍스트 블록 (요약 + 줄거리 + 매칭 구절) ────────
     context_parts = []
     if book and book.summary:
-        context_parts.append(f"[도서 요약]\n{book.summary}")
+        context_parts.append(f"[자료 요약]\n{book.summary}")
     if book and book.plot:
-        context_parts.append(f"[도서 줄거리]\n{book.plot}")
+        context_parts.append(f"[자료 줄거리]\n{book.plot}")
     if chunk_texts:
         chunks_block = "\n\n".join(
             f"[관련 구절 {i+1}]\n{text}" for i, text in enumerate(chunk_texts[:cfg.REASON_CHUNKS_DISPLAY_LIMIT])
@@ -502,8 +502,8 @@ async def stream_book_reason(
         ""
         if marc_keywords
         else (
-            "반드시 답변 첫 줄에 다음 형식으로 이 도서의 핵심 테마 키워드 5개를 출력하세요.\n"
-            "키워드는 아래 독서 의도와 도서 내용을 연결하는 개념으로 선택하세요:\n"
+            "반드시 답변 첫 줄에 다음 형식으로 이 자료의 핵심 테마 키워드 5개를 출력하세요.\n"
+            "키워드는 아래 독서 의도와 자료 내용을 연결하는 개념으로 선택하세요:\n"
             "#KW: 키워드1, 키워드2, 키워드3, 키워드4, 키워드5\n"
             "두 번째 줄부터 추천 이유 본문을 작성하세요.\n\n"
         )
