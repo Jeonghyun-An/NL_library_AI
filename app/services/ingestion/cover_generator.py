@@ -72,22 +72,31 @@ async def compose_cover(
     ad = cover_art.art_direction(book_id or title or "", doc_type, title or "", themes or "", summary or "")
     scene_vars = dict(doc_type=doc_type or "", title=title or "Untitled", author=author or "Unknown", kdc=kdc or "N/A",
                       themes=themes or "N/A", summary=(summary or introduction or "")[:1500],
-                      scale=cover_art.SCALE_TEXT[ad.scale], avoid=", ".join((avoid or [])[-12:]))
+                      scale=cover_art.SCALE_TEXT[ad.scale], people=cover_art.PEOPLE_TEXT[ad.figures],
+                      avoid=", ".join((avoid or [])[-12:]))
+
+    def hits_of(text: str) -> tuple[list[str], list[str]]:
+        """(금지어, 사람 없는 표지에 들어온 사람 말)."""
+        return cover_art.banned_terms(text, title or ""), ([] if ad.figures else cover_art.people_terms(text))
+
     scene = await _ask("cover_scene", timeout, **scene_vars, retry_from="", retry_hits="")
-    hits = cover_art.banned_terms(scene, title or "")
+    banned, people = hits_of(scene)
     for _ in range(COVER_PROMPT_MAX_CALLS - 1):
-        if not (scene and hits):
+        if not (scene and (banned or people)):
             break
         try:
-            again = await _ask("cover_scene", timeout, **scene_vars, retry_from=scene, retry_hits=", ".join(hits))
+            again = await _ask("cover_scene", timeout, **scene_vars, retry_from=scene, retry_hits=", ".join(banned + people))
         except Exception as e:  # 다시 쓰기가 실패하면 앞 장면으로 판단을 이어 간다
             log.warning(f"[{book_id}] 표지 장면 다시 쓰기 실패: {e}")
             break
-        again_hits = cover_art.banned_terms(again, title or "")
-        if again and len(again_hits) <= len(hits):
-            scene, hits = again, again_hits
-    if scene and hits:
-        log.warning(f"[{book_id}] 표지 장면에 금지어가 남았다: {hits} — {scene[:120]}")
+        again_banned, again_people = hits_of(again)
+        # 금지어가 적은 쪽, 같으면 사람 말이 적은 쪽(같으면 새 장면)
+        if again and (len(again_banned), len(again_people)) <= (len(banned), len(people)):
+            scene, banned, people = again, again_banned, again_people
+    if scene and people:
+        log.info(f"[{book_id}] 사람 없는 표지의 장면에 사람 말이 남았다(표지는 만든다): {people}")
+    if scene and banned:
+        log.warning(f"[{book_id}] 표지 장면에 금지어가 남았다: {banned} — {scene[:120]}")
         # 문학이 아니면(정책 보고서·일반 도서) 표지를 만들지 않는다 — 글자가 생기는 사물·재난의 아픈 그림을 내보내지 않는다
         # (다시 만들기 스크립트는 그 자료의 옛 표지를 그대로 두고 기록에 남긴다). 문학은 장면을 그대로 둔다
         if ad.genre == "policy":

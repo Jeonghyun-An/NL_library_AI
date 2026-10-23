@@ -222,7 +222,7 @@ async def _run(args) -> dict:
     stamp = time.strftime("%Y%m%d-%H%M%S")
     done = done_parts(args.log)
     todo = pending(targets, done, args.limit, args.parts)
-    avoid: dict[str, deque] = {g: deque(maxlen=AVOID_KEEP) for g in ("policy", "classical", "modern")}
+    avoid: dict[str, deque] = {g: deque(maxlen=AVOID_KEEP) for g in cover_art.STYLES}  # 장르마다
     counts = {"ok": 0, "dry": 0, "kept_old": 0, "fail": 0}
     client = minio_client() if args.apply else None
     fails_in_row = 0

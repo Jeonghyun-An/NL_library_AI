@@ -57,6 +57,50 @@ STYLES: dict[str, list[tuple[str, bool]]] = {
         ("Low-light cinematic photograph lit by a single warm lamp", False),
         ("Medium-format colour film photograph, soft morning light, fine grain", False),
     ],
+    "foreign": [
+        ("Cinematic still from a period film adaptation, soft natural light, shallow depth of field", False),
+        ("Cinematic wide still from a period film, golden late-afternoon light", False),
+        ("Cinematic still from a period drama, moody dusk light", False),
+        ("Cinematic still from a period film lit by candlelight, warm interior", False),
+        ("Black-and-white still from a classic period film", True),
+        ("Cinematic still from a period film, overcast daylight, muted natural colours", True),
+    ],
+}
+# 사람 없는 표지의 사진 종류 — 장소·사물·동식물을 찍는 사진. 위 STYLES(영화 스틸·다큐)는 사람이 중심이라 v9 운영 재생성에서
+# 문학 표지가 거의 다 한복 입은 인물이 됐다(사용자 2026-10-23 '왜 이렇게 인물 위주지'). 인물 유무를 자료 id 로 반씩 나눈다(FIGURES)
+PLACE_STYLES: dict[str, list[tuple[str, bool]]] = {
+    "policy": [
+        ("Architectural photograph with strong clean lines, bright clear daylight", False),
+        ("Wide landscape photograph in clear morning light", False),
+        ("Aerial drone photograph from a high oblique angle, clear daylight", False),
+        ("Golden-hour photograph with long warm shadows", False),
+        ("Medium-format film photograph with fine grain, soft afternoon light", False),
+        ("Rain-washed photograph on a wet overcast day, glistening surfaces", False),
+    ],
+    "classical": [
+        ("Fine-art photograph of a traditional Korean place, soft early-morning light, deep focus", False),
+        ("Documentary photograph of a preserved Joseon-era site, soft morning light", False),
+        ("Photograph of traditional Korean objects in their real setting, warm window light, shallow depth of field", False),
+        ("Landscape photograph in clear air, wide-angle lens", False),
+        ("Night photograph lit by moonlight and a single warm light", False),
+        ("Overcast fine-art photograph, muted natural colours", True),
+    ],
+    "modern": [
+        ("Black-and-white documentary photograph in the style of 1930s press photography", True),
+        ("Sepia-toned vintage photograph with soft vignetting", True),
+        ("Medium-format colour film photograph, soft morning light, fine grain", False),
+        ("Night photograph lit by a single warm lamp, grainy film", False),
+        ("Interior photograph with warm window light, fine grain", False),
+        ("Fine-art landscape photograph, overcast light", False),
+    ],
+    "foreign": [
+        ("Fine-art landscape photograph, soft early-morning light", False),
+        ("Photograph of period objects in their real setting, warm window light, shallow depth of field", False),
+        ("Night photograph lit by moonlight and a single warm light", False),
+        ("Medium-format colour film photograph, overcast light, fine grain", False),
+        ("Sepia-toned vintage photograph with soft vignetting", True),
+        ("Architectural photograph of a historic building, clear daylight", False),
+    ],
 }
 # 장르별 색 보정 — 차가운 청백·청록 보정은 뺐다(v8 블라인드 평가 2026-10-23: 보고서는 청백, 문학은 청록 연무로 판이 묶였다)
 PALETTES: dict[str, list[str]] = {
@@ -65,6 +109,8 @@ PALETTES: dict[str, list[str]] = {
     "classical": ["warm candlelight tones", "soft natural colours of early morning", "muted earthy tones",
                   "deep rich colours with dark shadows", "warm ochre and rust tones", "warm autumn tones"],
     "modern": ["warm tungsten tones", "muted earthy tones", "soft faded colours", "warm amber film tones"],
+    "foreign": ["warm candlelight tones", "muted earthy tones", "deep rich colours with dark shadows",
+                "soft natural colours of early morning", "warm autumn tones", "faded vintage film colours"],
 }
 # 장면이 한국으로 보이게 하는 긍정형 한 줄 — FLUX 는 사람·건물·산을 서양·중국풍으로 그리는 쪽으로 기운다(v8 평가: 23장 중
 # 8~9장이 서양인·유럽 거리·장자제 같은 기암 협곡·한푸풍 옷). 문학 근현대는 시대를 못 박지 않는다(1900~1990년대가 섞인다)
@@ -74,6 +120,19 @@ SETTING: dict[str, str] = {
     "classical": ("Set in premodern Korea: Korean hanbok, Korean hanok houses with grey tiled or thatched roofs, "
                   "low rounded Korean hills."),
     "modern": "Set in twentieth-century Korea, with Korean people in clothes of the period and Korean surroundings.",
+    "foreign": "Set in the country and period of the story, with people dressed for that time and place.",
+}
+# 사람 없는 표지의 한국 배경 — 사람·옷(한복) 말을 넣으면 FLUX 가 장면에 없던 사람을 그려 넣는다
+SETTING_PLACE: dict[str, str] = {
+    "policy": "Photographed in South Korea, with Korean surroundings.",
+    "classical": "Set in premodern Korea: Korean hanok houses with grey tiled or thatched roofs, low rounded Korean hills.",
+    "modern": "Set in twentieth-century Korea, with Korean surroundings of the period.",
+    "foreign": "Set in the country and period of the story.",
+}
+# LLM 에 주는 인물 지시
+PEOPLE_TEXT: dict[bool, str] = {
+    True: "anonymous people may appear, doing something from the subject, seen from behind or at a distance",
+    False: "none - the scene is a place, object, animal, plant or landscape from the subject, with nobody in it",
 }
 # (구도 문구, 장면 크기) — 사물 하나만 두는 구도(object)는 뺐다(위 STYLES 주석). 넓은 장면이 너무 많으면 작은 사람이 많은
 # 파노라마가 되어 검색 결과 썸네일에서 알아보기 어려워, 중간 장면(vignette)을 더 둔다. '뒤에서 본 한 사람'·'대칭' 구도는
@@ -93,8 +152,18 @@ SCALE_TEXT: dict[str, str] = {
     "vignette": "a medium scene: the main subject in its real setting, with two or three supporting details",
     "wide": "a wide scene: ONE dominant subject large in the foreground and its real setting stretching behind it",
 }
-# 끝에 늘 붙이는 꼬리(긍정형 — FLUX 는 부정을 읽지 않는다): 얼굴이 크게 드러나지 않게, 글자·간판이 생기지 않게
+# 끝에 늘 붙이는 꼬리(긍정형 — FLUX 는 부정을 읽지 않는다): 얼굴이 크게 드러나지 않게, 글자·간판이 생기지 않게.
+# 사람 없는 표지는 사람 말을 아예 넣지 않는다(TAIL_PLACE)
 TAIL = "Any people are anonymous, small in the frame or turned away. Unlettered scene with clean unmarked surfaces."
+TAIL_PLACE = "Unlettered scene with clean unmarked surfaces."
+# 사람 없는 표지의 장면에 사람이 들어왔는지 — 걸리면 다시 쓰게 한다(금지어와 달리 남아도 표지는 만든다)
+_PEOPLE_RE = re.compile(
+    r"\b(people|persons?|man|men|woman|women|girls?|boys?|child|children|kids?|figures?|villagers?|workers?|crews?|"
+    r"farmers?|fisherm[ae]n|travell?ers?|wanderers?|monks?|shamans?|lady|ladies|kings?|queens?|soldiers?|students?|"
+    r"elders?|famil(?:y|ies)|couples?|crowds?|residents?|technicians?|officials?|citizens?|nurses?|doctors?|"
+    r"scientists?|engineers?|rescuers?|volunteers?|performers?|dancers?|musicians?|merchants?|peddlers?|servants?|"
+    r"maids?|brides?|grooms?|mothers?|fathers?|daughters?|sons?|wives|wife|husbands?|widows?|poets?|scholars?|"
+    r"courtesans?|gisaeng|nobles?|noblem[ae]n|peasants?|hermits?|sages?|youths?)\b", re.I)
 
 # 고전·근현대 문학을 가르는 단서(제목·키워드·요약) — 많이 걸린 쪽으로, 같으면 근현대. 한글 두 글자 단서는 뜻이 갈려 쓰지 않는다
 # ('시가'=시+가·市街, '고려'=고려하다, '고전'=서양 고전 명작, '한시'=한시적 — 리뷰 지적 2026-10-23). 한자·여러 글자 갈래 이름만 쓴다
@@ -102,6 +171,9 @@ CLASSICAL_CUES = re.compile(
     r"朝鮮|조선|古典|고전소설|고전문학|고전시가|詩歌|歌辭|樓亭|누정|高麗|고려가요|고려시대|漢詩|時調|시조|판소리|傳奇|전기소설|"
     r"가전체|夢遊|몽유록|士大夫|사대부|儒|유교|성리|性理|三國|삼국시대|新羅|신라")
 MODERN_CUES = re.compile(r"近代|근대|現代|현대|新小說|신소설|19[0-9]0|年代|년대|모더니즘|해방|일제|開化|개화")
+# 외국 고전 — 소장 문학의 상당수가 영어 원문 고전이다(견본 138건 중 97건 — Dracula·Robinson Crusoe·Dickens). 제목에 한글·한자가
+# 없으면 외국 고전으로 보고 한국 배경을 붙이지 않는다(v9 까지는 근현대로 가 '20세기 한국'이 붙었다 — 한국에 사는 드라큘라)
+_KO_CJK = re.compile(r"[가-힣ㄱ-ㅎ㐀-鿿豈-﫿]")
 # 재난 자료 — 배·물에 뜬 물건을 더 막는다. '안전'(사회안전망)·'사고'(思考)는 재난이 아닌 제목에도 있어 쓰지 않는다
 DISASTER_TITLE = re.compile(r"재난|재해|災|참사|붕괴|홍수|태풍|지진|화재|산불")
 
@@ -122,6 +194,8 @@ BANNED_WORDS: list[str] = [
     "card", "id card", "badge", "printing press", "hand press", "typewriter",
     # 화면·자판에 글자가 찍힌다(2026-10-23 v8 견본 — 주민센터 장면에 줄지은 컴퓨터)
     "computer", "laptop", "keyboard",
+    # 비석·묘비에는 글자가 새겨진다(v10 견본 — 마을 어귀 '돌 기념비'에 글자 같은 획)
+    "memorial", "stele", "steles", "stelae", "tombstone", "gravestone", "headstone", "signpost",
     # 화폐 이름은 FLUX 가 글자로 그린다(2026-10-23 견본 — 'Euro banknote-shaped chocolate' 에 'EURO' 가 찍혔다)
     "euro", "dollar", "currency", "currencies",
     # 구명조끼·구명튜브는 세월호를 떠올리게 한다(2026-10-23 실사 견본에서 재난연감·나라살림 장면에 나왔다) — 모든 자료에서 막는다
@@ -150,12 +224,13 @@ _DIGITS = re.compile(r"\(?(?<![\w-])\d+(?:[.,]\d+)*\s?%?(?![\w-])\)?")
 
 @dataclass(frozen=True)
 class ArtDirection:
-    genre: str          # policy | classical | modern
+    genre: str          # policy | classical | modern | foreign
     style: str          # 사진 종류
     own_colour: bool    # 흑백·세피아처럼 색이 정해진 사진 — 색 보정을 붙이지 않는다
     palette: str        # 색 보정
     composition: str
     scale: str          # vignette | wide
+    figures: bool = True  # 사람이 나오는 표지인가 — False 면 장소·사물·동식물 사진(PLACE_STYLES·SETTING_PLACE·TAIL_PLACE)
 
 
 def _pick(book_id: str, salt: str, n: int) -> int:
@@ -163,19 +238,28 @@ def _pick(book_id: str, salt: str, n: int) -> int:
 
 
 def genre_of(doc_type: str | None, title: str = "", themes: str = "", summary: str = "") -> str:
-    """문학이면 고전·근현대를 단서 수로 가르고, 그 밖(정책·일반 도서)은 policy."""
+    """문학이면 외국 고전(제목에 한글·한자가 없다)·고전·근현대로 가르고, 그 밖(정책·일반 도서)은 policy."""
     if (doc_type or "") != "literature":
         return "policy"
+    if (title or "").strip() and not _KO_CJK.search(title):
+        return "foreign"
     text = " ".join([title or "", themes or "", summary or ""])
     return "classical" if len(CLASSICAL_CUES.findall(text)) > len(MODERN_CUES.findall(text)) else "modern"
 
 
 def art_direction(book_id: str, doc_type: str | None, title: str = "", themes: str = "", summary: str = "") -> ArtDirection:
     genre = genre_of(doc_type, title, themes, summary)
-    style, own_colour = STYLES[genre][_pick(book_id, "style", len(STYLES[genre]))]
+    figures = _pick(book_id, "figures", 2) == 0          # 반은 사람이 나오고 반은 장소·사물만
+    styles = (STYLES if figures else PLACE_STYLES)[genre]
+    style, own_colour = styles[_pick(book_id, "style", len(styles))]
     palette = PALETTES[genre][_pick(book_id, "palette", len(PALETTES[genre]))]
     composition, scale = COMPOSITIONS[_pick(book_id, "composition", len(COMPOSITIONS))]
-    return ArtDirection(genre, style, own_colour, palette, composition, scale)
+    return ArtDirection(genre, style, own_colour, palette, composition, scale, figures)
+
+
+def people_terms(scene: str) -> list[str]:
+    """장면에 든 사람 말(소문자, 겹침 없이) — 사람 없는 표지에 사람이 들어왔는지 본다."""
+    return sorted({m.group(1).lower() for m in _PEOPLE_RE.finditer(scene or "")})
 
 
 def banned_terms(scene: str, title: str = "") -> list[str]:
@@ -200,9 +284,10 @@ def clean_scene(text: str) -> str:
 
 
 def assemble(ad: ArtDirection, scene: str) -> str:
-    """완성 프롬프트 한 줄 — 사진 종류: 장면 한국 배경 구도 색 보정. 익명의 사람·글자 없는 장면."""
+    """완성 프롬프트 한 줄 — 사진 종류: 장면 한국 배경 구도 색 보정. (사람이 나오면 익명의 작은 사람) 글자 없는 장면."""
     grade = "" if ad.own_colour else f" Colour grade: {ad.palette}."
-    return f"{ad.style}: {scene} {SETTING[ad.genre]} {ad.composition}{grade} {TAIL}"
+    setting, tail = (SETTING, TAIL) if ad.figures else (SETTING_PLACE, TAIL_PLACE)
+    return f"{ad.style}: {scene} {setting[ad.genre]} {ad.composition}{grade} {tail}"
 
 
 def key_nouns(scene: str, n: int = 4) -> str:

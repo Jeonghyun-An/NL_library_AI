@@ -115,12 +115,13 @@ def test_nl_library_prompts_exist_and_render():
     # 표지 — 장면(cover_scene). StrictUndefined 라 변수가 바뀌면 여기서 잡는다(cover_generator 가 넘기는 것과 같다)
     cover_s, cover_u, cover_p = lib.get("cover_scene").render(
         doc_type="policy", title="t", author="a", kdc="800", themes="th", summary="s", scale="ONE object",
-        avoid="", retry_from="", retry_hits="")
+        people="none", avoid="", retry_from="", retry_hits="")
     assert "realistic photograph" in cover_s and "SCENE SIZE required by the fixed composition: ONE object" in cover_u
+    assert "PEOPLE: none" in cover_u
     assert "already used" not in cover_u and "previous scene" not in cover_u and cover_p.get("max_tokens") == 200
     _, retry_u, _ = lib.get("cover_scene").render(
         doc_type="policy", title="t", author="a", kdc="800", themes="th", summary="s", scale="ONE object",
-        avoid="pagoda stone", retry_from="a compass", retry_hits="compass")
+        people="none", avoid="pagoda stone", retry_from="a compass", retry_hits="compass")
     assert "already used for other covers in this collection (choose something different): pagoda stone" in retry_u
     assert "Your previous scene was: a compass" in retry_u and "(compass)" in retry_u
     assert "realistic photograph" in cover_s
