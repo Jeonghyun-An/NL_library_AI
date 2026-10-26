@@ -1,0 +1,49 @@
+PSN-MANSEJEON          만세전            literature 적재=True 빈칸=없음 '책'=0 '이 자료'=3 썸네일=200 원문=200
+PSN-SONAGI             소나기            literature 적재=True 빈칸=없음 '책'=0 '이 자료'=2 썸네일=200 원문=200
+PSN-JEOKBIN            적빈             literature 적재=True 빈칸=없음 '책'=0 '이 자료'=3 썸네일=200 원문=200
+PSN-CHUNHYANG          춘향전            literature 적재=True 빈칸=없음 '책'=0 '이 자료'=3 썸네일=200 원문=200
+PSN-HEOSAENG           허생전            literature 적재=True 빈칸=없음 '책'=0 '이 자료'=2 썸네일=200 원문=200
+PSN-BEAUTY-BEAST       미녀와 야수         literature 적재=True 빈칸=없음 '책'=0 '이 자료'=3 썸네일=200 원문=200
+PSN-RED-CAP            빨간 모자          literature 적재=True 빈칸=없음 '책'=0 '이 자료'=3 썸네일=200 원문=200
+PSN-STUDY-SCARLET      주홍색 연구         literature 적재=True 빈칸=없음 '책'=0 '이 자료'=4 썸네일=200 원문=200
+PSN-DOG-FLANDERS       플랜더스의 개        literature 적재=True 빈칸=없음 '책'=0 '이 자료'=4 썸네일=200 원문=200
+PSN-ROBIN-HOOD         로빈 후드의 모험      literature 적재=True 빈칸=없음 '책'=0 '이 자료'=3 썸네일=200 원문=200
+PSN-BULFINCH           불핀치의 신화        literature 적재=True 빈칸=없음 '책'=0 '이 자료'=3 썸네일=200 원문=200
+PSN-ANDERSEN           안데르센 동화집       literature 적재=True 빈칸=없음 '책'=0 '이 자료'=5 썸네일=200 원문=200
+PSN-DADDY-LONG-LEGS    키다리 아저씨        literature 적재=True 빈칸=없음 '책'=0 '이 자료'=2 썸네일=200 원문=200
+PSN-PERRAULT           페로 동화집         literature 적재=True 빈칸=없음 '책'=0 '이 자료'=5 썸네일=200 원문=200
+PSN-GEUMDOKKI          금도끼            literature 적재=True 빈칸=없음 '책'=0 '이 자료'=3 썸네일=200 원문=200
+PSN-ONDAL              평원공주와 우온달      literature 적재=True 빈칸=없음 '책'=0 '이 자료'=4 썸네일=200 원문=200
+PSN-GRIFFIS-COREA      Corea, Without book       적재=True 빈칸=없음 '책'=0 '이 자료'=7 썸네일=200 원문=200
+[검색] 만세전                    → PSN-MANSEJEON 순위 1
+[검색] 소나기                    → PSN-SONAGI 순위 1
+[검색] 적빈                     → PSN-JEOKBIN 순위 1
+[검색] 백신애 적빈                 → PSN-JEOKBIN 순위 1
+[검색] 춘향전                    → PSN-CHUNHYANG 순위 1
+[검색] 허생전                    → PSN-HEOSAENG 순위 1
+[검색] 박지원 허생전                → PSN-HEOSAENG 순위 1
+[검색] 미녀와 야수                 → PSN-BEAUTY-BEAST 순위 1
+[검색] 빨간 모자                  → PSN-RED-CAP 순위 1
+[검색] 주홍색 연구                 → PSN-STUDY-SCARLET 순위 1
+[검색] 셜록 홈즈와 왓슨의 첫 만남        → PSN-STUDY-SCARLET 순위 4 | 1위 LIT-GUTENBERG-1661 The Adventures of Sherlo
+[검색] 플랜더스의 개                → PSN-DOG-FLANDERS 순위 1
+[검색] 파트라슈                   → PSN-DOG-FLANDERS 순위 1
+[검색] 로빈 후드                  → PSN-ROBIN-HOOD 순위 1
+[검색] 로빈 후드의 모험              → PSN-ROBIN-HOOD 순위 1
+[검색] 신화의 시대                 → PSN-BULFINCH 순위 1
+[검색] 불핀치 그리스 로마 신화          → PSN-BULFINCH 순위 1
+[검색] 안데르센 동화                → PSN-ANDERSEN 순위 1
+[검색] 성냥팔이 소녀                → PSN-ANDERSEN 순위 4 | 1위 LIT-GUTENBERG-700 The Old Curiosity Shop
+[검색] 키다리 아저씨                → PSN-DADDY-LONG-LEGS 순위 1
+[검색] 주디 애벗                  → PSN-DADDY-LONG-LEGS 순위 1
+[검색] 페로 동화집                 → PSN-PERRAULT 순위 1
+[검색] 신데렐라                   → PSN-PERRAULT 순위 1
+[검색] 금도끼                    → PSN-GEUMDOKKI 순위 1
+[검색] 금도끼 은도끼                → PSN-GEUMDOKKI 순위 1
+[검색] 바보 온달                  → PSN-ONDAL 순위 1
+[검색] 평강공주와 온달               → PSN-ONDAL 순위 1
+[검색] 하멜 표류기                 → PSN-GRIFFIS-COREA 순위 1
+[검색] 하멜                     → PSN-GRIFFIS-COREA 순위 1
+[검색] Corea Without and Within → PSN-GRIFFIS-COREA 순위 1
+1위 28 / 30
+exit 0

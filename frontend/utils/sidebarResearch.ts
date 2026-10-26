@@ -60,8 +60,12 @@ export function sidebarStatusOf(view: { status: string; stage: string }, phase: 
 }
 
 // 묶음이 처음 보이는 줄 수를 넘는 연구를 펼치는 한 줄(시안 C) — 접혀 있으면 '이전 연구' + 숨은 수 칩, 펼치면 '접기'
-export function olderToggle(expanded: boolean, hidden: number): { label: string; count: number | null; ariaLabel: string } {
+export function olderToggle(
+  expanded: boolean,
+  hidden: number,
+  noun = "연구",
+): { label: string; count: number | null; ariaLabel: string } {
   return expanded
-    ? { label: "접기", count: null, ariaLabel: "이전 연구 접기" }
-    : { label: "이전 연구", count: hidden, ariaLabel: `이전 연구 ${hidden}건 더 보기` };
+    ? { label: "접기", count: null, ariaLabel: `이전 ${noun} 접기` }
+    : { label: `이전 ${noun}`, count: hidden, ariaLabel: `이전 ${noun} ${hidden}건 더 보기` };
 }

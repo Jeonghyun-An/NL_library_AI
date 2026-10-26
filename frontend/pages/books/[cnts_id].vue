@@ -440,6 +440,13 @@ const toast = ref("");
 
 // Chat panel
 const chatPanelOpen = ref(false);
+// 사이드바 DeepRead 기록을 누르면(같은 자료 화면이면 다시 마운트되지 않는다) ?chat=1 이 다시 와 — 닫힌 딥리드 창을 연다
+watch(
+  () => route.query.chat,
+  (v) => {
+    if (v === "1" && book.value) chatPanelOpen.value = true;
+  },
+);
 
 // Loan modals
 const loanModalOpen = ref(false);
