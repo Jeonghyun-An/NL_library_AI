@@ -86,4 +86,16 @@ OCR 쪽 본문을 잃는다).
   - 백필 API(14권 밖까지 다시 쓴다)
   - 책 한 권 재시도 `POST /api/books/{id}/retry`(잡 파라미터 없이 돌아 표지를 새로 만든다)
   - 진행 중 스택 업데이트·Recreate·fastapi 재시작(함정 16·18·20). nuxt 단독 Recreate 는 괜찮다.
-- 결과: 운영 적용 뒤 이 절에 적는다.
+- 결과(2026-10-26 운영):
+  - 사전 점검: 운영 ODL 로 14권 모두 OCR 0(전 쪽 opendataloader), MILVUS_RECREATE_ON_MISMATCH 는 embed·control·fastapi 모두
+    false, PSN 옛 잡 모두 done.
+  - 백업 `library_catalog_20261026T102538.dump`, `snapshot`(catalog_before.json, 14행 요약 빈 행 0).
+  - 적용 전 report: 14권 모두 문구가 섹션 1·청크 1에 있었다.
+  - 적재: 카나리(소나기) → 나머지 13권(잡 `38aed8f5-4c3d-4fd9-886f-5c4400cabdc8`). 아이템 14개 모두 done·finalized,
+    sections_failed 0, ocr_errors 0, cover false.
+  - 적용 뒤 report: 14권 모두 원문 v2, 섹션·청크 문구 0, 섹션 수 = 섹션 요약 수, 요약·테마·소개·줄거리·읽고 난 후 모두 채워짐.
+    청크 수는 그대로이고 섹션은 빨간 모자 4→3, 안데르센 153→152 로 표지 쪽 경계만 달라졌다.
+  - `verify_ingest.py` → `verify_report_v2.txt`: 17권 모두 '책' 0·빈칸 없음·썸네일/원문 200. 검색 30질의 중 28개 1위로
+    10-23 과 같고, '성냥팔이 소녀' 만 12위 → 4위로 올랐다.
+  - 부스 시연 질문의 쪽 번호는 그대로다(소나기 p.2·p.7–8, 불핀치 p.15–16, 플랜더스의 개 p.15). 출처를 펼친 조각 순서만
+    바뀌었다(소나기 '이 바보' 3/3 → 1/3, 불핀치 조각 1 → 2개).
