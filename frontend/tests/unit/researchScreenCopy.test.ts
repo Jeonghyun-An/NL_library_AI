@@ -103,7 +103,8 @@ describe("보고서 문서 자체의 글 — 문서 말투(합쇼체)를 지킨�
 
   it("초안 안내(draftIntro)는 화면에만 쓴다 — 내려받는 초안의 서론은 reportIntro", () => {
     expect(doc).not.toContain("draftIntro");
-    expect(doc).toMatch(/intro: reportIntro\(draft\.report, view\.subqs\.length\)/);
+    // 초안은 인용이 다 끝나지 않아 인용 수 한 줄을 붙이지 않는다(withCited=false)
+    expect(doc).toMatch(/intro: reportIntro\(draft\.report, view\.subqs\.length, false\)/);
     // 초안 안내가 여러 줄이라 보고서 서론 칸이 '\n' 을 줄로 그린다
     const researchCss = read("assets/css/research.css").replace(/\/\*[\s\S]*?\*\//g, "");
     expect(findBlock(".rs-report__intro", researchCss)).toMatch(/white-space:\s*pre-line/);
@@ -221,8 +222,9 @@ describe("딥리서치 카운터·패널 이름 — 숫자가 더해 맞고 사�
     expect(tpl).not.toContain("채택한 근거");
   });
 
-  it("옆 칸 채택 목록 카드는 '참고문헌', 탐색이 끝난 진행 패널은 '탐색 과정', 회차 줄은 '본문 N곳'", () => {
-    expect(template(read("components/work/EvidenceLedger.vue"))).toContain(">참고문헌</h2>");
+  it("옆 칸 채택 목록 카드는 '채택한 논문'(보고서 참고문헌과 이름을 가른다), 탐색이 끝난 진행 패널은 '탐색 과정', 회차 줄은 '본문 N곳'", () => {
+    expect(template(read("components/work/EvidenceLedger.vue"))).toContain(">채택한 논문</h2>");
+    expect(template(read("components/work/EvidenceLedger.vue"))).not.toContain(">참고문헌</h2>");
     expect(screenText(read("components/work/EvidenceLedger.vue"))).not.toContain("근거 장부");
     const panel = read("components/research/ProgressPanel.vue");
     expect(panel).toContain('completed: "탐색 과정"');

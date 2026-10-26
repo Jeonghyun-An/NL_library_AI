@@ -21,12 +21,23 @@ export function rangeLabel(range: Partial<ReportRange> | null | undefined): stri
 }
 
 // 서론 문장은 모델이 아니라 화면이 만든다 — 수치를 모델에게 쓰게 하면 틀린 숫자가 실린다.
-// 하위질문 수는 탐색 경로(trail)로 센다. trail 은 종합이 끝나야 생기므로 초안은 탐색한 하위질문 수를 넘긴다
-export function reportIntro(report: ResearchReport, subqCount = report.trail.length): string {
+// 하위질문 수는 탐색 경로(trail)로 센다. trail 은 종합이 끝나야 생기므로 초안은 탐색한 하위질문 수를 넘긴다.
+// withCited — 인용 수 한 줄(citedNote)을 붙일지. 인용이 다 끝나지 않은 초안(내려받는 초안 문서)은 붙이지 않는다
+export function reportIntro(report: ResearchReport, subqCount = report.trail.length, withCited = true): string {
   const subqs = subqCount || report.sections.length;
   const s = report.stats;
-  if (s) return `하위질문 ${subqs}개로 나눠 ${reviewTally(s)}다.`;
-  return `하위질문 ${subqs}개로 나눠 논문 ${Object.keys(report.evidence).length}편을 근거로 삼았다.`;
+  if (!s) return `하위질문 ${subqs}개로 나눠 논문 ${Object.keys(report.evidence).length}편을 근거로 삼았다.`;
+  const tally = `하위질문 ${subqs}개로 나눠 ${reviewTally(s)}다.`;
+  return withCited ? `${tally}${citedNote(report, s)}` : tally;
+}
+
+// 보고서가 실제로 인용한 논문 수(report.evidence 의 서로 다른 cnts_id) — 채택했지만 인용하지 않은 논문이 있어, 옆 칸
+// '채택한 논문'(채택 22)과 보고서 끝 '참고문헌'(인용한 것만, 14)의 수가 다르다. 서론에 한 줄로 밝혀 두 수가 어긋나 보이지
+// 않게 한다(2026-10-26, 대표 숫자 지적 뒤 사용자 승인). 인용이 채택보다 많은 어긋난 값이면 '그중'을 빼고, 0 이면 적지 않는다
+function citedNote(report: ResearchReport, s: CountersPayload): string {
+  const cited = new Set(Object.values(report.evidence).map((e) => e.cnts_id)).size;
+  if (!cited) return "";
+  return cited <= s.evidence_adopted ? ` 보고서에는 그중 ${cited}편을 인용했다.` : ` 보고서에는 ${cited}편을 인용했다.`;
 }
 
 // 검토·채택·제외 한 마디 — "논문 23편을 검토해 18편을 채택하고 5편은 제외했"까지 쓰고 맺음(다·어요)은 부르는 쪽이 붙인다.

@@ -1525,10 +1525,36 @@ html.skx-scroll-lock {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  /* 로고 아래 딥리드 한 줄이 늘어난 만큼 아래 여백을 줄여 입력창이 거의 내려가지 않게 한다(2026-10-26) */
+  margin: 0 0 0.75rem;
+  text-align: center;
+}
+.skx-brand__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 1rem;
   width: 100%;
-  margin: 0 0 1.5rem;
-  text-align: center;
+  margin: 0;
+}
+/* 머리 문구의 반쪽 — 좁은 폭(사이드바를 연 1024px 등)에서 쉼표 뒤에서만 꺾이게 반쪽째 묶는다 */
+.skx-brand__half {
+  display: inline-block;
+}
+.skx-brand__sub {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--skx-ink-2);
+  word-break: keep-all;
+  text-wrap: balance;
+}
+.skx-brand__sub-name {
+  margin-right: 0.3rem;
+  font-weight: 700;
+  color: var(--skx-ink-strong);
 }
 .skx-brand__line {
   font-size: 1.6rem;
@@ -1545,6 +1571,9 @@ html.skx-scroll-lock {
 @media (max-width: 480px) {
   .skx-brand__line {
     font-size: 1rem;
+  }
+  .skx-brand__sub {
+    font-size: 0.8rem;
   }
 }
 /* [E] 타이틀 */
