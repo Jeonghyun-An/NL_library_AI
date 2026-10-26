@@ -45,7 +45,7 @@
           <template v-if="reasonLoading && !reason">
             AI가 유사성을 분석 중입니다<span class="skx-stream-cursor" />
           </template>
-          <template v-else>{{ reason || emptyText }}</template>
+          <template v-else>{{ reasonText || emptyText }}</template>
         </p>
         <button
           ref="moreRef"
@@ -115,7 +115,7 @@
           AI가 유사성을 분석 중입니다<span class="skx-stream-cursor" />
         </template>
         <template v-else>
-          {{ reason || (reasonError ? "" : emptyText) }}<span v-if="reasonLoading" class="skx-stream-cursor" />
+          {{ reasonText || (reasonError ? "" : emptyText) }}<span v-if="reasonLoading" class="skx-stream-cursor" />
         </template>
       </p>
       <SkxInlineError
@@ -173,6 +173,10 @@ const props = withDefaults(
   },
 );
 const emit = defineEmits<{ "update:expanded": [open: boolean] }>();
+
+// 받은 글에 섞여 온 마크다운 굵게 표시(**…**)를 걷는다 — 카드는 글만 그려 별표가 그대로 보였다(사용자 2026-10-26 화면).
+// 받는 중에 닫는 ** 가 아직 오지 않았으면 여는 ** 만 남으므로 짝이 없는 ** 도 걷는다
+const reasonText = computed(() => props.reason.replace(/\*\*(.+?)\*\*/gs, "$1").replace(/\*\*/g, ""));
 
 const popId = `dt-rc-${useId()}`;
 const rootRef = ref<HTMLElement | null>(null);

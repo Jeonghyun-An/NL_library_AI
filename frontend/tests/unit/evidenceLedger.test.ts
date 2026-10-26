@@ -186,8 +186,8 @@ describe("ledgerLine·newlyAdded", () => {
   ]);
 
   it("채택·뺌 수 한 줄", () => {
-    expect(ledgerLine(l)).toBe("채택 2 · 뺌 1");
-    expect(ledgerLine({ adopted: [], dropped: [], reviewing: [] })).toBe("채택 0 · 뺌 0");
+    expect(ledgerLine(l)).toBe("채택 2 · 제외 1");
+    expect(ledgerLine({ adopted: [], dropped: [], reviewing: [] })).toBe("채택 0 · 제외 0");
   });
 
   it("검토 중이 있으면 '· 검토 중 n' 을 잇는다", () => {
@@ -196,7 +196,7 @@ describe("ledgerLine·newlyAdded", () => {
         excluded("C2", C2.title), excluded("C3", C3.title),
       ]),
     ]);
-    expect(ledgerLine(waiting)).toBe("채택 1 · 뺌 0 · 검토 중 2");
+    expect(ledgerLine(waiting)).toBe("채택 1 · 제외 0 · 검토 중 2");
   });
 
   it("직전 장부에 없던 논문만 새로 들어온 것으로 보고, 처음 그릴 때는 없다", () => {

@@ -645,7 +645,8 @@ html[data-theme="pink"] {
   --skx-aip-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9), 0 10px 30px -10px rgba(150, 70, 110, 0.16);
   --skx-rule: rgba(26, 17, 21, 0.1);
   --skx-frost-panel: rgba(255, 255, 255, 0.3);
-  --skx-read-surface: rgba(255, 255, 255, 0.55);
+  /* 읽는 칸(AI 검색 결과 글·추천 자료·상세 본문) — 0.55 는 분홍이 비쳐 칙칙했다(사용자 2026-10-26) */
+  --skx-read-surface: rgba(255, 255, 255, 0.8);
   --skx-read-ink: #1a1115;
   --skx-read-ink-2: #3a2f35;
   --skx-read-gray-1: #574c53;
@@ -718,6 +719,16 @@ html[data-theme="pink"] {
   --skx-holo-band-3: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.28) 50%, rgba(255, 255, 255, 0) 100%);
   --skx-holo-veil: none;
   --skx-holo-mask: none;
+}
+/* 핑크 테마 스피너 — 기본 GIF 는 알파가 1비트(가장자리를 끊는다)이고 색이 아주 옅은 살구색이라 분홍 위에서 거무튀튀한 계단 테두리로
+   보였다(사용자 2026-10-26). 핑크 테마만 장밋빛→산호, 가장자리가 매끈한 WebP·PNG 로 갈아 끼운다(research/spinner-160/make_pink.py).
+   쓰는 곳이 열 군데가 넘고 서버 렌더는 테마를 모르므로 src 를 고르지 않고 CSS content 로 바꾼다 — 수화가 어긋나지 않는다.
+   img 의 content 를 모르는 브라우저는 기본 그림을 그대로 보인다 */
+html[data-theme="pink"] img[src$="/skovix-spinner-clean-160.gif"] {
+  content: url("/skovix-spinner-pink-160.webp");
+}
+html[data-theme="pink"] img[src$="/skovix-spinner-front-160.png"] {
+  content: url("/skovix-spinner-front-pink-160.png");
 }
 /* 핑크 테마의 밝은 읽는 면 — 중립 흰 면은 .skx-reading 그대로 두고, 포인트(산호)만 검정 계열로 바꾼다 */
 html[data-theme="pink"] .skx-reading {

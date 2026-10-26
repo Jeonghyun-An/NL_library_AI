@@ -249,7 +249,7 @@ export function candidateLine(c: ExcludedCandidate): string {
 
 // 논문별 제외 사유는 저장되지 않는다(spec §5-4) — 뺀 회차와 그 회차의 critic 메모를 함께 보인다
 export function candidateNote(c: ExcludedCandidate): string | null {
-  const parts = [c.round != null ? `${c.round}회차에 뺌` : "", c.note.trim() ? `자기점검 메모: ${c.note.trim()}` : ""];
+  const parts = [c.round != null ? `${c.round}회차에 제외` : "", c.note.trim() ? `자기점검 메모: ${c.note.trim()}` : ""];
   const line = parts.filter(Boolean).join(" · ");
   return line || null;
 }
