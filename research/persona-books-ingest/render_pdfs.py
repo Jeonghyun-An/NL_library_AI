@@ -43,11 +43,10 @@ h2 { font-size: 13pt; font-weight: bold; margin: 14pt 0 8pt 0; }
 .t-orig { font-size: 13pt; text-align: center; margin-top: 10pt; }
 .t-author { font-size: 14pt; text-align: center; margin-top: 36pt; }
 .t-year { font-size: 12pt; text-align: center; margin-top: 6pt; }
-.t-note { font-size: 9pt; text-align: center; margin-top: 160pt; color: #555555; }
 """
 PUA = re.compile("[\ue000-\uf8ff]")
-# \uae00\uaf34\uc5d0 \uc788\uc5b4\ub3c4 PDF \uc5d0\uc11c \ub2e4\uc2dc \ubf51\uc73c\uba74 NUL(0x00)\ub85c \ub098\uc624\ub294 \uae00\uc790 \u2014 \ub9cc\uc138\uc804\u00b7\ud5c8\uc0dd\uc804\uc758 \uac00\uc6b4\ub383\uc810 '\u2024'(U+2024). \ub300\ub7c9 \uc801\uc7ac\uc5d0\uc11c NUL \uc774 \ub4e0
-# \ubcf8\ubb38\uc740 DB \uc800\uc7a5\uc774 \uc2e4\ud328\ud588\ub2e4('A string literal cannot contain NUL') \u2014 \uac19\uc740 \ub73b\uc758 \uae00\uc790\ub85c \ubc14\uafd4 \uadf8\ub9b0\ub2e4
+# 글꼴에 있어도 PDF 에서 다시 뽑으면 NUL(0x00)로 나오는 글자 — 만세전·허생전의 가운뎃점 '․'(U+2024). 대량 적재에서 NUL 이 든
+# 본문은 DB 저장이 실패했다('A string literal cannot contain NUL') — 같은 뜻의 글자로 바꿔 그린다
 FOLD = str.maketrans({"\u2024": "\u00b7"})
 CONTROL = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\ufffd]")
 HEADING = [re.compile(p) for p in (
@@ -147,8 +146,9 @@ def render_txt(book: dict, src: Path, dst: Path) -> dict:
     title_html = (f'<p class="t-title">{esc(book["title"])}</p>'
                   + (f'<p class="t-orig">{esc(book["title_remainder"])}</p>' if book.get("title_remainder") else "")
                   + f'<p class="t-author">{esc(book["author"])}</p>'
-                  + (f'<p class="t-year">{esc(book["pub_date"])}</p>' if book.get("pub_date") else "")
-                  + '<p class="t-note">SKOVIX 소장자료 원문 — 페르소나 에이전트 원문 보관본(2026-10-20)에서 옮김</p>')
+                  + (f'<p class="t-year">{esc(book["pub_date"])}</p>' if book.get("pub_date") else ""))
+    # 표지 쪽은 제목·원제·저자·연도만 — 첫 판(10-23)은 출처 메모('…페르소나 에이전트 원문 보관본에서 옮김')를 표지에 넣어
+    # 그 글이 검색 대목에도 섞였고 원문 뷰어 1쪽에 그대로 보였다. 출처는 카탈로그 extra.acquisition 과 이 README 에 남긴다
     body_html = "".join(f"<h2>{esc(t)}</h2>" if k == "h" else f"<p>{esc(t)}</p>" for k, t in parts)
     buf = io.BytesIO()                     # 임시 파일 없이 — Windows 에서 쓰개가 파일을 쥐고 놓지 않았다
     writer = fitz.DocumentWriter(buf)
