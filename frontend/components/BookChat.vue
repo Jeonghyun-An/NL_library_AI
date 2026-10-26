@@ -1,18 +1,47 @@
 <template>
   <div ref="rootEl" class="skx-chat-body">
     <div class="skx-chat-messages" ref="messagesEl">
-      <!-- 빈 상태 — 브로셔 DeepRead 소개와 같은 머리말 · 한 줄 설명 · 쪽 번호 쓰는 법 -->
-      <div v-if="messages.length === 0 && !isStreaming" class="skx-chat-msg skx-chat-msg--ai skx-chat-msg--intro">
+      <!-- 딥리드의 첫 차례 — 브로셔 머리말 · 바로 눌러 묻는 추천 질문(순서대로) · 출처 안내. 대화가 시작돼도 맨 위에 남아 물어본
+           질문은 체크와 [답 보기](그 질문으로 이동)가 된다. 설명 문장을 늘어놓던 카드(머리말과 둘째 줄이 같은 말)를 바꿨다 —
+           사용자 2026-10-23 '추천 질문을 주던가 사용 방법을 알려주던가'. 시안 셋을 대표·방문객·UX 관점으로 견줘 고른 안 -->
+      <div class="skx-chat-msg skx-chat-msg--ai skx-chat-opening">
         <p class="skx-chat-intro__title">{{ copy.introTitle }}</p>
-        <p class="skx-chat-intro__text">{{ copy.introBody }}</p>
-        <p class="skx-chat-intro__hint">{{ CITE_HINT }}</p>
+        <p class="skx-chat-opening__label">{{ STARTER_LABEL }}</p>
+        <ol class="skx-chat-starters" :aria-label="STARTER_LABEL">
+          <li v-for="s in starters" :key="s.q">
+            <button
+              type="button"
+              class="skx-chat-starter"
+              :class="{ 'is-asked': s.asked }"
+              :aria-disabled="isStreaming && !s.asked ? 'true' : undefined"
+              @click="onStarter(s)"
+            >
+              <span class="skx-chat-starter__num" aria-hidden="true">
+                <svg v-if="s.asked" viewBox="0 0 16 16" focusable="false"><path d="M3.5 8.5l3 3 6-6.5" /></svg>
+                <template v-else>{{ s.n }}</template>
+              </span>
+              <span class="skx-chat-starter__text">{{ s.q }}</span>
+              <span v-if="s.asked" class="skx-chat-starter__go">답 보기</span>
+              <svg v-else class="skx-chat-starter__arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                <path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5" />
+              </svg>
+            </button>
+          </li>
+        </ol>
+        <!-- 출처 안내는 여기 한 번 — 앞의 p.3 은 답에 붙는 출처 단추와 같은 모양의 견본(누르는 단추가 아니다) -->
+        <p class="skx-chat-opening__cite">
+          <span class="skx-chat-cite is-static" aria-hidden="true">p.3</span>
+          {{ CITE_HINT }}
+        </p>
       </div>
 
       <!-- 메시지 목록 — 질문은 오른쪽 말풍선, 답은 너비를 다 쓰는 답 카드(글 · 출처 목록) -->
       <div
         v-for="(msg, i) in messages"
+        :id="msgDomId(i)"
         :key="i"
         :class="['skx-chat-msg', msg.role === 'user' ? 'skx-chat-msg--user' : 'skx-chat-msg--ai']"
+        :tabindex="msg.role === 'user' ? -1 : undefined"
       >
         <div v-if="msg.role === 'user'" v-html="formatText(msg.content)" />
         <template v-else>
@@ -109,6 +138,13 @@
           <span class="skx-chat-typing__text">{{ WAIT_STEPS[waitStep] }}</span>
         </div>
       </template>
+
+      <!-- 다음 질문 — 끝난 답 아래(질문 말풍선 자리)에 아직 묻지 않은 추천 질문 하나. 누르면 그대로 내 질문이 된다.
+           받는 중·실패 안내가 있으면 숨기고(다시 시도와 겹치지 않게), 추천 질문을 다 물었으면 없다 -->
+      <div v-if="nextStarter" class="skx-chat-next">
+        <span class="skx-chat-next__label">다음 질문</span>
+        <button type="button" class="skx-chat-next__btn" @click="onStarter(nextStarter)">{{ nextStarter.q }}</button>
+      </div>
     </div>
     <!-- 화면낭독기용 — 방금 보낸 질문의 답을 다 받으면 한 번 읽는다. 흐르는 글은 토막마다 읽히지 않게 싣지 않는다 -->
     <div class="skx-sr-only" aria-live="polite" v-html="liveHtml" />
@@ -161,10 +197,11 @@ import { CHAT_MAX_CHARS, type DeepReadMessage, type DeepReadSource } from "~/uti
 import { renderMarkdown } from "~/utils/markdown";
 import { passageText } from "~/utils/passageText";
 
-// 빈 대화의 쓰는 법 한 줄 — 답의 쪽 번호가 이 화면의 핵심이라 처음부터 알린다. 화면 말은 사서가 쓰는 말(출처·원문·쪽)로 —
-// '대목'·'근거'·'자유롭게 물어보세요!' 같은 말은 AI 말투로 읽혀 걷었다(사용자 2026-10-23)
-// 출처 안내 — '원문 쪽을 짚어 준다'는 말이 AI 같다고 바꿨다(사용자 2026-10-23: 출처가 있는 답이라는 점과 눌러서 확인할 수 있다는 점만)
+// 첫 차례의 출처 안내 — 화면 말은 사서가 쓰는 말(출처·원문)로. '대목'·'근거'·'자유롭게 물어보세요!'·'원문 쪽을 짚어 준다'는
+// AI 말투로 읽혀 걷었다(사용자 2026-10-23: 출처가 있는 답이라는 점과 눌러서 확인할 수 있다는 점만)
 const CITE_HINT = "답과 함께 출처를 보여 드려요. 출처를 누르면 원문을 바로 확인할 수 있어요.";
+// 추천 질문 묶음의 이름 — 머리말(무엇을 하는 곳)과 겹치지 않게 '어떻게 쓰는지'만 말한다
+const STARTER_LABEL = "이렇게 물어보세요";
 // 첫 글이 오기 전의 안내 — 서버는 먼저 이 자료의 원문에서 찾고(1초 안팎) 찾은 내용으로 답을 쓴다. 단계 신호는 없어 시간으로 넘긴다
 const WAIT_STEPS = ["원문에서 찾고 있어요", "답변을 작성하고 있어요"] as const;
 const WAIT_STEP_MS = 1800;
@@ -230,6 +267,7 @@ function formatStatic(text: string): string {
 }
 
 const domId = useId();
+const msgDomId = (i: number) => `skx-chat-msg-${domId}-${i}`;
 const rowId = (i: number, gi: number) => `skx-chat-src-${domId}-${i}-${gi}`;
 const previewId = (i: number, gi: number) => `skx-chat-src-${domId}-${i}-${gi}-text`;
 
@@ -352,6 +390,40 @@ async function retry() {
   if (isStreaming.value) return;
   if (inputText.value.trim() === failure.value?.question) inputText.value = "";
   await ask(retryChat);
+}
+
+// 추천 질문 — 물어본 것(대화에 같은 질문이 있다)은 체크와 [답 보기]가 되고, 끝난 답 아래에는 아직 묻지 않은 첫 질문을 권한다.
+// 대화(messages)에서 바로 계산하므로 연구 화면 패널에서 논문을 오가도 그대로다
+interface Starter {
+  q: string;
+  n: number;
+  asked: boolean;
+}
+function askedIndex(q: string): number {
+  return messages.value.findIndex((m) => m.role === "user" && m.content.trim() === q);
+}
+const starters = computed<Starter[]>(() =>
+  copy.value.starters.map((q, k) => ({ q, n: k + 1, asked: askedIndex(q) >= 0 })),
+);
+const nextStarter = computed<Starter | null>(() =>
+  !messages.value.length || isStreaming.value || failure.value ? null : (starters.value.find((s) => !s.asked) ?? null),
+);
+
+// 추천 질문 누름 — 물어본 질문이면 그 질문으로 옮겨 간다(받는 중에도 — 목차처럼 쓴다). 아니면 그대로 보낸다. 답을 받지 못해
+// 입력 칸에 되살린 같은 질문은 비운다([다시 시도]와 같은 규칙 — 답을 받은 뒤 칸에 남지 않게)
+async function onStarter(s: Starter) {
+  if (s.asked) {
+    const i = askedIndex(s.q);
+    nextTick(() => {
+      const el = document.getElementById(msgDomId(i));
+      el?.scrollIntoView({ block: "start", behavior: "smooth" });
+      el?.focus({ preventScroll: true });
+    });
+    return;
+  }
+  if (isStreaming.value) return;
+  if (inputText.value.trim() === s.q) inputText.value = "";
+  await ask(() => sendChat(s.q));
 }
 
 async function ask(request: () => Promise<void>) {
