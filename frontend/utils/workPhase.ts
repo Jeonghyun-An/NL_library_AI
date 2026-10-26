@@ -6,6 +6,7 @@ import type { Corpus, WorkPhase, WorkStep, WorkView } from "~/types/work";
 import { DEEP_READ, DEEP_RESEARCH } from "~/utils/brand";
 import { pubYear } from "~/utils/citations";
 import { MIN_READING_FOR_OUTLINE } from "~/utils/readingList";
+import { excludedPaperCount } from "~/utils/researchEvents";
 import type { QueryValue } from "~/utils/restorePosition";
 
 export const WORK_STEPS: readonly WorkStep[] = ["topics", "reading", "proposal"];
@@ -110,23 +111,27 @@ export interface SummaryBand {
   excluded: number | null;
 }
 
-// 최종 보고서의 통계가 정본이고, 없으면(옛 보고서) 탐색 카운터를 쓴다. 제외 수를 모르는 잡(무관 제외 전)은 null
+// 최종 보고서의 통계가 정본이고, 없으면(옛 보고서) 탐색 카운터를 쓴다. 제외는 검토 − 채택(excludedPaperCount — 보고서 화면의
+// '제외한 논문' 칸·서론과 같은 셈)이라 검토·채택 중 하나라도 모르면 null. 띠는 연구가 끝난 뒤 단계 화면에만 떠 탐색 중
+// 판정 전 후보가 섞이는 일은 없다
 export function summaryBand(view: ResearchView): SummaryBand {
   const stats = view.report?.stats;
   return {
     question: view.question,
     sections: view.report?.sections.length ?? 0,
     adopted: stats ? stats.evidence_adopted : view.counters.evidenceAdopted,
-    excluded: stats ? (stats.excluded ?? null) : view.counters.excluded,
+    excluded: stats
+      ? excludedPaperCount(stats.papers_reviewed, stats.evidence_adopted)
+      : excludedPaperCount(view.counters.papersReviewed, view.counters.evidenceAdopted),
   };
 }
 
-// 제외는 하위질문별 판단의 수라 "건"으로 적는다(researchReport.reportIntro 와 같은 까닭). 모르는 값은 칸째 뺀다
+// 제외는 검토했지만 채택하지 않은 서로 다른 논문 수라 채택과 같이 "편"으로 적는다. 모르는 값은 칸째 뺀다
 export function summaryLine(b: SummaryBand): string {
   const parts: string[] = [];
   if (b.sections > 0) parts.push(`절 ${b.sections}개`);
   if (b.adopted !== null) parts.push(`채택 ${b.adopted}편`);
-  if (b.excluded !== null) parts.push(`제외 ${b.excluded}건`);
+  if (b.excluded !== null) parts.push(`제외 ${b.excluded}편`);
   return parts.join(" · ");
 }
 

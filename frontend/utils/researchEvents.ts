@@ -153,11 +153,34 @@ export function flaggedLabel(n: number | null): string | null {
   return n ? `무관 의심 ${n}편(제외 안 함)` : null;
 }
 
-// 카운터에 제외 칸을 그릴지. 제외 수를 모르는 옛 잡은 그리지 않는다. 새 잡은 API 가 잡을 만들 때 기본 파라미터를
-// 합쳐 저장해 params 에 exclude_off_topic 이 있으므로 첫 counters 이벤트 전에도 그린다 — 수를 받고서야 그리면
-// 첫 검색이 끝날 때 칸이 셋에서 넷으로 늘며 카운터 줄이 흔들린다
+// 카운터에 제외 칸을 그릴지. 칸의 값은 검토 − 채택(excludedPaperCount)이라 무관 제외 전 옛 잡도 검토·채택 수가 있으면
+// 그린다 — 보고서 서론(reportIntro)이 같은 잡에 'N편은 제외했다'를 쓰니 화면도 같은 수를 보인다. 옛 잡은 끝난 잡이라
+// 불러올 때부터 수가 있어 칸이 늘었다 줄었다 하지 않는다. 새 잡은 API 가 잡을 만들 때 기본 파라미터를 합쳐 저장해
+// params 에 exclude_off_topic 이 있으므로 첫 counters 이벤트 전에도 그린다 — 수를 받고서야 그리면 첫 검색이 끝날 때
+// 칸이 셋에서 넷으로 늘며 카운터 줄이 흔들린다. 검토·채택 수도 파라미터도 없는 잡(카운터 전 잡)만 그리지 않는다
 export function showsExcludedCounter(view: Pick<ResearchView, "counters" | "params">): boolean {
-  return view.counters.excluded !== null || "exclude_off_topic" in view.params;
+  const { counters } = view;
+  return (
+    counters.excluded !== null ||
+    "exclude_off_topic" in view.params ||
+    excludedPaperCount(counters.papersReviewed, counters.evidenceAdopted) !== null
+  );
+}
+
+// 제외한 논문 — 검토했지만 채택하지 않은 서로 다른 논문 수(검토 − 채택). 카운터 칸·보고서 서론·초안 안내가 같이 쓴다.
+// 서버의 excluded 는 하위질문별 무관 판정의 수라(같은 논문을 두 하위질문이 빼면 2, 한쪽이 빼고 다른 쪽이 채택해도 1)
+// 서로 다른 논문 수인 검토·채택과 더해 맞지 않는다 — '23편 검토 · 18편 채택 · 10 제외'로 숫자가 틀려 보였다(대표 지적 2026-10-26).
+// 검토(seen_cnts)는 채택 풀을 포함해 채택 ≤ 검토지만, 어긋난 값이 와도 음수를 보이지 않게 0 에서 멈춘다. 하나라도 모르면 null
+export function excludedPaperCount(reviewed: number | null | undefined, adopted: number | null | undefined): number | null {
+  if (reviewed === null || reviewed === undefined || adopted === null || adopted === undefined) return null;
+  return Math.max(0, reviewed - adopted);
+}
+
+// 카운터 줄의 '제외한 논문' 칸 값. 탐색 중에는 검토한 논문에 아직 판정하지 않은 후보가 섞여 검토 − 채택이 제외 수가
+// 아니다 — 칸은 두고 값은 비운다(null → '—'). 진행 화면(ResearchLive)과 진행 패널(ProgressPanel)이 같은 규칙을 쓴다
+export function excludedCounter(counters: CountersView, phase: ResearchPhase): number | null {
+  if (phase === "exploring") return null;
+  return excludedPaperCount(counters.papersReviewed, counters.evidenceAdopted);
 }
 
 export function subqStatusLabel(sq: SubqView): string {

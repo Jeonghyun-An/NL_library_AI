@@ -166,22 +166,35 @@ describe("withStep", () => {
 });
 
 describe("summaryBand·summaryLine", () => {
-  it("최종 보고서의 절 수·통계를 쓴다(제외는 하위질문별 판단의 수라 '건')", () => {
+  it("최종 보고서의 절 수·통계를 쓴다 — 제외는 서버의 하위질문별 무관 판정 수가 아니라 검토 − 채택(편)", () => {
     const band = summaryBand(view({ report: report() }));
     expect(band).toEqual({
       question: "노인의 우울과 사회적 지지에 관한 연구가 궁금해",
       sections: 3,
       adopted: 48,
-      excluded: 12,
+      excluded: 73,
     });
-    expect(summaryLine(band)).toBe("절 3개 · 채택 48편 · 제외 12건");
+    expect(summaryLine(band)).toBe("절 3개 · 채택 48편 · 제외 73편");
   });
 
-  it("통계가 없는 옛 보고서는 탐색 카운터를, 제외 수를 모르는 보고서는 제외 칸을 뺀다", () => {
-    expect(summaryBand(view({ report: report({ stats: undefined }) }))).toMatchObject({ adopted: 40, excluded: 9 });
-    const noExcluded = summaryBand(view({ report: report({ stats: { papers_reviewed: 50, evidence_adopted: 20, rechecks: 0 } }) }));
-    expect(noExcluded).toMatchObject({ sections: 3, adopted: 20, excluded: null });
-    expect(summaryLine(noExcluded)).toBe("절 3개 · 채택 20편");
+  it("대표 지적 예(검토 23 · 채택 18 · 서버 excluded 10)는 보고서 화면 칸·서론과 같은 '제외 5편'이다", () => {
+    const band = summaryBand(view({ report: report({ stats: { papers_reviewed: 23, evidence_adopted: 18, rechecks: 5, excluded: 10 } }) }));
+    expect(summaryLine(band)).toBe("절 3개 · 채택 18편 · 제외 5편");
+  });
+
+  it("통계가 없는 옛 보고서는 탐색 카운터로 센다 — 무관 제외 전 잡(excluded 없음)도 검토·채택이 있으면 제외를 적는다", () => {
+    expect(summaryBand(view({ report: report({ stats: undefined }) }))).toMatchObject({ adopted: 40, excluded: 81 });
+    const old = summaryBand(view({ report: report({ stats: { papers_reviewed: 50, evidence_adopted: 20, rechecks: 0 } }) }));
+    expect(old).toMatchObject({ sections: 3, adopted: 20, excluded: 30 });
+    expect(summaryLine(old)).toBe("절 3개 · 채택 20편 · 제외 30편");
+  });
+
+  it("검토 수를 모르면 제외 칸을 뺀다", () => {
+    const band = summaryBand(
+      view({ report: null, counters: { papersReviewed: null, evidenceAdopted: 40, rechecks: 2, excluded: 9 } }),
+    );
+    expect(band).toMatchObject({ sections: 0, adopted: 40, excluded: null });
+    expect(summaryLine(band)).toBe("채택 40편");
   });
 
   it("보고서가 없고 카운터도 모르면 빈 줄이다", () => {

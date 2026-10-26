@@ -87,7 +87,7 @@ describe("buildReportDocument — 구성", () => {
         generatedAt: "2026-09-27T23:30:00Z",
         range: { from: "2002", to: "2026", n_papers: 1234 },
         url: "http://nl.example/research/abc",
-        intro: "하위질문 1개로 나눠 논문 3편을 검토하고 1편을 근거로 삼았다.",
+        intro: "하위질문 1개로 나눠 논문 3편을 검토해 1편을 채택하고 2편은 제외했다.",
         sections: [
           section({
             heading: "규제 논의의 흐름",
@@ -112,7 +112,7 @@ describe("buildReportDocument — 구성", () => {
       "meta: 생성 일시 2026년 9월 28일 08:30",
       "meta: 수록 범위 2002~2026 논문 1,234편 기준",
       "meta: 연구 주소 http://nl.example/research/abc",
-      "para: 하위질문 1개로 나눠 논문 3편을 검토하고 1편을 근거로 삼았다.",
+      "para: 하위질문 1개로 나눠 논문 3편을 검토해 1편을 채택하고 2편은 제외했다.",
       "heading1: 1. 규제 논의의 흐름",
       "para: 논의가 늘었다 [1].",
       "heading2: 대표 논문",
@@ -121,9 +121,9 @@ describe("buildReportDocument — 구성", () => {
       "bullets: 국제 비교가 필요하다 [1]",
       "heading1: 이 보고서의 한계",
       "bullets: 근거가 1편뿐인 절이 있다.",
-      "heading1: 부록: 탐색 경로",
+      "heading1: 부록: 탐색 과정",
       "heading2: 1. 규제 논의의 흐름",
-      "bullets: 검색어: ‘AI 규제’ → ‘AI 규제 샌드박스’ (재검색 1회) / 판정: 근거 충분 / 채택한 근거: 1편",
+      "bullets: 검색어: ‘AI 규제’ → ‘AI 규제 샌드박스’ (재검색 1회) / 판정: 근거 충분 / 채택한 논문: 1편",
     ]);
     expect(doc.fileName).toBe("DeepResearch_국내_AI_규제_연구_동향_20260928.docx");
   });
@@ -147,7 +147,7 @@ describe("buildReportDocument — 구성", () => {
     });
   });
 
-  it("부록은 하위질문마다 검색어 이력·판정·채택한 근거 수를 싣고, 모르는 칸은 뺀다", () => {
+  it("부록은 하위질문마다 검색어 이력·판정·채택한 논문 수를 싣고, 모르는 칸은 뺀다", () => {
     const doc = buildReportDocument(
       input({
         trail: [
@@ -158,10 +158,10 @@ describe("buildReportDocument — 구성", () => {
       NOW,
     );
     const all = lines(doc);
-    expect(all.slice(all.indexOf("heading1: 부록: 탐색 경로"))).toEqual([
-      "heading1: 부록: 탐색 경로",
+    expect(all.slice(all.indexOf("heading1: 부록: 탐색 과정"))).toEqual([
+      "heading1: 부록: 탐색 과정",
       "heading2: 1. 가",
-      "bullets: 검색어: ‘가’ / 판정: 근거 부족 / 채택한 근거: 0편",
+      "bullets: 검색어: ‘가’ / 판정: 근거 부족 / 채택한 논문: 0편",
       "heading2: 2. 나",
     ]);
   });
@@ -176,14 +176,14 @@ describe("buildReportDocument — 구성", () => {
       NOW,
     );
     const all = lines(doc);
-    expect(all.slice(all.indexOf("heading1: 부록: 탐색 경로"))).toEqual([
-      "heading1: 부록: 탐색 경로",
+    expect(all.slice(all.indexOf("heading1: 부록: 탐색 과정"))).toEqual([
+      "heading1: 부록: 탐색 과정",
       "heading2: 1. 엣지 컴퓨팅",
-      "bullets: 검색어: ‘엣지 컴퓨팅’ → ‘엣지 컴퓨팅 자원 할당’ (재검색 1회) / 판정: 근거 충분 / 채택한 근거: 6편 / 무관 3편 제외",
+      "bullets: 검색어: ‘엣지 컴퓨팅’ → ‘엣지 컴퓨팅 자원 할당’ (재검색 1회) / 판정: 근거 충분 / 채택한 논문: 6편 / 무관 3편 제외",
     ]);
   });
 
-  it("제외한 논문은 탐색 경로 부록 뒤에 하위질문별로 싣고 참고문헌 번호를 매기지 않는다", () => {
+  it("제외한 논문은 탐색 과정 부록 뒤에 하위질문별로 싣고 참고문헌 번호를 매기지 않는다", () => {
     const doc = buildReportDocument(
       input({
         sections: [section({ heading: "엣지 컴퓨팅", intro: "자원을 나눈다 [E1]." })],
@@ -201,10 +201,10 @@ describe("buildReportDocument — 구성", () => {
       NOW,
     );
     const all = lines(doc);
-    expect(all.slice(all.indexOf("heading1: 부록: 탐색 경로"))).toEqual([
-      "heading1: 부록: 탐색 경로",
+    expect(all.slice(all.indexOf("heading1: 부록: 탐색 과정"))).toEqual([
+      "heading1: 부록: 탐색 과정",
       "heading2: 1. 엣지 컴퓨팅",
-      "bullets: 검색어: ‘엣지 컴퓨팅’ / 판정: 근거 충분 / 채택한 근거: 1편 / 무관 2편 제외",
+      "bullets: 검색어: ‘엣지 컴퓨팅’ / 판정: 근거 충분 / 채택한 논문: 1편 / 무관 2편 제외",
       "heading1: 부록: 관련성이 낮아 제외한 논문",
       "para: 자기점검이 하위질문의 핵심 개념과 무관하다고 판단해 근거에서 제외한 논문입니다. 인용한 근거가 아니어서 참고문헌 번호를 매기지 않습니다.",
       "heading2: 1. 엣지 컴퓨팅",
@@ -222,9 +222,9 @@ describe("buildReportDocument — 구성", () => {
     expect(lines(doc)).not.toContain("heading1: 부록: 관련성이 낮아 제외한 논문");
   });
 
-  it("탐색 경로가 없으면 부록을 싣지 않는다", () => {
+  it("탐색 과정이 없으면 부록을 싣지 않는다", () => {
     const doc = buildReportDocument(input(), NOW);
-    expect(lines(doc)).not.toContain("heading1: 부록: 탐색 경로");
+    expect(lines(doc)).not.toContain("heading1: 부록: 탐색 과정");
   });
 
   // 합성 출력의 JSON 을 풀면 LLM 이 쓴 LaTeX(\frac·\beta)가 이스케이프 \f·\b 로 풀려 제어문자가 된다
@@ -381,7 +381,7 @@ describe("buildReportDocument — 초안", () => {
 });
 
 describe("docInputFromReport", () => {
-  it("서론은 화면과 같은 reportIntro 이고, 탐색 경로를 부록 항목으로 옮긴다", () => {
+  it("서론은 화면과 같은 reportIntro 이고, 탐색 과정을 부록 항목으로 옮긴다", () => {
     const report: ResearchReport = {
       question: "q",
       range: { from: "2002", to: "2026", n_papers: 10 },
@@ -397,7 +397,7 @@ describe("docInputFromReport", () => {
     };
     const got = docInputFromReport(report, { generatedAt: "2026-09-28T06:05:00Z", url: "http://x/research/1" });
     expect(got.intro).toBe(reportIntro(report));
-    expect(got.intro).toBe("하위질문 2개로 나눠 논문 38편을 검토하고 11편을 근거로 삼았다.");
+    expect(got.intro).toBe("하위질문 2개로 나눠 논문 38편을 검토해 11편을 채택하고 27편은 제외했다.");
     // 오류로 끝난 하위질문은 판정을 싣지 않는다
     expect(got.trail).toEqual([
       { subquestion: "가", queries: ["가", "가2"], verdict: "sufficient", evidenceCount: 2, excluded: 3 },
@@ -513,7 +513,7 @@ describe("docInputFromDraft", () => {
 
   it("부록은 화면의 탐색 타임라인에서, 서론의 하위질문 수는 끝난 절 수가 아니라 탐색한 하위질문 수로 쓴다", () => {
     const got = docInputFromDraft(draft, v, "http://x/research/job-1");
-    expect(got.intro).toBe("하위질문 3개로 나눠 논문 38편을 검토하고 11편을 근거로 삼았다.");
+    expect(got.intro).toBe("하위질문 3개로 나눠 논문 38편을 검토해 11편을 채택하고 27편은 제외했다.");
     // 오류로 멈춘 하위질문은 판정을 싣지 않고, 모르는 채택 수는 0 이 아니라 비워 둔다.
     // 무관하다고 뺀 수는 회차마다 뺀 수의 합이다(최종본 trail 의 총수와 같다)
     expect(got.trail).toEqual([

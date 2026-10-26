@@ -19,13 +19,14 @@
           <dd>{{ shown(view.counters.papersReviewed) }}</dd>
         </div>
         <div class="rs-counter">
-          <dt>채택한 근거</dt>
+          <dt>채택한 논문</dt>
           <dd>{{ shown(view.counters.evidenceAdopted) }}</dd>
         </div>
-        <!-- 자기점검이 걸러낸 수 — 채택 수만 보이면 무관 제외로 결과가 줄어든 것처럼 읽힌다. 제외 수를 모르는 옛 잡은 칸을 그리지 않는다 -->
+        <!-- 검토했지만 채택하지 않은 논문 수(검토 − 채택, excludedCounter) — 채택 수만 보이면 걸러낸 것이 없는 것처럼 읽힌다.
+             탐색 중에는 판정 전 후보가 섞여 '—'. 검토·채택 수도 무관 제외 파라미터도 없는 옛 잡은 칸을 그리지 않는다(showsExcludedCounter) -->
         <div v-if="showsExcludedCounter(view)" class="rs-counter">
-          <dt>제외</dt>
-          <dd>{{ shown(view.counters.excluded) }}</dd>
+          <dt>제외한 논문</dt>
+          <dd>{{ shown(excludedCounter(view.counters, phase)) }}</dd>
         </div>
         <div class="rs-counter">
           <dt>재검색</dt>
@@ -76,7 +77,7 @@
                   :class="{ 'is-checking': r.verdict === null }"
                   aria-live="off"
                 >{{ roundStatusLabel(sq, r, phase) }}</span>
-                <span v-if="r.foundChunks !== null" class="rs-round__stat">대목 {{ r.foundChunks }}개</span>
+                <span v-if="r.foundChunks !== null" class="rs-round__stat">본문 {{ r.foundChunks }}곳</span>
                 <span v-if="r.newPapers !== null" class="rs-round__stat">새 논문 {{ r.newPapers }}편</span>
                 <!-- 뺀 논문 목록이 있으면 눌러 펼친다. 목록 없이 수만 있는 회차(목록을 기록하기 전 잡)는 글자만 둔다 -->
                 <button
@@ -137,6 +138,7 @@ import { stampExcludedLink } from "~/composables/useRestorePosition";
 import type { ResearchView } from "~/types/research";
 import { excludedAnchor, excludedDetailUrl } from "~/utils/detailSource";
 import {
+  excludedCounter,
   excludedLabel,
   flaggedLabel,
   roundStatusLabel,
@@ -163,7 +165,7 @@ const props = defineProps<{
 
 const TITLES: Partial<Record<ResearchPhase, string>> = {
   synthesizing: "탐색 완료 요약",
-  completed: "탐색 경로",
+  completed: "탐색 과정",
   failed: "멈춘 지점",
   canceled: "멈춘 지점",
 };
