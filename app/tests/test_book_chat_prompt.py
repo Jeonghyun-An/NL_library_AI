@@ -130,7 +130,7 @@ def test_a_paper_gets_the_paper_prompt(book_chat):
     system, user, params = book_chat.chat_prompt(SimpleNamespace(doc_type="paper")).render(**VARS)
 
     assert system.startswith('당신은 논문 "노인 우울 연구" (김철수, 2019) 의 전담 읽기 도우미입니다.')
-    assert "[논문 요약]\n요약" in system and "이 논문에서는 다루지 않습니다" in system
+    assert "[논문 요약]\n요약" in system and "찾은 본문에서는 확인하지 못했습니다" in system
     assert user == "" and params == {"max_tokens": 10000, "temperature": 0.3}
 
 
@@ -178,6 +178,21 @@ def test_a_reference_question_streams_with_the_paper_prompt_and_its_references(b
     # 이 길의 user 메시지에는 [참고 내용]·쪽이 없다 — 시스템 규칙이 이 블록 이름을 근거로 대야 '근거 없음'으로 답하지 않는다
     assert "[이 논문의 참고문헌 목록]" in system["content"]
     assert searched.embedded == [] and searched.filters == []
+
+
+def test_a_paper_without_a_summary_puts_its_abstract_in_the_summary_slot(book_chat, monkeypatch):
+    # 대량 적재 논문은 요약(summary)이 비고 초록만 있는 것이 많다 — 규칙이 '대목에 없으면 요약으로 답하라'인데 요약 칸이
+    # '요약 정보 없음'이면 '이 논문이 주장하고자 하는 바는?'에 얼버무렸다(부스 점검 2026-10-26, KCI_FI000862072).
+    # 요약이 있으면 요약을, 없으면 초록을 싣는다
+    hit = book_chat.SearchHit(chunk_id="c1", book_id="KCI_1", chunk_idx=0, section_idx=0,
+                              text="표본은 노인 300명이다.", page_start=3, page_end=4, score=0.9)
+    _fake_search(monkeypatch, book_chat, [hit])
+    for fields, expected in (({"abstract": "초록 글"}, "[논문 요약]\n초록 글"),
+                             ({"summary": "요약 글", "abstract": "초록 글"}, "[논문 요약]\n요약 글"),
+                             ({}, "[논문 요약]\n요약 정보 없음")):
+        payloads = _fake_llm(monkeypatch, book_chat, "답")
+        _stream(book_chat, "KCI_1", "이 논문의 주장은?", [], book=_paper(**fields))
+        assert expected in payloads[0]["messages"][0]["content"]
 
 
 def test_a_reference_question_without_references_falls_back_to_the_chunk_search(book_chat, monkeypatch):
@@ -230,6 +245,20 @@ def test_the_page_rule_points_at_the_context_headers(book_chat):
         assert "출처(페이지)를 자연스럽게 언급하세요" not in system
         # 규칙이 적은 머리 꼴([p.N–M])의 이음표가 문맥의 것과 같은 글자(–)다
         assert ranged.replace("4", "N").replace("5", "M") in system
+
+
+def test_the_answer_rules_allow_the_summary_and_hide_internal_labels(book_chat):
+    # 부스 점검(2026-10-26) — 브로셔 질문 '이 연구논문에서 주장하고자 하는 바는?'에 "제공된 [참고 내용]만으로는 파악하기
+    # 어렵습니다"로 얼버무렸고(대목이 이론·방법 쪽만 뽑혔다), 소나기 결말은 대목을 못 찾아 "자료에 포함되어 있지 않습니다"로
+    # 단정했다. 대목은 자료의 일부만 뽑은 것이다 — 요약에 있으면 요약으로(쪽 없이) 답하고, 둘 다 없을 때만 '찾은 본문에서
+    # 확인하지 못했다'고 하고, 안쪽 이름([참고 내용]·[쪽 정보 없음] 등)은 답 글에 쓰지 않는다. 책·논문 프롬프트 모두 같다
+    for doc_type, summary_block in (("book", "[자료 요약]"), ("paper", "[논문 요약]")):
+        system = book_chat.chat_prompt(SimpleNamespace(doc_type=doc_type)).render(**VARS)[0]
+        assert f"대목에 없지만 위 {summary_block}에 있는 내용은 요약을 근거로 답하세요. 이때는 쪽을 붙이지 마세요." in system
+        assert "목적·주장·결론·의의" in system
+        assert '"찾은 본문에서는 확인하지 못했습니다"' in system
+        assert "다루지 않습니다" not in system and "반드시 제공된 [참고 내용]" not in system
+        assert f"답 글에 [참고 내용]·{summary_block}·[핵심 주제] 같은 안쪽 이름이나 [쪽 정보 없음]을 쓰지 마세요." in system
 
 
 def test_cited_hits_match_the_one_based_pages(book_chat):
