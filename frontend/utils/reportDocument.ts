@@ -248,7 +248,8 @@ export function docInputFromDraft(draft: DraftReport, view: ResearchView, url: s
     range: draft.report.range,
     generatedAt: null,
     url,
-    intro: reportIntro(draft.report, view.subqs.length),
+    // 초안은 인용이 다 끝나지 않아 인용 수 한 줄을 붙이지 않는다
+    intro: reportIntro(draft.report, view.subqs.length, false),
     sections: draft.report.sections,
     evidence: draft.report.evidence,
     limitations: null,

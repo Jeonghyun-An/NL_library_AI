@@ -52,24 +52,47 @@ describe("rangeLabel", () => {
 describe("reportIntro", () => {
   it("stats 가 있으면 검토·채택 수와 제외(검토 − 채택)를 쓴다", () => {
     expect(reportIntro(report({ stats: { papers_reviewed: 23, evidence_adopted: 18, rechecks: 5 } })))
-      .toBe("하위질문 3개로 나눠 논문 23편을 검토해 18편을 채택하고 5편은 제외했다.");
+      .toBe("하위질문 3개로 나눠 논문 23편을 검토해 18편을 채택하고 5편은 제외했다. 보고서에는 그중 2편을 인용했다.");
   });
 
   // 서버의 excluded 는 하위질문별 무관 판정 수라(한 논문을 두 하위질문이 빼면 두 번) 검토·채택과 더해 맞지 않는다 —
   // 서론의 제외는 늘 검토 − 채택이고 excluded 는 읽지 않는다(대표 지적 2026-10-26: '23 검토 · 18 채택 · 10 제외')
   it("제외는 하위질문별 무관 판정 수(excluded)가 아니라 검토 − 채택으로 센다", () => {
     expect(reportIntro(report({ stats: { papers_reviewed: 23, evidence_adopted: 18, rechecks: 5, excluded: 10 } })))
-      .toBe("하위질문 3개로 나눠 논문 23편을 검토해 18편을 채택하고 5편은 제외했다.");
+      .toBe("하위질문 3개로 나눠 논문 23편을 검토해 18편을 채택하고 5편은 제외했다. 보고서에는 그중 2편을 인용했다.");
   });
 
   it("제외가 0 이면(검토한 논문을 모두 채택) 제외를 적지 않는다", () => {
     expect(reportIntro(report({ stats: { papers_reviewed: 18, evidence_adopted: 18, rechecks: 0, excluded: 3 } })))
-      .toBe("하위질문 3개로 나눠 논문 18편을 검토해 18편을 채택했다.");
+      .toBe("하위질문 3개로 나눠 논문 18편을 검토해 18편을 채택했다. 보고서에는 그중 2편을 인용했다.");
   });
 
   it("채택이 검토보다 많은 어긋난 값이 와도 음수 제외를 적지 않는다", () => {
     expect(reportIntro(report({ stats: { papers_reviewed: 10, evidence_adopted: 12, rechecks: 0 } })))
-      .toBe("하위질문 3개로 나눠 논문 10편을 검토해 12편을 채택했다.");
+      .toBe("하위질문 3개로 나눠 논문 10편을 검토해 12편을 채택했다. 보고서에는 그중 2편을 인용했다.");
+  });
+
+  // 채택한 논문(옆 칸 22)과 보고서 참고문헌(인용한 것만 14)의 수가 달라 서론에 인용 수를 밝힌다 — 서로 다른 cnts_id 로 센다
+  it("인용 수는 report.evidence 의 서로 다른 논문 수로 한 줄 덧붙이고, 초안(withCited=false)·인용 0 은 붙이지 않는다", () => {
+    const stats = { papers_reviewed: 23, evidence_adopted: 22, rechecks: 2 };
+    const evidence = {
+      E1: { cnts_id: "C1", meta: {}, chunks: [] },
+      E2: { cnts_id: "C2", meta: {}, chunks: [] },
+      E3: { cnts_id: "C1", meta: {}, chunks: [] },
+    };
+    expect(reportIntro(report({ stats, evidence }))).toBe(
+      "하위질문 3개로 나눠 논문 23편을 검토해 22편을 채택하고 1편은 제외했다. 보고서에는 그중 2편을 인용했다.",
+    );
+    expect(reportIntro(report({ stats, evidence }), 3, false)).toBe(
+      "하위질문 3개로 나눠 논문 23편을 검토해 22편을 채택하고 1편은 제외했다.",
+    );
+    expect(reportIntro(report({ stats, evidence: {} }))).toBe(
+      "하위질문 3개로 나눠 논문 23편을 검토해 22편을 채택하고 1편은 제외했다.",
+    );
+    // 인용이 채택보다 많은 어긋난 값이면 '그중'을 뺀다
+    expect(reportIntro(report({ stats: { papers_reviewed: 3, evidence_adopted: 1, rechecks: 0 }, evidence }))).toBe(
+      "하위질문 3개로 나눠 논문 3편을 검토해 1편을 채택하고 2편은 제외했다. 보고서에는 2편을 인용했다.",
+    );
   });
 
   it("보강 전 보고서는 근거 수만 쓴다", () => {
