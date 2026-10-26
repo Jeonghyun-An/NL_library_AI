@@ -5,11 +5,13 @@
        정한다(회차 끝 채택 목록을 기록하기 전 잡(06a 전)은 장부가 없어 카드를 그리지 않는다) -->
   <section v-if="shown" class="rs-card wk-ledger" aria-labelledby="wk-ledger-title">
     <header class="wk-ledger__head">
-      <h2 id="wk-ledger-title" class="rs-card__title">근거 장부</h2>
+      <!-- '참고문헌'이 아니라 '채택한 논문' — 이 카드는 채택한 논문 전부(숫자 칸 '채택한 논문'과 같은 수)이고, 보고서의 참고문헌은
+           그중 인용한 것만이라 이름이 같으면 두 수가 어긋나 보였다(2026-10-26 사용자 승인). '참고문헌'은 보고서 목록에만 쓴다 -->
+      <h2 id="wk-ledger-title" class="rs-card__title">채택한 논문</h2>
       <p class="wk-ledger__count">{{ line }}</p>
     </header>
 
-    <ol ref="adoptedList" class="wk-ledger__list" aria-label="채택한 논문">
+    <ol ref="adoptedList" class="wk-ledger__list" aria-label="채택한 논문 목록">
       <li
         v-for="p in ledger.adopted"
         :key="p.cntsId"
@@ -35,7 +37,7 @@
     </template>
 
     <template v-if="ledger.dropped.length">
-      <h3 class="wk-ledger__pile-title">뺌 {{ ledger.dropped.length }}</h3>
+      <h3 class="wk-ledger__pile-title">제외 {{ ledger.dropped.length }}</h3>
       <ol ref="droppedList" class="wk-ledger__list wk-ledger__list--dropped" aria-label="자기점검이 뺀 논문">
         <li
           v-for="p in ledger.dropped"
@@ -44,7 +46,7 @@
           :class="{ 'is-fresh': fresh.dropped.includes(p.cntsId) }"
         >
           <span class="wk-ledger__title">{{ p.title || p.cntsId }}</span>
-          <span class="wk-ledger__meta">{{ byline(p) }} · 하위질문 {{ subqLabel(p) }} · {{ p.round }}회차에 뺌</span>
+          <span class="wk-ledger__meta">{{ byline(p) }} · 하위질문 {{ subqLabel(p) }} · {{ p.round }}회차에 제외</span>
         </li>
       </ol>
     </template>
@@ -129,7 +131,7 @@ watch(
     announcement.value = [
       reviewing.length ? `후보 ${reviewing.length}편 검토 중` : "",
       adopted.length ? `근거 ${adopted.length}편 채택` : "",
-      dropped.length ? `${dropped.length}편 뺌` : "",
+      dropped.length ? `${dropped.length}편 제외` : "",
     ]
       .filter(Boolean)
       .join(", ");

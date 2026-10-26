@@ -159,8 +159,8 @@ function isStopped(view: ResearchView): boolean {
 }
 
 // 보고서 서론 한 줄(reportIntro)이 읽는 stats — 라이브 카운터가 셋 다 있을 때만 싣는다.
-// 하나라도 비면(옛 잡) 서론은 근거 수만 쓰는 옛 문장으로 되돌아간다. 제외 수는 무관 제외 뒤 잡에만
-// 있어 따로 붙인다 — 없으면 서론이 걸러낸 수를 적지 않는다
+// 하나라도 비면(옛 잡) 서론은 근거 수만 쓰는 옛 문장으로 되돌아간다. 서론의 제외 수는 검토 − 채택으로 센다
+// (excludedPaperCount). 하위질문별 무관 판정 수(excluded)는 서버 stats 와 같은 모양으로 남기려고 있을 때만 붙인다
 function liveStats(c: CountersView): CountersPayload | null {
   if (c.papersReviewed === null || c.evidenceAdopted === null || c.rechecks === null) return null;
   const stats: CountersPayload = { papers_reviewed: c.papersReviewed, evidence_adopted: c.evidenceAdopted, rechecks: c.rechecks };

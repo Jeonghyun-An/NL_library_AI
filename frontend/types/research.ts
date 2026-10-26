@@ -435,7 +435,8 @@ export interface CountersView {
   papersReviewed: number | null;
   evidenceAdopted: number | null;
   rechecks: number | null;
-  // 제외 수를 모르는 잡(무관 제외 전)은 null — 화면은 제외 칸을 그리지 않는다
+  // 하위질문별 무관 판정 수(서버 excluded). 무관 제외 전 잡은 null. 화면의 '제외한 논문' 칸·서론은 이 값이 아니라
+  // 검토 − 채택(excludedPaperCount)을 쓴다
   excluded: number | null;
 }
 

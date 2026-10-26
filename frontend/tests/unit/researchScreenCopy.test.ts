@@ -103,7 +103,8 @@ describe("보고서 문서 자체의 글 — 문서 말투(합쇼체)를 지킨�
 
   it("초안 안내(draftIntro)는 화면에만 쓴다 — 내려받는 초안의 서론은 reportIntro", () => {
     expect(doc).not.toContain("draftIntro");
-    expect(doc).toMatch(/intro: reportIntro\(draft\.report, view\.subqs\.length\)/);
+    // 초안은 인용이 다 끝나지 않아 인용 수 한 줄을 붙이지 않는다(withCited=false)
+    expect(doc).toMatch(/intro: reportIntro\(draft\.report, view\.subqs\.length, false\)/);
     // 초안 안내가 여러 줄이라 보고서 서론 칸이 '\n' 을 줄로 그린다
     const researchCss = read("assets/css/research.css").replace(/\/\*[\s\S]*?\*\//g, "");
     expect(findBlock(".rs-report__intro", researchCss)).toMatch(/white-space:\s*pre-line/);
@@ -203,5 +204,31 @@ describe("화면 문구 훑기 — 합쇼체('~습니다'·'~입니다')·명령
       return /[가-힣]니다(?![가-힣])|[^주]세요(?![가-힣])|십시오/.test(line);
     });
     expect(left).toEqual([]);
+  });
+});
+
+// 대표 지적 2026-10-26 — '검토한 논문 23 · 채택한 근거 18 · 제외 10'이 더해 맞지 않았다. 제외 칸은 서버의 하위질문별 무관 판정 수
+// (counters.excluded)가 아니라 검토 − 채택(excludedCounter)이고, 패널 이름은 사서가 쓰는 말로(사용자 확정)
+describe("딥리서치 카운터·패널 이름 — 숫자가 더해 맞고 사서가 쓰는 말로", () => {
+  const panels = ["components/research/ProgressPanel.vue", "components/research/ResearchLive.vue"];
+
+  it.each(panels)("%s — 채택한 논문·제외한 논문 칸, 제외는 검토 − 채택", (file) => {
+    const src = read(file);
+    const tpl = template(src);
+    expect(tpl).toContain("<dt>채택한 논문</dt>");
+    expect(tpl).toContain("<dt>제외한 논문</dt>");
+    expect(src).toContain("excludedCounter(");
+    expect(tpl).not.toContain("counters.excluded");
+    expect(tpl).not.toContain("채택한 근거");
+  });
+
+  it("옆 칸 채택 목록 카드는 '채택한 논문'(보고서 참고문헌과 이름을 가른다), 탐색이 끝난 진행 패널은 '탐색 과정', 회차 줄은 '본문 N곳'", () => {
+    expect(template(read("components/work/EvidenceLedger.vue"))).toContain(">채택한 논문</h2>");
+    expect(template(read("components/work/EvidenceLedger.vue"))).not.toContain(">참고문헌</h2>");
+    expect(screenText(read("components/work/EvidenceLedger.vue"))).not.toContain("근거 장부");
+    const panel = read("components/research/ProgressPanel.vue");
+    expect(panel).toContain('completed: "탐색 과정"');
+    expect(template(panel)).toContain("본문 {{ r.foundChunks }}곳");
+    expect(screenText(panel)).not.toContain("탐색 경로");
   });
 });

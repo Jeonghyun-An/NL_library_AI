@@ -819,6 +819,10 @@
   border-radius: 12px;
   box-shadow: var(--skx-shadow-banner);
 }
+/* 핑크 테마는 페이지 바탕이 웜톤 살구(#f0ddd6)라 팝업만 웜톤으로 튀었다(사용자 2026-10-26) — 카드와 같은 흰 계열 면으로 */
+html[data-theme="pink"] .dt-rc__pop {
+  background: var(--skx-white);
+}
 .dt-rc__pop-head {
   display: flex;
   align-items: center;

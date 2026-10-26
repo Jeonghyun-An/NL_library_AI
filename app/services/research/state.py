@@ -297,9 +297,12 @@ def research_stats(state: ResearchState) -> dict:
     스냅샷에 실리므로 재개한 잡에서도 같은 값이 나온다. 제외 수도 같은 이유로 회차 기록에서 얻는다.
 
     excluded 는 하위질문별 판단의 수다 — 같은 논문을 두 하위질문이 뺐으면 두 번 세고, 한 하위질문이 뺀 논문을
-    다른 하위질문이 채택하면 evidence_adopted 에도 든다. 그래서 검토·채택 수와 더해 맞지 않으며, 화면 서론은
-    "편"이 아니라 "하위질문별로 … 건"으로 적는다. 채택 수만 보이면 무관 제외로 줄어든 숫자가 결과가 준 것으로
-    읽힌다. 보강 전 회차에는 excluded 가 없다.
+    다른 하위질문이 채택하면 evidence_adopted 에도 든다. 그래서 검토·채택 수와 더해 맞지 않는다. 화면의 서론과
+    카운터의 '제외한 논문'은 이 값을 쓰지 않고 papers_reviewed − evidence_adopted(검토했지만 채택하지 않은 서로
+    다른 논문 수)로 센다 — 나란히 놓인 숫자가 더해 맞지 않아 오류로 읽혔다(대표 지적 2026-10-26,
+    frontend/utils/researchReport.ts). 화면은 이 합계를 '제외한 논문' 칸을 그릴지(무관 제외 전 옛 잡이면 null)를
+    가리는 데만 쓰고, 하위질문 회차 줄의 '무관 N편 제외'는 회차 기록의 excluded 를 그대로 쓴다. 보강 전 회차에는
+    excluded 가 없다.
     """
     return {
         "papers_reviewed": len(state.seen_cnts),

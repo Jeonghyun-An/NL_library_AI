@@ -10,7 +10,7 @@ import type {
 } from "../types/research";
 import { pubYear, splitAuthors } from "./citations";
 import type { DraftSlot } from "./researchDraft";
-import { toExcludedPaperView, type ResearchPhase } from "./researchEvents";
+import { excludedPaperCount, toExcludedPaperView, type ResearchPhase } from "./researchEvents";
 
 export function rangeLabel(range: Partial<ReportRange> | null | undefined): string | null {
   if (!range?.n_papers) return null;
@@ -21,22 +21,32 @@ export function rangeLabel(range: Partial<ReportRange> | null | undefined): stri
 }
 
 // 서론 문장은 모델이 아니라 화면이 만든다 — 수치를 모델에게 쓰게 하면 틀린 숫자가 실린다.
-// 하위질문 수는 탐색 경로(trail)로 센다. trail 은 종합이 끝나야 생기므로 초안은 탐색한 하위질문 수를 넘긴다
-export function reportIntro(report: ResearchReport, subqCount = report.trail.length): string {
+// 하위질문 수는 탐색 경로(trail)로 센다. trail 은 종합이 끝나야 생기므로 초안은 탐색한 하위질문 수를 넘긴다.
+// withCited — 인용 수 한 줄(citedNote)을 붙일지. 인용이 다 끝나지 않은 초안(내려받는 초안 문서)은 붙이지 않는다
+export function reportIntro(report: ResearchReport, subqCount = report.trail.length, withCited = true): string {
   const subqs = subqCount || report.sections.length;
   const s = report.stats;
-  if (s) {
-    return `하위질문 ${subqs}개로 나눠 논문 ${s.papers_reviewed}편을 검토하고 ${s.evidence_adopted}편을 근거로 삼았다${droppedNote(s, "걸러냈다")}.`;
-  }
-  return `하위질문 ${subqs}개로 나눠 논문 ${Object.keys(report.evidence).length}편을 근거로 삼았다.`;
+  if (!s) return `하위질문 ${subqs}개로 나눠 논문 ${Object.keys(report.evidence).length}편을 근거로 삼았다.`;
+  const tally = `하위질문 ${subqs}개로 나눠 ${reviewTally(s)}다.`;
+  return withCited ? `${tally}${citedNote(report, s)}` : tally;
 }
 
-// 걸러낸 수를 서론에 덧붙인다 — 채택 수만 적으면 무관 제외로 결과가 줄어든 것처럼 읽힌다.
-// 제외 수는 하위질문별 판단의 수다(한 논문을 두 하위질문이 빼면 두 번, 한 하위질문이 뺀 논문을 다른 하위질문이
-// 채택하면 채택 수에도 든다). "편"으로 적으면 검토·채택 수와 더해 맞아야 할 서로 다른 논문 수로 읽혀 "건"으로 적는다.
-// 뺀 것이 없거나(0) 제외 수가 없는 잡(무관 제외 전)은 적지 않는다
-function droppedNote(stats: CountersPayload, verb: string): string {
-  return stats.excluded ? `(하위질문별로 무관하다고 본 ${stats.excluded}건은 ${verb})` : "";
+// 보고서가 실제로 인용한 논문 수(report.evidence 의 서로 다른 cnts_id) — 채택했지만 인용하지 않은 논문이 있어, 옆 칸
+// '채택한 논문'(채택 22)과 보고서 끝 '참고문헌'(인용한 것만, 14)의 수가 다르다. 서론에 한 줄로 밝혀 두 수가 어긋나 보이지
+// 않게 한다(2026-10-26, 대표 숫자 지적 뒤 사용자 승인). 인용이 채택보다 많은 어긋난 값이면 '그중'을 빼고, 0 이면 적지 않는다
+function citedNote(report: ResearchReport, s: CountersPayload): string {
+  const cited = new Set(Object.values(report.evidence).map((e) => e.cnts_id)).size;
+  if (!cited) return "";
+  return cited <= s.evidence_adopted ? ` 보고서에는 그중 ${cited}편을 인용했다.` : ` 보고서에는 ${cited}편을 인용했다.`;
+}
+
+// 검토·채택·제외 한 마디 — "논문 23편을 검토해 18편을 채택하고 5편은 제외했"까지 쓰고 맺음(다·어요)은 부르는 쪽이 붙인다.
+// 제외는 검토 − 채택(excludedPaperCount — 화면 카운터의 '제외한 논문' 칸과 같은 셈)이라 세 수가 더해 맞는다.
+// 채택 수만 적으면 걸러낸 것이 없는 것처럼 읽혀 제외를 함께 적고, 제외가 0 이면 적지 않는다
+function reviewTally(s: CountersPayload): string {
+  const head = `논문 ${s.papers_reviewed}편을 검토해 ${s.evidence_adopted}편을 채택`;
+  const excluded = excludedPaperCount(s.papers_reviewed, s.evidence_adopted);
+  return excluded ? `${head}하고 ${excluded}편은 제외했` : `${head}했`;
 }
 
 // 빈자리 문구는 화면(절 본문·보고서)과 내려받은 문서가 같이 쓴다 — 문서가 화면과 다른 말을 하지 않게
@@ -94,7 +104,7 @@ export function draftIntro(slots: readonly DraftSlot[], state: DraftState, stats
   if (!stats) return head;
   // 다 쓴 뒤의 카운터는 최종 집계라 "지금까지"를 붙이지 않는다
   const upTo = state === "finishing" ? "" : "지금까지 ";
-  return `${head}\n${upTo}논문 ${stats.papers_reviewed}편을 검토하고 ${stats.evidence_adopted}편을 근거로 삼았어요${droppedNote(stats, "걸러냈어요")}.`;
+  return `${head}\n${upTo}${reviewTally(stats)}어요.`;
 }
 
 // 끝에서는 제자리에 선다. 버튼을 disabled 로 막으면 초점을 쥔 버튼이 비활성이 되는 순간

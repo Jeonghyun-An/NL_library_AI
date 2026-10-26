@@ -17,12 +17,13 @@
         <dd :key="`r${view.counters.papersReviewed}`">{{ shown(view.counters.papersReviewed) }}</dd>
       </div>
       <div class="rs-live__counter">
-        <dt>채택한 근거</dt>
+        <dt>채택한 논문</dt>
         <dd :key="`a${view.counters.evidenceAdopted}`">{{ shown(view.counters.evidenceAdopted) }}</dd>
       </div>
+      <!-- 검토 − 채택(excludedCounter) — 탐색 중에는 판정 전 후보가 섞여 '—'(진행 패널과 같은 규칙) -->
       <div v-if="showsExcludedCounter(view)" class="rs-live__counter">
-        <dt>제외</dt>
-        <dd :key="`x${view.counters.excluded}`">{{ shown(view.counters.excluded) }}</dd>
+        <dt>제외한 논문</dt>
+        <dd :key="`x${excluded}`">{{ shown(excluded) }}</dd>
       </div>
       <div class="rs-live__counter">
         <dt>재검색</dt>
@@ -102,7 +103,7 @@ import { computed, shallowRef } from "vue";
 import type { ResearchView, SubqView } from "~/types/research";
 import { slotElementId } from "~/utils/planSlots";
 import { subqFailureText } from "~/utils/researchErrors";
-import { showsExcludedCounter, subqStatusLabel } from "~/utils/researchEvents";
+import { excludedCounter, researchPhase, showsExcludedCounter, subqStatusLabel } from "~/utils/researchEvents";
 import { doneSummary, liveNowLine, liveRunning, roundSteps, type LiveStep } from "~/utils/researchLive";
 
 const props = defineProps<{ view: ResearchView }>();
@@ -119,6 +120,7 @@ const REVIEW_SHOWN = 4;
 
 const running = computed(() => liveRunning(props.view.subqs));
 const nowLine = computed(() => liveNowLine(props.view.subqs));
+const excluded = computed(() => excludedCounter(props.view.counters, researchPhase(props.view)));
 
 function shown(n: number | null): string {
   return n === null ? "—" : n.toLocaleString("ko-KR");

@@ -49,7 +49,8 @@
               <div class="dt-cover">
                 <BookCover :book-id="cnts_id" />
               </div>
-              <p class="dt-cover-note">
+              <!-- AI 가 그린 표지일 때만 — 원문 첫 쪽(PDF 1p)이나 글자 표지(목업)에 붙으면 사실과 다르다(사용자 2026-10-26 확인) -->
+              <p v-if="isDrawnCover(book.cover_image_key)" class="dt-cover-note">
                 <span class="skx-ai-dot" aria-hidden="true"></span>
                 AI가 도서 내용을 분석해 그려낸 표지입니다
               </p>
@@ -327,6 +328,7 @@ import { useBookmark } from "~/composables/useBookmark";
 import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { API_SEARCH_TIMEOUT_MS, apiHeaders, apiUrl, useApi } from "~/composables/useApi";
 import type { BookInfo } from "~/types/search";
+import { isDrawnCover } from "~/utils/bookCover";
 import { firstValue, shouldGoBack } from "~/utils/detailSource";
 import {
   activeTabKey,
