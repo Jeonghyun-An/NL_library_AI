@@ -2767,6 +2767,14 @@ html.skx-scroll-lock {
   gap: 0.8rem;
   padding: 1.2rem;
 }
+/* 핑크 테마 추천 1권의 [원문 보기] — 목록 카드와 같은 흰 34% 유리라 흰 읽는 칸(0.8) 위에서는 면이 사라져 글자만 남았다(사용자
+   2026-10-26: 아래 목록의 [원문 보기]와 색을 맞춰 달라). 목록 버튼이 페이지 바탕 위에서 보이는 색(흰 34% + 바탕 66%)을 불투명으로 깐다 */
+html[data-theme="pink"] .skx-pick__book .skx-btn-pview {
+  background: color-mix(in srgb, var(--skx-page-bg) 66%, var(--skx-white));
+}
+html[data-theme="pink"] .skx-pick__book .skx-btn-pview:hover {
+  background: color-mix(in srgb, var(--skx-page-bg) 85%, var(--skx-white));
+}
 /* [E] 검색 결과 공통 틀 */
 
 /* [S] 결과 카드(ResultCard) — 소장자료 목록·논문 목록·추천 1권이 같은 해부도.
