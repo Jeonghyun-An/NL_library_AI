@@ -91,7 +91,10 @@ class Book(Base):
 
     @property
     def references(self) -> list[str]:
-        return (self.extra or {}).get("references", [])
+        # 저장된 목록 끝에 붙어 온 논문 뒷부분(투고 정보·키워드·초록 머리·저자 소개)을 읽을 때 걷는다 — 화면(논문 상세·
+        # 인용하기)·딥리드 참고문헌 답이 모두 이 속성을 거친다. 저장값은 바꾸지 않는다(services/ingestion/reference_tail)
+        from services.ingestion.reference_tail import clean_references
+        return clean_references((self.extra or {}).get("references", []))
 
     @property
     def plot(self) -> str | None:

@@ -274,7 +274,9 @@ async def _chat_events(
         title=book.title or cnts_id,
         author=author,
         pub_date=pub_date,
-        summary=book.summary or "요약 정보 없음",
+        # 요약이 없으면 초록을 요약 자리에 싣는다 — 대량 적재 논문은 요약이 비고 초록만 있는 것이 많다. 규칙이 '대목에 없으면
+        # 요약으로 답하라'고 하는데 요약 칸이 비면 논문 전체의 주장·목적을 묻는 질문에 얼버무린다(부스 점검 2026-10-26)
+        summary=book.summary or book.abstract or "요약 정보 없음",
         themes=book.themes or "테마 정보 없음",
     )
 
