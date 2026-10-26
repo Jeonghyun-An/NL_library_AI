@@ -137,7 +137,9 @@ describe("BookChat · AppSidebar 연결", () => {
 
   it("답을 다 받거나 멈추면 남기고, 화면에 붙은 뒤·자료가 바뀐 뒤 남긴 대화를 되살린다(store 를 넘긴 곳은 되살리지 않는다)", () => {
     expect(chat).toContain("saveConversation(sessionId.value, props.cntsId, props.bookTitle || props.cntsId, props.docKind, messages.value)");
-    expect(chat).toContain('<button type="button" class="skx-chat-new" @click="startNewConversation">새 대화</button>');
+    // [새 대화]는 입력 칸 안 왼쪽 아래(보내기 단추와 같은 줄) — 대화가 있고 받는 중이 아닐 때만
+    expect(chat).toMatch(/<button v-if="canStartNew" type="button" class="skx-chat-new" @click="startNewConversation">/);
+    expect(chat).toContain(":class=\"['skx-chat-input-wrap', canStartNew && 'has-new']\"");
     expect(chat).toContain("onMounted(restoreSaved);");
     expect(chat).toContain("if (props.store || messages.value.length || isStreaming.value) return;");
   });
@@ -145,6 +147,17 @@ describe("BookChat · AppSidebar 연결", () => {
   it("사이드바는 대화가 있을 때만 'DeepRead' 묶음을 그리고, 누르면 그 자료 상세로 간다", () => {
     expect(sidebar).toContain('v-if="deepReadRows.length"');
     expect(sidebar).toContain('@click="goDeepRead(d)"');
-    expect(sidebar).toContain("void router.push(deepReadRoute(d));");
+    expect(sidebar).toContain("const to = deepReadRoute(d);");
+  });
+
+  it("DeepRead·DeepResearch 묶음은 최근 3줄, 머리를 누르면 접히고(이 브라우저에 기억) 빈 DeepResearch 는 접지 않는다", () => {
+    expect(sidebar).toContain("const DEEP_READ_ROW_LIMIT = 3;");
+    expect(sidebar).toContain("const RESEARCH_ROW_LIMIT = 3;");
+    expect(sidebar).toContain(`@click="toggleFold('deepread')"`);
+    expect(sidebar).toContain(`@click="toggleFold('research')"`);
+    expect(sidebar).toContain("const researchFolded = computed(() => fold.research && researchRows.value.length > 0);");
+    expect(sidebar).toContain('const FOLD_KEY = "skx-sidebar-fold-v1";');
+    expect(sidebar).toContain('<template v-if="!fold.deepread">');
+    expect(sidebar).toContain('<template v-if="!researchFolded">');
   });
 });

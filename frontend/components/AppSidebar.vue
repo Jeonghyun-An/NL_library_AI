@@ -121,15 +121,27 @@
         <ClientOnly>
           <template v-if="loaded">
             <!-- 딥리드: 이 브라우저에서 나눈 자료별 대화(utils/deepReadHistory — 서버 기록과 따로). 대화가 있을 때만 보인다.
-                 누르면 그 자료의 상세 화면이 딥리드 창을 연 채로 열리고 대화가 이어 보인다(대표 요청 2026-10-26 — 딥리드를 더 드러내게) -->
+                 누르면 그 자료의 상세 화면이 딥리드 창을 연 채로 열리고 대화가 이어 보인다(대표 요청 2026-10-26 — 딥리드를 더 드러내게).
+                 DeepResearch 와 같은 카드 — 머리를 누르면 머리 한 줄로 접히고(대화 수 칩), 펼치면 최근 3개 + '이전 대화 [n]'(사용자 2026-10-26) -->
             <section
               v-if="deepReadRows.length"
               class="skx-history__group skx-history__group--deepread"
               aria-labelledby="skx-history-deepread"
             >
               <div class="skx-history__head">
-                <h2 id="skx-history-deepread" class="skx-history__title" tabindex="-1">{{ DEEP_READ }}</h2>
+                <h2 id="skx-history-deepread" class="skx-history__title" tabindex="-1">
+                  <button
+                    type="button"
+                    class="skx-history__fold"
+                    :aria-expanded="!fold.deepread"
+                    @click="toggleFold('deepread')"
+                  >
+                    {{ DEEP_READ }}
+                    <span v-if="fold.deepread" class="skx-history-chip">{{ deepReadTotal }}</span>
+                  </button>
+                </h2>
               </div>
+              <template v-if="!fold.deepread">
               <ul class="skx-history__list">
                 <li v-for="d in deepReadRows" :key="d.id" class="skx-history__row">
                   <div class="skx-history__row-main">
@@ -156,21 +168,54 @@
                   </div>
                 </li>
               </ul>
+              <button
+                v-if="deepReadHiddenCount > 0 || deepReadExpanded"
+                type="button"
+                :class="['skx-history__older', deepReadExpanded && 'is-expanded']"
+                :aria-expanded="deepReadExpanded"
+                :aria-label="olderDeepRead.ariaLabel"
+                @click="deepReadExpanded = !deepReadExpanded"
+              >
+                <span>{{ olderDeepRead.label }}</span>
+                <span v-if="olderDeepRead.count !== null" class="skx-history-chip" aria-hidden="true">{{ olderDeepRead.count }}</span>
+                <svg class="skx-history__older-chev" viewBox="0 0 8 5" aria-hidden="true" focusable="false">
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M7.86768 0.102681C8.03189 0.250461 8.0452 0.503377 7.89742 0.667584L4.29757 4.66758C4.22172 4.75187 4.11365 4.8 4.00026 4.8C3.88686 4.80001 3.7788 4.75188 3.70294 4.6676L0.102695 0.667599C-0.0450944 0.5034 -0.0317915 0.250484 0.132408 0.102695C0.296607 -0.0450943 0.549523 -0.0317915 0.697312 0.132408L4.00023 3.80207L7.30278 0.132424C7.45056 -0.0317831 7.70347 -0.0450996 7.86768 0.102681Z"
+                  />
+                </svg>
+              </button>
+              </template>
             </section>
 
             <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 머리는 'DeepResearch' · 오른쪽 '전체 삭제'(아래 '최근 검색' 머리와 같은 꼴).
                  묶음은 기록이 없어도 늘 보이고, 연구 기록이 하나도 없을 때만 머리 아래에 [연구 시작하기 >]를 둔다 — 기록이 있으면
-                 버튼 없이 목록만(사용자 결정 2026-10-16) -->
+                 버튼 없이 목록만(사용자 결정 2026-10-16). 기록이 있으면 머리를 눌러 머리 한 줄로 접는다 — 빈 묶음의 [연구 시작하기]처럼
+                 작게(기록 수 칩, 진행 중·승인 대기가 있으면 점). 펼치면 3줄 + '이전 연구 [n]'(사용자 2026-10-26) -->
             <section class="skx-history__group skx-history__group--research" aria-labelledby="skx-history-research">
               <div class="skx-history__head">
                 <div class="skx-history__head-main">
-                  <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">{{ DEEP_RESEARCH }}</h2>
+                  <h2 id="skx-history-research" class="skx-history__title" tabindex="-1">
+                    <button
+                      v-if="researchRows.length"
+                      type="button"
+                      class="skx-history__fold"
+                      :aria-expanded="!researchFolded"
+                      @click="toggleFold('research')"
+                    >
+                      {{ DEEP_RESEARCH }}
+                      <span v-if="researchFolded" class="skx-history-chip">{{ groups.researchTotal }}</span>
+                      <span v-if="researchFolded && researchActive" class="skx-history__fold-dot" aria-hidden="true"></span>
+                    </button>
+                    <template v-else>{{ DEEP_RESEARCH }}</template>
+                  </h2>
                   <!-- '진행 중 N' 알약은 뺐다 — 진행 중인 줄의 '~ 중' 라벨이 산호 알약이라 같은 말이 겹쳤다(사용자 결정 2026-10-16).
                        화면 읽기 프로그램에는 묶음 머리에서 바로 들리게 글로만 남긴다 -->
                   <span v-if="liveCount > 0" class="skx-sr-only">진행 중 {{ liveCount }}</span>
                 </div>
                 <button
-                  v-if="researchRows.length"
+                  v-if="researchRows.length && !researchFolded"
                   ref="researchClearBtn"
                   type="button"
                   class="skx-history__clear"
@@ -206,6 +251,7 @@
                   />
                 </svg>
               </button>
+              <template v-if="!researchFolded">
               <div
                 v-if="confirming === 'research'"
                 class="skx-history__confirm"
@@ -295,7 +341,7 @@
                   </div>
                 </li>
               </ul>
-              <!-- 5줄을 넘는 연구는 구분선 아래 '이전 연구 [n]' 한 줄로 이 자리에서 펼친다(시안 C — 숫자는 최근 검색의 종류 칩과
+              <!-- 3줄을 넘는 연구는 구분선 아래 '이전 연구 [n]' 한 줄로 이 자리에서 펼친다(시안 C — 숫자는 최근 검색의 종류 칩과
                    같은 칩, 오른쪽 끝 ⌄, 펼치면 '접기') -->
               <button
                 v-if="researchHiddenCount > 0 || researchExpanded"
@@ -315,6 +361,7 @@
                   />
                 </svg>
               </button>
+              </template>
             </section>
 
             <!-- 진짜 빈 목록일 때만 — 못 읽은 묶음은 제자리에서 실패를 말한다. 사이드바 모양(작은 회색 한 줄)을 지키려 공통 빈 상태
@@ -496,8 +543,8 @@ import { olderToggle, stageProgress, statusStageLine, type StageRange } from "~/
 const props = defineProps<{ collapsed?: boolean; foldOnEnter?: boolean }>();
 const emit = defineEmits<{ cart: []; save: [] }>();
 
-// DeepResearch 묶음이 처음 보이는 행 수 — 넘치는 만큼은 구분선 아래 '이전 연구 [n]' 한 줄로 이 자리에서 펼친다
-const RESEARCH_ROW_LIMIT = 5;
+// DeepResearch 묶음이 처음 보이는 행 수 — 넘치는 만큼은 구분선 아래 '이전 연구 [n]' 한 줄로 이 자리에서 펼친다(5 → 3, 사용자 2026-10-26)
+const RESEARCH_ROW_LIMIT = 3;
 type ClearGroup = SidebarGroupKey;
 // 묶음별 전체 삭제 확인 문구 — 최근 검색은 도서·논문만, 딥리서치는 따로 지운다. 해요체, 문장마다 줄을 바꾼다(.skx-history__confirm-text pre-line)
 const CLEAR_TEXT: Record<ClearGroup, string> = {
@@ -651,7 +698,7 @@ async function retryLoad() {
   }
 }
 
-// 기록이 하나씩 지워져 묶음이 비면 열려 있던 확인창을 닫고, 5줄 이하로 줄면 펼침도 푼다 —
+// 기록이 하나씩 지워져 묶음이 비면 열려 있던 확인창을 닫고, 3줄 이하로 줄면 펼침도 푼다 —
 // 안 풀면 다음에 기록이 늘 때 처음부터 펼쳐진 채 나타난다
 watch(
   () => [groups.value.researchTotal, recentRows.value.length] as const,
@@ -797,15 +844,53 @@ function go(h: HistoryEntry) {
   router.push(routeFor(h));
 }
 
-// 딥리드 기록 — 최신 DEEP_READ_ROW_LIMIT 개. 누르면 그 자료 상세에서 딥리드 창을 연 채로(?chat=1)
-const DEEP_READ_ROW_LIMIT = 5;
+// 딥리드 기록 — 최신 DEEP_READ_ROW_LIMIT 개, 넘치면 '이전 대화 [n]'으로 펼친다. 누르면 그 자료 상세에서 딥리드 창을 연 채로(?chat=1)
+const DEEP_READ_ROW_LIMIT = 3;
 const deepRead = useDeepReadHistory();
-const deepReadRows = computed(() => deepRead.items.value.slice(0, DEEP_READ_ROW_LIMIT));
+const deepReadExpanded = ref(false);
+const deepReadTotal = computed(() => deepRead.items.value.length);
+const deepReadRows = computed(() =>
+  deepReadExpanded.value ? deepRead.items.value : deepRead.items.value.slice(0, DEEP_READ_ROW_LIMIT),
+);
+const deepReadHiddenCount = computed(() => deepReadTotal.value - deepReadRows.value.length);
+const olderDeepRead = computed(() => olderToggle(deepReadExpanded.value, deepReadHiddenCount.value, "대화"));
+watch(deepReadTotal, (n) => {
+  if (n <= DEEP_READ_ROW_LIMIT) deepReadExpanded.value = false;
+});
+
+// DeepRead·DeepResearch 묶음 접힘 — 머리를 누르면 머리 한 줄만 남는다(사용자 2026-10-26: 기록이 없을 때의 [연구 시작하기]처럼
+// 작게). 보는 사람마다의 편의라 이 브라우저에 기억한다 — 저장소가 막히면 이 화면에서만. 빈 DeepResearch 묶음은 접지 않는다
+// ([연구 시작하기]가 늘 보이게)
+type FoldGroup = "deepread" | "research";
+const FOLD_KEY = "skx-sidebar-fold-v1";
+const fold = reactive<Record<FoldGroup, boolean>>({ deepread: false, research: false });
+const researchFolded = computed(() => fold.research && researchRows.value.length > 0);
+function toggleFold(group: FoldGroup) {
+  fold[group] = !fold[group];
+  if (group === "research" && confirming.value === "research") confirming.value = null;
+  rowConfirm.value = null;
+  try {
+    safeLocalStorage()?.setItem(FOLD_KEY, JSON.stringify(fold));
+  } catch {
+    // 막힌 저장소 — 이 화면에서만 접힌다
+  }
+}
+onMounted(() => {
+  try {
+    const saved = JSON.parse(safeLocalStorage()?.getItem(FOLD_KEY) || "{}") as Partial<Record<FoldGroup, unknown>>;
+    fold.deepread = saved.deepread === true;
+    fold.research = saved.research === true;
+  } catch {
+    // 읽지 못하면 펼친 채로
+  }
+});
 function isDeepReadActive(d: DeepReadHistoryItem): boolean {
   return route.path === deepReadRoute(d).path && route.query.dr === d.id;
 }
+// 같은 자료 화면이면 지금 쿼리(검색어·관련도)를 지킨 채 대화만 바꾼다 — 상세 머리의 관련도 배지가 사라지지 않게(리뷰 지적)
 function goDeepRead(d: DeepReadHistoryItem) {
-  void router.push(deepReadRoute(d));
+  const to = deepReadRoute(d);
+  void router.push(route.path === to.path ? { path: to.path, query: { ...route.query, ...to.query } } : to);
 }
 
 function badgeOf(h: HistoryEntry): { label: string; tone: string } {
@@ -915,8 +1000,9 @@ onBeforeUnmount(() => {
 .skx-history__group .skx-history__list {
   overflow: visible;
 }
-/* DeepResearch 묶음 카드(시안): 흰 5% 유리 — 사이드바가 이미 흐려져 있어 이 카드는 흐림 없이 바탕만 얹는다 */
-.skx-history__group--research {
+/* DeepResearch·DeepRead 묶음 카드(시안): 흰 5% 유리 — 사이드바가 이미 흐려져 있어 이 카드는 흐림 없이 바탕만 얹는다 */
+.skx-history__group--research,
+.skx-history__group--deepread {
   padding: 0.6rem;
   background: var(--skx-frost-side-card);
   border-radius: var(--skx-radius-md);
@@ -946,6 +1032,46 @@ onBeforeUnmount(() => {
 }
 .skx-history__group .skx-history__title {
   color: var(--skx-teal-ink);
+}
+/* 묶음 머리 접기 — 머리 줄 전체가 단추(제목 · 접히면 수 칩). 화살표 없이 머리만 누른다(사용자 2026-10-26) */
+.skx-history__head-main,
+.skx-history__head > .skx-history__title {
+  flex: 1;
+  min-width: 0;
+}
+.skx-history__head-main > .skx-history__title {
+  flex: 1;
+  min-width: 0;
+}
+.skx-history__fold {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.skx-history__fold:hover {
+  color: var(--skx-primary);
+}
+.skx-history__fold:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+  border-radius: var(--skx-radius-sm);
+}
+/* 접힌 DeepResearch 머리의 점 — 진행 중이거나 승인을 기다리는 연구가 있다(접힌 띠의 현미경 점과 같은 뜻) */
+.skx-history__fold-dot {
+  flex: none;
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: var(--skx-primary);
 }
 .skx-history__clear {
   flex: none;

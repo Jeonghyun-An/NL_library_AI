@@ -60,10 +60,19 @@ function readAll(): DeepReadHistoryItem[] {
   }
 }
 
-// 저장소가 가득 차면(QuotaExceeded) 오래된 자료부터 빼며 다시 쓴다 — 저장을 못 해도 화면은 그대로 돈다
-function writeAll(list: DeepReadHistoryItem[]): DeepReadHistoryItem[] {
+// 저장소가 가득 차면(QuotaExceeded) 오래된 대화부터 빼며 다시 쓴다. 맨 앞(새로 남길 대화) 하나도 못 들어가면 저장소를 건드리지 않고
+// keep(지금까지의 목록)을 돌려준다 — 새 대화 하나 때문에 남긴 기록이 통째로 지워지지 않게(리뷰 지적). 빈 목록은 키를 지운다
+function writeAll(list: DeepReadHistoryItem[], keep: DeepReadHistoryItem[] = list): DeepReadHistoryItem[] {
   const ls = safeLocalStorage();
   if (!ls) return list;
+  if (!list.length) {
+    try {
+      ls.removeItem(DEEP_READ_HISTORY_KEY);
+    } catch {
+      // 막힌 저장소 — 이 탭의 목록만 비운다
+    }
+    return [];
+  }
   let rest = list;
   while (rest.length) {
     try {
@@ -73,12 +82,7 @@ function writeAll(list: DeepReadHistoryItem[]): DeepReadHistoryItem[] {
       rest = rest.slice(0, -1);
     }
   }
-  try {
-    ls.removeItem(DEEP_READ_HISTORY_KEY);
-  } catch {
-    // 막힌 저장소 — 이 탭의 목록만 비운다
-  }
-  return [];
+  return keep;
 }
 
 function trimSource(s: DeepReadSource): DeepReadSource {
@@ -146,7 +150,7 @@ export function saveConversation(
     messages: cleaned,
   };
   const rest = items.value.filter((i) => i.id !== id);
-  items.value = writeAll([item, ...rest].slice(0, DEEP_READ_HISTORY_MAX));
+  items.value = writeAll([item, ...rest].slice(0, DEEP_READ_HISTORY_MAX), items.value);
 }
 
 export function removeConversation(id: string): void {

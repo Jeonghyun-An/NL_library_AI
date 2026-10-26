@@ -34,7 +34,7 @@ describe("사이드바 — 목록을 못 읽은 묶음", () => {
       /<SkxInlineError\s+v-if="researchLoadError"\s+class="skx-history__notice"\s+role="status"\s+:message="researchLoadError"\s+:busy="retrying"\s+@retry="retryLoad"\s+\/>\s*<button\s+v-else-if="!researchRows.length"[^>]*class="skx-history__start"/,
     );
     // 머리 'DeepResearch · 전체 삭제' 는 기록이 있을 때만 전체 삭제
-    expect(researchSection).toMatch(/<button\s+v-if="researchRows.length"\s+ref="researchClearBtn"/);
+    expect(researchSection).toMatch(/<button\s+v-if="researchRows.length && !researchFolded"\s+ref="researchClearBtn"/);
   });
 
   it("최근 검색은 실패면 줄이 없어도 묶음을 그려 그 자리에 알린다 — 전체 삭제·목록은 줄이 있을 때만", () => {
