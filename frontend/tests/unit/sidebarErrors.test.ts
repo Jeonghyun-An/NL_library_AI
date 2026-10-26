@@ -12,7 +12,9 @@ const read = (rel: string) =>
 const src = read("components/AppSidebar.vue");
 const tpl = src.slice(src.indexOf("<template>"), src.lastIndexOf("</template>"));
 const js = src.slice(src.indexOf("<script setup"), src.indexOf("</script>"));
-const researchSection = tpl.slice(tpl.indexOf('aria-labelledby="skx-history-research"'), tpl.indexOf("</section>"));
+// 딥리서치 묶음 — 그 앞에 DeepRead 묶음(2026-10-26)이 있어 첫 </section> 이 아니라 딥리서치 머리 뒤의 </section> 까지
+const researchAt = tpl.indexOf('aria-labelledby="skx-history-research"');
+const researchSection = tpl.slice(researchAt, tpl.indexOf("</section>", researchAt));
 const recentSection = tpl.slice(tpl.indexOf('aria-labelledby="skx-history-recent"'));
 
 describe("사이드바 — 목록을 못 읽은 묶음", () => {
@@ -32,7 +34,7 @@ describe("사이드바 — 목록을 못 읽은 묶음", () => {
       /<SkxInlineError\s+v-if="researchLoadError"\s+class="skx-history__notice"\s+role="status"\s+:message="researchLoadError"\s+:busy="retrying"\s+@retry="retryLoad"\s+\/>\s*<button\s+v-else-if="!researchRows.length"[^>]*class="skx-history__start"/,
     );
     // 머리 'DeepResearch · 전체 삭제' 는 기록이 있을 때만 전체 삭제
-    expect(researchSection).toMatch(/<button\s+v-if="researchRows.length"\s+ref="researchClearBtn"/);
+    expect(researchSection).toMatch(/<button\s+v-if="researchRows.length && !researchFolded"\s+ref="researchClearBtn"/);
   });
 
   it("최근 검색은 실패면 줄이 없어도 묶음을 그려 그 자리에 알린다 — 전체 삭제·목록은 줄이 있을 때만", () => {
@@ -46,7 +48,7 @@ describe("사이드바 — 목록을 못 읽은 묶음", () => {
 
   it("'아직 검색 기록이 없어요'는 두 묶음 모두 비었고 실패가 없을 때만 — 옛 한 줄 실패 문구는 없다", () => {
     expect(tpl).toMatch(
-      /<p\s+v-if="!researchRows.length && !recentRows.length && !researchLoadError && !recentLoadError"\s+class="skx-history__empty"\s+role="status"\s*>\s*\{\{ SIDEBAR_EMPTY \}\}\s*<\/p>/,
+      /<p\s+v-if="!deepReadRows.length && !researchRows.length && !recentRows.length && !researchLoadError && !recentLoadError"\s+class="skx-history__empty"\s+role="status"\s*>\s*\{\{ SIDEBAR_EMPTY \}\}\s*<\/p>/,
     );
     expect(SIDEBAR_EMPTY).toBe("아직 검색 기록이 없어요.");
     expect(src).not.toContain("잠시 뒤 다시 열어 주세요");
