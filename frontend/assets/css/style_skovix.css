@@ -3675,6 +3675,32 @@ html.skx-scroll-lock {
 .skx-chat-opening__cite .skx-chat-cite {
   margin: 0 0.35em 0 0;
 }
+/* [새 대화] — 입력 칸 바로 위 오른쪽의 작은 글자 단추. 지금 대화는 사이드바 DeepRead 기록에 남는다 */
+.skx-chat-newrow {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.35rem 0.2rem 0;
+}
+.skx-chat-new {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--skx-rule);
+  border-radius: var(--skx-radius-pill);
+  background: transparent;
+  color: var(--skx-ink-strong);
+  font: inherit;
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.85;
+}
+.skx-chat-new:hover {
+  opacity: 1;
+  background: var(--skx-chat-user-bg);
+}
+.skx-chat-new:focus-visible {
+  outline: 2px solid var(--skx-ink-strong);
+  outline-offset: 2px;
+}
 /* 다음 질문 — 끝난 답 아래 질문 말풍선 자리의 점선 말풍선. 올리면 실제 질문 말풍선 면으로 채워져 '누르면 내 질문'이 보인다 */
 .skx-chat-next {
   align-self: flex-end;

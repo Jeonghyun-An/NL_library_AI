@@ -120,6 +120,44 @@
         <!-- 첫 로드가 끝나기 전의 빈 목록을 '기록 없음'으로 보이지 않게 loaded 를 기다린다 -->
         <ClientOnly>
           <template v-if="loaded">
+            <!-- 딥리드: 이 브라우저에서 나눈 자료별 대화(utils/deepReadHistory — 서버 기록과 따로). 대화가 있을 때만 보인다.
+                 누르면 그 자료의 상세 화면이 딥리드 창을 연 채로 열리고 대화가 이어 보인다(대표 요청 2026-10-26 — 딥리드를 더 드러내게) -->
+            <section
+              v-if="deepReadRows.length"
+              class="skx-history__group skx-history__group--deepread"
+              aria-labelledby="skx-history-deepread"
+            >
+              <div class="skx-history__head">
+                <h2 id="skx-history-deepread" class="skx-history__title" tabindex="-1">{{ DEEP_READ }}</h2>
+              </div>
+              <ul class="skx-history__list">
+                <li v-for="d in deepReadRows" :key="d.id" class="skx-history__row">
+                  <div class="skx-history__row-main">
+                    <button
+                      type="button"
+                      :class="['skx-history-item', isDeepReadActive(d) && 'is-active']"
+                      :aria-current="isDeepReadActive(d) ? 'page' : undefined"
+                      @click="goDeepRead(d)"
+                    >
+                      <span class="skx-history-item__query" :title="firstQuestion(d)">{{ d.title }}</span>
+                      <span class="skx-history-item__meta">
+                        <span class="skx-history-badge is-done">{{ d.kind === "paper" ? "논문" : "소장자료" }}</span>
+                        <span class="skx-history-item__time">질문 {{ questionCount(d) }}개 · {{ formatHistoryTime(d.updatedAt) }}</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      class="skx-history-item__del"
+                      :aria-label="`'${d.title}' 대화 기록 삭제`"
+                      @click="deepRead.remove(d.id)"
+                    >
+                      <img src="/img/ico-delete.svg" alt="" />
+                    </button>
+                  </div>
+                </li>
+              </ul>
+            </section>
+
             <!-- 딥리서치: 진행 중·승인 대기가 위로, 그다음 최신순. 머리는 'DeepResearch' · 오른쪽 '전체 삭제'(아래 '최근 검색' 머리와 같은 꼴).
                  묶음은 기록이 없어도 늘 보이고, 연구 기록이 하나도 없을 때만 머리 아래에 [연구 시작하기 >]를 둔다 — 기록이 있으면
                  버튼 없이 목록만(사용자 결정 2026-10-16) -->
@@ -282,7 +320,7 @@
             <!-- 진짜 빈 목록일 때만 — 못 읽은 묶음은 제자리에서 실패를 말한다. 사이드바 모양(작은 회색 한 줄)을 지키려 공통 빈 상태
                  블록(SkxErrorState empty)을 쓰지 않는다 — 공통 디자인 훅 밖이다(오류 화면 모음에도 그렇게 적었다) -->
             <p
-              v-if="!researchRows.length && !recentRows.length && !researchLoadError && !recentLoadError"
+              v-if="!deepReadRows.length && !researchRows.length && !recentRows.length && !researchLoadError && !recentLoadError"
               class="skx-history__empty"
               role="status"
             >
@@ -431,7 +469,14 @@ import { SHOW_MOCKS } from "~/utils/featureFlags";
 import { readV1Map } from "~/utils/historyStore";
 import { activeIdFor, routeFor } from "~/utils/historyRoute";
 import { deepResearchStartRoute } from "~/utils/landingStart";
-import { DEEP_RESEARCH } from "~/utils/brand";
+import { DEEP_READ, DEEP_RESEARCH } from "~/utils/brand";
+import {
+  type DeepReadHistoryItem,
+  deepReadRoute,
+  firstQuestion,
+  questionCount,
+  useDeepReadHistory,
+} from "~/utils/deepReadHistory";
 import { NARROW_QUERY, trapTabTarget } from "~/utils/sidebarDrawer";
 import {
   SIDEBAR_EMPTY,
@@ -750,6 +795,17 @@ function startDeepResearch() {
 
 function go(h: HistoryEntry) {
   router.push(routeFor(h));
+}
+
+// 딥리드 기록 — 최신 DEEP_READ_ROW_LIMIT 개. 누르면 그 자료 상세에서 딥리드 창을 연 채로(?chat=1)
+const DEEP_READ_ROW_LIMIT = 5;
+const deepRead = useDeepReadHistory();
+const deepReadRows = computed(() => deepRead.items.value.slice(0, DEEP_READ_ROW_LIMIT));
+function isDeepReadActive(d: DeepReadHistoryItem): boolean {
+  return route.path === deepReadRoute(d).path && route.query.dr === d.id;
+}
+function goDeepRead(d: DeepReadHistoryItem) {
+  void router.push(deepReadRoute(d));
 }
 
 function badgeOf(h: HistoryEntry): { label: string; tone: string } {
