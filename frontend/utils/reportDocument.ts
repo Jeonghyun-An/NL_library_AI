@@ -293,13 +293,13 @@ function limitBlocks(input: ReportDocInput): DocBlock[] {
 
 function trailBlocks(trail: DocTrailItem[]): DocBlock[] {
   if (!trail.length) return [];
-  const out: DocBlock[] = [{ type: "heading", level: 1, text: "부록: 탐색 경로" }];
+  const out: DocBlock[] = [{ type: "heading", level: 1, text: "부록: 탐색 과정" }];
   trail.forEach((t, i) => {
     out.push({ type: "heading", level: 2, text: `${i + 1}. ${t.subquestion}` });
     const items: DocRun[][] = [];
     if (t.queries.length) items.push([{ text: `검색어: ${queryPath(t.queries)}` }]);
     if (t.verdict) items.push([{ text: `판정: ${verdictLabel(t.verdict)}` }]);
-    if (t.evidenceCount !== null) items.push([{ text: `채택한 근거: ${t.evidenceCount}편` }]);
+    if (t.evidenceCount !== null) items.push([{ text: `채택한 논문: ${t.evidenceCount}편` }]);
     const excluded = excludedLabel(t.excluded);
     if (excluded) items.push([{ text: excluded }]);
     if (items.length) out.push({ type: "bullets", items });

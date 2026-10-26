@@ -46,7 +46,7 @@ describe("liveRunning · liveNowLine — 지금 AI가 하는 일 한 줄", () =>
   it("도는 하위질문의 마지막 회차로 지금 일을 말한다 — 검색 → 점검 → 다시 찾기 → 확인", () => {
     const at = (rounds: RoundView[]) => liveNowLine([subq(0, { status: "done" }), subq(1, { status: "running", rounds }), subq(2)]);
     expect(at([])).toBe("하위질문 2/3 — 검색어를 정해 논문을 찾고 있어요");
-    expect(at([round({ foundChunks: 12 })])).toBe("하위질문 2/3 — 찾은 대목 12개를 질문에 맞는지 스스로 점검하고 있어요");
+    expect(at([round({ foundChunks: 12 })])).toBe("하위질문 2/3 — 찾은 본문 12곳을 질문에 맞는지 스스로 점검하고 있어요");
     expect(at([round()])).toBe("하위질문 2/3 — 찾은 논문을 질문에 맞는지 스스로 점검하고 있어요");
     expect(at([round({ verdict: "insufficient", nextQuery: "농촌 노인 우울" })])).toBe(
       "하위질문 2/3 — 근거가 부족해 ‘농촌 노인 우울’(으)로 다시 찾고 있어요",
@@ -62,9 +62,9 @@ describe("liveRunning · liveNowLine — 지금 AI가 하는 일 한 줄", () =>
 });
 
 describe("roundSteps — 한 회차의 단계", () => {
-  it("검색 단계는 찾은 대목·새 논문 수를 붙인다", () => {
+  it("검색 단계는 찾은 본문·새 논문 수를 붙인다", () => {
     const [search] = roundSteps(round({ foundChunks: 12, newPapers: 4 }), false);
-    expect(search).toMatchObject({ kind: "search", title: "‘노인 우울 사회적 지지’(으)로 찾음", detail: "대목 12개 · 새 논문 4편", pending: false });
+    expect(search).toMatchObject({ kind: "search", title: "‘노인 우울 사회적 지지’(으)로 찾음", detail: "본문 12곳 · 새 논문 4편", pending: false });
   });
 
   it("판정 전이면 지금 도는 회차에만 '자기점검 중'(깜빡임)을 단다", () => {

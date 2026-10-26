@@ -205,3 +205,28 @@ describe("화면 문구 훑기 — 합쇼체('~습니다'·'~입니다')·명령
     expect(left).toEqual([]);
   });
 });
+
+// 대표 지적 2026-10-26 — '검토한 논문 23 · 채택한 근거 18 · 제외 10'이 더해 맞지 않았다. 제외 칸은 서버의 하위질문별 무관 판정 수
+// (counters.excluded)가 아니라 검토 − 채택(excludedCounter)이고, 패널 이름은 사서가 쓰는 말로(사용자 확정)
+describe("딥리서치 카운터·패널 이름 — 숫자가 더해 맞고 사서가 쓰는 말로", () => {
+  const panels = ["components/research/ProgressPanel.vue", "components/research/ResearchLive.vue"];
+
+  it.each(panels)("%s — 채택한 논문·제외한 논문 칸, 제외는 검토 − 채택", (file) => {
+    const src = read(file);
+    const tpl = template(src);
+    expect(tpl).toContain("<dt>채택한 논문</dt>");
+    expect(tpl).toContain("<dt>제외한 논문</dt>");
+    expect(src).toContain("excludedCounter(");
+    expect(tpl).not.toContain("counters.excluded");
+    expect(tpl).not.toContain("채택한 근거");
+  });
+
+  it("옆 칸 채택 목록 카드는 '참고문헌', 탐색이 끝난 진행 패널은 '탐색 과정', 회차 줄은 '본문 N곳'", () => {
+    expect(template(read("components/work/EvidenceLedger.vue"))).toContain(">참고문헌</h2>");
+    expect(screenText(read("components/work/EvidenceLedger.vue"))).not.toContain("근거 장부");
+    const panel = read("components/research/ProgressPanel.vue");
+    expect(panel).toContain('completed: "탐색 과정"');
+    expect(template(panel)).toContain("본문 {{ r.foundChunks }}곳");
+    expect(screenText(panel)).not.toContain("탐색 경로");
+  });
+});

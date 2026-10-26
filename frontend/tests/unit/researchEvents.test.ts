@@ -20,7 +20,9 @@ import {
   applyApproval,
   applyQueue,
   applyResearchEvent,
+  excludedCounter,
   excludedLabel,
+  excludedPaperCount,
   flaggedLabel,
   initialResearchView,
   isTerminalEvent,
@@ -330,11 +332,55 @@ describe("showsExcludedCounter", () => {
     expect(showsExcludedCounter(initialResearchView(job({ params: { exclude_off_topic: 0 } })))).toBe(true);
   });
 
-  it("제외 수를 받았으면 그리고, 파라미터도 제외 수도 없는 옛 잡은 그리지 않는다", () => {
+  it("제외 수를 받았으면 그리고, 파라미터도 카운터도 없는 잡은 그리지 않는다", () => {
     const old = initialResearchView(job());
     expect(showsExcludedCounter(old)).toBe(false);
     const counted = run([{ kind: "counters", papers_reviewed: 20, evidence_adopted: 7, rechecks: 1, excluded: 3 }], old);
     expect(showsExcludedCounter(counted)).toBe(true);
+  });
+
+  it("무관 제외 전 옛 잡도 검토·채택 수가 있으면 그린다 — 칸 값(검토 − 채택)을 셀 수 있고 서론도 같은 제외 수를 쓴다", () => {
+    const old = initialResearchView(job());
+    const counted = run([{ kind: "counters", papers_reviewed: 23, evidence_adopted: 18, rechecks: 5 }], old);
+    expect(counted.counters.excluded).toBeNull();
+    expect(showsExcludedCounter(counted)).toBe(true);
+    expect(excludedCounter(counted.counters, "completed")).toBe(5);
+  });
+});
+
+describe("excludedPaperCount — 제외한 논문(검토 − 채택)", () => {
+  it("검토했지만 채택하지 않은 논문 수 — 검토·채택과 더해 맞는다", () => {
+    expect(excludedPaperCount(23, 18)).toBe(5);
+    expect(excludedPaperCount(18, 18)).toBe(0);
+  });
+
+  it("채택이 검토보다 많은 어긋난 값이면 0 에서 멈춘다", () => {
+    expect(excludedPaperCount(10, 12)).toBe(0);
+  });
+
+  it("검토·채택 중 하나라도 모르면 null", () => {
+    expect(excludedPaperCount(null, 18)).toBeNull();
+    expect(excludedPaperCount(23, null)).toBeNull();
+    expect(excludedPaperCount(undefined, undefined)).toBeNull();
+  });
+});
+
+describe("excludedCounter — 카운터 줄의 '제외한 논문' 칸", () => {
+  const counters = { papersReviewed: 23, evidenceAdopted: 18, rechecks: 5, excluded: 10 };
+
+  it("탐색 뒤에는 하위질문별 무관 판정 수(excluded)가 아니라 검토 − 채택을 보인다", () => {
+    for (const phase of ["synthesizing", "completed", "failed", "canceled"] as const) {
+      expect(excludedCounter(counters, phase)).toBe(5);
+    }
+  });
+
+  it("탐색 중에는 판정 전 후보가 검토 수에 섞여 비운다('—')", () => {
+    expect(excludedCounter(counters, "exploring")).toBeNull();
+  });
+
+  it("검토·채택을 모르면 비우고, 채택이 검토보다 많으면 0", () => {
+    expect(excludedCounter({ ...counters, papersReviewed: null }, "completed")).toBeNull();
+    expect(excludedCounter({ ...counters, papersReviewed: 10, evidenceAdopted: 12 }, "completed")).toBe(0);
   });
 });
 

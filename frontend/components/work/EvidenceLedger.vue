@@ -5,7 +5,7 @@
        정한다(회차 끝 채택 목록을 기록하기 전 잡(06a 전)은 장부가 없어 카드를 그리지 않는다) -->
   <section v-if="shown" class="rs-card wk-ledger" aria-labelledby="wk-ledger-title">
     <header class="wk-ledger__head">
-      <h2 id="wk-ledger-title" class="rs-card__title">근거 장부</h2>
+      <h2 id="wk-ledger-title" class="rs-card__title">참고문헌</h2>
       <p class="wk-ledger__count">{{ line }}</p>
     </header>
 

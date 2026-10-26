@@ -1473,7 +1473,7 @@ const BADGE_SAMPLES: OutsideSample[] = [
     id: "failedBadge",
     name: "줄 배지 — 오류·실패",
     uses: [
-      "딥리서치 — 탐색 경로·계획 카드에서 오류로 끝난 하위질문",
+      "딥리서치 — 탐색 과정·계획 카드에서 오류로 끝난 하위질문",
       "연구 작업대 보고서 — 쓰지 못한 절의 상태 배지",
       "보고서 자리의 오류 칩은 같은 모양의 다른 규칙(.rs-slot.is-failed — 아래 ‘보고서 자리’)",
     ],
@@ -1713,7 +1713,7 @@ const SKIPPED: { name: string; lines: string[] }[] = [
   {
     name: "따로 꾸미는 자리 — 글이 컴포넌트 안에만 있어요",
     lines: [
-      "딥리서치 탐색 경로의 멈춘 지점 줄 — .rs-subq__stopped(research.css, 굵은 본문색 작은 글)",
+      "딥리서치 탐색 과정의 멈춘 지점 줄 — .rs-subq__stopped(research.css, 굵은 본문색 작은 글)",
       "첫 화면 AI 결과에서 1위 도서도 질문과 멀 때의 약한 결과 안내 — .skx-aip__notice(style_skovix.css, 큰 회색 글)",
       "사이드바 연구 줄의 실패·취소·알 수 없음 배지 — .skx-history-badge.is-failed·.is-canceled·.is-unknown(AppSidebar.vue scoped, 옅은 유리 알약에 회색 글)",
       "참고문헌 단계의 다시 맞춤 필요 — 회색 기본 배지(.rs-badge)를 흐린 안내 글 안에 둬요(ReadingStep)",

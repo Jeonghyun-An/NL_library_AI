@@ -21,7 +21,7 @@ export function liveNowLine(subqs: readonly SubqView[]): string {
   const last = running.rounds[running.rounds.length - 1];
   if (!last) return `${head} — 검색어를 정해 논문을 찾고 있어요`;
   if (last.verdict === null) {
-    const found = last.foundChunks !== null ? `찾은 대목 ${last.foundChunks}개를` : "찾은 논문을";
+    const found = last.foundChunks !== null ? `찾은 본문 ${last.foundChunks}곳을` : "찾은 논문을";
     return `${head} — ${found} 질문에 맞는지 스스로 점검하고 있어요`;
   }
   if (last.nextQuery) return `${head} — 근거가 부족해 ‘${last.nextQuery}’(으)로 다시 찾고 있어요`;
@@ -44,7 +44,7 @@ export interface LiveStep {
 // 한 회차의 단계 — 검색 → 자기점검 → (부족하면) 다시 찾기. live 는 지금 도는 하위질문의 마지막 회차인가(판정 전이면 점검 중 단계를 단다)
 export function roundSteps(r: RoundView, live: boolean): LiveStep[] {
   const stats = [
-    r.foundChunks !== null ? `대목 ${r.foundChunks}개` : null,
+    r.foundChunks !== null ? `본문 ${r.foundChunks}곳` : null,
     r.newPapers !== null ? `새 논문 ${r.newPapers}편` : null,
   ].filter((s): s is string => !!s);
   const steps: LiveStep[] = [
