@@ -29,9 +29,9 @@ describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
     const book = chatCopy("book");
     expect(book.introTitle).toBe("자료와의 대화만으로 핵심 내용 파악");
     expect(book.starters).toEqual([
+      "이 자료가 다루는 주제는 무엇인가요?",
       "가장 중요한 사건이나 주장은 무엇인가요?",
-      "마지막 부분은 어떻게 마무리되나요?",
-      "중심이 되는 인물이나 기관은 누구인가요?",
+      "가장 인상적인 장면이나 내용은 무엇인가요?",
     ]);
     expect(book.placeholder).toBe("자료에 대해 질문해 주세요");
     expect(book.inputLabel).toBe("자료에 대한 질문 입력");
@@ -41,8 +41,8 @@ describe("chatCopy·sourceLabel·sourcePdfTarget", () => {
     expect(paper.introTitle).toBe("자료와의 대화만으로 핵심 내용 파악");
     expect(paper.starters).toEqual([
       "누구를 대상으로, 어떤 방법으로 연구했나요?",
-      "주요 결과를 수치와 함께 알려 주세요.",
-      "결론에서 무엇을 제언했나요?",
+      "이 연구에서 가장 중요한 발견은 무엇인가요?",
+      "이 논문의 핵심 주장은 무엇인가요?",
     ]);
     expect(paper.placeholder).toBe("논문에 대해 질문해 주세요");
     for (const kind of ["book", "paper"] as const) {
