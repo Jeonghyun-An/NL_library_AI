@@ -3675,6 +3675,47 @@ html.skx-scroll-lock {
 .skx-chat-opening__cite .skx-chat-cite {
   margin: 0 0.35em 0 0;
 }
+/* [새 대화] — 입력 칸 안 왼쪽 아래, 보내기 단추(1.8rem 원)와 같은 줄·같은 높이의 알약. 지금 대화는 사이드바 DeepRead 기록에 남는다.
+   글자 수(한도 가까이에서만 보임)는 단추 오른쪽으로 비킨다 */
+.skx-chat-new {
+  position: absolute;
+  left: 0.8rem;
+  bottom: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 1.8rem;
+  padding: 0 0.75rem 0 0.6rem;
+  border: 1px solid var(--skx-frost-menu-line);
+  border-radius: var(--skx-radius-pill);
+  background: var(--skx-chat-user-bg);
+  color: var(--skx-ink-strong);
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    background-color 0.12s;
+}
+.skx-chat-new svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: none;
+  stroke: var(--skx-ink-strong);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.skx-chat-new:hover {
+  border-color: var(--skx-accent);
+}
+.skx-chat-new:focus-visible {
+  outline: 2px solid var(--skx-accent);
+  outline-offset: 2px;
+}
+.skx-chat-input-wrap.has-new .skx-chat-count {
+  left: 6.4rem;
+}
 /* 다음 질문 — 끝난 답 아래 질문 말풍선 자리의 점선 말풍선. 올리면 실제 질문 말풍선 면으로 채워져 '누르면 내 질문'이 보인다 */
 .skx-chat-next {
   align-self: flex-end;

@@ -80,5 +80,6 @@ describe("olderToggle — 구분선 아래 '이전 연구 [n]' 한 줄", () => {
   it("접혀 있으면 '이전 연구'와 숨은 수 칩, 펼치면 '접기'", () => {
     expect(olderToggle(false, 3)).toEqual({ label: "이전 연구", count: 3, ariaLabel: "이전 연구 3건 더 보기" });
     expect(olderToggle(true, 0)).toEqual({ label: "접기", count: null, ariaLabel: "이전 연구 접기" });
+    expect(olderToggle(false, 2, "대화")).toEqual({ label: "이전 대화", count: 2, ariaLabel: "이전 대화 2건 더 보기" });
   });
 });

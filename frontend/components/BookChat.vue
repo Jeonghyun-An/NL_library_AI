@@ -149,7 +149,7 @@
     <!-- 화면낭독기용 — 방금 보낸 질문의 답을 다 받으면 한 번 읽는다. 흐르는 글은 토막마다 읽히지 않게 싣지 않는다 -->
     <div class="skx-sr-only" aria-live="polite" v-html="liveHtml" />
 
-    <div class="skx-chat-input-wrap">
+    <div :class="['skx-chat-input-wrap', canStartNew && 'has-new']">
       <!-- 질문은 서버 한도(CHAT_MAX_CHARS)까지 — maxlength 가 막고 글자 수(SkxCharCount)가 얼마나 썼는지 보인다. 질문 칸이라
            quiet — 한도 가까이(90%)부터만 보인다(검색창과 같다, 사용자 결정 2026-10-16). 낭독기 알림 영역은 늘 남는다 -->
       <textarea
@@ -166,6 +166,14 @@
         @keydown.enter.shift.exact="() => {}"
       />
       <SkxCharCount :id="countId" class="skx-chat-count" quiet :length="inputText.length" :max="CHAT_MAX_CHARS" />
+      <!-- [새 대화] — 입력 칸 안 왼쪽 아래(보내기 단추와 같은 줄). 지금 대화는 사이드바 DeepRead 기록에 둔 채 빈 대화로.
+           대화가 있고 받는 중이 아닐 때만 -->
+      <button v-if="canStartNew" type="button" class="skx-chat-new" @click="startNewConversation">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M8 3.5v9M3.5 8h9" />
+        </svg>
+        새 대화
+      </button>
       <!-- 보내기 — 답을 받는 동안은 같은 단추가 [멈춤]이다(한 요소라 누른 초점이 그대로 남는다) -->
       <button
         ref="sendEl"
@@ -188,11 +196,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue";
 import { useDeepReadChat } from "~/composables/useDeepReadChat";
 import type { OpenPdfPayload } from "~/types/research";
 import { type DocKind, chatCopy, sourcePdfTarget } from "~/utils/deepRead";
 import { type SourceGroup, groupSources, renderAnswer } from "~/utils/deepReadCitations";
+import { newSessionId, saveConversation, savedSession } from "~/utils/deepReadHistory";
 import { CHAT_MAX_CHARS, type DeepReadMessage, type DeepReadSource } from "~/utils/deepReadSse";
 import { renderMarkdown } from "~/utils/markdown";
 import { passageText } from "~/utils/passageText";
@@ -237,6 +246,80 @@ const {
   store: () => props.store,
 });
 const inputText = ref("");
+
+// 대화 기록(utils/deepReadHistory — 이 브라우저) — 답을 다 받거나 멈추면 이 대화(sessionId)를 남기고(사이드바 'DeepRead' 묶음), 이
+// 자료의 딥리드를 다시 열면 사이드바에서 고른 대화(?dr=)나 그 자료의 가장 최근 대화를 이어 보인다. 이어 묻는 질문은 되살린 대화를
+// history 로 보낸다. [새 대화]는 지금 대화를 기록에 둔 채 빈 대화로 시작한다(한 자료에 대화가 여럿 — 사용자 2026-10-26).
+// 연구 화면 패널처럼 store 를 넘긴 곳은 그쪽이 대화를 쥐므로 되살리지도 새로 열지도 않는다(남기기는 한다).
+// 되살리기는 화면에 붙은 뒤에 한다 — 서버 렌더(빈 대화)와 어긋나지 않게
+const route = useRoute();
+const router = useRouter();
+const sessionId = ref(newSessionId());
+// 상세 화면(/papers/{id}·/books/{id})에서만 주소의 ?dr= 를 지금 대화에 맞춘다 — 새로고침·사이드바 활성 표시·같은 줄 다시 누르기가
+// 지금 대화를 가리키게(리뷰 지적 2026-10-26). 논문 검색 결과 채팅(/papers)은 주소를 건드리지 않는다
+function onDetailPage(): boolean {
+  return /^\/(papers|books)\/[^/]+$/.test(route.path);
+}
+function syncSessionQuery(id: string | null): void {
+  if (props.store || !onDetailPage()) return;
+  const cur = typeof route.query.dr === "string" ? route.query.dr : null;
+  if (cur === id) return;
+  const query = { ...route.query };
+  if (id) query.dr = id;
+  else delete query.dr;
+  void router.replace({ query });
+}
+// 대화를 바꾸면(새 대화·다른 대화) 앞 대화의 실패 안내와 입력 칸에 되살린 그 질문을 걷는다 — [다시 시도]가 다른 대화에 섞이지 않게
+function clearFailure(): void {
+  if (failure.value && inputText.value.trim() === failure.value.question) inputText.value = "";
+  failure.value = null;
+}
+function restoreSaved(): void {
+  if (props.store || messages.value.length || isStreaming.value) return;
+  const dr = typeof route.query.dr === "string" ? route.query.dr : null;
+  const saved = savedSession(props.cntsId, dr);
+  if (!saved) return;
+  sessionId.value = saved.id;
+  messages.value.push(...saved.messages);
+  syncSessionQuery(saved.id);
+}
+onMounted(restoreSaved);
+watch(
+  () => props.cntsId,
+  () => {
+    sessionId.value = newSessionId();
+    nextTick(restoreSaved);
+  },
+);
+// 같은 자료 화면에서 사이드바의 다른 대화를 누르면 주소의 ?dr= 만 바뀐다(화면은 그대로) — 그 대화로 바꿔 보인다. 받는 중이면 끊는다
+watch(
+  () => route.query.dr,
+  (dr) => {
+    if (props.store || typeof dr !== "string" || dr === sessionId.value) return;
+    const saved = savedSession(props.cntsId, dr);
+    if (!saved || saved.id !== dr) return;
+    if (isStreaming.value) stopChat();
+    clearFailure();
+    sessionId.value = saved.id;
+    messages.value = saved.messages;
+  },
+);
+// 남기기 — 연구 화면 패널(store)은 그쪽이 논문별 대화를 쥐어 같은 대화가 새 id 로 거듭 쌓이므로 남기지 않는다(리뷰 지적)
+watch(isStreaming, (now, before) => {
+  if (props.store || !before || now || !messages.value.length) return;
+  saveConversation(sessionId.value, props.cntsId, props.bookTitle || props.cntsId, props.docKind, messages.value);
+  syncSessionQuery(sessionId.value);
+});
+// [새 대화] — 지금 대화는 기록에 남기고(이미 남겼다) 빈 대화로. 받는 중에는 보이지 않는다
+const canStartNew = computed(() => !props.store && messages.value.length > 0 && !isStreaming.value);
+function startNewConversation(): void {
+  if (!canStartNew.value) return;
+  clearFailure();
+  sessionId.value = newSessionId();
+  messages.value = [];
+  syncSessionQuery(null);
+  nextTick(() => inputEl.value?.focus());
+}
 const rootEl = ref<HTMLElement | null>(null);
 const messagesEl = ref<HTMLElement | null>(null);
 const inputEl = ref<HTMLTextAreaElement | null>(null);
