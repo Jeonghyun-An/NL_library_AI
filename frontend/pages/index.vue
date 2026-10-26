@@ -8,10 +8,23 @@
     <!-- ===== LANDING VIEW ===== -->
     <main v-if="view === 'landing'" ref="contentsRef" class="skx-contents">
       <div ref="contentsInnerRef" class="skx-contents__inner">
-        <h1 class="skx-brand">
-          <span class="skx-brand__line">넓게 찾고 깊게 확인하는, 도서관의 AI 탐색</span>
-          <SkovixWordmark class="skx-brand__logo" />
-        </h1>
+        <!-- 머리 문구 — 대표 요청(2026-10-23·26): OA 자료를 갖고 있다는 게 첫 화면에 드러나게, 딥리드를 메인으로. 건수는 쓰지 않는다
+             (대표 예시 '50만'은 실제 23만 6천 편과 다르고, 딥리서치 보고서 머리가 '논문 236,133편 기준'을 그대로 찍어 어긋난다 — 사용자 결정).
+             세 방향 시안 9개를 대표·방문객(사서)·사실·배치 세 관점으로 심사해 고른 안. 쉼표 앞뒤를 반쪽씩 묶어 좁은 폭에서 쉼표 뒤에서만 꺾는다 -->
+        <div class="skx-brand">
+          <h1 class="skx-brand__head">
+            <!-- 두 반쪽은 한 줄에 둔다 — 줄을 바꿔 쓰면 템플릿이 사이 공백을 지워 '소장자료,한곳에서'로 붙는다 -->
+            <span class="skx-brand__line"
+              ><span class="skx-brand__half">KCI 오픈액세스 논문과 소장자료,</span> <span class="skx-brand__half">한곳에서 찾고 묻는 AI 탐색</span></span
+            >
+            <SkovixWordmark class="skx-brand__logo" />
+          </h1>
+          <!-- 딥리드 한 줄 — 딥리드 창 머리말('자료와의 대화만으로 핵심 내용 파악')과 출처 안내를 첫 화면에서 미리 약속한다 -->
+          <p class="skx-brand__sub">
+            <strong class="skx-brand__sub-name">DeepRead</strong>
+            자료와의 대화만으로 핵심 내용을 파악하고, 출처로 원문을 바로 확인할 수 있어요
+          </p>
+        </div>
 
         <!-- 두 갈래 전환: 자료 검색 · 논문 검색. 딥리서치는 갈래가 아니라 논문 패널의 + 메뉴·슬래시 명령 모드다 -->
         <div
@@ -56,7 +69,7 @@
                   ref="bookInputRef"
                   class="skx-search__input"
                   v-model="currentQuery"
-                  placeholder="찾고싶은 도서를 문장으로 검색해보세요!"
+                  placeholder="학위논문·정책 보고서·도서를 문장으로 물어보세요"
                   :maxlength="SEARCH_QUERY_MAX"
                   aria-describedby="skx-count-book"
                   :disabled="loading"
@@ -121,7 +134,7 @@
                   ref="paperInputRef"
                   class="skx-search__input"
                   v-model="currentQuery"
-                  placeholder="찾고싶은 논문을 문장으로 검색해보세요!"
+                  placeholder="KCI 오픈액세스 학술논문을 문장으로 물어보세요"
                   :maxlength="SEARCH_QUERY_MAX"
                   aria-describedby="skx-count-paper"
                   :disabled="loading"
