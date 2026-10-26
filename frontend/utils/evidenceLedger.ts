@@ -157,7 +157,8 @@ export function ledgerFrom(subqs: SubqView[]): Ledger {
 }
 
 export function ledgerLine(l: Ledger): string {
-  const head = `채택 ${l.adopted.length} · 뺌 ${l.dropped.length}`;
+  // '뺌' 대신 '제외'(사용자 2026-10-26) — 같은 화면 카운터의 '제외한 논문'과 말을 맞춘다
+  const head = `채택 ${l.adopted.length} · 제외 ${l.dropped.length}`;
   return l.reviewing.length ? `${head} · 검토 중 ${l.reviewing.length}` : head;
 }
 

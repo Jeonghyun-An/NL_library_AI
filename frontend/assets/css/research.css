@@ -11,7 +11,9 @@
   --rs-bar-area-h: 5.6rem;
 }
 .rs-page {
-  --rs-side-width: 17rem;
+  /* 옆 칸(진행 패널·탐색 과정) — 좁은 화면 17rem, 넓은 화면은 화면 폭을 따라 22rem 까지(사용자 2026-10-26: 칸 이름이 두 줄로
+     꺾이고 회차 글이 좁았다) */
+  --rs-side-width: clamp(17rem, 24vw, 22rem);
   --rs-bar-thick: 1rem;
   --rs-bar-h: 0px;
   display: flex;

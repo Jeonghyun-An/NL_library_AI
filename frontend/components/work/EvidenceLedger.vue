@@ -35,7 +35,7 @@
     </template>
 
     <template v-if="ledger.dropped.length">
-      <h3 class="wk-ledger__pile-title">뺌 {{ ledger.dropped.length }}</h3>
+      <h3 class="wk-ledger__pile-title">제외 {{ ledger.dropped.length }}</h3>
       <ol ref="droppedList" class="wk-ledger__list wk-ledger__list--dropped" aria-label="자기점검이 뺀 논문">
         <li
           v-for="p in ledger.dropped"
@@ -44,7 +44,7 @@
           :class="{ 'is-fresh': fresh.dropped.includes(p.cntsId) }"
         >
           <span class="wk-ledger__title">{{ p.title || p.cntsId }}</span>
-          <span class="wk-ledger__meta">{{ byline(p) }} · 하위질문 {{ subqLabel(p) }} · {{ p.round }}회차에 뺌</span>
+          <span class="wk-ledger__meta">{{ byline(p) }} · 하위질문 {{ subqLabel(p) }} · {{ p.round }}회차에 제외</span>
         </li>
       </ol>
     </template>
@@ -129,7 +129,7 @@ watch(
     announcement.value = [
       reviewing.length ? `후보 ${reviewing.length}편 검토 중` : "",
       adopted.length ? `근거 ${adopted.length}편 채택` : "",
-      dropped.length ? `${dropped.length}편 뺌` : "",
+      dropped.length ? `${dropped.length}편 제외` : "",
     ]
       .filter(Boolean)
       .join(", ");
