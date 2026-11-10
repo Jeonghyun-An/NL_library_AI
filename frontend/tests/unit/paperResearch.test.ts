@@ -1,7 +1,8 @@
 // frontend/tests/unit/paperResearch.test.ts
 import { describe, expect, it } from "vitest";
 import { parseQuery } from "vue-router";
-import { paperResearchQuestion, paperResearchUrl, readResearchDraft } from "~/utils/paperResearch";
+import { deepResearchStartRoute, readStart, readStartDraft } from "~/utils/landingStart";
+import { paperResearchQuestion, readResearchDraft } from "~/utils/paperResearch";
 import { questionProblem } from "~/utils/researchInput";
 
 describe("paperResearchQuestion", () => {
@@ -47,20 +48,29 @@ describe("paperResearchQuestion", () => {
   });
 });
 
-describe("paperResearchUrl · readResearchDraft", () => {
-  it("주소에 실은 초안을 그대로 읽는다", () => {
-    const q = "「제목 & 부제」에서 출발해, 이 주제의 선행 연구는?";
-    const url = new URL(paperResearchUrl(q), "http://x");
-    expect(url.pathname).toBe("/papers");
-    expect(readResearchDraft(Object.fromEntries(url.searchParams))).toBe(q);
+// 상세 [질문 초안 만들기]는 메인 화면 입구(/?start=deep-research&draft=)로 간다 — 예전 /papers?draft= 는 메인처럼 생긴 빈 검색 화면이었다
+describe("논문 상세 초안 → 메인 화면 DeepResearch 입구", () => {
+  it("메인('/')을 DeepResearch 시작으로 열고 초안을 그대로 싣는다", () => {
+    const q = paperResearchQuestion("청소년 SNS 이용과 우울", ["SNS", "우울"]);
+    const to = deepResearchStartRoute(q);
+    expect(to.path).toBe("/");
+    expect(readStart(to.query)).not.toBeNull();
+    expect(readStartDraft(to.query)).toBe(q);
   });
 
-  it("라우터의 쿼리 해석을 거쳐도 특수문자·이모지가 그대로 돌아온다", () => {
+  it("주소로 바뀌어 라우터의 쿼리 해석을 거쳐도 특수문자·이모지가 그대로 돌아온다", () => {
     const q = paperResearchQuestion("C++ A+B 50% #1 & 😀", ["키워드"]);
-    const url = paperResearchUrl(q);
-    expect(readResearchDraft(parseQuery(url.split("?")[1] ?? ""))).toBe(q);
+    const query = parseQuery(new URLSearchParams(deepResearchStartRoute(q).query).toString());
+    expect(readStartDraft(query)).toBe(q);
   });
 
+  it("한도까지 자른 긴 초안도 입구가 버리지 않는다", () => {
+    const q = paperResearchQuestion("가".repeat(400), ["나".repeat(100), "다".repeat(100), "라".repeat(100)]);
+    expect(readStartDraft(deepResearchStartRoute(q).query)).toBe(q);
+  });
+});
+
+describe("readResearchDraft — 예전 /papers?draft= 주소", () => {
   it("없거나 빈 값이면 null, 배열이면 첫 값", () => {
     expect(readResearchDraft({})).toBeNull();
     expect(readResearchDraft({ draft: "  " })).toBeNull();

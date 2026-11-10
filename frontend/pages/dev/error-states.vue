@@ -853,7 +853,7 @@ const STATE_SAMPLES: StateSample[] = [
     kind: errorKind(SAMPLE.notFound),
     title: researchErrorMessage(SAMPLE.notFound, ""),
     message: RESEARCH_STATE_TEXT.notFoundMessage,
-    action: { label: RESEARCH_STATE_TEXT.backToSearch, href: "/papers" },
+    action: { label: RESEARCH_STATE_TEXT.backToSearch, href: "/" },
     uses: [
       "딥리서치 — 없는 연구 주소",
       "논문·도서 상세 — 목록에 없는 자료(404·410 — 다시 시도 없이 돌아갈 버튼만)",
@@ -1009,7 +1009,7 @@ const RESEARCH_SAMPLES: StateSample[] = [
     kind: errorKind(SAMPLE.notFound),
     title: researchErrorMessage(SAMPLE.notFound, ""),
     message: RESEARCH_STATE_TEXT.notFoundMessage,
-    action: { label: RESEARCH_STATE_TEXT.backToSearch, href: "/papers" },
+    action: { label: RESEARCH_STATE_TEXT.backToSearch, href: "/" },
     uses: ["딥리서치 — 없는 연구 주소(주소 오타)"],
     hooks: [".skx-state--notFound", '[data-tone="neutral"]'],
     diff:
