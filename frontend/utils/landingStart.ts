@@ -1,5 +1,5 @@
 // frontend/utils/landingStart.ts
-// 사이드바 DeepResearch 묶음의 [+ 연구 시작하기]·소장자료 결과의 [DeepResearch로 이어서 조사하기] — 랜딩('/')을
+// 사이드바 DeepResearch 묶음의 [+ 연구 시작하기]·소장자료 결과의 [DeepResearch로 이어서 조사하기]·논문 상세의 [질문 초안 만들기] — 랜딩('/')을
 // ?start=deep-research 로 열면 논문 패널에 DeepResearch 모드를 켜고 입력창에 초점을 준다. ?draft= 가 함께 오면 그 질문을 입력창에
 // 채운다(연구는 시작하지 않는다). 이미 '/' 에 있어도 쿼리가 바뀌므로 같은 경로로 동작하고, 처리한 뒤 두 쿼리는 지운다
 import { firstValue } from "~/utils/detailSource";
