@@ -129,9 +129,10 @@ def _status_code(exc: BaseException):
 
 def is_search_outage(exc: BaseException) -> bool:
     """검색 기반에 잠시 닿지 못한 것인가 — '잠시 뒤 다시'로 나을 연결 장애만 본다:
-    - 내장 ConnectionError·TimeoutError, httpx 전송 오류(연결·시간 초과). 임베딩은 같은 프로세스의 BGE-M3(FlagEmbedding)라
-      httpx 를 쓰지 않고, 지금 검색 가드 안에서 httpx 로 부르는 단계(질의 재작성·메타데이터 필터 LLM)는 실패를 스스로 잡고
-      원문 질의로 넘어가 여기까지 오지 않는다 — 가드 안에 HTTP 로 부르는 의존이 생길 때를 위한 것이다
+    - 내장 ConnectionError·TimeoutError, httpx 전송 오류(연결·시간 초과). 임베딩을 공용 서버(EMBEDDING_BACKEND=http)로
+      부르면 연결 실패·시간 초과·서버 일시 오류(5xx·429)가 embedder.EmbeddingUnavailable(ConnectionError)로 온다 — 여기서
+      503 이 된다. 검색 가드 안에서 httpx 로 부르는 다른 단계(질의 재작성·메타데이터 필터 LLM)는 실패를 스스로 잡고 원문
+      질의로 넘어가 여기까지 오지 않는다
     - Milvus 연결 실패 — MilvusUnavailableException·ConnectError, 연결 실패 code(2) 의 MilvusException
     - grpc UNAVAILABLE·DEADLINE_EXCEEDED — 날 grpc.RpcError(pymilvus 는 기한 초과를 재시도 없이 그대로 다시 던진다)이든,
       재시도 끝에 pymilvus 가 감싼 MilvusException 이든. 채널 대기 시간 초과(grpc.FutureTimeoutError)도 연결 장애다

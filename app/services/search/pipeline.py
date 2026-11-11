@@ -27,7 +27,7 @@ from services.search.query_rewriter import rewrite_query
 from services.search.metadata_filter import extract_metadata_filter, MetadataFilter
 from services.search.reranker import rerank as rerank_docs
 from services.search.context_expander import expand_context, ExpandedContext
-from services.ingestion.embedder import embed_texts
+from services.ingestion.embedder import embed_texts, offload_embed
 from services.ingestion.indexer import SearchHit, search_chunks, search_by_book
 from schemas.book import (
     ChunkHit,
@@ -134,7 +134,7 @@ async def search(
     with_original = (mode != "chunk" and include_original and rewritten is not None
                      and rewritten.strip() != query.strip())
     texts = [search_query, query] if with_original else [search_query]
-    dense_vecs, sparse_vecs = embed_texts(texts, is_query=True)
+    dense_vecs, sparse_vecs = await offload_embed(embed_texts, texts, is_query=True)
     query_dense = dense_vecs[0]
     query_sparse = sparse_vecs[0]
     original_vectors = (dense_vecs[1], sparse_vecs[1]) if with_original else None
@@ -183,7 +183,7 @@ async def search_related_books(title: str, exclude_id: str, *, fetch_top_k: int)
     if not is_safe_book_id(exclude_id):
         raise ValueError(f"조건식에 넣을 수 없는 도서 id: {exclude_id!r}")
     t0 = time.perf_counter()
-    dense_vecs, sparse_vecs = embed_texts([title], is_query=True)
+    dense_vecs, sparse_vecs = await offload_embed(embed_texts, [title], is_query=True)
     expr = f'{_BOOK_EXPR} && book_id != "{exclude_id}"'
     elapsed = (time.perf_counter() - t0) * 1000
     return await _search_book_mode(

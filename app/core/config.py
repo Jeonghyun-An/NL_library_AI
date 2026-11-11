@@ -131,6 +131,16 @@ class Settings(BaseSettings):
     EMBEDDING_BATCH_SIZE: int = 32
     EMBEDDING_DIM: int = 1024
     EMBEDDING_MAX_LENGTH: int = 512
+    # local: 프로세스마다 FlagEmbedding 으로 GPU 에 올린다(예전 방식). http: GPU 서버의 공용 bge-m3(vLLM) 를 부른다 —
+    # dense·sparse 가 서버 둘로 나뉜다(~/models/bge-m3-dense.sh·bge-m3-sparse.sh). 되돌릴 때는 local 로만 바꾼다
+    EMBEDDING_BACKEND: Literal["local", "http"] = "local"
+    EMBEDDING_DENSE_URL: str = "http://bge-m3-dense:8000"
+    EMBEDDING_SPARSE_URL: str = "http://bge-m3-sparse:8000"
+    EMBEDDING_SERVED_MODEL: str = "bge-m3"   # 서버의 --served-model-name
+    # 공용 서버가 느려지면 그 요청이 이만큼까지 기다린다(검색 경로는 스레드에서 기다려 다른 요청은 막지 않는다).
+    # 연결 거절·5xx 같은 빨리 끝나는 일시 오류는 embedder 가 두 번 더 보낸다
+    EMBEDDING_HTTP_CONNECT_TIMEOUT: float = 3.0
+    EMBEDDING_HTTP_TIMEOUT: float = 15.0
 
     # ── Reranker ─────────────────────────────────────
     RERANKER_MODEL_NAME: str = "jinaai/jina-reranker-v2-base-multilingual"
