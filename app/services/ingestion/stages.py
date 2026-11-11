@@ -119,7 +119,7 @@ def split_into_sections(pages: list) -> list[dict]:
         cursor += len(p.text) + 2  # "\n\n" 구분자
 
     def _embed_fn(sentences: list[str]) -> list[list[float]]:
-        dense, _ = embed_texts(sentences)
+        dense, _ = embed_texts(sentences, need_sparse=False)
         return dense
 
     chunks = semantic_chunk(
@@ -822,7 +822,7 @@ def run_embed_index(ctx: StageContext) -> dict:
         db.close()
 
     def _embed_fn(texts: list[str]) -> list[list[float]]:
-        dense, _ = embed_texts(texts)
+        dense, _ = embed_texts(texts, need_sparse=False)
         return dense
 
     chunks = semantic_chunk(full_text, _embed_fn, page_map=page_map)

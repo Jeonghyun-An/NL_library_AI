@@ -174,7 +174,7 @@
             </DetailTabs>
             <SkxErrorState v-else kind="empty" compact :title="PAPER_STATE_TEXT.curationEmpty" />
 
-            <!-- 이 논문으로 DeepResearch: 바로 시작하지 않고 초안을 논문 검색 입력창에 채워 고쳐 보내게 한다 -->
+            <!-- 이 논문으로 DeepResearch: 바로 시작하지 않고 메인 화면 논문 입력창에 DeepResearch 모드를 켜고 초안을 채워 고쳐 보내게 한다 -->
             <section v-if="researchQuestion" class="dt-research" aria-labelledby="pdetail-research-title">
               <span class="dt-research__icon" aria-hidden="true"><DetailSparkIcon /></span>
               <div class="dt-research__text">
@@ -183,7 +183,7 @@
                   논문 입력창에 {{ DEEP_RESEARCH }} 모드가 켜지고, 이 논문의 주제로 질문 초안이 채워집니다
                 </p>
               </div>
-              <NuxtLink :to="paperResearchUrl(researchQuestion)" class="dt-btn dt-btn--accent">
+              <NuxtLink :to="deepResearchStartRoute(researchQuestion)" class="dt-btn dt-btn--accent">
                 <span class="skx-sr-only">{{ DEEP_RESEARCH }} </span>질문 초안 만들기
               </NuxtLink>
             </section>
@@ -369,7 +369,8 @@ import {
 } from "~/utils/detailView";
 import { citeContext, summaryQuestion, withRo, type CiteContext } from "~/utils/paperDetail";
 import { isRetryableKind, PAPER_STATE_TEXT, shownError, type ShownError } from "~/utils/paperErrors";
-import { paperResearchQuestion, paperResearchUrl } from "~/utils/paperResearch";
+import { deepResearchStartRoute } from "~/utils/landingStart";
+import { paperResearchQuestion } from "~/utils/paperResearch";
 import { citedPdfTarget } from "~/utils/pdfViewer";
 import { isPlainClick } from "~/utils/restorePosition";
 import { cardKeywords } from "~/utils/resultCard";

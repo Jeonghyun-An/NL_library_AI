@@ -1,5 +1,5 @@
 // frontend/utils/paperResearch.ts
-// 논문 상세의 [이 논문으로 딥리서치] — 제목·키워드로 질문 초안을 만들어 논문 검색 입력창으로 넘긴다
+// 논문 상세의 [이 논문으로 딥리서치] — 제목·키워드로 질문 초안을 만든다. 넘기는 길은 메인 화면 입구(landingStart.deepResearchStartRoute)다
 import { firstValue } from "~/utils/detailSource";
 
 // 부제까지 붙은 긴 제목이나 문장형 키워드가 질문을 다 차지하지 않게 자른다(서버 한도 QUESTION_MAX 500자 안쪽)
@@ -26,11 +26,7 @@ export function paperResearchQuestion(title: string, keywords: readonly string[]
   return `「${clip(name, TITLE_MAX)}」에서 출발해, ${topic} 선행 연구는 어떻게 전개되어 왔고 주요 쟁점과 남은 과제는 무엇인가?`;
 }
 
-export function paperResearchUrl(question: string): string {
-  return `/papers?${new URLSearchParams({ draft: question })}`;
-}
-
-// /papers 가 받는 질문 초안(?draft=). 없거나 빈 값이면 null
+// /papers 가 받는 질문 초안(?draft=) — 상세 버튼이 메인 화면 입구로 옮기기 전(2026-11-10)의 주소로 들어와도 받는다. 없거나 빈 값이면 null
 export function readResearchDraft(query: Record<string, unknown>): string | null {
   return firstValue(query.draft) ?? null;
 }

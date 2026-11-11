@@ -1,0 +1,173 @@
+{
+ "round": 2,
+ "reviewed": 387,
+ "false_positives": [
+  {
+   "id": "KCI_FI002630871",
+   "kind": "truncated_real_ref",
+   "real_refs_lost": 3,
+   "marker": "_FURNITURE[1] 쪽 번호 패턴 ^\\s*[-－–]?\\s*\\d{1,4}\\s*[-－–]?\\s*$ 이 맨 연도 항목에 걸림",
+   "evidence": "[340] 줄바꿈으로 갈린 서지의 출판 연도만 따로 들어온 항목 b[13] '1978', b[18] '1977', b[25] '1999'를 쪽 번호로 보고 버렸어요. 그래서 남은 서지가 연도 없이 끝나요: 'Alexy, R., Theorie der juristischen Argumentation,Frankfurt a.M.: Suhrkamp,'(1978 빠짐), 'Engisch, K., Einführung in das juristische Denken, 7.Aufl.,Stuttgart: Kohlhammer,'(1977 빠짐), 'Pawlowski, H.-M., Methodenlehre für Juristen, 3. Aufl., Heidelberg: C.F. Müller,'(1999 빠짐).",
+   "suggested_rule_fix": "쪽 번호 패턴에서 앞뒤 대시가 없는 4자리 (19|20)\\d{2}[a-z]? 하나뿐인 항목은 쪽 번호로 보지 마세요. 바로 앞에 남긴 항목이 ',' ':' ';' 로 끝나거나 마침표 없이 끝나면(서지가 덜 끝난 꼴) 그 연도를 앞 항목 끝에 붙이세요. KCI 쪽 번호는 대개 '- 117 -'처럼 대시로 감싸거나 머리글과 함께 나와서, 대시 없는 맨 숫자는 앞 항목이 덜 끝났을 때만 연도로 보면 돼요."
+  },
+  {
+   "id": "KCI_FI002542294",
+   "kind": "truncated_real_ref",
+   "real_refs_lost": 2,
+   "marker": "_FURNITURE[1] 쪽 번호 패턴 ^\\s*[-－–]?\\s*\\d{1,4}\\s*[-－–]?\\s*$ 이 맨 연도 항목에 걸림",
+   "evidence": "[342] 같은 원인이에요. b[17] '1991', b[20] '1977'을 버려서 '###### Bydlinsky, F., Juristische Methodenlehre und Rechtsbegrif, 2.Aufl,, Wien: Springer,'(1991 빠짐)와 'Engisch, K., Einführung in das juristische Denken, 7.Aufl., Stuttgart: Kohlhammer,'(1977 빠짐)가 연도 없이 남았어요. 같은 목록의 b[15] '1991, 359-406면'은 쪽수가 붙어 있어서 살아남았어요.",
+   "suggested_rule_fix": "위와 같아요. 대시 없는 맨 연도(19xx/20xx) 항목은 앞 항목이 쉼표·쌍점으로 끝나면 버리지 말고 앞 항목에 이어 붙이세요. 아니면 적어도 쪽 번호 패턴을 '대시로 감싼 숫자' 또는 '19xx·20xx가 아닌 맨 숫자'로 좁히세요."
+  },
+  {
+   "id": "259:KCI_FI002779322",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 1,
+   "marker": "투고 정보 지우기 분기(_SUBMISSION) + 다음 항목 없음 + 남은 글에 'E-mail:'(_TAIL) → 항목 통째 버림",
+   "evidence": "마지막 항목 B7 'Zizek, Slavoj, Pandemic! -COVID-19 Shakes the World-, Polity Press, 2020. 강우성 역, 팬데믹 패닉 . 북하우스, 2020, 172쪽. 심 선 향 서울특별시 … E-mail: hyangeeya@naver.com 논문 투고 일자 : 2021년 09월 15일 …' 이 after 에서 통째로 사라짐(번역서 서지까지 포함한 1개 항목). after 의 마지막은 Bloom & Johnson(2010).",
+   "suggested_rule_fix": "clean_references 의 투고 정보 분기에서 following 이 서지 꼴이 아니라 끊을 때 `if text and not _TAIL.search(text) and not _BADGE.search(text): out.append(text)` 로 항목을 통째 버리지 말고, 일반 경로처럼 원문에서 첫 _SUBMISSION 매치·_TAIL·_BADGE 중 가장 앞 위치를 잘라 앞부분(_letters ≥ _MIN_ENTRY, 배지가 맨 앞 컷이 아닐 때)을 남긴 뒤 break. 이 경우 연락처 표지에 '전화\\s*[:：]'·'Tel\\s*[:：]'을 더하면 저자 주소 꼬리도 덜 남는다."
+  },
+  {
+   "id": "283:KCI_FI002405910",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 1,
+   "marker": "투고 정보 지우기 분기 + 다음 항목 없음 + 남은 글에 '교신저자'(_TAIL) → 항목 통째 버림",
+   "evidence": "마지막 항목 B39 'Zhou, W., Guan, Y., Xin, L., Mak, M. C. K., & Deng, Y. (2016). Career success criteria and locus of control as indicators of adaptive readiness in the career adaptation model. Journalof VocationalBehavior,94(1), 124-130. ･ 접수일 2018년 9월 20일 … ･ 교신저자 : 안도희 …' 가 통째로 사라짐. after 의 마지막은 Yu, X. 외(2018).",
+   "suggested_rule_fix": "위와 같음 — 투고 정보 분기에서 끊을 때 첫 투고 정보 매치 시작(또는 그보다 앞선 _TAIL/_BADGE) 앞부분을 서지로 남긴다. 이 항목은 첫 '접수일' 앞에서 자르면 '…124-130.' 으로 깨끗이 남는다."
+  },
+  {
+   "id": "284:KCI_FI002069250",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 1,
+   "marker": "투고 정보 지우기 분기 + 다음 항목 없음 + 남은 글에 '<ABSTRACT>'(_TAIL 감싼 초록 머리) → 항목 통째 버림",
+   "evidence": "마지막 항목 B34 'Torrance, E. P. (1988). The nature of creativity as manifest in its testing. In Sternberg, R. J. (Ed.), The mature of creativity, 43-75. Cambridge: Cambridge University Press. 투고일자: 2015. 11. 17 … <ABSTRACT> ## Structural Relationships …' 가 통째로 사라짐. after 의 마지막은 Super, D. E. (1955).",
+   "suggested_rule_fix": "위와 같음 — 투고 정보 분기의 break 경로에서도 _TAIL 컷을 '앞부분 남기기'로 처리(현재는 _TAIL 이 보이면 append 를 건너뛰어 서지 머리까지 버림). 회귀 테스트로 '서지 + 투고 정보 + <ABSTRACT>/교신저자/E-mail' 이 한 항목에 붙은 마지막 항목 3꼴을 넣을 것."
+  },
+  {
+   "id": "KCI_FI001623956",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 18,
+   "marker": "_FURNITURE[3] '^[^\\d(),.]{2,24}\\s+\\d{1,4}\\s*$' (글자 뒤에 숫자 하나가 오면 쪽 머리글로 봄)",
+   "evidence": "[152] 글꼴이 깨졌지만(한자 일부가 빠짐) 진짜 서지인 글머리표 항목 19개가 쪽 머리글로 처리돼 지워졌다. '• 玉野和志 1999', '• 千相哲 2006', '• 地方分 道州制 東京 成文堂 小松和彦編 1997', '• 祭 文化人類 京都 世界思想社 上野 也 2008', '• 統 創造 長崎 春節祭 東洋文化 究所紀要 146', '• 九州 調査協 2003/2008', '• - 土交通省 2005~2008', '• 흥렬·윤 민 2006', '• 廖赤陽·王維 2004' 등이다. 36개이던 목록이 17개로 줄었고, 남은 것은 URL 항목뿐이다. '• 한 중 민 5'는 서지인지 확실하지 않아 셈에서 뺐다(18개는 확실함).",
+   "suggested_rule_fix": "_FURNITURE[3]의 범위를 줄인다. (1) 글머리표(•∙·▪-)로 시작하는 항목은 쪽 머리글로 보지 않는다. 쪽 머리글·바닥글에는 글머리표가 붙지 않는다. (2) 끝(또는 앞)의 숫자가 연도 꼴(19xx·20xx)이면 쪽 번호로 보지 않는다. 학술지 쪽 번호가 1900~2099인 경우는 드물다."
+  },
+  {
+   "id": "KCI_FI002415966",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 1,
+   "marker": "_BADGE '[정회원]' (배지 앞부분은 저자 이름으로 보고 통째로 버림)",
+   "evidence": "[144] 마지막 항목 b27 전체가 지워졌다: '[28] T. G. An. (2017). A Study on the Effect of Festival Satisfaction … Journal of the Korea Convergence Society, 8(11), 241-247. 김 영 대(Kim, Young Dai) [정회원] • 2016년 8월 …'. 배지 앞에는 저자 이름만 있는 게 아니라, 이름 앞에 서지 [28]이 통째로 붙어 있었다. after는 '[27] K. S. Kim. (2017)…'에서 끝난다.",
+   "suggested_rule_fix": "배지 앞부분을 무조건 버리지 않는다. 앞부분 끝의 저자 이름 꼴('[가-힣]( ?[가-힣]){1,3}\\s*\\([^)]{1,40}\\)\\s*$', 앞의 '#' 머리 포함)만 떼어 낸다. 남은 부분이 _BIB_START에 맞고 _MIN_ENTRY 이상이면 항목으로 남긴다."
+  },
+  {
+   "id": "KCI_FI001110592",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 1,
+   "marker": "투고 정보 가지(_SUBMISSION)에서 following 이 None 일 때 _TAIL('저자소개')이 걸리면 항목 전체를 버림",
+   "evidence": "[145] 마지막 항목 b15가 통째로 지워졌다: 'Uysal, Muzaffer, Lawrence Gahan & Bonnie Martin(1993), An examination of event motivations: a case study, Festival Management and Event Tourism, 1(1) :5-10. [저자소개] 河映秀 … 논문접수일 : 2003.10.31. / 심사완료일 : 2004.2.23.'. 투고 정보를 지운 뒤 다음 항목이 없으므로 'if text and not _TAIL.search(text) …: out.append(text)' 조건에 걸려 서지 부분까지 버려졌다. 투고 정보만 없었다면 일반 경로에서 '[저자소개]' 앞부분이 남았을 것이다.",
+   "suggested_rule_fix": "투고 정보 가지의 끝내기 분기에서도 일반 경로처럼 처리한다. 지우고 남은 text에 _TAIL이나 _BADGE가 있으면 버리지 말고 그 위치에서 자른다. 앞부분이 _MIN_ENTRY 이상이면 남긴다(배지면 위 저자 이름 떼기 규칙을 쓴다). 표지가 없을 때만 text를 그대로 남긴다."
+  },
+  {
+   "id": "KCI_FI002769492",
+   "kind": "altered_real_ref",
+   "real_refs_lost": 0,
+   "marker": "_SUBMISSION 라벨 '기\\s*고' + ':' (날짜가 없어도 맞음)",
+   "evidence": "[107] 남은 항목 a9 안의 서지 제목에서 글자가 지워졌다. '홍세희 (2000). 특별기고: 구조 방정식 모형의 적합도 지수 선정기준과 그 근거. 한국심리학회지: 임상, 19(1)'이 '홍세희 (2000). 특별 구조 방정식 모형의 …'로 바뀌었다. 항목은 남았지만 제목이 망가졌다.",
+   "suggested_rule_fix": "_SUB_DATE가 선택 사항이라 라벨+':'만으로도 맞는 게 원인이다. 라벨 뒤에 ':'가 오면 날짜(숫자로 시작하는 연·월)가 반드시 뒤따르게 한다(예: '[:：]\\s*(?=\\(?\\s*\\d)'). 또는 라벨 바로 앞이 한글 낱말 글자일 때('특별기고', '수정' 등 낱말 안)는 맞지 않게 '(?<![가-힣])'를 둔다(라벨 접두 '원고·논문·최종' 등은 라벨 안에 있으므로 영향이 없다)."
+  },
+  {
+   "id": "[49] KCI_FI001813964 (초등 한국어 교육을 위한 몇 가지 과제)",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 5,
+   "marker": "투고 정보 '접수 일자 : 9월 10일 … 게재 확정 일자 : 10월 19일' + 항목 끝 '<Abstract>'",
+   "evidence": "마지막 항목 b[3] 통째로 사라짐: 'Banks, J. A. ＆ Cherry A. McGee banks(2005) Multicultural education…', 'Banks, J. A.(2008) An Introducton to Multicultural Education…', '모경환 외 공역(2009), 다문화교육 입문…', 'Pence, K. L. ＆ Justice, L. M.(2008), Language Development…', '김성수 외 역(2010), 언어 발달, 학지사.' 뒤에 저자 주소·투고 정보·<Abstract>가 붙어 있었다. 투고 정보 분기에서 following 이 None 이라 `if text and not _TAIL.search(text) …: out.append(text)` 를 타는데, 남은 글 끝의 '<Abstract>'가 _TAIL 에 걸려 항목 전체를 버렸다.",
+   "suggested_rule_fix": "투고 정보 분기에서 목록을 끝낼 때(following 없음·서지 꼴 아님) _TAIL/_BADGE 가 있으면 통째로 버리지 말고 본 경로처럼 가장 앞선 표지 위치에서 잘라 앞부분(_MIN_ENTRY 이상)을 남긴다. 더 낫게는 이 경우 첫 _SUBMISSION 매치 시작점 앞(text[:m.start()])만 남기고 거기에 꼬리 자르기를 적용한다 — 목록을 끝내는 항목에서 날짜 상자 뒤는 꼬리다."
+  },
+  {
+   "id": "[2] KCI_FI003213942 (키워드 네트워크 기법을 활용한 노인 우울 연구 동향 분석)",
+   "kind": "altered_real_ref",
+   "real_refs_lost": 1,
+   "marker": "_SUBMISSION 이 날짜 없는 '기고 :' 에 매치",
+   "evidence": "'장선철 (2008). 특별기고 : 노인상담에 관한 연구동향 분 석. 사회과학논총, 23(2), 1-22.' → '장선철 (2008). 특별 노인상담에 관한 연구동향 분 석.' — 서지 제목 '특별기고 :' 의 '기고 :' 가 투고 정보로 지워짐(다음 항목이 서지 꼴이라 목록은 계속 읽혀 이 항목만 변형).",
+   "suggested_rule_fix": "_SUBMISSION 앞에 `(?<![가-힣])` 를 붙여 낱말 한가운데('특별기고', '오류문장수정:')에서 시작하지 못하게 하고, 구분자가 '일' 없이 ':' 뿐일 때는 뒤에 숫자 날짜를 필수로 한다(_SUB_DATE 의 바깥 `?` 를 그 갈래에서 뺀다). '수정제출일'처럼 붙은 꼴은 접두에 '수정'을 넣어 유지."
+  },
+  {
+   "id": "[52] KCI_FI003016499 (Development of an Orff Musical Activity Intervention Program)",
+   "kind": "altered_real_ref",
+   "real_refs_lost": 1,
+   "marker": "_WATERMARK 'w*\\.?kci\\.go\\.kr' 가 서지 URL 안에 매치",
+   "evidence": "'[16] S. K. Kim & K. M Yang (2012). … Korean J. Youth Stud, 19, 147-176. https://www.kci.go.kr/kciportal/ci/sereArticleS earch/…' → 'https:// /kciportal/ci/sereArticleS earch/…' — 서지의 접근 URL 호스트가 지워져 링크가 깨짐.",
+   "suggested_rule_fix": "워터마크는 홀로 선 꼴만 지운다: 앞이 '/'·':'·'.'·영숫자가 아니고 뒤가 '/'·영숫자가 아닐 때만, 예) `(?<![\\w/.:])(?:w+\\.)?kci\\.go\\.kr(?![\\w/.])` (+ 뒤 ``` 허용)."
+  },
+  {
+   "id": "[60] KCI_FI003092850 (국내 공공도서관 프로그램의 내용분석에 관한 연구)",
+   "kind": "altered_real_ref",
+   "real_refs_lost": 1,
+   "marker": "_WATERMARK 의 'w*\\.?' 가 'uci.' 서브도메인의 점부터 먹음",
+   "evidence": "'김종성, 엄미진 (2010). 공공도서관 청소년 프로그램의 유형별 특성과 발전 방안 연구. 한국비블리아학회지, 21(2), 39-56. https://uci.kci.go.kr/G704-000742.2010.21.2.011' → 'https://uci /G704-000742.2010.21.2.011' — UCI 식별자 URL 이 깨짐.",
+   "suggested_rule_fix": "위와 같음 — 'w*\\.?' 가 w 없이 '.'만으로도 매치되는 것을 없애고(서브도메인 'uci.' 'scholar.' 등 보호), 앞이 영숫자·'.'·'/'면 매치하지 않게 lookbehind, 뒤가 '/'면 매치하지 않게 lookahead 를 둔다."
+  },
+  {
+   "id": "KCI_FI002543275 [164]",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 1,
+   "marker": "투고 정보 '최초투고일 2019년 11월 15일 …' + 같은 항목의 꼬리 표지 '교신:' (마지막 항목)",
+   "evidence": "before b17 'Vargas-Silva, C., 2008, “Monetary policy and the US housing market: A VAR analysis…,” Journal of Macroeconomics 30(3), pp.977990. 교신: 김경민 …'. 항목이 통째로 없어져 after는 'Ume, E., 2018 …'에서 끝난다. 투고 정보 분기(104~108행)는 다음 항목이 없을 때 `text and not _TAIL.search(text)`가 거짓이면 항목 전체를 버리고 끊는다.",
+   "suggested_rule_fix": "투고 정보 분기에서 끊어야 할 때(following이 없거나 서지 꼴이 아닐 때) 남은 text에 _TAIL이나 _BADGE가 있으면 버리지 말고, 아래쪽 표지 자르기(cut 앞 head가 _MIN_ENTRY 이상이면 남기기)를 그대로 거친 뒤 끊는다. 예를 들어 stop 플래그를 두고 표지 자르기 다음에 break한다. 내 범위에서 시험해 보니 164·174·175·186이 복구되고 다른 논문은 바뀌지 않았다."
+  },
+  {
+   "id": "KCI_FI002139035 [174]",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 5,
+   "marker": "투고 정보 '접수일자: 2016. 06. 30 …' + 같은 항목의 '전자우편:' (마지막 항목)",
+   "evidence": "before b7 '학출판문화원. 이미향 외(2016), 유학생을 위한 한국어 글쓰기, 소통. 이정희 외(2014) … 장향실 외(2010) … 한국학중앙연구원 …(2011) … 한양대학교 국어교육위원회(2009) … 이유경 (02841) … 전자우편: …'. 이 항목이 통째로 사라져 서지 5편을 잃었다. 앞 항목 '연세대학교 한국어학당(2013) … 연세대학교 대'도 출판사 꼬리 '학출판문화원'을 잃었다. 원인은 164와 같다.",
+   "suggested_rule_fix": "164와 같다. 투고 정보 분기에서 끊을 때도 꼬리 표지 앞부분(head)을 남긴다."
+  },
+  {
+   "id": "KCI_FI001293828 [175]",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 1,
+   "marker": "투고 정보 '접수일자: 2008. 24 게재결정: 2008.' + 같은 항목의 '전자우편:' (마지막 항목)",
+   "evidence": "before b4 '통계청(2006), 2005년 혼임 및 이혼 통계 결과, 통계청. 이병규 서울시 강서구 … 전자우편: leebk@… 접수일자: 2008. 24'. 항목 전체가 사라졌다. 원인은 164와 같다.",
+   "suggested_rule_fix": "164와 같다."
+  },
+  {
+   "id": "KCI_FI002072416 [186]",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 1,
+   "marker": "투고 정보 '논문 접수: 2015년 11월 15일 …' + 같은 항목의 '<ABSTRACT>' (마지막 항목)",
+   "evidence": "before b4 '홍승아(2014). 한국어 학습자의 주체높임법 습득연구. 한국언어문화학, 11(3), 271-291. 논문 접수: … ##### <ABSTRACT> ## A Study on …'. 항목 전체가 사라졌다. 원인은 164와 같다.",
+   "suggested_rule_fix": "164와 같다."
+  },
+  {
+   "id": "KCI_FI003308342 [185] a",
+   "kind": "truncated_real_ref",
+   "real_refs_lost": 1,
+   "marker": "_TAIL 키워드 머리 `_OPEN? _KEYWORDS [:：|]`가 서지 제목 안의 소문자 'keywords:'에 걸림",
+   "evidence": "before b12 'Baker, P.(2004), Querying keywords: Questions of difference, frequency, and sense in keywords analysis. Journal of English linguistics vol. 32 …'. after에는 'Baker, P.(2004), Querying'만 남는다.",
+   "suggested_rule_fix": "영문 키워드 머리는 대문자로 시작하는 꼴(Key words·Keywords·KEY WORDS·Key Word 등)만 항목 중간에서 인정한다. 소문자 'keywords'는 항목 맨 앞이나 감싼 꼴([ ]·< >·|)일 때만 본다. 또는 표지 바로 앞이 소문자 낱말+공백(문장 중간)이면 제외한다. 시험 시 185 복구, 다른 논문 영향 없음."
+  },
+  {
+   "id": "KCI_FI003308342 [185] b",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 10,
+   "marker": "위와 같다. b12에서 목록을 끊어 뒤 항목이 모두 사라짐",
+   "evidence": "b13~b17이 사라졌다. 'Baker, P., Gabrielatos, C. … (2008), A useful methodological synergy? … Discourse & Society', 'Hunston, S.(2022) …', 'Louw, B.(1993) …', 'Norton, B.(2013) …(번역 연준흠⋅김주은 2021)', 'Norton, B.(2000)', 'Norton, B.(2006)', 'Pavelnko, A., & Blackedge, A.(eds.)(2004)', 'Sinclair, J.(1996)', 'Stubbs, M.(2009)', 'Zethsen, K. K.(2006)'. 모두 이 논문의 영문 참고문헌이다.",
+   "suggested_rule_fix": "위 185 a와 같다(소문자 keywords의 문장 중간 매치 제외)."
+  },
+  {
+   "id": "KCI_FI001438539 [171]",
+   "kind": "dropped_real_refs",
+   "real_refs_lost": 4,
+   "marker": "저자 연락처 '전자우편 : choiyg58@…'. 2단 조판이라 목록 가운데(b3)에 끼었다",
+   "evidence": "b3 '최용기(국립국어원 국어진흥부장) 주소 : … 전자우편 : choiyg58@mct.go.kr'에서 끊겨 뒤의 서지가 사라졌다. 'b4 김중섭(2006) 한국어 교육의 정체성과 교사로서의 자질에 대하여 …', 'b5 민현식(2005), 한국어교사론, 한국어교육 16-1 … 민현식(2005), 한국어 세계화의 과제 …', 'b6 … 박영순(2001), 외국어로서의 한국어교육론, 월인'. 가나다순으로 보면 앞 단(김·민·박 → 백봉자…)이 뒤로 밀려 온 이 논문의 서지다.",
+   "suggested_rule_fix": "연락처 표지(전자우편·E-mail+주소)가 항목 끝을 이루고(메일 주소 뒤가 비었고), 그 항목에 투고 정보가 없고, 다음 항목이 _BIB_START이며 투고 정보를 담지 않았다면 연락처 앞부분만 남기고 끊지 말고 계속 읽는다(투고 정보 처리와 같은 방식). 173처럼 연락처 뒤에 투고 정보·영문 제목이 이어지면 지금처럼 끊어야 한다. 이 조건 없이 넓히면 173의 'Park, Suk-Hee(2014), Current Situation…'(영문 초록 머리의 자기 서지)이 되살아난다."
+  }
+ ],
+ "notes": [
+  "인덱스 309~386(78편)을 모두 검토했어요. 항목 단위 정렬과 글자 단위 difflib로 before(unescape와 워터마크 처리 후)와 after를 비교했어요. 사라지거나 바뀐 부분은 모두 읽었어요.\n\n거짓 양성은 2편, 서지 5건이에요. 둘 다 같은 원인인데, 쪽 번호 패턴이 줄바꿈으로 갈린 서지의 맨 연도 항목('1978' 등)을 버려요. 독일어 법학 문헌 목록([340] KCI_FI002630871, [342] KCI_FI002542294)에서 'Verlag,' 다음 줄로 넘어간 출판 연도가 잘려 나갔어요.\n\n나머지 76편은 거짓 양성이 아니에요. 사라진 부분은 다음과 같아요.\n- 감싼 초록 머리(|Abstract|, <Abstract>, ￭국문초록, <Zusammenfassung>, 【논문초록】 등), 키워드 줄, 영문 제목·저자·초록\n- 저자 약력('[정회원]' 배지, '이름(漢字):', '[저자소개]', 교신저자·E-mail·전자우편)\n- 투고 정보와 대시 쪽 번호('- 117 -', '－ 159 －'), 쪽 머리글('116 人文科學研究論叢 第二十二號'), 밑줄 줄\n- [370]·[383] <Korean Abstract> 아래의 이 논문 자신의 서지 '유재원. (2019). 초급 중국어 어휘에…', '홍신철. (2018). 코퍼스기반…'(참고문헌 아님)\n- [382] 부록 설문지와 'www.kci.go.go.kr' 반복\n- [309]~[386]의 투고 정보 지우기는 서지 글자를 지우지 않았어요.\n\n참고로 [325] Hayes 외(2004)는 서지 한가운데 끼었던 투고 정보를 지운 뒤 'Behavior ․ ․ ․ Therapy, 35, 35-54.'처럼 구분점 찌꺼기가 남아요. 서지 글자는 잃지 않아서 거짓 양성으로 넣지 않았어요. 지운 구간 사이의 ․∙ 구분점을 함께 정리하면 좋아요.\n\n규칙 버전도 확인했어요. reference_tail.py가 17:31에 바뀌었고, changed_rows2.json은 17:29에 만들어졌어요. 지금 코드로 다시 돌리면 [330]과 [352]는 공백만 다르고, [369]는 결과가 달라져요. [369]는 앞 서지 '김대호(2009. 중국…'에 닫는 괄호가 없어서, 새로 생긴 괄호 안 건너뛰기(_submission_spans)가 투고 정보 '∙논문 접수: 2009년 8월 27일…'을 지우지 않고 남겨요. 덜 자르는 쪽이라 이번 보고에는 넣지 않았어요. 다만 원문 서지의 짝 안 맞는 괄호 때문에 투고 정보 지우기가 꺼질 수 있다는 점은 알아 두세요. 쪽 번호 패턴은 지금 버전에도 그대로라 위 거짓 양성은 지금도 나요.\n\n작업 스크립트 위치: C:\\Users\\LANDSOFT\\AppData\\Local\\Temp\\claude\\C--Users-LANDSOFT-mygit-NL-library-AI\\b3814fb0-3a88-4834-ad31-4e0746a19127\\scratchpad\\fp309\\diff.py, trace.py",
+  "232~308(77편)을 항목·글자 단위 diff(difflib)로 모두 검토했어요. 현재 규칙을 다시 돌린 결과는 저장된 after 와 같아요(243만 공백 한 칸 차이).\n\n거짓 양성은 3편이고 원인은 모두 같아요. 마지막 항목이 [진짜 서지 + 투고 정보 + 꼬리 표지(E-mail·교신저자·<ABSTRACT>)] 꼴이면, 투고 정보 분기가 다음 항목이 없다는 이유로 끊어요. 이때 `not _TAIL.search(text)` 조건 때문에 append 를 건너뛰어서 앞에 붙은 서지까지 통째로 버려요(259·283·284, 각 1항목). 일반 경로처럼 꼬리 표지 앞부분을 남기게 고치면 3편 모두 살아나요. 사본으로 시뮬레이션해서 확인했어요.\n\n거짓 양성이 아닌 것:\n- 290 은 after 가 비었지만, before 의 유일한 항목이 쪽 머리글('36|勞動經濟論集 第45卷 第2號')이라 잃은 서지가 없어요.\n- 투고 정보 지우기(_SUBMISSION)의 매치 약 90건은 전부 실제 접수·심사·게재 날짜였어요. 서지의 날짜·숫자를 지운 altered_real_ref 는 없어요.\n- 워터마크 제거 11건은 전부 'www.kci.go.kr' 워터마크였어요. 서지 URL 을 먹은 경우는 없어요.\n- 쪽 번호·머리글로 버린 단독 숫자 항목('171', '108', '3', '18' 등)은 이웃 항목을 확인해 보니 모두 쪽 번호예요. 이 가운데 240 의 '3' 은 앞 항목이 '환경소'에서 끊겨 있었는데, 그 서지 뒷부분은 before 에도 없었어요.\n- 297 의 '1987 인하대학교 산업공학과 학사' 같은 저자 약력 줄도 _FURNITURE 4번째 패턴(숫자 + 짧은 글)으로 버려졌는데, 이 범위에서는 모두 약력이었어요. 다만 이 패턴은 '2007 국가통계포털' 같은 짧은 서지 줄도 잡을 수 있어 주의가 필요해요.\n\n덜 자른 꼬리는 지시대로 보고하지 않았어요. 238·247·273·276·277·285·295 등에서 다음 논문 학술지명·영문 저자·주소가 남아 있어요.",
+  "인덱스 77~153(77편)을 모두 검토했다. 방법: 항목 단위 difflib, 바뀐 항목은 글자 단위 diff, 지워진 부분 전체를 서지 신호(연도 괄호·권호·쪽·Journal·학회지 등)로 다시 훑었고, 신호로 안 잡히는 깨진 글꼴 항목(152번)은 눈으로 확인했다. 거짓 양성은 4건이다. 152번 18개 탈락, 144번 1개 탈락, 145번 1개 탈락, 107번 서지 제목 글자 손상이다. emptied_list는 없다.\n\n지금 디스크에 있는 reference_tail.py(검토 중에 바뀜)로 다시 돌려도 4건 모두 똑같이 재현된다. 이 범위에서 저장된 after와 현재 규칙의 차이는 78·94·130·133·142번의 공백 차이뿐이다.\n\n거짓 양성이 아닌 것으로 판단한 경계 사례:\n- 덜 자른 것(이번에는 보고하지 않음): 92번 '899-902. 수정', 78·94번 '1차 최종 3인 익명심사필', 133번 표 잔재, 142번 '2020년 8월 31일 수정 최종 3인 익명 심사 畢'.\n- 138·139번에서 지워진 저자 약력 안의 '논문과 저서로는 …(2011)'은 저자 소개라 참고문헌이 아니다.\n- 95번에서 지워진 것은 데이터 이용 안내와 이해상충 문구다.\n- 118번 '1997 서울교육대학교'와 146번 '5 용인시 웰니스 축제 브랜드 제안'은 약력이나 본문 절 제목이다(146번은 목록에 본문이 섞여 들어온 경우).\n- 92·96번 등에서 지워진 '재활심리연구, 제23권 제4호 … Vol. 23' 같은 줄은 다음 논문의 쪽 머리글이다.",
+  "인덱스 0~76(77편) 전부를 항목 단위(difflib SequenceMatcher)와 글자 단위로 비교했고, 사라진 구간에서 연도·권호·쪽 꼴을 자동으로 다시 훑어 확인했어요. 지금 코드의 clean_references(before)는 77편 중 76편에서 after와 똑같이 나와요. [29] 한 편만 꼬리의 공백 한 칸이 달라서 영향이 없어요. 위 거짓 양성 4건은 지금 코드에서도 그대로 다시 나와요.\n\n거짓 양성 4건(진짜 서지 8개):\n- 통째로 버림 1건: [49] 마지막 항목에 투고 정보와 '<Abstract>'가 함께 있어, 투고 정보 분기에서 끝내면서 항목 전체를 버렸어요. 그 바람에 서지 5개가 사라졌어요.\n- 서지 글자를 지움 1건: [2] '특별기고 :'의 '기고 :'를 투고 정보로 보고 지웠어요.\n- URL을 깨뜨림 2건: [52]·[60] 워터마크 정규식이 서지 URL 안의 'www.kci.go.kr', 'uci.kci.go.kr'를 지웠어요.\n\n목록이 빈 경우(emptied_list)는 없어요. [15]는 after가 1항목뿐이지만, 사라진 것은 쪽 머리글과 영문 Abstract라서 정상이에요.\n\n거짓 양성이 아닌 것(정상 또는 덜 자름이라 이번 보고 범위 밖):\n- 덜 자름: [2]·[44] '수정'·'1 차'가 남고, [3]·[26]·[30]·[32]·[35]·[53]·[58]·[61]에 다음 논문의 학술지 머리·영문 제목이 남고, [46]에 '9월 10일 … 월 13일' 조각이 남고, [33]에 한자 이름의 저자 소개가 남고(E-mail에서 끊김), 워터마크 뒤에 '```text'가 남아요.\n- 정상으로 버린 것: 쪽 번호·쪽 머리글('- 309 -', '140 시민교육연구', '노인의 사회적 배제와 우울에 관한 탐색적 연구 | 27' 등)과 저자 약력·회원 배지·키워드·초록이에요.\n\n[36] 부록 표의 '오류문장수정:'도 _SUBMISSION에 걸리지만, 이미 꼬리 뒤라 영향이 없어요. 그래도 [2]와 같은 고침(낱말 한가운데 매치 금지)이 필요하다는 근거예요.",
+  "인덱스 154~231(78편)을 검토했어요. 거짓 양성은 6편, 진짜 서지 손실은 22편이에요(통째로 사라진 것 21편, 잘린 것 1편). 174의 앞 항목 출판사 꼬리가 잘린 것은 따로 세지 않았어요.\n\n원인은 세 갈래예요.\n(A) 투고 정보 분기 결함 — 4편(164·174·175·186). 마지막 항목 하나에 '서지 + 연락처/초록 머리 + 투고 정보'가 함께 붙어 있으면, following이 None일 때 `not _TAIL.search(text)` 조건 때문에 항목 전체를 버려요. 이게 가장 큰 결함이에요.\n(B) 'keywords:' 오탐 — 1편(185). 영문 서지 제목 'Querying keywords: …' 안의 소문자 'keywords:'를 키워드 머리로 봤어요. 그래서 11편을 잃었어요.\n(C) 연락처 상자 — 1편(171). 2단 조판이라 연락처 상자가 목록 중간에 끼어 있었고, 그 뒤 서지 4편을 잃었어요.\n\n수정안 A·B·C(C는 '메일 주소로 항목이 끝나고, 투고 정보가 없고, 다음 항목이 서지 꼴'로 좁힘)를 내 범위에 시험 적용했어요. 이 6편만 복구되고 나머지 72편 출력은 바뀌지 않았어요. 같은 수정을 387편 전체에 돌리면 16편이 바뀌는데, 내 범위 밖 10편은 검토하지 않았어요. 시험 스크립트는 C:/Users/LANDSOFT/AppData/Local/Temp/claude/C--Users-LANDSOFT-mygit-NL-library-AI/b3814fb0-3a88-4834-ad31-4e0746a19127/scratchpad/fp154/sim.py 에 있어요.\n\n거짓 양성이 아닌 것으로 확인한 것:\n- altered_real_ref 없음. 투고 정보 지우기는 모두 날짜 상자 안에서만 지웠고, 서지 글자를 지운 경우는 없었어요. 202·215는 '･1차 ･2차' 같은 찌꺼기가 남지만 덜 자른 것이라 보고하지 않았어요.\n- emptied_list 없음.\n- 쪽 번호·머리글로 버린 항목 9개(195·196·199·208)는 모두 진짜 쪽 번호·머리글이었어요.\n- 176·178은 끊긴 뒤가 같은 PDF에 이어 실린 다음 논문(박석준)의 본문과 참고문헌이라 정상이에요.\n- 173의 'Park, Suk-Hee(2014), …'은 영문 초록 머리의 자기 서지라 정상이에요.\n\n참고로 JSON의 after와 현재 규칙 출력이 170·180에서 공백만 달라요. 의미는 같아요."
+ ]
+}

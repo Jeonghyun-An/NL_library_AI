@@ -223,3 +223,36 @@ def test_metadata_only_paper_without_pages_still_uses_abstract(monkeypatch):
         assert result["indexed"] == 1
         assert chunked == ["이 논문은 강화학습 보상 설계를 다룬다."], meta
     assert indexed == [True, True]
+
+
+def test_semantic_chunking_asks_for_dense_only_and_indexing_for_both(monkeypatch):
+    """의미 청킹(embed_fn)은 dense 만 쓴다 — 공용 서버(EMBEDDING_BACKEND=http)에서는 sparse 서버를 부르지 않는다.
+    청크 색인(마지막 embed_texts)은 dense·sparse 를 다 받는다."""
+    book = MagicMock(doc_type="paper", abstract="이 논문은 강화학습 보상 설계를 다룬다.",
+                     title="논문 제목", personal_author=None, corporate_author=None,
+                     series_title=None, subject=None, keyword=None)
+    _patch_common(monkeypatch, book, artifact_loader=lambda book_id, client: ("본문 문장 하나. 본문 문장 둘.", {}))
+
+    import services.ingestion.chunker as chunker_mod
+    import services.ingestion.embedder as embedder_mod
+    import services.ingestion.indexer as indexer_mod
+
+    calls: list[dict] = []
+
+    def fake_embed(texts, is_query=False, *, need_sparse=True):   # 진짜와 같은 인자
+        calls.append({"texts": list(texts), "need_sparse": need_sparse})
+        return [[0.0] for _ in texts], [{1: 0.1} for _ in texts]
+
+    def fake_chunk(text, embed_fn, **kw):
+        embed_fn(["본문 문장 하나.", "본문 문장 둘."])   # 진짜 semantic_chunk 처럼 문장을 임베딩해 경계를 잰다
+        return [chunker_mod.Chunk(chunk_idx=0, text=text, section_idx=None)]
+
+    monkeypatch.setattr(stages.cfg, "PAPER_ENRICH_ENABLED", False)
+    monkeypatch.setattr(chunker_mod, "semantic_chunk", fake_chunk)
+    monkeypatch.setattr(embedder_mod, "embed_texts", fake_embed)
+    monkeypatch.setattr(indexer_mod, "index_chunks", lambda *a, **kw: MagicMock(errors=[], chunks_indexed=1))
+
+    stages.run_embed_index(StageContext(book_id="KCI_FI000000005"))
+
+    assert calls[0] == {"texts": ["본문 문장 하나.", "본문 문장 둘."], "need_sparse": False}
+    assert calls[-1]["need_sparse"] is True and len(calls) == 2

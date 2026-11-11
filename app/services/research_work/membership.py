@@ -175,7 +175,7 @@ def concept_affinity(concepts: list[str], cnts_ids: list[str]) -> dict[str, dict
         log.warning("[membership] 임베딩·Milvus 모듈을 불러오지 못했다 — 하위질문 소속으로 바꾼다: %s", e)
         return None
     try:
-        dense, _ = embed_texts(list(concepts))
+        dense, _ = embed_texts(list(concepts), need_sparse=False)
         rows = ensure_collection().query(
             expr=f"book_id in [{_ids_expr(ids)}] && chunk_idx == -1",
             output_fields=["book_id", "embedding"], limit=len(ids), timeout=_MILVUS_TIMEOUT_SECONDS,

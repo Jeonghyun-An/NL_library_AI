@@ -8,10 +8,11 @@
     />
 
     <main class="rs-page" :class="{ 'has-progressbar': !!barView }">
-      <!-- 없는 연구(첫 로드 404·422, 보던 중 재동기화 404)·첫 로드 실패는 본문 전체 자리의 상태 블록 — 카드 면(rs-card) 위에 둔다 -->
+      <!-- 없는 연구(첫 로드 404·422, 보던 중 재동기화 404)·첫 로드 실패는 본문 전체 자리의 상태 블록 — 카드 면(rs-card) 위에 둔다.
+           [논문 검색으로 돌아가기]는 메인('/' — 처음 갈래가 논문 검색)으로 간다. 검색어 없는 /papers 는 메인처럼 생긴 다른 빈 화면이었다 -->
       <div v-if="notFound" class="rs-card">
         <SkxErrorState kind="notFound" title-tag="h1" :title="RESEARCH_NOT_FOUND" :message="RESEARCH_STATE_TEXT.notFoundMessage">
-          <NuxtLink to="/papers" class="skx-state__action">{{ RESEARCH_STATE_TEXT.backToSearch }}</NuxtLink>
+          <NuxtLink to="/" class="skx-state__action">{{ RESEARCH_STATE_TEXT.backToSearch }}</NuxtLink>
         </SkxErrorState>
       </div>
 

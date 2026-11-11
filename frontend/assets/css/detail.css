@@ -129,6 +129,16 @@
 .dt-btn--accent:hover {
   filter: brightness(1.05);
 }
+/* 링크(NuxtLink)로 쓴 버튼 — 공통 리셋의 a:visited·a:hover(color: inherit, 특이도 0,1,1)가 한 클래스(0,1,0)를 이겨 눌러 본 뒤·마우스를
+   올린 동안 글이 본문색이 되어, [질문 초안 만들기]·관련 자료 [DeepRead]가 검은 바탕에 검은 글로 사라졌다(사용자 2026-11-10). 같은 상태로 다시 적는다 */
+.dt-btn--ghost:visited,
+.dt-btn--ghost:hover {
+  color: var(--skx-ink-strong);
+}
+.dt-btn--accent:visited,
+.dt-btn--accent:hover {
+  color: var(--skx-on-accent);
+}
 .dt-btn--accent .dt-spark {
   width: 0.7rem;
   height: 0.7rem;

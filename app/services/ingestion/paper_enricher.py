@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 import httpx
 
 from core.config import get_settings
+from services.ingestion.reference_tail import clean_references
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
@@ -445,7 +446,8 @@ def extract_references(full_text: str) -> list[str]:
         if len(blank_refs) > len(refs):
             refs = blank_refs
 
-    return refs[:200]
+    # 멈춤 머리(_REF_STOP)에 안 걸린 꼬리('<Abstract>'·'Key words :'·'접수일'·저자 소개)를 걷는다 — 읽을 때와 같은 규칙
+    return clean_references(refs)[:200]
 
 
 # ── 3. 마크다운 표 추출 (원본 그대로) ────────────────────────
@@ -756,7 +758,7 @@ async def enrich_paper(
         ref_source = "LLM"
         try:
             async with sem:
-                references = await generate_references(full_text)
+                references = clean_references(await generate_references(full_text))
             log.info(f"[{book_id}] 참고문헌 LLM 추출: {len(references)}건")
         except Exception as e:
             log.warning(f"[{book_id}] 참고문헌 LLM 추출 실패: {e}")
