@@ -31,17 +31,20 @@ docker exec -w /app nl-lib-fastapi python -m scripts.check_embedding_backend --n
 - 맨 끝 '판정'이 모두 `통과`면 전환해도 된다. `확인 필요`가 있으면 숫자를 local 대 저장값 차이와 견준다.
 - local 갈래 비교를 위해 이 프로세스에 bge-m3 를 한 벌 더 올린다(GPU 약 2~3GB, 끝나면 내려간다).
 - 참고(2026-11-11, 개발 PC): 공용 서버 대 FlagEmbedding 은 dense 코사인 ≥ 0.999998, sparse 토큰 집합 일치, 가중치 차 ≤ 0.0006 이었다. fp32·fp16 끼리의 차이와 같은 크기다.
+- 운영(2026-11-11, `--n 50`): 판정 5개 모두 통과. 저장↔http dense 코사인 최저 0.999991, sparse 토큰 일치 평균 0.998(저장↔local 도 0.9994 — 색인 때의 fp16 흔들림과 같은 크기), 검색 상위 10 겹침 평균 1.00, 1위 58/58, 제목 질의 자기 자료 찾기 50/50.
 
 ## 전환
 
 전환과 되돌리기 모두 `x-common-env` 변경이라 적재 워커까지 다시 만들어진다 — 적재가 돌지 않을 때만 한다.
 
-1. Portainer 스택 env 에 `EMBEDDING_BACKEND=http`를 넣고 스택을 업데이트한다. compose 에 `${EMBEDDING_BACKEND:-local}`로 선언돼 있어 스택 env 가 먹는다. 모델 이름(`EMBEDDING_SERVED_MODEL`)·주소·시간 한도도 같은 방식으로 바꿀 수 있다.
-2. `x-common-env`를 쓰는 컨테이너가 모두 다시 만들어진다. 끝나면 gateway 를 재시작한다(옛 IP 로 가는 502 방지).
-3. fastapi 로그에 `공용 임베딩 서버 응답 확인`이 찍히는지, `nvidia-smi`에서 fastapi·celery-research 가 줄었는지 본다.
+1. Portainer 스택 env 에 `EMBEDDING_BACKEND=http`를 넣고 스택을 업데이트한다(Re-pull·Prune 끔). compose 에 `${EMBEDDING_BACKEND:-local}`로 선언돼 있어 스택 env 가 먹는다. 모델 이름(`EMBEDDING_SERVED_MODEL`)·주소·시간 한도도 같은 방식으로 바꿀 수 있다.
+   - Re-pull 을 끄면 서버에 받아 둔 이미지로 뜬다 — 새 앱 이미지는 서버에서 먼저 `docker pull` 한다. Re-pull 을 켜면 `minio:latest`·`postgres:16-alpine` 같은 떠 있는 태그를 새로 받아 데이터 컨테이너까지 다시 만든다.
+   - Re-pull 을 꺼도, 같은 서버의 다른 스택이 그 떠 있는 태그를 새로 받아 두었으면 그 컨테이너는 다시 만들어진다(2026-11-11 postgres 가 16.15 로 재생성 — 데이터는 외부 볼륨이라 그대로였다).
+2. `x-common-env`를 쓰는 컨테이너(fastapi·celery 8개)가 다시 만들어진다. 끝나면 `docker exec nl-lib-gateway nginx -s reload`로 gateway 가 새 IP 를 보게 한다(안 하면 502·gateway unhealthy).
+3. fastapi 로그에 `공용 임베딩 서버 응답 확인`이 찍히는지, `nvidia-smi`에서 fastapi·celery-research 가 줄었는지 본다. 둘에는 jina 리랭커가 그대로 남는다(리랭커는 이번 전환 범위 밖).
 
 ## 되돌리기
 
-스택 env 의 `EMBEDDING_BACKEND`를 `local`로 바꾸고(또는 지우고) 스택을 업데이트한 뒤 gateway 를 재시작한다. 이미지·데이터는 그대로다. 재색인은 필요 없다 — 두 갈래가 같은 값을 낸다.
+스택 env 의 `EMBEDDING_BACKEND`를 `local`로 바꾸고(또는 지우고) 스택을 업데이트한 뒤(Re-pull·Prune 끔) `docker exec nl-lib-gateway nginx -s reload`를 한다. 이미지·데이터는 그대로다. 재색인은 필요 없다 — 두 갈래가 같은 값을 낸다.
 
 - **먼저 GPU 여유를 본다**(`nvidia-smi`). local 은 fastapi·celery-research 에 bge-m3 를 다시 올린다(각 2~4GB). fastapi 는 모델을 못 올리면 기동을 멈추고, gateway 는 fastapi 가 떠야 뜬다 — 자리가 없으면 사이트 전체가 내려간다.
