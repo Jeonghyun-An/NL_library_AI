@@ -59,10 +59,9 @@ async def lifespan(app: FastAPI):
         ))
     log.info("DB 테이블 확인 완료")
 
-    # 임베딩 모델 로드 (FlagEmbedding)
-    from services.ingestion.embedder import embed_texts
-    _ = embed_texts(["워밍업"])
-    log.info("임베딩 모델 로드 완료")
+    # 임베딩 — local 은 모델을 올리고(실패하면 기동 중단), http 는 공용 서버 응답만 본다(실패해도 기동은 계속)
+    from services.ingestion.embedder import warmup as embedder_warmup
+    embedder_warmup()
 
     # 리랭커 모델 로드
     from services.search.reranker import warmup as reranker_warmup

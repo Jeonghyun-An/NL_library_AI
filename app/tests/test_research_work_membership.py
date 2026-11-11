@@ -239,14 +239,16 @@ class _Collection:
 class _Heavy:
     def __init__(self):
         self.texts: list[list[str]] = []
+        self.need_sparse: list[bool] = []
         self.dense: list[list[float]] = []
         self.embed_error: Exception | None = None
         self.collection = _Collection()
         self.milvus_exception = _MilvusException
         self.rpc_error = _RpcError
 
-    def embed_texts(self, texts, is_query=False):
+    def embed_texts(self, texts, is_query=False, *, need_sparse=True):   # 진짜와 같은 인자 — 틀린 이름이면 TypeError
         self.texts.append(list(texts))
+        self.need_sparse.append(need_sparse)
         if self.embed_error is not None:
             raise self.embed_error
         return self.dense, [{} for _ in texts]
@@ -294,6 +296,7 @@ class TestConceptAffinity:
                        "C2": {"우울": pytest.approx(0.0), "지지": pytest.approx(1.0)}}
         assert json.loads(json.dumps(out)) == out          # numpy 값이 남지 않는다
         assert heavy.texts == [["우울", "지지"]]
+        assert heavy.need_sparse == [False]   # dense 만 쓴다 — 공용 sparse 서버가 꺼져도 친밀도는 돈다
         # ANN 검색이 아니라 메타청크 행을 그대로 꺼낸다. 상한은 정수 — pymilvus 는 int 일 때만 재시도 루프도 끊는다
         assert heavy.collection.calls == [{
             "expr": 'book_id in ["C1", "C2", "C3"] && chunk_idx == -1',

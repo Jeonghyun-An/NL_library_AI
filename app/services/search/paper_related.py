@@ -9,7 +9,7 @@ import logging
 from core.config import get_settings
 from repositories.book import BookRepository
 from schemas.book import BookOut
-from services.ingestion.embedder import embed_texts
+from services.ingestion.embedder import embed_texts, offload_embed
 from services.ingestion.indexer import search_by_book
 
 log = logging.getLogger(__name__)
@@ -46,8 +46,8 @@ async def find_related_papers(
         log.warning("[paper_related] %s: 대표 쿼리 텍스트 없음 — 연관 논문 추천 생략", cnts_id)
         return []
 
-    # 임베딩 (sync, pipeline.py 와 동일 패턴)
-    dense_vecs, sparse_vecs = embed_texts([query_text])
+    # 임베딩 (pipeline.py 와 동일 패턴 — 공용 서버면 스레드에서 기다린다)
+    dense_vecs, sparse_vecs = await offload_embed(embed_texts, [query_text])
     dense, sparse = dense_vecs[0], sparse_vecs[0]
 
     # Milvus: KCI 논문 범위 + 자기 자신 제외

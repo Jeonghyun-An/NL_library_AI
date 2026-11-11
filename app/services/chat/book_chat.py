@@ -11,7 +11,7 @@ import httpx
 
 from core.config import get_settings
 from schemas.book import BookOut
-from services.ingestion.embedder import embed_texts
+from services.ingestion.embedder import embed_texts, offload_embed
 from services.ingestion.indexer import SearchHit, search_chunks
 from services.llm_sse import sse_deltas
 from services.prompts import PromptTemplate, get_prompt
@@ -155,14 +155,16 @@ def _find_cited_hits(response_text: str, hits: list[SearchHit]) -> list[SearchHi
     return cited
 
 
-def _search_book_chunks(query: str, cnts_id: str) -> list[SearchHit]:
-    """질의를 임베딩해 이 자료(cnts_id)의 청크만 찾는다 — 동기(BGE-M3·Milvus)지만 스레드로 옮기지 않고 루프에서 부른다.
-    메인 검색(pipeline.search)이 같은 BGE-M3 모델·빠른 토크나이저를 루프에서 바로 쓰는데, 다른 스레드에서 동시에 쓰면
-    토크나이저 동시 사용 오류('Already borrowed')로 메인 검색까지 깨질 수 있다(대회 주간에 새 동시 경로를 늘리지 않는다).
+async def _search_book_chunks(query: str, cnts_id: str) -> list[SearchHit]:
+    """질의를 임베딩해 이 자료(cnts_id)의 청크만 찾는다. Milvus 검색은 동기라 루프에서 부른다.
+    임베딩은 offload_embed 로 부른다 — local(프로세스 안 BGE-M3)은 예전처럼 루프에서 바로 부른다. 메인 검색(pipeline.search)이
+    같은 모델·빠른 토크나이저를 루프에서 쓰는데, 다른 스레드에서 동시에 쓰면 토크나이저 동시 사용 오류('Already borrowed')로
+    메인 검색까지 깨질 수 있다. http(공용 서버)는 스레드에서 기다린다 — 공용 서버가 다른 서비스 요청에 밀려도 루프를 잡지
+    않게(토크나이저는 embedder 가 잠근다).
     검색은 짧아(1초 안팎) 15초 ping 을 막을 만큼 루프를 오래 잡지 않는다 — 오래 기다리는 구간(질의 재구성·LLM 첫 조각)은 비동기다.
     Milvus 가 죽었을 때는 search_chunks 의 시간 한도(MILVUS_SEARCH_TIMEOUT, 기본 20초) 안에 예외로 끝나 retrieval_failed 가 된다
     (한도 전에는 pymilvus 재시도가 약 3.5분 루프를 붙들었다)"""
-    dense, sparse = embed_texts([query], is_query=True)
+    dense, sparse = await offload_embed(embed_texts, [query], is_query=True)
     return search_chunks(dense[0], sparse[0], top_k=cfg.BOOK_CHAT_SEARCH_TOP_K, book_filter=cnts_id)
 
 
@@ -259,7 +261,7 @@ async def _chat_events(
     hits = []
     if not ref_context_block:
         try:
-            hits = _search_book_chunks(search_query, cnts_id)
+            hits = await _search_book_chunks(search_query, cnts_id)
         except Exception as e:
             log.error("[%s] 채팅 청크 검색 실패 — 답하지 않고 끝낸다: %s: %s", cnts_id, type(e).__name__, e, exc_info=True)
             yield _error_event(CHAT_RETRIEVAL_ERROR, "retrieval_failed")
